@@ -1,0 +1,48 @@
+print_expr := 'PRINT' expr [';' expr]* NEWLINE
+input_expr := 'INPUT' expr ';' val_list NEWLINE
+
+assi_expr := NAME '=' expr NEWLINE
+call_expr := NAME '(' arg_list ')' NEWLINE
+
+if_expr := 'if' test 'then' NEWLINE
+	   BLOCK 
+	   'end' 'if' NEWLINE
+
+if_else_expr := 'if' test 'then' NEWLINE
+		BLOCK 
+		'else' NEWLINE
+		BLOCK
+		'end' 'if' NEWLINE
+
+while_expr := 'while' test NEWLINE
+	      BLOCK
+	      'wend' NEW LINE
+
+do_loop_expr := 'do' NEWLINE
+		BLOCK
+		'loop' 'until' test NEWLINE
+
+test := or_test | '(' test ')'
+or_test := and_test ['or' and_test]*
+and_test := cmp_test ['and' cmp_test]
+cmp_test := expr [cmp_op expr]*
+cmp_op := '>' | '<' | '=' | '<>' | '>=' | '<='
+
+expr := md_expr [('+' | '-') md_expr]*
+md_expr := mod_expr [('*' | '/') mod_expr]
+mod_expr := pow_expr ['MOD' pow_expr]
+pow_expr := cell ['^' cell]
+cell := NUMBER | NAME | STRING | call_expr
+call_expr := NAME '(' arg_list ')'
+arg_list := expr [',' expr]*
+
+val_list := NAME [',' NAME]
+
+def_expr := NAME '=' expr NEWLINE
+
+stmt := while_expr | if_expr | if_else_expr | do_loop_expr | def_expr |
+	print_expr | input_expr
+
+BLOCK := stmt*
+
+program := BLOCK 'END'
