@@ -28,7 +28,8 @@ and_test := cmp_test ['and' cmp_test]
 cmp_test := expr [cmp_op expr]*
 cmp_op := '>' | '<' | '=' | '<>' | '>=' | '<='
 
-expr := md_expr [('+' | '-') md_expr]*
+# expr := real_expr | '(' expr ')'
+real_expr := md_expr [('+' | '-') md_expr]* | '(' real_expr ')'
 md_expr := mod_expr [('*' | '/') mod_expr]
 mod_expr := pow_expr ['MOD' pow_expr]
 pow_expr := cell ['^' cell]

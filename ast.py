@@ -58,16 +58,18 @@ class MuitDivExprAST:
     '''
     md_expr := mod_expr [('*' | '/') mod_expr]
     '''
-    def __init__(self, left :ModExprAST, right :ModExprAST):
+    def __init__(self, op :str, left :ModExprAST, right :ModExprAST):
+        self.op = op
         self.left = left
         self.right = right
 
 
 class BinaryExprAST:
     '''
-    expr := md_expr [('+' | '-') md_expr]*
+    real_expr := md_expr [('+' | '-') md_expr]* | '(' real_expr ')'
     '''
-    def __init__(self, left :MuitDivExprAST, right :MuitDivExprAST):
+    def __init__(self, op :str, left :MuitDivExprAST, right :MuitDivExprAST):
+        self.op = op
         self.left = left
         self.right = right
 
@@ -104,3 +106,6 @@ class InputExprAST(ExprAST):
     def __init__(self, msg :ExprAST, val_list :ValueListAST):
         self.msg = msg
         self.v_list = val_list
+
+
+

@@ -66,12 +66,9 @@ class Parser:
     def __parse_cell_or_call_expr(self) -> ast.ExprAST:
         nt = self.__now_tok
 
-        if nt.ttype != LAP_IDENTIFIER:
-            self.__syntax_error()
-
         name = nt.value  # it can be string, number or identifier
 
-        if self.__next_tok().value != '(':  # is not call expr
+        if self.__next_tok().value != '(' and nt.ttype != LAP_IDENTIFIER:  # is not call expr
             self.__next_tok()
             return ast.CellAST(name)
 
@@ -85,14 +82,93 @@ class Parser:
 
 
     def __parse_power_expr(self) -> ast.PowerExprAST:
-        left = self.__parse_cell_or_call_expr
+        left = self.__parse_cell_or_call_expr()
         
         if left is None:
             self.__syntax_error()
 
-        self.__now_tok.value != '^':
+        if self.__now_tok.value != '^':
             return left
 
         rl = []
         
-        while self.__now_tok.value == '^'
+        while self.__now_tok.value == '^':
+            self.__next_tok()
+            r = self.__parse_cell_or_call_expr()
+            if r is None:
+                self.__syntax_error()
+            rl.append(r)
+        return ast.PowerExprAST(left, rl)
+
+
+    def __parse_mod_expr(self) -> ast.ModExprAST:
+        left = self.__parse_power_expr()
+        
+        if left is None:
+            self.__syntax_error()
+
+        if self.__now_tok.value != 'MOD':
+            return left
+
+        rl = []
+        
+        while self.__now_tok.value == 'MOD':
+            self.__next_tok()
+            r = self.__parse_power_expr()
+            if r is None:
+                self.__syntax_error()
+            rl.append(r)
+        return ast.ModExprAST(left, rl)
+
+
+    def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:
+        left = self.__parse_mod_expr()
+        
+        if left is None:
+            self.__syntax_error()
+        
+        if self.__now_tok.value not in ('*', '/'):
+            return left
+
+        left_op = self.__now_tok.value
+
+        rl = []
+
+        while self.__now_tok.value in ('*', '/'):
+            r_op = self.__now_tok.value
+            self.__next_tok()
+
+            r = self.__parse_mod_expr()
+            if r is None:
+                self.__syntax_error()
+
+            rl.append((r_op, r))
+
+        return ast.MuitDivExprAST(left_op, left, rl)
+
+
+    def __parse_binary_expr(self) -> ast.BinaryExprAST:
+        left = self.__parse_muit_div_expr()
+        
+        if left is None:
+            self.__syntax_error()
+        
+        if self.__now_tok.value not in ('+', '-'):
+            return left
+
+        left_op = self.__now_tok.value
+
+        rl = []
+
+        while self.__now_tok.value in ('+', '-'):
+            r_op = self.__now_tok.value
+            self.__next_tok()
+
+            r = self.__parse_muit_div_expr()
+            if r is None:
+                self.__syntax_error()
+
+            rl.append((r_op, r))
+
+        return ast.BinaryExprAST(left_op, left, rl)
+ 
