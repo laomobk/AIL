@@ -1,1 +1,9 @@
+begin
 
+if i_like(nezha) then
+	while 1 then  // commit test
+		print "I Love Nezha"
+	wend
+endif
+
+end
