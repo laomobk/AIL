@@ -380,10 +380,10 @@ class Parser:
             return ast.IfExprAST(test, block, ast.BlockExprAST([]))
 
         self.__next_tok()  # move to else
-        self.__next_tok()  # eat else
+        #self.__next_tok()  # eat else
 
-        elseb = self.__parse_block('then', 'endif',
-                "else block should starts with 'then'",
+        elseb = self.__parse_block('else', 'endif',
+                "else block should starts with 'else'",
                 "else block should ends with 'endif'")
 
         return ast.IfExprAST(test, block, elseb)
@@ -425,6 +425,22 @@ class Parser:
 
         return ast.DoLoopExprAST(test, block)
 
+    def __parse_continue_stmt(self) -> ast.ContinueAST:
+        if self.__now_tok != 'continue':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'continue'
+
+        return ast.ContinueAST()
+
+    def __parse_break_stmt(self) -> ast.BreakAST:
+        if self.__now_tok != 'break':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'break'
+
+        return ast.BreakAST()
+
     def __parse_stmt(self, limit :tuple=()) -> ast.ExprAST:
         nt = self.__now_tok
 
@@ -442,6 +458,12 @@ class Parser:
 
         elif nt == 'do':
             a = self.__parse_do_loop_expr()
+
+        elif nt == 'continue':
+            a = self.__parse_continue_stmt()
+
+        elif nt == 'break':
+            a = self.__parse_break_stmt()
 
         elif nt.ttype == LAP_IDENTIFIER and nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr()
@@ -464,14 +486,20 @@ class Parser:
         return a
 
     def __parse_block(self, start='then', end='end', 
-            start_msg :str=None, end_msg :str=None) -> ast.BlockExprAST:
+            start_msg :str=None, end_msg :str=None,
+            start_enter=True) -> ast.BlockExprAST:
+
         if self.__now_tok != start:
             self.__syntax_error(start_msg)
 
-        if self.__next_tok().ttype != LAP_ENTER:
+        if start_enter and self.__next_tok().ttype != LAP_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat enter
+
+        if self.__now_tok == end:   # empty block
+            self.__next_tok()
+            return ast.BlockExprAST([])
 
         first = self.__parse_stmt((start, end))
 
@@ -529,12 +557,9 @@ def test_parse():
     ts = l.lex()
 
     p = Parser(ts, 'tests/test.ail')
-    pt = test_utils.make_ast_tree(p.test())
-    pprint.pprint(pt)
-    try:
-        print(pt.left, pt.right)
-    except:
-        pass
+    t = p.test()
+    #pt = test_utils.make_ast_tree(t)
+    #pprint.pprint(pt)
 
 if __name__ == '__main__':
     test_parse()

@@ -72,6 +72,12 @@ def make_ast_tree(a) -> dict:
         return {'DoLoopAST' : 
                 {'test' : make_ast_tree(a.test), 
                  'body' : make_ast_tree(a.block)}}
+
+    elif isinstance(a, ast.BreakAST):
+        return 'BreakAST'
+    
+    elif isinstance(a, ast.ContinueAST):
+        return 'ContinueAST'
  
     elif isinstance(a, list):
         return unpack_list(a)

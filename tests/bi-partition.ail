@@ -1,3 +1,5 @@
+// 二分法求近似零点值
+
 begin
 
 input "Please enter : (a, b, E)" ; a, b, E

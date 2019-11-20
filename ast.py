@@ -200,6 +200,20 @@ class DoLoopExprAST:
         self.block = block
 
 
+class ContinueAST:
+    '''
+    continue_stmt := 'continue'
+    '''
+    pass
+
+
+class BreakAST:
+    '''
+    break_stmt := 'break'
+    '''
+    pass
+
+
 class NullLineAST:
     '''
     null_line := NEWLINE

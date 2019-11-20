@@ -48,3 +48,6 @@ stmt := while_expr | if_expr | if_else_expr | do_loop_expr | def_expr |
 BLOCK := stmt*
 
 program := BLOCK 'END'
+
+continue_expr := 'continue'
+break_expr := 'break'
