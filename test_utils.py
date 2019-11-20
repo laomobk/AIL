@@ -11,7 +11,7 @@ def unpack_list(l :list):
 
 def make_ast_tree(a) -> dict:
     if isinstance(a, ast.CellAST):
-        return {'Cell' : {'value' : a.value}}
+        return {'Cell' : {'value' : a.value, 'type' : a.type}}
 
     elif isinstance(a, ast.PowerExprAST):
         return {'PowerAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.righ)}}

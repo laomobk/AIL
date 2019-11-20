@@ -296,6 +296,7 @@ class Lex:
             if ord(c) == 10:
                 self.__ln += 1
                 self.__movchr(1)
+
                 self.__stream.append(Token(
                     '\n',
                     LAP_ENTER,
@@ -458,27 +459,30 @@ class Lex:
  
             elif c in ('(', ')', '[', ']', '{', '}', 
                        ',', '.', ';', '$', '@', '#', '\\',':'):
-                self.__stream.append(Token(
-                    c, 
-                    {
-                        '(':LAP_SLBASKET, 
-                        ')':LAP_SRBASKET, 
-                        '[':LAP_MLBASKET, 
-                        ']':LAP_MRBASKET, 
-                        '{':LAP_LLBASKET, 
-                        '}':LAP_LRBASKET,
-                        ',':LAP_COMMA, 
-                        '.':LAP_DOT, 
-                        ';':LAP_SEMI, 
-                        '$':LAP_MONEY, 
-                        '@':LAP_AT,
-                        '#':LAP_WELL,
-                        '\\':LAP_ESCAPE,
-                        ':':LAP_COLON
-                    }[c],
-                    self.__ln
-                ))
-                self.__movchr()
+                if c == '\\' and self.__nextch(1) == '\n':
+                    self.__movchr(2)
+                else:
+                    self.__stream.append(Token(
+                        c, 
+                        {
+                            '(':LAP_SLBASKET, 
+                            ')':LAP_SRBASKET, 
+                            '[':LAP_MLBASKET, 
+                            ']':LAP_MRBASKET, 
+                            '{':LAP_LLBASKET, 
+                            '}':LAP_LRBASKET,
+                            ',':LAP_COMMA, 
+                            '.':LAP_DOT, 
+                            ';':LAP_SEMI, 
+                            '$':LAP_MONEY, 
+                            '@':LAP_AT,
+                            '#':LAP_WELL,
+                            '\\':LAP_ESCAPE,
+                            ':':LAP_COLON
+                        }[c],
+                        self.__ln
+                    ))
+                    self.__movchr()
             
             elif c == '!':  #感叹号
                 if self.__nextch() == '=':  #!=
