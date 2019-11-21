@@ -425,6 +425,29 @@ class Parser:
 
         return ast.DoLoopExprAST(test, block)
 
+    def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
+        self.__next_tok()  # eat 'fun'
+
+        if self.__now_tok.ttype != LAP_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        if self.__next_tok() != '(':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '('
+
+        if self.__now_tok == ')':
+            arg_list = ast.ArgListAST([])  # empty arglist
+            self.__next_tok()  # eat ')'
+        else:
+            arg_list = self.__parse_arg_list()
+
+        block = self.__parse_block('is', 'end')
+
+        return ast.FunctionDefineAST(name, arg_list, block)
+
     def __parse_continue_stmt(self) -> ast.ContinueAST:
         if self.__now_tok != 'continue':
             self.__syntax_error()
@@ -464,6 +487,9 @@ class Parser:
 
         elif nt == 'break':
             a = self.__parse_break_stmt()
+
+        elif nt == 'fun':
+            a = self.__parse_func_def_stmt()
 
         elif nt.ttype == LAP_IDENTIFIER and nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr()
@@ -558,8 +584,8 @@ def test_parse():
 
     p = Parser(ts, 'tests/test.ail')
     t = p.test()
-    #pt = test_utils.make_ast_tree(t)
-    #pprint.pprint(pt)
+    pt = test_utils.make_ast_tree(t)
+    pprint.pprint(pt)
 
 if __name__ == '__main__':
     test_parse()

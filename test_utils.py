@@ -73,6 +73,14 @@ def make_ast_tree(a) -> dict:
                 {'test' : make_ast_tree(a.test), 
                  'body' : make_ast_tree(a.block)}}
 
+    elif isinstance(a, ast.FunctionDefineAST):
+        return {
+                'FunctionDefAST' :
+                {
+                    'name' : a.name,
+                    'arg_list' : make_ast_tree(a.arg_list),
+                    'block' : make_ast_tree(a.block)}}
+
     elif isinstance(a, ast.BreakAST):
         return 'BreakAST'
     

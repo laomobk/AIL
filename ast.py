@@ -165,7 +165,7 @@ class IfExprAST:
     if_else_expr := 'if' test 'then' NEWLINE
                 BLOCK
                 'endif'
-                'else' 'then'NEWLINE
+                'else' NEWLINE
                 BLOCK
                 'endif' NEWLINE
     '''
@@ -180,7 +180,7 @@ class WhileExprAST:
     '''
     while_expr := 'while' test 'then'
         BLOCK
-        'wend' NEW LINE'
+        'wend' NEWLINE'
     '''
 
     def __init__(self, test :TestExprAST, block :BlockExprAST):
@@ -197,6 +197,19 @@ class DoLoopExprAST:
 
     def __init__(self, test :TestExprAST, block :BlockExprAST):
         self.test = test
+        self.block = block
+
+
+class FunctionDefineAST:
+    '''
+    func_def := 'fun' NAME '(' arg_list ')' NEWLINE
+                BLOCK
+            'end'
+    '''
+
+    def __init__(self, name :str, arg_list :ArgListAST, block :BlockExprAST):
+        self.name = name
+        self.arg_list = arg_list
         self.block = block
 
 

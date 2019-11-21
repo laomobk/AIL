@@ -1,25 +1,7 @@
 begin
 
-input "Please enter : (a, b, E)" ; a, b, E
-
-do
-
-	c = (a + b) / 2
-
-	if f(a) * f(c) < 0 then
-		b = c
-	endif
-	else
-
-		if f(c) == 0 then
-			break
-		endif
-
-		a = c
-	endif
-
-loop until abs(a - b) >= E
-
-print "The approximate zero point value is : " ; c
+fun SayHi(name) is
+	print "Hello " ; name
+end
 
 end

@@ -11,17 +11,22 @@ if_expr := 'if' test
 if_else_expr := 'if' test 'then' NEWLINE
 		BLOCK
 		'end'
-		'else' 'then'NEWLINE
+		'else'NEWLINE
 		BLOCK
 		'endif' NEWLINE
 
 while_expr := 'while' test NEWLINE
 	      BLOCK
-	      'wend' NEW LINE
+	      'wend' NEWLINE
 
 do_loop_expr := 'do' NEWLINE
 		BLOCK
 		'loop' 'until' test NEWLINE
+
+
+func_def := 'fun' NAME '(' arg_list ')' NEWLINE
+		BLOCK
+	    'end'
 
 test := or_test
 or_test := and_test ['or' and_test]*
@@ -49,5 +54,5 @@ BLOCK := stmt*
 
 program := BLOCK 'END'
 
-continue_expr := 'continue'
-break_expr := 'break'
+continue_stmt := 'continue'
+break_stmt := 'break'
