@@ -1,7 +1,8 @@
 begin
 
-fun SayHi(name) is
-	print "Hello " ; name
+fun main(arg) is
+	if a then
+
 end
 
 end

@@ -7,10 +7,14 @@ _keywords_uc = (
         'PRINT', 'INPUT',
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
-        'UNTIL', 'LOOP'
+        'UNTIL', 'LOOP', 'WEND',
+        'FUN', 'IS'
         )
 
+_end_signs_uc = ('WEND', 'END', 'ENDIF')
+
 _keywords = tuple([x.lower() for x in _keywords_uc])
+_end_signs = tuple([x.lower() for x in _end_signs_uc])
 
 _cmp_op = (
         LAP_EQ, LAP_LARGER, LAP_SMALER,
@@ -498,7 +502,7 @@ class Parser:
             self.__next_tok()
             return ast.NullLineAST()
 
-        elif nt.ttype == LAP_EOF:
+        elif nt.ttype == LAP_EOF or (nt.value in _end_signs and nt.ttype != LAP_STRING):
             return ast.EOFAST()
 
         else:
