@@ -81,6 +81,9 @@ def make_ast_tree(a) -> dict:
                     'arg_list' : make_ast_tree(a.arg_list),
                     'block' : make_ast_tree(a.block)}}
 
+    elif isinstance(a, ast.ReturnAST):
+        return {'ReturnAST' : {'expr' : make_ast_tree(a.expr)}}
+
     elif isinstance(a, ast.BreakAST):
         return 'BreakAST'
     

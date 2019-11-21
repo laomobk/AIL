@@ -2,7 +2,8 @@ begin
 
 fun main(arg) is
 	if a then
-
+		return 0
+	endif
 end
 
 end

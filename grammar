@@ -56,3 +56,4 @@ program := BLOCK 'END'
 
 continue_stmt := 'continue'
 break_stmt := 'break'
+return_stmt := 'return' expr
