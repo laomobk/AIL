@@ -179,11 +179,12 @@ class BlockExprAST:
 class IfExprAST:
     '''
     if_else_expr := 'if' test 'then' NEWLINE
-                BLOCK
+                BLOK
+                (
+                 'else' NEWLINE
+                 BLOCK
+                )
                 'endif'
-                'else' NEWLINE
-                BLOCK
-                'endif' NEWLINE
     '''
 
     def __init__(self, test :TestExprAST, 

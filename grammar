@@ -4,16 +4,14 @@ input_expr := 'INPUT' expr ';' val_list NEWLINE
 assi_expr := NAME '=' expr NEWLINE
 call_expr := NAME '(' arg_list ')' NEWLINE
 
-if_expr := 'if' test
-	   BLOCK 
-	    'if' NEWLINE
+ if_else_expr := 'if' test 'then' NEWLINE
+	BLOCK
+	(
+	 'else' NEWLINE
+	 BLOCK
+	)
+	'endif'
 
-if_else_expr := 'if' test 'then' NEWLINE
-		BLOCK
-		'end'
-		'else'NEWLINE
-		BLOCK
-		'endif' NEWLINE
 
 while_expr := 'while' test NEWLINE
 	      BLOCK

@@ -14,7 +14,7 @@ def make_ast_tree(a) -> dict:
         return {'Cell' : {'value' : a.value, 'type' : a.type}}
 
     elif isinstance(a, ast.PowerExprAST):
-        return {'PowerAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.righ)}}
+        return {'PowerAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.right)}}
     
     elif isinstance(a, ast.ModExprAST):
         return {'ModAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.right)}}
@@ -61,7 +61,8 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.IfExprAST):
         return {'IfAST' : 
                 {'test' : make_ast_tree(a.test), 
-                 'body' : make_ast_tree(a.block), 'else_block' : make_ast_tree(a.else_block)}}
+                 'body' : make_ast_tree(a.block), 
+                 'else_block' : make_ast_tree(a.else_block)}}
 
     elif isinstance(a, ast.WhileExprAST):
         return {'WhileAST' : 

@@ -11,7 +11,7 @@ _keywords_uc = (
         'FUN', 'IS'
         )
 
-_end_signs_uc = ('WEND', 'END', 'ENDIF')
+_end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
 
 _keywords = tuple([x.lower() for x in _keywords_uc])
 _end_signs = tuple([x.lower() for x in _end_signs_uc])
@@ -364,6 +364,59 @@ class Parser:
 
         test = self.__parse_test_expr()
 
+        if self.__now_tok != 'then':
+            self.__syntax_error()
+
+        if self.__next_tok().ttype != LAP_ENTER:
+            self.__syntax_error()
+
+        if_stmts = []
+        el_stmts = []
+
+        in_else = False
+        is_elif = False
+
+        now = if_stmts
+
+        while self.__now_tok != 'endif':
+            s = self.__parse_stmt()
+
+            # check s
+            if isinstance(s, ast.NullLineAST):
+                pass
+            elif isinstance(s, ast.EOFAST):
+                self.__syntax_error("if statement should ends with 'endif'")
+            else:
+                now.append(s)
+
+            if self.__now_tok == 'else':
+                if in_else:
+                    self.__syntax_error()
+                self.__next_tok()  # eat 'else'
+
+                is_elif = self.__now_tok == 'if'
+                
+                if self.__now_tok.ttype != LAP_ENTER and not is_elif:
+                    self.__syntax_error()
+
+                if not is_elif:
+                    self.__next_tok()
+
+                in_else = True
+                now = el_stmts
+
+        ifb = ast.BlockExprAST(if_stmts, self.__now_ln)
+        elb = ast.BlockExprAST(el_stmts, self.__now_ln)
+
+        self.__next_tok()  # eat 'endif'
+
+        return ast.IfExprAST(test, ifb, elb, self.__now_ln)
+
+    def __oparse_if_else_expr(self) -> ast.IfExprAST:
+        self.__next_tok()  # eat 'if'
+
+        test = self.__parse_test_expr()
+
         if test is None:
             self.__syntax_error()
 
@@ -387,7 +440,7 @@ class Parser:
         self.__next_tok()  # move to else
         #self.__next_tok()  # eat else
 
-        elseb = self.__parse_block('else', 'endif',
+        elseb = self.__parse_block('else', 'endel',
                 "else block should starts with 'else'",
                 "else block should ends with 'endif'")
 
@@ -532,7 +585,7 @@ class Parser:
         self.__next_tok()  # eat enter
 
         return a
-
+ 
     def __parse_block(self, start='then', end='end', 
             start_msg :str=None, end_msg :str=None,
             start_enter=True) -> ast.BlockExprAST:
