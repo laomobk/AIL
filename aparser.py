@@ -124,6 +124,24 @@ class Parser:
             self.__next_tok()  # eat ')'
             return e
 
+        if self.__now_tok in ('+', '-') and self.__now_tok.ttype != LAP_STRING:
+            ntv = self.__now_tok.value
+
+            nt = self.__next_tok()
+
+            if nt.ttype != LAP_NUMBER:
+                self.__syntax_error()
+
+            v = self.__now_tok.value
+
+            res = ntv + v
+
+            c = ast.CellAST(res, LAP_NUMBER, self.__now_ln)
+
+            self.__next_tok()  # eat number
+
+            return c
+
         nt = self.__now_tok
 
         name = nt.value  # it can be string, number or identifier
