@@ -3,6 +3,8 @@ import asts as ast
 from error import error_msg
 from tokentype import *
 
+__author__ = 'LaomoBK'
+
 _keywords_uc = (
         'PRINT', 'INPUT',
         'IF', 'THEN', 'BEGIN',
