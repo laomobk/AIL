@@ -1,5 +1,5 @@
 from alex import Token, TokenStream, Lex
-import ast
+import asts as ast
 from error import error_msg
 from tokentype import *
 
@@ -67,7 +67,7 @@ class Parser:
         if self.__now_tok == ')':
             #空参数列表
             self.__next_tok()  # eat ')'
-            return ast.ArgListAST([])
+            return ast.ArgListAST([], self.__now_ln)
             
         a1 = self.__parse_binary_expr()
 

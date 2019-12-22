@@ -1,15 +1,15 @@
-from typing import List, TypeVar, Union
-import ast
-from opcode import *
+from typing import List, TypeVar, Union, Tuple
+import asts as ast
+from opcodes import *
 from error import error_msg
 from tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
+import aobjects as obj
+
 
 __author__ = 'LaomoBK'
 
 ___doc__ = ''' Compiler for AIL
 将语法分析得出的语法树编译为字节码。'''
-
-consts_t = TypeVar('ConstsType', int, float, str)
 
 _BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
 
@@ -21,8 +21,15 @@ class ByteCode:
     def to_bytes(self) -> bytes:
         return bytes(self.blist)
 
+    def add_bytecode(self, opcode :int, argv :int):
+        self.blist += [opcode, argv]
+
     def __add__(self, b):
         return ByteCode(self.blist + b.blist)
+
+    def __iadd__(self, b):
+        self.blist + b.blist
+        return self
 
 
 class LineNumberTableGenerator:
@@ -55,7 +62,7 @@ class ByteCodeFileBuffer:
     '''
     def __init__(self):
         self.bytes :ByteCode = None
-        self.consts :List[consts_t] = []
+        self.consts  = []
         self.varnames :List[str] = []
         self.lnotab :LineNumberTableGenerator = None
 
@@ -65,7 +72,7 @@ class ByteCodeFileBuffer:
         '''
         pass
 
-    def add_const(self, const :Union[consts_t]) -> int:
+    def add_const(self, const) -> int:
         '''
         若const not in self.consts: 
             将const加入到self.consts中
@@ -74,8 +81,6 @@ class ByteCodeFileBuffer:
         if const not in self.consts:
             self.consts.append(const)
 
-        if const in self.consts:
-            return self.consts.index(const)
         return self.consts.index(const)
 
     def get_varname_index(self, name :str):
@@ -83,15 +88,15 @@ class ByteCodeFileBuffer:
                 if name in self.varnames  \
                 else None
 
-    def add_varname(self, name :str):
+    def get_or_add_varname_index(self, name :str):
         '''
+        若 name 不存在 varname，则先加入到varname再返回
         return : index of name in self.varnames
         '''
 
         if name not in self.varnames:
-            self.varname.append(name)
-            return self.varname.index(mame)
-        return -1
+            self.varnames.append(name)
+        return self.varnames.index(name)
 
 
 class Compiler:
@@ -106,23 +111,149 @@ class Compiler:
 
         self.__buffer.lnotab = self.__lnotab
 
+        self.__flag = 0x0
+
+    def __flag_cmp(self, f :int) -> bool:
+        return self.__flag & f
+
     def __bytecode_update(self, bytecode :ByteCode):
-        self.__general_bytecode.blist += bytecode
+        self.__general_bytecode.blist += bytecode.blist
+        self.__lnotab.check()
 
-    def __do_call_ast(self, tree :ast.CallExprAST) -> ByteCode:
-        b = ByteCode()
+    def __do_cell_ast(self, cell :ast.CellAST) -> Tuple[int, int]:
+        '''
+        sign : 
+            0 : number or str
+            1 : identifier
+        return : (sign, index)
+        '''
+        if cell.type in (LAP_NUMBER, LAP_STRING):
+            c = {
+                    LAP_NUMBER : lambda n : convert_numeric_str_to_number(n),
+                    LAP_STRING : lambda s : s
+                }[cell.type](cell.value)
 
-        # load_ast
+            ci = self.__buffer.add_const(c)
+            sign = 0
 
-        for east in tree.arg_list:
-            if isinstance(east, ast.CellAST):
-                pass
+        elif cell.type == LAP_IDENTIFIER:
+            ci = self.__buffer.get_or_add_varname_index(cell.value)
+            sign = 1
 
-        i = self.__buffer.get_varname_index(tree.name)
+        return (sign, ci)
 
-    def __parse_bin_expr(self, tree :ast.BinaryExprAST) -> ByteCode:
-        pass
+    def __get_operator(self, op :str):
+        return {
+                '+' : binary_add,
+                '-' : binary_sub,
+                '*' : binary_muit,
+                '/' : binary_div,
+                'mod' : binary_mod,
+                '^' : binary_pow
+               }[op]
 
-    def __do_block(self, tree) -> ByteCode:
+    def __compile_binary_expr(self, tree :ast.BinaryExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        # 先递归处理 left，然后再递归处理right
+
+        if isinstance(tree, ast.CellAST):
+            s, i = self.__do_cell_ast(tree)
+
+            bc.add_bytecode(load_const if s == 0 else load_global, i)
+
+            return bc
+
+        elif isinstance(tree, ast.CallExprAST):
+            bc += self.__compile_call_expr(tree)
+
+        elif type(tree.left) in ast.BINARY_AST_TYPES:
+            bc += self.__compile_binary_expr(tree.left)
+
+        # right
+
+        if not hasattr(tree, 'right'):
+            return bc
+
+        for op, rtree in tree.right:
+            opc = self.__get_operator(op)
+            rbc = self.__compile_binary_expr(rtree)
+            bc += rbc
+
+            bc.add_bytecode(opc, 0)
+
+        return bc
+
+    def __compile_define_expr(self, tree :ast.DefineExprAST)  -> ByteCode:
+        bc = ByteCode()
+
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+        expc = self.__compile_binary_expr(tree.value)
+
+        bc += expc
+        bc.add_bytecode(store_var, ni)
+
+        return bc
+
+    def __compile_call_expr(self, tree :ast.CallExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        fni = self.__buffer.get_or_add_varname_index(tree.name)
+        bc.add_bytecode(load_global, fni)
+
+        expl = tree.arg_list.exp_list
+        
+        for et in expl:
+            etc = self.__compile_binary_expr(et)
+            bc += etc
+
+        bc.add_bytecode(call_func, len(expl))
+
+        return bc
+
+
+    def __compile_block(self, tree) -> ByteCode:
         if isinstance(tree, ):
             pass
+
+
+    def test(self, tree):
+        return (self.__compile_define_expr(tree), self.__buffer)
+
+
+def convert_numeric_str_to_number(value :str) -> Union[int, float]:
+    '''
+    将一个或许是数字型字符串转换成数字
+
+    return : eval(value)    若value是数字型字符串
+    return : None           若value不是数字型字符串
+    '''
+    v = eval(value)
+    if type(v) in (int, float):
+        return v
+    return None
+
+
+def test_compiler():
+    import test_utils
+    from aparser import Parser
+    from alex import Lex
+
+    l = Lex('tests/test.ail')
+    ts = l.lex()
+
+    p = Parser(ts, 'tests/test.ail')
+    t = p.parse()
+    t = t.stmts[0]
+
+    c = Compiler(t)
+    bc, bf = c.test(t)
+
+    print('varnames :', bf.varnames)
+    print('consts :', bf.consts)
+
+    test_utils.show_bytecode(bc)
+
+
+if __name__ == '__main__':
+    test_compiler()

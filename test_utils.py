@@ -1,4 +1,5 @@
-import ast
+import asts as ast
+import opcodes as opcs
 
 def unpack_list(l :list):
     rl = []
@@ -95,3 +96,16 @@ def make_ast_tree(a) -> dict:
         return unpack_list(a)
 
     return a
+
+
+def show_bytecode(bc):
+    bl = bc.blist
+
+    print(bl)
+
+    for bi in range(0, len(bl), 2):
+        b = bl[bi]
+        # find opname
+        for k, v in opcs.__dict__.items():
+            if b == v:
+                print(k, bl[bi + 1], sep='\t')

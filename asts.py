@@ -274,3 +274,11 @@ class EOFAST:
         self.ln = ln
 
 
+
+BINARY_AST_TYPES = (
+        CellAST,
+        PowerExprAST,
+        ModExprAST,
+        MuitDivExprAST,
+        BinaryExprAST
+        )
