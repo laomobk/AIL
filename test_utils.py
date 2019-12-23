@@ -1,5 +1,10 @@
 import asts as ast
 import opcodes as opcs
+from acompiler import (
+            ByteCode,
+            ByteCodeFileBuffer, 
+            LineNumberTableGenerator
+        )
 
 def unpack_list(l :list):
     rl = []
@@ -98,14 +103,63 @@ def make_ast_tree(a) -> dict:
     return a
 
 
-def show_bytecode(bc):
-    bl = bc.blist
+class ByteCodeDisassembler:
+    __SHOW_VARNAME  = (
+                opcs.store_var,
+                opcs.load_global,
+                opcs.load_local
+            )
 
-    print(bl)
+    __SHOW_CONST    = (
+                opcs.load_const,
+            )
 
-    for bi in range(0, len(bl), 2):
-        b = bl[bi]
-        # find opname
+    def __init__(self):
+        self.__now_buffer :ByteCodeFileBuffer = None
+    
+    @property
+    def __lnotab(self) -> list:
+        return self.__now_buffer.lnotab
+
+    @property
+    def __varnames(self) -> list:
+        return self.__now_buffer.varnames
+
+    @property
+    def __consts(self) -> list:
+        return self.__now_buffer.consts
+
+    @property
+    def __bytecodes(self) -> list:
+        return self.__now_buffer.bytecodes.blist
+
+    def __get_opname(self, opcode :int) -> str:
         for k, v in opcs.__dict__.items():
-            if b == v:
-                print(k, bl[bi + 1], sep='\t')
+            if opcode == v:
+                return k
+
+    def __get_opcode_comment(self, opcode :int, argv :int) -> str:
+        cmt = '( %s )'
+
+        if opcode in self.__SHOW_CONST:
+            return cmt % self.__consts[argv]
+        elif opcode in self.__SHOW_VARNAME:
+            return cmt % self.__varnames[argv]
+
+        return ''
+
+    def disassemble(self, buffer_ :ByteCodeFileBuffer):
+        self.__now_buffer = buffer_
+
+        for bi in range(0, len(self.__bytecodes), 2):
+            bc = self.__bytecodes[bi]
+            argv = self.__bytecodes[bi + 1]
+
+            print(bi, self.__get_opname(bc), argv, self.__get_opcode_comment(bc, argv),
+                    sep='\t')
+
+
+def show_bytecode(bf :ByteCodeFileBuffer):
+    diser = ByteCodeDisassembler()
+
+    diser.disassemble(bf)

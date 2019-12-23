@@ -1,5 +1,5 @@
 begin
 
-nezha = play_with(aobing, jianzi)
+result = sum(1, 2 + a, 3 + b)
 
 end

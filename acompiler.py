@@ -42,6 +42,10 @@ class LineNumberTableGenerator:
         self.__sum_line = 0
         self.__sum_ofs = 0
 
+    @property
+    def table(self) -> list:
+        return self.__lnotab
+
     def __update_lnotab(self):
         self.__lnotab += [self.__sum_ofs, self.__sum_line]
         self.__sum_ofs = self.__sum_line = 0  # reset.
@@ -61,7 +65,7 @@ class ByteCodeFileBuffer:
     用于存储即将存为字节码的数据
     '''
     def __init__(self):
-        self.bytes :ByteCode = None
+        self.bytecodes :ByteCode = None
         self.consts  = []
         self.varnames :List[str] = []
         self.lnotab :LineNumberTableGenerator = None
@@ -106,7 +110,7 @@ class Compiler:
         self.__general_bytecode = ByteCode()
         self.__buffer = ByteCodeFileBuffer()
 
-        self.__buffer.bytes = self.__general_bytecode
+        self.__buffer.bytecodes = self.__general_bytecode
         self.__lnotab = LineNumberTableGenerator()
 
         self.__buffer.lnotab = self.__lnotab
@@ -217,8 +221,11 @@ class Compiler:
             pass
 
 
-    def test(self, tree):
-        return (self.__compile_define_expr(tree), self.__buffer)
+    def test(self, tree) -> ByteCodeFileBuffer:
+        bc = self.__compile_define_expr(tree)
+        self.__buffer.bytecodes = bc
+
+        return self.__buffer
 
 
 def convert_numeric_str_to_number(value :str) -> Union[int, float]:
@@ -247,12 +254,9 @@ def test_compiler():
     t = t.stmts[0]
 
     c = Compiler(t)
-    bc, bf = c.test(t)
+    bf = c.test(t)
 
-    print('varnames :', bf.varnames)
-    print('consts :', bf.consts)
-
-    test_utils.show_bytecode(bc)
+    test_utils.show_bytecode(bf)
 
 
 if __name__ == '__main__':
