@@ -180,7 +180,7 @@ class Parser:
             r = self.__parse_cell_or_call_expr()
             if r is None:
                 self.__syntax_error()
-            rl.append(r)
+            rl.append(('^', r))
         return ast.PowerExprAST(left, rl, self.__now_ln)
 
     def __parse_mod_expr(self) -> ast.ModExprAST:
@@ -199,7 +199,7 @@ class Parser:
             r = self.__parse_power_expr()
             if r is None:
                 self.__syntax_error()
-            rl.append(r)
+            rl.append(('MOD', r))
         return ast.ModExprAST(left, rl, self.__now_ln)
 
     def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:

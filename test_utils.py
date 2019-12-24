@@ -116,9 +116,12 @@ class ByteCodeDisassembler:
 
     def __init__(self):
         self.__now_buffer :ByteCodeFileBuffer = None
+
+        self.__lnotab_cursor = 0
+        self.__offset_counter = 0
     
     @property
-    def __lnotab(self) -> list:
+    def __lnotab(self) -> LineNumberTableGenerator:
         return self.__now_buffer.lnotab
 
     @property
@@ -133,6 +136,16 @@ class ByteCodeDisassembler:
     def __bytecodes(self) -> list:
         return self.__now_buffer.bytecodes.blist
 
+    def __check_lno(self) -> bool:
+        if self.__lnotab.table[self.__lnotab_cursor] == self.__offset_counter:
+            self.__offset_counter = 0
+            self.__move_lnotab_cursor()
+            return True
+        return False
+
+    def __move_lnotab_cursor(self):
+        self.__lnotab_cursor += 2
+
     def __get_opname(self, opcode :int) -> str:
         for k, v in opcs.__dict__.items():
             if opcode == v:
@@ -140,9 +153,14 @@ class ByteCodeDisassembler:
 
     def __get_opcode_comment(self, opcode :int, argv :int) -> str:
         cmt = '( %s )'
+        cmts = '( \'%s\' )'
 
         if opcode in self.__SHOW_CONST:
-            return cmt % self.__consts[argv]
+            c = self.__consts[argv]
+            
+            if type(c) == str:
+                return cmts % c
+            return cmt % c
         elif opcode in self.__SHOW_VARNAME:
             return cmt % self.__varnames[argv]
 
@@ -151,12 +169,19 @@ class ByteCodeDisassembler:
     def disassemble(self, buffer_ :ByteCodeFileBuffer):
         self.__now_buffer = buffer_
 
+        #print('lnotab :', self.__now_buffer.lnotab.table)
+
         for bi in range(0, len(self.__bytecodes), 2):
             bc = self.__bytecodes[bi]
             argv = self.__bytecodes[bi + 1]
 
             print(bi, self.__get_opname(bc), argv, self.__get_opcode_comment(bc, argv),
                     sep='\t')
+
+            self.__offset_counter += 2
+
+            if self.__check_lno():
+                print()
 
 
 def show_bytecode(bf :ByteCodeFileBuffer):

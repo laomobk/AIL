@@ -13,6 +13,9 @@ ___doc__ = ''' Compiler for AIL
 
 _BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
 
+COMPILER_MODE_FUNC = 0x1
+COMPILER_MODE_MAIN = 0x2
+
 class ByteCode:
     '''表示字节码序列'''
     def __init__(self, blist :List[int]=[]):
@@ -42,6 +45,8 @@ class LineNumberTableGenerator:
         self.__sum_line = 0
         self.__sum_ofs = 0
 
+        self.firstlineno = 0
+
     @property
     def table(self) -> list:
         return self.__lnotab
@@ -50,7 +55,7 @@ class LineNumberTableGenerator:
         self.__lnotab += [self.__sum_ofs, self.__sum_line]
         self.__sum_ofs = self.__sum_line = 0  # reset.
 
-    def check(self, lno):
+    def check(self, lno :int):
         if self.__last_line != lno:
             self.__last_line = lno
             self.__update_lnotab()
@@ -58,6 +63,16 @@ class LineNumberTableGenerator:
 
         self.__sum_line = lno - self.__last_line
         self.__sum_ofs += _BYTE_CODE_SIZE
+
+    def mark(self, lno :int, offset :int):
+        self.__last_line = lno
+        self.__last_ofs = offset
+
+    def update(self, lno :int, offset :int):
+        self.__sum_line = lno - self.__last_line
+        self.__sum_ofs = offset - self.__last_ofs
+
+        self.__update_lnotab()
 
 
 class ByteCodeFileBuffer:
@@ -104,7 +119,7 @@ class ByteCodeFileBuffer:
 
 
 class Compiler:
-    def __init__(self, astree :ast.ExprAST):
+    def __init__(self, astree :ast.BlockExprAST, mode=COMPILER_MODE_MAIN):
         self.__ast = astree
         self.__now_ast :ast.ExprAST = astree
         self.__general_bytecode = ByteCode()
@@ -115,7 +130,17 @@ class Compiler:
 
         self.__buffer.lnotab = self.__lnotab
 
+        self.__lnotab.firstlineno = astree.stmts[0].ln if astree.stmts else 1
+
         self.__flag = 0x0
+
+        self.__mode = mode
+
+    def __update_lnotab(self, line :int):
+        self.__lnotab.check(line)
+
+    def __flag_set(self, f :int):
+        self.__flag |= f
 
     def __flag_cmp(self, f :int) -> bool:
         return self.__flag & f
@@ -123,6 +148,10 @@ class Compiler:
     def __bytecode_update(self, bytecode :ByteCode):
         self.__general_bytecode.blist += bytecode.blist
         self.__lnotab.check()
+
+    @property
+    def __now_offset(self) -> int:
+        return len(self.__general_bytecode.blist) - 2
 
     def __do_cell_ast(self, cell :ast.CellAST) -> Tuple[int, int]:
         '''
@@ -152,7 +181,7 @@ class Compiler:
                 '-' : binary_sub,
                 '*' : binary_muit,
                 '/' : binary_div,
-                'mod' : binary_mod,
+                'MOD' : binary_mod,
                 '^' : binary_pow
                }[op]
 
@@ -215,14 +244,64 @@ class Compiler:
 
         return bc
 
+    def __compile_print_expr(self, tree :ast.PrintExprAST) -> ByteCode:
+        bc = ByteCode()
 
-    def __compile_block(self, tree) -> ByteCode:
-        if isinstance(tree, ):
-            pass
+        expl = tree.value_list
 
+        for et in expl:
+            etc = self.__compile_binary_expr(et)
+            bc += etc
+
+        bc.add_bytecode(print_value, len(expl))
+        
+        return bc
+
+    def __compile_input_expr(self, tree :ast.InputExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        expc = self.__compile_binary_expr(tree.msg)
+        bc += expc
+
+        vl = tree.value_list.value_list
+
+        for name in vl:
+            ni = self.__buffer.get_or_add_varname_index(name)
+            bc.add_bytecode(load_global, ni)
+
+        bc.add_bytecode(input_value, len(vl))
+
+        return bc
+
+    def __compile_block(self, tree :ast.BlockExprAST) -> ByteCode:
+        bc = ByteCode()
+        last_ln = 0
+
+        for eti in range(len(tree.stmts)):
+            et = tree.stmts[eti]
+
+            self.__lnotab.mark(et.ln, len(bc.blist))
+
+            if isinstance(et, ast.InputExprAST):
+                tbc = self.__compile_input_expr(et)
+
+            elif isinstance(et, ast.PrintExprAST):
+                tbc = self.__compile_print_expr(et)
+
+            elif isinstance(et, ast.DefineExprAST):
+                tbc = self.__compile_define_expr(et)
+            
+            if eti + 1 < len(tree.stmts):
+                self.__lnotab.update(tree.stmts[eti + 1].ln, len(tbc.blist))
+
+            bc += tbc
+        else:
+            self.__lnotab.update(et.ln + 1, len(tbc.blist))
+
+        return tbc
 
     def test(self, tree) -> ByteCodeFileBuffer:
-        bc = self.__compile_define_expr(tree)
+        bc = self.__compile_block(tree)
         self.__buffer.bytecodes = bc
 
         return self.__buffer
@@ -251,7 +330,7 @@ def test_compiler():
 
     p = Parser(ts, 'tests/test.ail')
     t = p.parse()
-    t = t.stmts[0]
+    #t = t.stmts[0]
 
     c = Compiler(t)
     bf = c.test(t)

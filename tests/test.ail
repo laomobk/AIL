@@ -1,5 +1,12 @@
 begin
 
-result = sum(1, 2 + a, 3 + b)
+print "Hello nezha!"
+print "Merry Christmas!"
+
+presentA_for_nezha = christmas_hat
+presentB_for_nezha = christmas_tree
+bless = "Merry Christmas! nezha!!"
+
+presents_for_nezha = presentA_for_nezha + presentB_for_nezha + bless
 
 end
