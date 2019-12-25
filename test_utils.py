@@ -114,6 +114,10 @@ class ByteCodeDisassembler:
                 opcs.load_const,
             )
 
+    __SHOW_COMPARE_OP = (
+                opcs.compare_op,
+            )
+
     def __init__(self):
         self.__now_buffer :ByteCodeFileBuffer = None
 
@@ -161,15 +165,19 @@ class ByteCodeDisassembler:
             if type(c) == str:
                 return cmts % c
             return cmt % c
+
         elif opcode in self.__SHOW_VARNAME:
             return cmt % self.__varnames[argv]
+
+        elif opcode in self.__SHOW_COMPARE_OP:
+            return cmt % opcs.COMPARE_OPERATORS[argv]
 
         return ''
 
     def disassemble(self, buffer_ :ByteCodeFileBuffer):
         self.__now_buffer = buffer_
 
-        #print('lnotab :', self.__now_buffer.lnotab.table)
+        print('lnotab :', self.__now_buffer.lnotab.table)
 
         for bi in range(0, len(self.__bytecodes), 2):
             bc = self.__bytecodes[bi]
@@ -188,3 +196,4 @@ def show_bytecode(bf :ByteCodeFileBuffer):
     diser = ByteCodeDisassembler()
 
     diser.disassemble(bf)
+

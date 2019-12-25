@@ -1,12 +1,6 @@
 begin
 
-print "Hello nezha!"
-print "Merry Christmas!"
-
-presentA_for_nezha = christmas_hat
-presentB_for_nezha = christmas_tree
-bless = "Merry Christmas! nezha!!"
-
-presents_for_nezha = presentA_for_nezha + presentB_for_nezha + bless
+if nezha_height < aobing_height > taiyi_height then
+endif
 
 end

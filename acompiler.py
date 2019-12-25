@@ -4,7 +4,7 @@ from opcodes import *
 from error import error_msg
 from tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
 import aobjects as obj
-
+import debugger
 
 __author__ = 'LaomoBK'
 
@@ -18,8 +18,8 @@ COMPILER_MODE_MAIN = 0x2
 
 class ByteCode:
     '''表示字节码序列'''
-    def __init__(self, blist :List[int]=[]):
-        self.blist = blist
+    def __init__(self):
+        self.blist = []
 
     def to_bytes(self) -> bytes:
         return bytes(self.blist)
@@ -31,8 +31,13 @@ class ByteCode:
         return ByteCode(self.blist + b.blist)
 
     def __iadd__(self, b):
-        self.blist + b.blist
+        self.blist += b.blist
         return self
+
+    #@debugger.debug_python_runtime
+    def __setattr__(self, n, v):
+        #print('attr set %s = %s' % (n, v))
+        super().__setattr__(n, v)
 
 
 class LineNumberTableGenerator:
@@ -45,7 +50,7 @@ class LineNumberTableGenerator:
         self.__sum_line = 0
         self.__sum_ofs = 0
 
-        self.firstlineno = 0
+        self.firstlineno = 1
 
     @property
     def table(self) -> list:
@@ -54,6 +59,9 @@ class LineNumberTableGenerator:
     def __update_lnotab(self):
         self.__lnotab += [self.__sum_ofs, self.__sum_line]
         self.__sum_ofs = self.__sum_line = 0  # reset.
+
+    def init_table(self):
+        self.__lnotab += [0, self.firstlineno]
 
     def check(self, lno :int):
         if self.__last_line != lno:
@@ -130,7 +138,11 @@ class Compiler:
 
         self.__buffer.lnotab = self.__lnotab
 
-        self.__lnotab.firstlineno = astree.stmts[0].ln if astree.stmts else 1
+        self.__lnotab.firstlineno = astree.stmts[0].ln \
+                if isinstance(astree, ast.BlockExprAST) and astree.stmts  \
+                else 1
+
+        self.__lnotab.init_table()
 
         self.__flag = 0x0
 
@@ -273,14 +285,58 @@ class Compiler:
 
         return bc
 
-    def __compile_block(self, tree :ast.BlockExprAST) -> ByteCode:
+    def __compile_comp_expr(self, tree :ast.CmpTestAST) -> ByteCode:
+        bc = ByteCode()
+        
+        # left
+        if isinstance(tree, ast.CellAST):
+            s, i = self.__do_cell_ast(tree)
+
+            bc.add_bytecode(load_const if s == 0 else load_global, i)
+
+            return bc
+
+        elif isinstance(tree.left, ast.CallExprAST):
+            bc += self.__compile_call_expr(tree.left)
+
+        elif type(tree.left) in ast.BINARY_AST_TYPES:
+            bc += self.__compile_binary_expr(tree.left)
+
+
+        # right
+
+        for op, et in tree.right:
+            opi = COMPARE_OPERATORS.index(op)
+
+            etc = self.__compile_binary_expr(et)
+
+            bc += etc
+            bc.add_bytecode(compare_op, opi)
+
+        return bc
+
+    def __compile_test_expr(self, tree :ast.TestExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        if isinstance(tree, ast.CmpTestAST):
+            pass
+
+    def __compile_while_stmt(self, tree :ast.WhileExprAST):
+        bc = ByteCode()
+
+        b = tree.block
+
+        self.__compile_block(b)
+
+    def __compile_block(self, tree :ast.BlockExprAST, firstoffset=0) -> ByteCode:
         bc = ByteCode()
         last_ln = 0
+        total_offset = firstoffset
 
         for eti in range(len(tree.stmts)):
             et = tree.stmts[eti]
 
-            self.__lnotab.mark(et.ln, len(bc.blist))
+            self.__lnotab.mark(et.ln, total_offset)
 
             if isinstance(et, ast.InputExprAST):
                 tbc = self.__compile_input_expr(et)
@@ -290,18 +346,20 @@ class Compiler:
 
             elif isinstance(et, ast.DefineExprAST):
                 tbc = self.__compile_define_expr(et)
-            
+ 
+            total_offset += len(tbc.blist)           
+
             if eti + 1 < len(tree.stmts):
-                self.__lnotab.update(tree.stmts[eti + 1].ln, len(tbc.blist))
+                self.__lnotab.update(tree.stmts[eti + 1].ln, total_offset)
 
             bc += tbc
         else:
-            self.__lnotab.update(et.ln + 1, len(tbc.blist))
+            self.__lnotab.update(et.ln + 1, total_offset)
 
-        return tbc
+        return bc
 
     def test(self, tree) -> ByteCodeFileBuffer:
-        bc = self.__compile_block(tree)
+        bc = self.__compile_comp_expr(tree)
         self.__buffer.bytecodes = bc
 
         return self.__buffer
@@ -330,7 +388,7 @@ def test_compiler():
 
     p = Parser(ts, 'tests/test.ail')
     t = p.parse()
-    #t = t.stmts[0]
+    t = t.stmts[0].test.test
 
     c = Compiler(t)
     bf = c.test(t)
