@@ -1,6 +1,20 @@
 begin
 
-if nezha_height < aobing_height > taiyi_height then
-endif
+fun new_present() is
+	return Jianzi
+end
+
+fun sey_hi() is
+	present = new_present()
+	return present
+end
+
+while true then
+	print sey_hi()
+	
+	if false then
+		continue
+	endif
+wend
 
 end

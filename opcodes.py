@@ -9,7 +9,7 @@ setup_doloop    = 0x06
 
 store_var       = 0x07
 
-compare_op         = 0x08
+compare_op      = 0x08
 
 binary_add      = 0x09
 binary_sub      = 0x0a
@@ -27,8 +27,12 @@ logic_or        = 0x13
 print_value     = 0x14
 input_value     = 0x15
 
-jump_if_false   = 0x16
+jump_if_false_or_pop   = 0x16
+jump_if_true_or_pop = 0x18
+jump_if_false = 0x19
 jump_absolute   = 0x17
+
+store_function = 0x1a
 
 
 COMP_EQ     = 0

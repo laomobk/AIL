@@ -380,6 +380,7 @@ class Parser:
         return ast.TestExprAST(t, self.__now_ln)
 
     def __parse_if_else_expr(self) -> ast.IfExprAST:
+        ln = self.__now_ln
         self.__next_tok()  # eat 'if'
 
         test = self.__parse_test_expr()
@@ -430,9 +431,10 @@ class Parser:
 
         self.__next_tok()  # eat 'endif'
 
-        return ast.IfExprAST(test, ifb, elb, self.__now_ln)
+        return ast.IfExprAST(test, ifb, elb, ln)
 
     def __oparse_if_else_expr(self) -> ast.IfExprAST:
+        ln = self.__now_ln
         self.__next_tok()  # eat 'if'
 
         test = self.__parse_test_expr()
@@ -464,9 +466,10 @@ class Parser:
                 "else block should starts with 'else'",
                 "else block should ends with 'endif'")
 
-        return ast.IfExprAST(test, block, elseb, self.__now_ln)
+        return ast.IfExprAST(test, block, elseb, ln)
 
     def __parse_while_expr(self) -> ast.WhileExprAST:
+        ln = self.__now_ln
         self.__next_tok()  # eat 'while'
 
         test = self.__parse_test_expr()
@@ -484,9 +487,10 @@ class Parser:
         if self.__now_tok.ttype != LAP_ENTER:
             self.__syntax_error()
 
-        return ast.WhileExprAST(test, block, self.__now_ln)
+        return ast.WhileExprAST(test, block,ln)
 
     def __parse_do_loop_expr(self) -> ast.DoLoopExprAST:
+        ln = self.__now_ln
         block = self.__parse_block('do', 'loop', 
                 'do loop statement should starts with \'do\'',
                 "do loop statement should ends with 'until'")
@@ -501,9 +505,10 @@ class Parser:
 
         test = self.__parse_test_expr()
 
-        return ast.DoLoopExprAST(test, block, self.__now_ln)
+        return ast.DoLoopExprAST(test, block, ln)
 
     def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
+        ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
 
         if self.__now_tok.ttype != LAP_IDENTIFIER:
@@ -517,14 +522,14 @@ class Parser:
         self.__next_tok()  # eat '('
 
         if self.__now_tok == ')':
-            arg_list = ast.ArgListAST([])  # empty arglist
+            arg_list = ast.ArgListAST([], self.__now_ln)  # empty arglist
             self.__next_tok()  # eat ')'
         else:
             arg_list = self.__parse_arg_list()
 
         block = self.__parse_block('is', 'end')
 
-        return ast.FunctionDefineAST(name, arg_list, block, self.__now_ln)
+        return ast.FunctionDefineAST(name, arg_list, block, ln)
 
     def __parse_continue_stmt(self) -> ast.ContinueAST:
         if self.__now_tok != 'continue':
