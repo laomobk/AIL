@@ -10,7 +10,7 @@ _keywords_uc = (
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS'
+        'FUN', 'IS', 'ELSE',  'ENDIF'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -24,6 +24,9 @@ _cmp_op = (
         LAP_UEQ
         )
 
+_FROM_MAIN = 0
+_FROM_FUNC = 1
+
 class Parser:
     def __init__(self, ts :TokenStream, filename :str):
         self.__filename = filename
@@ -31,6 +34,8 @@ class Parser:
         self.__tok_list = ts.token_list
 
         self.__tc = 0
+
+        self.__level = 0  # level 0
 
     def __mov_tp(self, step=1):
         self.__tc += step
@@ -526,8 +531,12 @@ class Parser:
             self.__next_tok()  # eat ')'
         else:
             arg_list = self.__parse_arg_list()
+        
+        self.__level += 1
 
         block = self.__parse_block('is', 'end')
+
+        self.__level -= 1
 
         return ast.FunctionDefineAST(name, arg_list, block, ln)
 
@@ -585,6 +594,8 @@ class Parser:
             a = self.__parse_break_stmt()
 
         elif nt == 'return':
+            if self.__level == 0:
+                self.__syntax_error('return outside function')
             a = self.__parse_return_stmt()
 
         elif nt == 'fun':

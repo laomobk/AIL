@@ -332,7 +332,7 @@ class Compiler:
                  当为 0 时，则不处理extofs
         '''
         bc = ByteCode()
-
+        
         if isinstance(tree, ast.AndTestAST):
             return self.__compile_and_expr(tree, extofs)
 
@@ -370,6 +370,9 @@ class Compiler:
         if type(tree) in ast.BINARY_AST_TYPES:
             return self.__compile_binary_expr(tree)
 
+        if isinstance(tree, ast.CmpTestAST):
+            return self.__compile_comp_expr(tree)
+
         lbc = self.__compile_comp_expr(tree.left)
 
         rbcl = []
@@ -398,6 +401,8 @@ class Compiler:
 
         if type(test) in ast.BINARY_AST_TYPES:
             return self.__compile_binary_expr(test)
+        elif isinstance(test, ast.CmpTestAST):
+            return self.__compile_comp_expr(test)
         else:
             return self.__compile_or_expr(test, extofs)
 
@@ -514,7 +519,7 @@ class Compiler:
     def __compile_function(self, tree :ast.FunctionDefineAST) -> ByteCode:
         bc = ByteCode()
 
-        cobj = Compiler(tree.block, filename=tree.name).test(tree.block).code_object
+        cobj = Compiler(tree.block, mode=COMPILER_MODE_FUNC, filename=tree.name).test(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
 
         ci = self.__buffer.add_const(cobj)
