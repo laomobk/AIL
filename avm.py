@@ -28,7 +28,11 @@ class Interpreter:
             else None
 
     @property
-    def __tos(self):
+    def __tos(self) -> objs.AILBaseObject:
         return self.__tof.stack[-1]   \
             if self.__tof.stack   \
             else None
+
+    @property
+    def __stack(self) -> List[objs.AILBaseObject]:
+        return self.__tof.stack

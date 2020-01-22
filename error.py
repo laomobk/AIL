@@ -1,6 +1,8 @@
 import sys
 import os.path
 
+import aobjects as objs
+
 def get_line_from_line_no(lno :int, fp :str):
     '''
     ln : 行号
@@ -36,4 +38,8 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     sys.exit(errcode)
 
 
-
+class _GlobalErrorManager:
+    def __init__(self):
+        self.direct_line = 0
+        self.msg = None
+        self.ErrType :objs.AILBaseObject = None

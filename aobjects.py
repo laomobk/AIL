@@ -34,4 +34,16 @@ class AILCodeObject:
     __repr__ = __str__
 
 
+class AILBaseObject:
+    '''Base object, do noting...'''
+    def __init__(self, **kwargs):
+        self.properties = kwargs
+
+
+class ObjectCreater:
+    @staticmethod
+    def new_object():
+        pass
+
+
 null = NullType()
