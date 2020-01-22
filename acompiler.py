@@ -599,15 +599,15 @@ class Compiler:
 
         return bc
 
-    def compile(self, astree :ast.BlockExprAST) -> obj.AILCodeObject:
+    def compile(self, astree :ast.BlockExprAST) -> ByteCodeFileBuffer:
         tbc = self.__compile_block(astree)
 
         if tbc.blist[-2] != return_value:
-            bc += self.__make_final_return()
+            tbc += self.__make_final_return()
 
-        self.__buffer.bytecodes = bc
+        self.__buffer.bytecodes = tbc
 
-        return self.__buffer.code_object
+        return self.__buffer
 
     def test(self, tree) -> ByteCodeFileBuffer:
         bc = self.__compile_block(tree, 0)
