@@ -38,8 +38,17 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     sys.exit(errcode)
 
 
-class _GlobalErrorManager:
+class GlobalError:
     def __init__(self):
-        self.direct_line = 0
-        self.msg = None
-        self.ErrType :objs.AILBaseObject = None
+        self.msg :str = None
+        self.err_type :str = None
+
+
+def print_global_error(err :GlobalError):
+    import sys
+
+    msg = err.msg
+    t = err.err_type
+
+    sys.stderr.write('%s : %s' % (t, msg))
+    sys.stderr.flush()
