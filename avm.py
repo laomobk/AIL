@@ -2,6 +2,13 @@
 
 import aobjects as objs
 from typing import List
+from .agc import GC
+from .astate import InterpreterState
+
+
+# GLOBAL SETTINGS
+REFERENCE_LIMIT = 8192
+
 
 class Frame:
     def __init__(self):
@@ -11,15 +18,11 @@ class Frame:
         self.variable = {}
 
 
-class InterpreterState:
-    def __init__(self):
-        self.now_codeobj :objs.AILCodeObject = None
-        self.frame_stack :List[Frame] = []
-
-
 class Interpreter:
     def __init__(self, cobj :objs.AILCodeObject):
         self.__now_state = InterpreterState()  # init state
+        self.__gc = GC(REFERENCE_LIMIT)  # each interpreterhas one GC
+        self.__now_state.gc = self.__gc
 
     @property
     def __tof(self) -> Frame:

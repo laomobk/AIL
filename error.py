@@ -38,13 +38,13 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     sys.exit(errcode)
 
 
-class GlobalError:
-    def __init__(self):
-        self.msg :str = None
-        self.err_type :str = None
+class AILRuntimeError:
+    def __init__(self, msg :str=None, err_type :str=None):
+        self.msg :str = msg
+        self.err_type :str = err_type
 
 
-def print_global_error(err :GlobalError):
+def print_global_error(err :AILRuntimeError):
     import sys
 
     msg = err.msg
