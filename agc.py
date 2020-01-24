@@ -1,5 +1,7 @@
 '''garbage collector'''
 from .error import AILRuntimeError
+import aobjects as obj
+
 
 class GC:
     def __init__(self, ref_limit :int=8192):
@@ -12,14 +14,16 @@ class GC:
         except MemoryError:
             pass
 
-    def register_object(self, objref :object) -> AILRuntimeError:
+    def register_object(self, objref :obj.AILObject) -> AILRuntimeError:
         '''
         注册一个对象，并将其的 reference ++
 
         return : 0 if no error, RuntimeError otherwise.
         '''
+        if objref.reference < 1:
+            objref.reference = 1
         if len(self.__references_table) + 1 > self.__ref_limit:
             return AILRuntimeError('Too many objects!', 'ObjectLimitError')
-        nelf.__references_table.append(objref)
+        self.__references_table.append(objref)
 
         return 0

@@ -43,6 +43,9 @@ class AILRuntimeError:
         self.msg :str = msg
         self.err_type :str = err_type
 
+    def __str__(self):
+        return '<AIL_RT_ERROR %s : %s>' % (self.err_type, self.msg)
+
 
 def print_global_error(err :AILRuntimeError):
     import sys
