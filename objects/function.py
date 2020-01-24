@@ -22,6 +22,12 @@ def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonError')
 
 
+def func_func_init(self, cobj :types.CodeType, globals :dict, name :str):
+    self['__code__'] = cobj
+    self['__globals__'] = globals
+    self['__name__'] = name
+
+
 def call_function(pyfw :obj.AILObject, *args):
     if inspect.isfunction(pyfw):
         try:

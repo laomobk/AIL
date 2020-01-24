@@ -14,6 +14,7 @@ class NullType:
     def __str__(self):
         return 'null'
     __repr__ = __str__
+    
 
 null = NullType()
 

@@ -53,7 +53,7 @@ def int_sub(self :AILObject, other :AILObject) -> AILObject:
 
 def int_div(self :AILObject, other :AILObject) -> AILObject:
     if not other['__value__']:   # do not have __value__ property
-        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+        return AILRuntimeError('Not support \'/\' with type %s' % str(other), 'TypeError')
 
     if other['__value__'] == 0:
         return AILRuntimeError('0 cannot be used as a divisor', 'ZeroDivisonError')
@@ -71,7 +71,7 @@ def int_div(self :AILObject, other :AILObject) -> AILObject:
 
 def int_muit(self :AILObject, other :AILObject) -> AILObject:
     if not other['__value__']:   # do not have __value__ property
-        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+        return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
