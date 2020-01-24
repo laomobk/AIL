@@ -67,4 +67,5 @@ STRING_TYPE = obj.AILObjectType('<AIL string type>',
                                 __init__=str_init,
                                 __add__=str_add,
                                 __muit__=str_muit,
-                                __str__=str_str)
+                                __str__=str_str,
+                                __eq__=str_eq)

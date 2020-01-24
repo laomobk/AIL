@@ -1,23 +1,23 @@
 # Integer
-from aobjects import AILObject, AILObjectType, compare_type, ObjectCreater
+import aobjects as obj
 from error import AILRuntimeError
 from . import float
 
 POOL_RANGE = (-5, 128)
 
 
-def int_str(self :AILObject):
+def int_str(self :obj.AILObject):
     return '%d' % self['__value__']
 
 
-def int_init(self :AILObject, value :AILObject):
+def int_init(self :obj.AILObject, value :obj.AILObject):
     if isinstance(value, int):
         self['__value__'] = value
-    elif compare_type(value, INTEGER_TYPE):
+    elif obj.compare_type(value, INTEGER_TYPE):
         self['__value__'] = value['__value__']
 
 
-def int_add(self :AILObject, other :AILObject) -> AILObject:
+def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     if not other['__value__']:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
@@ -31,10 +31,10 @@ def int_add(self :AILObject, other :AILObject) -> AILObject:
 
     if res in range(*POOL_RANGE):
         return INTEGER_POOL[int(res - POOL_RANGE[0])]
-    return ObjectCreater.new_object(INTEGER_TYPE, res)
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
-def int_sub(self :AILObject, other :AILObject) -> AILObject:
+def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     if not other['__value__']:   # do not have __value__ property
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
@@ -48,10 +48,10 @@ def int_sub(self :AILObject, other :AILObject) -> AILObject:
 
     if res in range(*POOL_RANGE):
         return INTEGER_POOL[int(POOL_RANGE[0] + res)]
-    return ObjectCreater(INTEGER_TYPE, res)
+    return obj.ObjectCreater(INTEGER_TYPE, res)
 
 
-def int_div(self :AILObject, other :AILObject) -> AILObject:
+def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     if not other['__value__']:   # do not have __value__ property
         return AILRuntimeError('Not support \'/\' with type %s' % str(other), 'TypeError')
 
@@ -66,10 +66,10 @@ def int_div(self :AILObject, other :AILObject) -> AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    return ObjectCreater.new_object(float.FLOAT_TYPE, res)
+    return obj.ObjectCreater.new_object(float.FLOAT_TYPE, res)
 
 
-def int_muit(self :AILObject, other :AILObject) -> AILObject:
+def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     if not other['__value__']:   # do not have __value__ property
         return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
@@ -83,10 +83,10 @@ def int_muit(self :AILObject, other :AILObject) -> AILObject:
 
     if res in range(*POOL_RANGE):
         return INTEGER_POOL[int(POOL_RANGE[0] + res)]
-    return ObjectCreater.new_object(INTEGER_TYPE, res)
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
-INTEGER_TYPE = AILObjectType('<AIL integer type>',
+INTEGER_TYPE = obj.AILObjectType('<AIL integer type>',
                              __init__=int_init,
                              __add__=int_add,
                              __str__=int_str,

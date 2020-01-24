@@ -14,4 +14,4 @@ obj_i = obj.ObjectCreater.new_object(integer.INTEGER_TYPE, 2)
 obj_s = obj.ObjectCreater.new_object(string.STRING_TYPE, "Nezha")
 obj_s2 = obj.ObjectCreater.new_object(string.STRING_TYPE, " and AoBing")
 
-print(obj_s['__add__'](obj_s, obj_s2))
+print(obj_s['__eq__'](obj_s, obj_s2))

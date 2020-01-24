@@ -1,6 +1,6 @@
 import inspect
-import objects.ailobject as aobj
-import objects
+from objects import ailobject as aobj
+
 
 class AILConstant:
     __slots__ = ['const', 'type_']
@@ -14,7 +14,7 @@ class NullType:
     def __str__(self):
         return 'null'
     __repr__ = __str__
-    
+
 
 null = NullType()
 
