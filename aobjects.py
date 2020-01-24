@@ -1,3 +1,4 @@
+import objects.ailobject as aobj
 
 class AILConstant:
     __slots__ = ['const', 'type_']
@@ -12,6 +13,7 @@ class NullType:
         return 'null'
     __repr__ = __str__
 
+null = NullType()
 
 class AILCodeObject:
     __slots__ = ['consts', 'varnames', 'bytecodes', 'firstlineno', 
@@ -41,19 +43,47 @@ class AILObject:
         self.reference = 0
 
     def __getitem__(self, key :str):
-        return self.properties[key]
+        return self.properties[key]   \
+            if key in self.properties   \
+            else None
 
     def __setitem__(self, key :str, value):
-        self.properties[key]
+        self.properties[key] = value
+
+
+class AILObjectType:
+    '''Object Type'''
+    def __init__(self, tname :str, **required):
+        self.name = tname
+        self.required = required
+
+    def __str__(self):
+        return '<AIL Type \'%s\'>' % self.name
 
 
 class ObjectCreater:
     __required_normal = {
-            '__str__'}
+        '__str__' : aobj.obj_func_str,
+        '__init__' : aobj.obj_func_init,
+    }
 
     @staticmethod
-    def new_object(obj_type, **required):
-        b
+    def new_object(obj_type :AILObjectType, *args):
+        obj = AILObject()  # create an object
+        obj.properties = obj_type.required
+        obj_type['__class__'] = obj_type
+
+        #check normal required
+
+        missing_req = [x for x in ObjectCreater.__required_normal.keys() if x not in obj_type.required.keys()]
+
+        for mis in missing_req:
+            obj.properties[mis] = ObjectCreater.__required_normal[mis]
+
+        obj.reference += 1
+
+        return obj
 
 
-null = NullType()
+def compare_type(a :AILObject, b :AILObject) -> bool:
+    return a['__class__'] == b['__class__']
