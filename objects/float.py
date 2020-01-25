@@ -1,6 +1,7 @@
 # float
 import aobjects as obj
 from error import AILRuntimeError
+from . import types
 
 
 def float_str(self :obj.AILObject):
@@ -14,7 +15,7 @@ def float_init(self :obj.AILObject, value :obj.AILObject):
         self['__value__'] = value['__value__']
 
 
-def float_add(self :obj.ILObject, other :obj.AILObject) -> obj.AILObject:
+def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     if not other['__value__']:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
@@ -77,7 +78,7 @@ def float_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(FLOAT_TYPE, res)
 
 
-FLOAT_TYPE = obj.AILObjectType('<AIL float type>',
+FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __init__=float_init,
                              __add__=float_add,
                              __str__=float_str,

@@ -1,7 +1,7 @@
 # Integer
 import aobjects as obj
 from error import AILRuntimeError
-from . import float
+from . import float, types
 
 POOL_RANGE = (-5, 128)
 
@@ -86,7 +86,7 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
-INTEGER_TYPE = obj.AILObjectType('<AIL integer type>',
+INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __init__=int_init,
                              __add__=int_add,
                              __str__=int_str,
@@ -104,7 +104,7 @@ class _IntegerPool:
         mi, ma = POOL_RANGE
 
         for num in range(mi, ma):
-            num = ObjectCreater.new_object(INTEGER_TYPE, num)
+            num = obj.ObjectCreater.new_object(INTEGER_TYPE, num)
             self.__pool.append(num)
 
     @property

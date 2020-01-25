@@ -1,12 +1,13 @@
 # Function and PyFunction
 import aobjects as obj
-import types
+import types as t
 from error import AILRuntimeError
 import objects
 import inspect
+from . import types
 
 
-def pyfunc_func_init(self :obj.AILObject, func :types.FunctionType):
+def pyfunc_func_init(self :obj.AILObject, func :t.FunctionType):
     self['__pyfunction__'] = func
 
 
@@ -22,7 +23,7 @@ def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonError')
 
 
-def func_func_init(self, cobj :types.CodeType, globals :dict, name :str):
+def func_func_init(self, cobj :t.CodeType, globals :dict, name :str):
     self['__code__'] = cobj
     self['__globals__'] = globals
     self['__name__'] = name
@@ -50,8 +51,10 @@ def call_function(pyfw :obj.AILObject, *args):
         return AILRuntimeError(str(e), 'PythonError')
 
 
-FUNCTION_TYPE = obj.AILObjectType('<AIL function type>')
-PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>',
+FUNCTION_TYPE = obj.AILObjectType('<AIL function type>', types.I_FUNC_TYPE,
+                                  __init__=func_func_init)
+
+PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_TYPE,
                                      __init__=pyfunc_func_init,
                                      __call__=pyfunc_func_call)
 

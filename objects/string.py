@@ -1,7 +1,9 @@
 # String
 import aobjects as obj
 from error import AILRuntimeError
-from objects import integer
+from objects import bool, integer
+from . import types
+
 
 def str_init(self, anystr :str):
     if type(anystr) == str:
@@ -52,18 +54,20 @@ def str_eq(self, ostr :obj.AILObject) -> obj.AILObject:
     if type(ostr) != obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
 
-    if ostr['__class__'] != integer.INTEGER_TYPE:
+    if ostr['__class__'] != STRING_TYPE:
         return AILRuntimeError('Not support \'==\' with type %s' % ostr['__class__'])
 
     ss = self['__value__']
     os = ostr['__value__']
 
-    res = 0 if ss != os else 1
+    if len(ss) != len(os):
+        return obj.ObjectCreater.new_object(bool.BOOL_TYPE, 0)
+    else:
+        s = sum([a == b for a, b in zip(ss, os)])
+        return obj.ObjectCreater.new_object(bool.BOOL_TYPE, s == len(os))
 
-    return obj.ObjectCreater.new_object(integer.INTEGER_TYPE, res)
 
-
-STRING_TYPE = obj.AILObjectType('<AIL string type>',
+STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __init__=str_init,
                                 __add__=str_add,
                                 __muit__=str_muit,

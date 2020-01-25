@@ -1,6 +1,6 @@
 import inspect
-from objects import ailobject as aobj
 
+from objects import types
 
 class AILConstant:
     __slots__ = ['const', 'type_']
@@ -71,22 +71,26 @@ class AILObject:
 
     __repr__ = __str__
 
+
 class AILObjectType:
     '''Object Type'''
-    def __init__(self, tname :str, **required):
+    def __init__(self, tname :str, otype=None,**required):
         self.name = tname
         self.required = required
+        self.otype = types.I_TYPE_TYPE if not otype else otype
 
     def __str__(self):
         return '<AIL Type \'%s\'>' % self.name
 
     __repr__ = __str__
 
-
 class ObjectCreater:
+    from objects import ailobject as aobj
+
     __required_normal = {
         '__str__' : aobj.obj_func_str,
         '__init__' : aobj.obj_func_init,
+        '__eq__' : aobj.obj_func_eq
     }
 
     @staticmethod
