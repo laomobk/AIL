@@ -27,3 +27,9 @@ class GC:
         self.__references_table.append(objref)
 
         return 0
+
+    def scan_and_clean(self):
+        for ref in self.__references_table:
+            if not ref.reference:
+                del ref
+

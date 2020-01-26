@@ -4,6 +4,7 @@ import aobjects as objs
 from typing import List
 from .agc import GC
 from .astate import InterpreterState
+import threading
 
 
 # GLOBAL SETTINGS
