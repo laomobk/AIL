@@ -46,11 +46,16 @@ class AILObject:
         self.reference = 0
 
     def __getitem__(self, key :str):
-        return self.properties[key]   \
-            if key in self.properties   \
-            else None
+        if key in self.properties:
+            k = self.properties[key]
+            if isinstance(k, AILObject):
+                k.reference += 1
+            return k
+        return None
 
     def __setitem__(self, key :str, value):
+        if isinstance(value, AILObject):
+            value.reference += 1
         self.properties[key] = value
 
     def __getattr__(self, item :str):
@@ -85,12 +90,12 @@ class AILObjectType:
     __repr__ = __str__
 
 class ObjectCreater:
-    from objects import ailobject as aobj
+    from objects import ailobject as __aobj
 
     __required_normal = {
-        '__str__' : aobj.obj_func_str,
-        '__init__' : aobj.obj_func_init,
-        '__eq__' : aobj.obj_func_eq
+        '__str__' : __aobj.obj_func_str,
+        '__init__' : __aobj.obj_func_init,
+        '__eq__' : __aobj.obj_func_eq
     }
 
     @staticmethod
@@ -116,6 +121,8 @@ class ObjectCreater:
         # call init method
         init_mthd = obj['__init__']
         init_mthd(obj, *args)
+
+        obj.reference += 1
 
         return obj
 

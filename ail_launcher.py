@@ -15,4 +15,4 @@ def launch_py_test(test_name):
 
 
 if __name__ == '__main__':
-    launch_py_test('test_object_system')
+    launch_py_test('test_gc')
