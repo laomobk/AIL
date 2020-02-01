@@ -47,12 +47,17 @@ class AILRuntimeError:
         return '<AIL_RT_ERROR %s : %s>' % (self.err_type, self.msg)
 
 
-def print_global_error(err :AILRuntimeError):
+def print_global_error(err :AILRuntimeError, where :str=''):
     msg = err.msg
     t = err.err_type
 
-    sys.stderr.write('%s : %s \n' % (t, msg))
+    if where:
+        sys.stderr.write('in %s :\n' % where)
+
+    sys.stderr.write(('\t' if where else '') + '%s : %s \n' % (t, msg))
     sys.stderr.flush()
+
+    sys.exit(1)
 
 
 def raise_error_as_python(err :AILRuntimeError):

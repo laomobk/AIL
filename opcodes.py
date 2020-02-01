@@ -36,6 +36,7 @@ store_function = 0x1a
 
 load_varname = 0x1b
 
+pop_top = 0x1c
 
 COMP_EQ     = 0
 COMP_LEQ    = 1

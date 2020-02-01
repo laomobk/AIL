@@ -4,10 +4,19 @@ import aobjects as objs
 from typing import List
 from agc import GC
 from astate import InterpreterState
-import threading
 import error
 from test_utils import get_opname
-import objects as aobj
+import types
+import inspect
+
+import objects.bool as abool
+import objects.integer as aint
+import objects.string as astr
+import objects.float as afloat
+import objects.function as afunc
+import objects.wrapper as awrapper
+
+import opcodes as opcs
 
 import re
 
@@ -15,6 +24,8 @@ from opcodes import *
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
+_BYTE_CODE_SIZE = 2
+_MAX_RECURSION_DEPTH = 888
 
 
 class Frame:
@@ -24,6 +35,12 @@ class Frame:
         self.varnames = []
         self.consts = []
         self.variable = {}
+        self.break_stack = []
+
+    def __str__(self):
+        return '<Frame object for code object \'%s\'>' % self.code.name
+
+    __repr__ = __str__
 
 
 class Interpreter:
@@ -49,15 +66,26 @@ class Interpreter:
     def __stack(self) -> List[objs.AILObject]:
         return self.__tof.stack
 
+    @property
+    def __break_stack(self) -> list:
+        return self.__tof.break_stack
+
     def __push_back(self, obj :objs.AILObject):
         self.__stack.append(obj)
 
     def __pop_top(self) -> objs.AILObject:
         return self.__stack.pop() \
                 if self.__stack \
-                else None
+                else self.__raise_error('Pop from empty stack', 'VMError')
 
-    def __push_new_frame(self, cobj :objs.AILCodeObject):
+    def __push_new_frame(self, cobj :objs.AILCodeObject, frame :Frame=None):
+        if len(self.__frame_stack) + 1 > _MAX_RECURSION_DEPTH:
+            self.__raise_error('Maximum recursion depth exceeded', 'RecursionError')
+
+        if frame:
+            self.__frame_stack.append(frame)
+            return
+
         f = Frame()
 
         f.consts = cobj.consts
@@ -78,7 +106,7 @@ class Interpreter:
 
     def __raise_error(self, msg :str, err_type :str):
         error.print_global_error(
-                error.AILRuntimeError(msg, err_type))
+                error.AILRuntimeError(msg, err_type), self.__tof.code.name)
 
     def __chref(self, ailobj :objs.AILObject, mode :int):
         '''
@@ -102,14 +130,15 @@ class Interpreter:
         tos = self.__tos
 
         if isinstance(tos, objs.AILObject):
-            if tos['__class__'] == aobj.integer.INTEGER_TYPE:
+            if tos['__class__'] in (aint.INTEGER_TYPE, abool.BOOL_TYPE):
                 if why and tos['__value__'] or not why and not tos['__value__']:
+                    if pop:
+                        self.__pop_top()
                     return jump_to
 
         else:
             if why and tos or not why and not tos:
                 return jump_to
-
 
         return 0
 
@@ -125,13 +154,58 @@ class Interpreter:
                         'TypeError')
         return r
 
-    def __run_bytecode(self, cobj :objs.AILCodeObject):
+    def __compare(self, a, b, cop :str) -> objs.AILObject:
+        if (type(a), type(b)) != (objs.AILObject, objs.AILObject) and \
+                a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) and \
+                b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE):
+            self.__raise_error(
+                'operator \'%s\' can only use between two number',
+                'TypeError'
+            )
+
+        av = a['__value__']
+        bv = b['__value__']
+
+        if cop in opcs.COMPARE_OPERATORS:
+            if cop == '<>':
+                cop = '!='
+            res = eval('%s %s %s' % (av, cop, bv))
+        else:
+            self.__raise_error(
+                'Unknown compare operator \'%s\'' % cop,
+                'VMError'
+            )
+
+        return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
+
+    def __check_break(self) -> int:
+        jump_to = 0
+        if self.__break_stack:
+            jump_to = self.__break_stack.pop()
+        return jump_to
+
+    def __check_countinue(self) -> int:
+        jump_to = 0
+
+        if self.__break_stack:
+            jump_to = self.__break_stack.pop() - _BYTE_CODE_SIZE
+        return jump_to
+
+    def __load_name(self, index :int) -> objs.AILObject:
+        for f in self.__frame_stack[::-1]:
+            n = self.__tof.varnames[index]
+
+            if n in f.variable.keys():
+                return f.variable[n]
+        else:
+            self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
+
+    def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
         # push a new frame
-        self.__push_new_frame(cobj)
-
+        self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
-        cp = 0
 
+        cp = 0
         jump_to = 0
 
         while cp < len(code) - 1:  # included argv index
@@ -143,10 +217,12 @@ class Interpreter:
             # 如果有时间，我会写一个新的（动态获取attr）解释方法
             # 速度可能会慢些
 
-            if op == print_value:
-                pc = argv
+            if op == pop_top:
+                tos = self.__pop_top()
+                self.__decref(tos)
 
-                tosl = [self.__pop_top() for _ in range(pc)][::-1]
+            elif op == print_value:
+                tosl = [self.__pop_top() for _ in range(argv)][::-1]
                 
                 for tos in tosl:
                     if isinstance(tos, objs.AILObject):
@@ -154,11 +230,14 @@ class Interpreter:
                     else:
                         tosm = str(tos)
 
+                    print(tosm, end=' ')
+                print()
+
             elif op == input_value:
                 vc = argv
-                tos = self.__pop_top()
-                
+
                 vl = [self.__pop_top() for _ in range(vc)][::-1]
+                tos = self.__pop_top()
 
                 if isinstance(tos, objs.AILObject):
                     msg = self.__check_object(tos['__str__'](tos))
@@ -167,11 +246,11 @@ class Interpreter:
 
                 inp = input(msg)
 
-                sip = [aobj.string.convert_to_string(x)
+                sip = [astr.convert_to_string(x)
                         for x in re.split(r'\s+', inp) if x]  
                 # Remove empty string
 
-                if len(vl) != len(sip):
+                if vl and len(vl) != len(sip):
                     self.__raise_error(
                         'required input value is not enough',
                         'ValueError')
@@ -195,10 +274,15 @@ class Interpreter:
                 self.__push_back(
                         self.__tof.consts[argv])
 
-            elif op == load_global:
-                n = self.__tof.varnames[argv]
+            elif op == load_varname:
                 self.__push_back(
-                        self.__tof.variable[n])
+                    self.__tof.varnames[argv]
+                )
+
+            elif op == load_global:
+                var = self.__load_name(argv)
+
+                self.__push_back(var)
 
             elif op == return_value:
                 tos = self.__pop_top()
@@ -209,7 +293,15 @@ class Interpreter:
                 self.__push_back(tos)
 
             elif op in (setup_doloop, setup_while):
-                pass
+                if op == setup_while:  # setup_while can test TOS
+                    tos = self.__pop_top()
+
+                    if tos['__value__'] is not None and not tos['__value__']:
+                        jump_to = argv
+                    else:
+                        self.__break_stack.append(argv)
+                else:
+                    self.__break_stack.append(argv)
 
             elif op == jump_absolute:
                 jump_to = argv
@@ -241,14 +333,107 @@ class Interpreter:
                 res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
 
                 self.__push_back(res)
-            
-            if jump_to:
+
+            elif op == compare_op:
+                cop = opcs.COMPARE_OPERATORS[argv]
+
+                b = self.__pop_top()
+                a = self.__pop_top()
+
+                self.__push_back(
+                    self.__compare(a, b, cop)
+                )
+
+            elif op == break_loop:
+                jump_to = self.__check_break()
+
+            elif op == continue_loop:
+                jump_to = self.__check_countinue()
+
+            elif op == call_func:
+                argl = [self.__pop_top() for _ in range(argv)]
+                func :objs.AILObject = self.__pop_top()
+
+                if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
+                    if func['__class__'] == afunc.FUNCTION_TYPE:
+                        c :objs.AILCodeObject = func['__code__']
+
+                        if c.argcount != argv:
+                            self.__raise_error(
+                                '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
+                                'TypeError'
+                            )
+
+                        argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
+                        # init new frame
+                        f = Frame()
+                        f.varnames = c.varnames
+                        f.variable = argd
+                        f.code = c
+                        f.consts = c.consts
+
+                        try:
+                            self.__run_bytecode(c, f)
+                        except RecursionError as e:
+                            self.__raise_error(str(e), 'PythonError')
+                    elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
+                        pyf = func['__pyfunction__']
+
+                        if not hasattr(pyf, '__call__'):
+                            self.__raise_error(
+                                '\'%s\' object is not callable' % str(type(pyf))
+                            )
+
+                        if not inspect.isbuiltin(pyf):
+                            # check arguments
+                            fc :types.CodeType = pyf.__code__
+
+                            if fc.co_argcount != argv:
+                                self.__raise_error(
+                                    'function \'%s\' need %s argument(s)' % fc.co_argcount,
+                                    'TypeError'
+                                )
+
+                        else:
+                            argl = [o['__value__'] for o in argl]
+                            # unpack argl for builtin function
+
+                        try:
+                            rtn = pyf(*argl)
+                        except Exception as e:
+                            self.__raise_error(
+                                str(e), 'PythonError'
+                            )
+
+                        if not isinstance(rtn, objs.AILObject):
+                            rtn = objs.ObjectCreater.new_object(awrapper.WRAPPER_TYPE, rtn)
+
+                        self.__push_back(rtn)
+
+            elif op == store_function:
+                tos = self.__pop_top()
+
+                tosf = objs.ObjectCreater.new_object(
+                    afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
+                )
+
+                n = self.__tof.varnames[argv]
+                self.__store_var(n, tosf)
+
+            if jump_to != cp:
                 cp = jump_to
             else:
-                cp += 2
+                cp += _BYTE_CODE_SIZE
+                jump_to = cp
 
     def test_exec(self, cobj):
-        self.__run_bytecode(cobj)
+        # init namespace
+        f = Frame()
+        f.code = cobj
+        f.consts = cobj.consts
+        f.varnames = cobj.varnames
+
+        self.__run_bytecode(cobj, f)
 
 
 if __name__ == '__main__':

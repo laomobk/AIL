@@ -18,7 +18,7 @@ class NullType:
     __repr__ = __str__
 
 
-#null = NullType()
+# null = NullType()
 
 class AILCodeObject:
     __slots__ = ['consts', 'varnames', 'bytecodes', 'firstlineno', 

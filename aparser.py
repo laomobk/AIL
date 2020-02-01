@@ -528,9 +528,16 @@ class Parser:
 
         if self.__now_tok == ')':
             arg_list = ast.ArgListAST([], self.__now_ln)  # empty arglist
+
             self.__next_tok()  # eat ')'
         else:
             arg_list = self.__parse_arg_list()
+
+            for a in arg_list.exp_list:
+                if not isinstance(a, ast.CellAST):
+                    self.__syntax_error()
+                elif a.type != LAP_IDENTIFIER:
+                    self.__syntax_error()
         
         self.__level += 1
 

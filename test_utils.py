@@ -110,7 +110,7 @@ class ByteCodeDisassembler:
                 opcs.load_global,
                 opcs.load_local,
                 opcs.store_function,
-                opcs.load_varname
+                opcs.load_varname,
             )
 
     __SHOW_CONST = (
@@ -152,7 +152,9 @@ class ByteCodeDisassembler:
 
     @property
     def __bytecodes(self) -> list:
-        return self.__now_buffer.bytecodes.blist
+        return self.__now_buffer.bytecodes.blist \
+                if not isinstance(self.__now_buffer, obj.AILCodeObject) \
+                else self.__now_buffer.bytecodes
 
     def __check_lno(self) -> bool:
         if self.__lnotab.table[self.__lnotab_cursor] == self.__offset_counter:

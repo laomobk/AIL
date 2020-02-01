@@ -24,6 +24,7 @@ _BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
 COMPILER_MODE_FUNC = 0x1
 COMPILER_MODE_MAIN = 0x2
 
+
 class ByteCode:
     '''表示字节码序列'''
     def __init__(self):
@@ -122,9 +123,14 @@ class ByteCodeFileBuffer:
                     float : afloat.FLOAT_TYPE,
                     bool : abool.BOOL_TYPE,
                  }.get(type(const), awrapper.WRAPPER_TYPE)
-        
+
+        allowed_type = (objs.AILCodeObject, )
+
         if const != null:
-            ac = objs.ObjectCreater.new_object(target, const)
+            if target == awrapper.WRAPPER_TYPE and type(const) in allowed_type:
+                ac = const
+            else:
+                ac = objs.ObjectCreater.new_object(target, const)
         else:
             ac = null
 
@@ -156,7 +162,8 @@ class ByteCodeFileBuffer:
 
 
 class Compiler:
-    def __init__(self, astree :ast.BlockExprAST, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>'):
+    def __init__(self, astree :ast.BlockExprAST, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
+                 ext_varname :tuple=()):
         self.__ast = astree
         self.__now_ast :ast.ExprAST = astree
         self.__general_bytecode = ByteCode()
@@ -177,6 +184,13 @@ class Compiler:
         self.__flag = 0x0
 
         self.__mode = mode
+
+        self.__init_ext_varname(ext_varname)
+
+    def __init_ext_varname(self, ext_varname :tuple):
+        if self.__mode == COMPILER_MODE_FUNC:
+            for n in ext_varname:
+                self.__buffer.get_or_add_varname_index(n)
 
     def __update_lnotab(self, line :int):
         self.__lnotab.check(line)
@@ -447,7 +461,7 @@ class Compiler:
         bc += tc
 
         back = extofs  # move to first opcode in block
-        to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2 
+        to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2
         # including setup_while and jump over block
         bc.add_bytecode(setup_while, to)
 
@@ -487,8 +501,10 @@ class Compiler:
 
         ifbc = self.__compile_block(tree.block, extofs)
 
+        jump_over_ifb = len(ifbc.blist) + len(tc.blist) + extofs
+
         if has_else:
-            elbc = self.__compile_block(tree.else_block, extofs)
+            elbc = self.__compile_block(tree.else_block, jump_over_ifb)
         else:
             elbc = ByteCode()
 
@@ -504,10 +520,10 @@ class Compiler:
         if has_else:
             ifbc.add_bytecode(jump_absolute, jump_over)
 
-        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE
-        # 不需要加elbc的长度
+        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE # * 2
+        # 不需要加elbc的长度, 乘2是为了越过block
 
-        #tc = self.__compile_test_expr(tree.test, test_jump)
+        # tc = self.__compile_test_expr(tree.test, test_jump)
         tc.add_bytecode(jump_if_false_or_pop, test_jump)
 
         bc += tc
@@ -540,7 +556,10 @@ class Compiler:
     def __compile_function(self, tree :ast.FunctionDefineAST) -> ByteCode:
         bc = ByteCode()
 
-        cobj = Compiler(tree.block, mode=COMPILER_MODE_FUNC, filename=tree.name).test(tree.block).code_object
+        ext = [c.value for c in tree.arg_list.exp_list]
+
+        cobj = Compiler(tree.block, mode=COMPILER_MODE_FUNC, filename=tree.name,
+                        ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
 
         ci = self.__buffer.add_const(cobj)
@@ -549,6 +568,21 @@ class Compiler:
     
         bc.add_bytecode(load_const, ci)
         bc.add_bytecode(store_function, namei)
+
+        return bc
+
+    def __compile_plain_call(self, tree :ast.CallExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+
+        bc.add_bytecode(load_global, ni)
+
+        for et in tree.arg_list.exp_list:
+            bc += self.__compile_binary_expr(et)
+
+        bc.add_bytecode(call_func, len(tree.arg_list.exp_list))
+        bc.add_bytecode(pop_top, 0)
 
         return bc
 
@@ -593,6 +627,9 @@ class Compiler:
             elif isinstance(et, ast.ContinueAST):
                 tbc = self.__compile_continue_expr(et)
 
+            elif isinstance(et, ast.CallExprAST):
+                tbc = self.__compile_plain_call(et)
+
             else:
                 print('W: Unknown AST type: %s' % type(et))
  
@@ -623,8 +660,8 @@ class Compiler:
     def compile(self, astree :ast.BlockExprAST) -> ByteCodeFileBuffer:
         tbc = self.__compile_block(astree)
 
-        if tbc.blist[-2] != return_value:
-            tbc += self.__make_final_return()
+        # if tbc.blist and tbc.blist[-2] != return_value:
+        tbc += self.__make_final_return()
 
         self.__buffer.bytecodes = tbc
 
