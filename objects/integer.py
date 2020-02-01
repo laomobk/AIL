@@ -2,6 +2,7 @@
 import aobjects as obj
 from error import AILRuntimeError
 from . import float, types
+import objects.bool as abool
 
 POOL_RANGE = (-5, 128)
 
@@ -86,12 +87,19 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
+def int_eq(self :obj.AILObject, o :obj.AILObject):
+    if isinstance(o, obj.AILObject):
+        return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o['__value__'])
+    return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o)
+
+
 INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __init__=int_init,
                              __add__=int_add,
                              __str__=int_str,
                              __div__=int_div,
-                             __muit__=int_muit)
+                             __muit__=int_muit, 
+                             __eq__=int_eq)
 
 
 class _IntegerPool:

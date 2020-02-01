@@ -109,7 +109,8 @@ class ByteCodeDisassembler:
                 opcs.store_var,
                 opcs.load_global,
                 opcs.load_local,
-                opcs.store_function
+                opcs.store_function,
+                opcs.load_varname
             )
 
     __SHOW_CONST = (
@@ -228,7 +229,8 @@ class ByteCodeDisassembler:
 
             self.__check_jump_point(bc, argv)
 
-            print('\t', bi, self.__get_opname(bc), argv, self.__get_opcode_comment(bc, argv), self.__get_jump_point_commit(),
+            print('\t', bi, self.__get_opname(bc), argv, 
+                    self.__get_opcode_comment(bc, argv), self.__get_jump_point_commit(),
                     sep='\t')
 
             self.__offset_counter += 2
@@ -244,3 +246,8 @@ def show_bytecode(bf :ByteCodeFileBuffer):
 
     diser.disassemble(bf)
 
+
+def get_opname(op :int):
+    for k, v in opcs.__dict__.items():
+        if v == op:
+            return k

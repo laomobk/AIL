@@ -5,6 +5,14 @@ from error import error_msg
 from tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
 import aobjects as obj
 import debugger
+import aobjects as objs
+
+import objects.string as astr
+import objects.integer as aint
+import objects.bool as abool
+import objects.wrapper as awrapper
+import objects.float as afloat
+from objects.null import null
 
 __author__ = 'LaomoBK'
 
@@ -107,10 +115,23 @@ class ByteCodeFileBuffer:
             将const加入到self.consts中
         return : const 在 self.consts 中的index
         '''
-        if const not in self.consts:
-            self.consts.append(const)
+        # convert const to ail object
+        target = {
+                    str : astr.STRING_TYPE,
+                    int : aint.INTEGER_TYPE,
+                    float : afloat.FLOAT_TYPE,
+                    bool : abool.BOOL_TYPE,
+                 }.get(type(const), awrapper.WRAPPER_TYPE)
+        
+        if const != null:
+            ac = objs.ObjectCreater.new_object(target, const)
+        else:
+            ac = null
 
-        return self.consts.index(const)
+        if ac not in self.consts:
+            self.consts.append(ac)
+
+        return self.consts.index(ac)
 
     def get_varname_index(self, name :str):
         return self.varnames.index(name)  \
@@ -129,7 +150,7 @@ class ByteCodeFileBuffer:
 
     @property
     def code_object(self) -> obj.AILCodeObject:
-        return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes, 
+        return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes.blist, 
                                  self.lnotab.firstlineno, self.argcount,
                                  self.name, self.lnotab)
 
@@ -288,7 +309,7 @@ class Compiler:
 
         for name in vl:
             ni = self.__buffer.get_or_add_varname_index(name)
-            bc.add_bytecode(load_global, ni)
+            bc.add_bytecode(load_varname, ni)
 
         bc.add_bytecode(input_value, len(vl))
 
@@ -592,7 +613,7 @@ class Compiler:
     def __make_final_return(self) -> ByteCode:
         bc = ByteCode()
 
-        ni = self.__buffer.add_const(obj.null)
+        ni = self.__buffer.add_const(null)
 
         bc.add_bytecode(load_const, ni)
         bc.add_bytecode(return_value, 0)

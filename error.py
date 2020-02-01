@@ -48,10 +48,19 @@ class AILRuntimeError:
 
 
 def print_global_error(err :AILRuntimeError):
-    import sys
-
     msg = err.msg
     t = err.err_type
 
-    sys.stderr.write('%s : %s' % (t, msg))
+    sys.stderr.write('%s : %s \n' % (t, msg))
     sys.stderr.flush()
+
+
+def raise_error_as_python(err :AILRuntimeError):
+    msg = err.msg
+    t = err.err_type
+
+    raise _AILRuntimeError('%s : %s' % (t, msg))
+
+
+class _AILRuntimeError(Exception):
+    pass

@@ -1,26 +1,7 @@
-// 二分法求近似零点值
-
 begin
 
-input "Please enter : (a, b, E)" ; a, b, E
+a = "Hello" * " Nezha"  // string test
 
-do
-
-	c = (a + b) / 2
-
-	if f(a) * f(c) < 0 then
-		b = c
-	else
-
-		if f(c) == 0 then
-			break
-		endif
-
-		a = c
-	endif
-
-loop until abs(a - b) >= E
-
-print "The approximate zero point value is : " ; c
+print a
 
 end

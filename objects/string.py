@@ -38,7 +38,7 @@ def str_muit(self, times :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
 
     if times['__class__'] != integer.INTEGER_TYPE:
-        return AILRuntimeError('Not support \'*\' with type %s' % times['__class__'])
+        return AILRuntimeError('Not support \'*\' with type %s' % times['__class__'], 'TypeError')
 
     t = times['__value__']
     rs = self['__value__'] * t
@@ -55,7 +55,7 @@ def str_eq(self, ostr :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
 
     if ostr['__class__'] != STRING_TYPE:
-        return AILRuntimeError('Not support \'==\' with type %s' % ostr['__class__'])
+        return AILRuntimeError('Not support \'==\' with type %s' % ostr['__class__'], 'TypeError')
 
     ss = self['__value__']
     os = ostr['__value__']
@@ -65,6 +65,13 @@ def str_eq(self, ostr :obj.AILObject) -> obj.AILObject:
     else:
         s = sum([a == b for a, b in zip(ss, os)])
         return obj.ObjectCreater.new_object(bool.BOOL_TYPE, s == len(os))
+
+
+def convert_to_string(aobj) -> obj.AILObject:
+    if isinstance(aobj, obj.AILObject):
+        return aobj['__str__'](aobj)
+    else:
+        return obj.ObjectCreater.new_object(STRING_TYPE, str(aobj))
 
 
 STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,

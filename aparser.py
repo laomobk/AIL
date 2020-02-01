@@ -291,7 +291,7 @@ class Parser:
             self.__syntax_error()
 
         if self.__now_tok != ';':
-            return ast.InputExprAST(msg, ast.ValueListAST([]), self.__now_ln)
+            return ast.InputExprAST(msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
         if self.__next_tok().ttype == LAP_IDENTIFIER:
             vl = self.__parse_value_list()

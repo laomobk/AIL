@@ -1,5 +1,7 @@
 import inspect
 
+import error
+
 from objects import types
 
 class AILConstant:
@@ -16,14 +18,14 @@ class NullType:
     __repr__ = __str__
 
 
-null = NullType()
+#null = NullType()
 
 class AILCodeObject:
     __slots__ = ['consts', 'varnames', 'bytecodes', 'firstlineno', 
                  'argcount', 'name', 'lnotab']
 
     def __init__(self, consts :list, varnames :list, 
-                 bytecodes :bytes, firstlineno :int,
+                 bytecodes :list, firstlineno :int,
                  argcount :int, name :str, lnotab :list):
         self.consts = consts
         self.varnames = varnames
@@ -71,8 +73,23 @@ class AILObject:
     def __str__(self):
         try:
             return self['__str__'](self)
-        except:
+        except TypeError:
             return '<AIL %s object at %s>' % (self['__class__'].name, hex(id(self)))
+
+    def __eq__(self, o):
+        try:
+            b = self['__eq__'](self, o)
+            if isinstance(b, error.AILRuntimeError):
+                return False
+            if isinstance(b, AILObject):
+                v = b['__value__']
+                if v is None:
+                    return True  # 若无value， 默认返回 True
+                return v
+            return bool(b)
+
+        except TypeError:
+            return super().__eq__(o)
 
     __repr__ = __str__
 

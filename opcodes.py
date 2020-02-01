@@ -34,6 +34,8 @@ jump_absolute   = 0x17
 
 store_function = 0x1a
 
+load_varname = 0x1b
+
 
 COMP_EQ     = 0
 COMP_LEQ    = 1
