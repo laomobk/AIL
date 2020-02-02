@@ -1,10 +1,8 @@
 from typing import List, TypeVar, Union, Tuple
 import asts as ast
 from opcodes import *
-from error import error_msg
 from tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
 import aobjects as obj
-import debugger
 import aobjects as objs
 
 import objects.string as astr
@@ -164,7 +162,6 @@ class ByteCodeFileBuffer:
 class Compiler:
     def __init__(self, astree :ast.BlockExprAST, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
                  ext_varname :tuple=()):
-        self.__ast = astree
         self.__now_ast :ast.ExprAST = astree
         self.__general_bytecode = ByteCode()
         self.__buffer = ByteCodeFileBuffer()
@@ -256,6 +253,9 @@ class Compiler:
         elif isinstance(tree, ast.CallExprAST):
             bc += self.__compile_call_expr(tree)
 
+        elif isinstance(tree, ast.DefineExprAST):
+            bc += self.__compile_define_expr(tree, single=False)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -273,7 +273,7 @@ class Compiler:
 
         return bc
 
-    def __compile_define_expr(self, tree :ast.DefineExprAST)  -> ByteCode:
+    def __compile_define_expr(self, tree :ast.DefineExprAST, single=False)  -> ByteCode:
         bc = ByteCode()
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
@@ -281,6 +281,9 @@ class Compiler:
 
         bc += expc
         bc.add_bytecode(store_var, ni)
+
+        if single:
+            bc.add_bytecode(pop_top, 0)
 
         return bc
 
@@ -474,7 +477,10 @@ class Compiler:
         bc = ByteCode()
 
         tc = self.__compile_test_expr(tree.test, 0)  # first compile
-        bcc = self.__compile_block(tree.block, extofs)
+
+        loopb_ext = extofs + _BYTE_CODE_SIZE  # setup_do_loop
+
+        bcc = self.__compile_block(tree.block, loopb_ext)
 
         jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 2
 
@@ -488,7 +494,7 @@ class Compiler:
         bc += tc
 
         jump_back = extofs + _BYTE_CODE_SIZE  # over setup_doloop
-        bc.add_bytecode(jump_if_true_or_pop, jump_back)
+        bc.add_bytecode(jump_if_false_or_pop, jump_back)
 
         return bc
 
@@ -499,9 +505,12 @@ class Compiler:
 
         tc = self.__compile_test_expr(tree.test, extofs)
 
-        ifbc = self.__compile_block(tree.block, extofs)
+        ifbc_ext = extofs + len(tc.blist) + _BYTE_CODE_SIZE  # jump_if_false_or_pop
 
-        jump_over_ifb = len(ifbc.blist) + len(tc.blist) + extofs
+        ifbc = self.__compile_block(tree.block, ifbc_ext)
+
+        jump_over_ifb = len(ifbc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE + \
+                        (_BYTE_CODE_SIZE if has_else else 0)   # jump_absolute if has else
 
         if has_else:
             elbc = self.__compile_block(tree.else_block, jump_over_ifb)
@@ -520,8 +529,8 @@ class Compiler:
         if has_else:
             ifbc.add_bytecode(jump_absolute, jump_over)
 
-        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE # * 2
-        # 不需要加elbc的长度, 乘2是为了越过block
+        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE
+        # 不需要加elbc的长度
 
         # tc = self.__compile_test_expr(tree.test, test_jump)
         tc.add_bytecode(jump_if_false_or_pop, test_jump)
@@ -604,7 +613,7 @@ class Compiler:
                 tbc = self.__compile_print_expr(et)
 
             elif isinstance(et, ast.DefineExprAST):
-                tbc = self.__compile_define_expr(et)
+                tbc = self.__compile_define_expr(et, single=True)
             
             elif isinstance(et, ast.IfExprAST):
                 tbc = self.__compile_if_else_stmt(et, total_offset)
@@ -630,9 +639,13 @@ class Compiler:
             elif isinstance(et, ast.CallExprAST):
                 tbc = self.__compile_plain_call(et)
 
+            elif type(et) in ast.BINARY_AST_TYPES:
+                tbc = self.__compile_binary_expr(et)
+                tbc.add_bytecode(pop_top, 0)
+
             else:
                 print('W: Unknown AST type: %s' % type(et))
- 
+
             total_offset += len(tbc.blist) 
 
             if eti + 1 < len(tree.stmts):
@@ -667,7 +680,7 @@ class Compiler:
 
         return self.__buffer
 
-    def test(self, tree) -> ByteCodeFileBuffer:
+    def __test(self, tree) -> ByteCodeFileBuffer:
         bc = self.__compile_block(tree, 0)
 
         if bc.blist[-2] != return_value:
@@ -703,7 +716,7 @@ def test_compiler():
     #t = t.stmts[0]
 
     c = Compiler(t)
-    bf = c.test(t)
+    bf = c.compile(t)
 
     test_utils.show_bytecode(bf)
 

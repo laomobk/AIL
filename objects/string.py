@@ -50,6 +50,10 @@ def str_str(self):
     return '%s' % self['__value__']
 
 
+def str_repr(self):
+    return '\'%s\'' % self['__value__']
+
+
 def str_eq(self, ostr :obj.AILObject) -> obj.AILObject:
     if type(ostr) != obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
@@ -79,4 +83,5 @@ STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __add__=str_add,
                                 __muit__=str_muit,
                                 __str__=str_str,
+                                __repr__=str_repr,
                                 __eq__=str_eq)

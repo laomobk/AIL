@@ -17,7 +17,9 @@ def get_line_from_line_no(lno :int, fp :str):
     if not os.path.exists(fp):
         return '<NULL>'
 
-    for ln in open(fp):
+    f = open(fp, encoding='UTF-8')
+
+    for ln in f:
         if tlno == lno:
             return ln
         tlno += 1
@@ -52,7 +54,7 @@ def print_global_error(err :AILRuntimeError, where :str=''):
     t = err.err_type
 
     if where:
-        sys.stderr.write('in %s :\n' % where)
+        sys.stderr.write('in \'%s\' :\n' % where)
 
     sys.stderr.write(('\t' if where else '') + '%s : %s \n' % (t, msg))
     sys.stderr.flush()

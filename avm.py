@@ -9,12 +9,15 @@ from test_utils import get_opname
 import types
 import inspect
 
+import abuiltins
+
 import objects.bool as abool
 import objects.integer as aint
 import objects.string as astr
 import objects.float as afloat
 import objects.function as afunc
 import objects.wrapper as awrapper
+import objects.null as null
 
 import opcodes as opcs
 
@@ -26,6 +29,13 @@ from opcodes import *
 REFERENCE_LIMIT = 8192
 _BYTE_CODE_SIZE = 2
 _MAX_RECURSION_DEPTH = 888
+_MAX_BREAK_POINT_NUMBER = 50
+
+_BUILTINS = {
+    'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
+    'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
+    'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input)
+}
 
 
 class Frame:
@@ -98,7 +108,7 @@ class Interpreter:
 
     def __check_object(self, aobj :objs.AILObject) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
-            error.print_global_error(aobj)
+            error.print_global_error(aobj, self.__tof.code.name)
         return aobj
 
     def __store_var(self, name, value):
@@ -144,7 +154,14 @@ class Interpreter:
 
     def __binary_op(self, op :str, pymth :str, ailmth :str, a, b):
         if isinstance(a, objs.AILObject):
-            r = a[ailmth](a, b)
+            m = a[ailmth]
+
+            if not m:
+                self.__raise_error(
+                    'Not support \'%s\' with %s and %s' % (op, str(a), str(b)),
+                    'TypeError')
+
+            r = m(a, b)
         else:
             if hasattr(a, pymth):
                 r = getattr(a, pymth)(b)
@@ -155,11 +172,11 @@ class Interpreter:
         return r
 
     def __compare(self, a, b, cop :str) -> objs.AILObject:
-        if (type(a), type(b)) != (objs.AILObject, objs.AILObject) and \
-                a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) and \
-                b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE):
+        if (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
+                (a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) or \
+                b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
             self.__raise_error(
-                'operator \'%s\' can only use between two number',
+                'operator \'%s\' can only use between two number' % cop,
                 'TypeError'
             )
 
@@ -184,7 +201,12 @@ class Interpreter:
             jump_to = self.__break_stack.pop()
         return jump_to
 
-    def __check_countinue(self) -> int:
+    def __add_break_point(self, cp):
+        if len(self.__break_stack) + 1 > _MAX_BREAK_POINT_NUMBER:
+            self.__break_stack = []  # reset stack
+        self.__break_stack.append(cp)
+
+    def __check_continue(self) -> int:
         jump_to = 0
 
         if self.__break_stack:
@@ -216,6 +238,8 @@ class Interpreter:
             # 虽然可能不太美观，但是能提高运行速度
             # 如果有时间，我会写一个新的（动态获取attr）解释方法
             # 速度可能会慢些
+
+            # print(cp, get_opname(op), self.__tof, self.__stack)
 
             if op == pop_top:
                 tos = self.__pop_top()
@@ -266,9 +290,16 @@ class Interpreter:
                     self.__raise_error(
                             'Pop from empty stack', 'VMError')
 
+                if n in self.__tof.variable.keys():
+                    self.__decref(self.__tof.variable[n])
+
                 self.__incref(v)
 
                 self.__store_var(n, v)
+
+                self.__push_back(v)
+
+                self.__incref(v)
 
             elif op == load_const:
                 self.__push_back(
@@ -292,6 +323,8 @@ class Interpreter:
 
                 self.__push_back(tos)
 
+                break  # 结束这个解释循环
+
             elif op in (setup_doloop, setup_while):
                 if op == setup_while:  # setup_while can test TOS
                     tos = self.__pop_top()
@@ -299,9 +332,9 @@ class Interpreter:
                     if tos['__value__'] is not None and not tos['__value__']:
                         jump_to = argv
                     else:
-                        self.__break_stack.append(argv)
+                        self.__add_break_point(argv)
                 else:
-                    self.__break_stack.append(argv)
+                    self.__add_break_point(argv)
 
             elif op == jump_absolute:
                 jump_to = argv
@@ -310,10 +343,27 @@ class Interpreter:
                 jump_to = self.__get_jump(argv, False, 0)
 
             elif op == jump_if_false_or_pop:
-                jump_to = self.__get_jump(argv, True, 0)
+                tos = self.__pop_top()
+
+                if isinstance(tos, objs.AILObject):
+                    if tos['__value__'] is not None and not tos['__value__']:
+                        jump_to = argv
+                else:
+                    if tos:
+                        jump_to = argv
 
             elif op == jump_if_true_or_pop:
-                jump_to = self.__get_jump(argv, True, 1)
+                tos = self.__pop_top()
+
+                if isinstance(tos, objs.AILObject):
+                    if tos['__value__'] is not None and tos['__value__']:
+                        jump_to = argv
+                    elif tos['__value__'] is None:
+                        if tos:
+                            jump_to = argv
+                else:
+                    if tos:
+                        jump_to = argv
 
             elif op in (binary_add, binary_div, 
                         binary_mod, binary_muit, 
@@ -348,7 +398,7 @@ class Interpreter:
                 jump_to = self.__check_break()
 
             elif op == continue_loop:
-                jump_to = self.__check_countinue()
+                jump_to = self.__check_continue()
 
             elif op == call_func:
                 argl = [self.__pop_top() for _ in range(argv)]
@@ -399,14 +449,25 @@ class Interpreter:
                             # unpack argl for builtin function
 
                         try:
-                            rtn = pyf(*argl)
+                            rtn = self.__check_object(pyf(*argl))
                         except Exception as e:
                             self.__raise_error(
                                 str(e), 'PythonError'
                             )
 
                         if not isinstance(rtn, objs.AILObject):
-                            rtn = objs.ObjectCreater.new_object(awrapper.WRAPPER_TYPE, rtn)
+
+                            target = {
+                                str: astr.STRING_TYPE,
+                                int: aint.INTEGER_TYPE,
+                                float: afloat.FLOAT_TYPE,
+                                bool: abool.BOOL_TYPE,
+                            }.get(type(rtn), awrapper.WRAPPER_TYPE)
+
+                            if rtn is None:
+                                rtn = null.null
+                            else:
+                                rtn = objs.ObjectCreater.new_object(target, rtn)
 
                         self.__push_back(rtn)
 
@@ -426,12 +487,15 @@ class Interpreter:
                 cp += _BYTE_CODE_SIZE
                 jump_to = cp
 
-    def test_exec(self, cobj):
-        # init namespace
+    def exec(self, cobj):
+
         f = Frame()
         f.code = cobj
         f.consts = cobj.consts
         f.varnames = cobj.varnames
+
+        # init namespace
+        f.variable = _BUILTINS
 
         self.__run_bytecode(cobj, f)
 
@@ -446,7 +510,7 @@ if __name__ == '__main__':
 
     t = Parser(ts, 'tests/test.ail').parse()
 
-    co = Compiler(t).compile(t)
+    co = Compiler(t, filename='<TEST>').compile(t)
 
     inter = Interpreter()
-    inter.test_exec(co.code_object)
+    inter.exec(co.code_object)

@@ -280,5 +280,7 @@ BINARY_AST_TYPES = (
         PowerExprAST,
         ModExprAST,
         MuitDivExprAST,
-        BinaryExprAST
+        BinaryExprAST,
+        DefineExprAST,
+        CallExprAST
         )

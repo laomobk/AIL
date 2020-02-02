@@ -56,7 +56,8 @@ def skip_comment_block(source :str, cursor :int,) -> tuple:
     except IndexError:
         #一般是到文件尾部了 */ 没有 /
         return (-1, 0)
- 
+
+
 def get_identifier(source :str, cursor :int) -> tuple:
     '''
     source : 源码文件
@@ -83,7 +84,8 @@ def get_identifier(source :str, cursor :int) -> tuple:
         cur += 1
  
     return (cur, buffer)
- 
+
+
 def get_number(source :str, cursor :int) -> tuple:
     '''
     source : 源码文件
@@ -105,7 +107,8 @@ def get_number(source :str, cursor :int) -> tuple:
         ccur += 1
  
     return (cur, buffer)
- 
+
+
 def get_string(source :str, cursor :int) -> tuple:
     '''
     source : 源码文件
@@ -128,6 +131,10 @@ def get_string(source :str, cursor :int) -> tuple:
     hasEND = False
  
     schr = '' #开始字符串的引号
+
+    slen = len(source)
+
+    tcur = 0
  
     while ccur < len(source):
         if instr and source[ccur] == schr and source[ccur - 1] != '\\':
@@ -136,9 +143,24 @@ def get_string(source :str, cursor :int) -> tuple:
  
         if source[ccur] == '\n':
             lni += 1
- 
+
+        if instr and source[ccur] == '\\' and slen > ccur + 1 \
+                and source[ccur + 1] in ('n', 'r', 't', 'a'):  # escape character
+            target = {
+                'n' : '\n',
+                'r' : '\r',
+                't' : '\t',
+                'a' : '\a'
+            }.get(source[ccur + 1])
+
+            buffer += target
+
+            ccur += 2
+            cur += 2
+
         if instr:
             buffer += source[ccur]
+
         cur += 1
         ccur += 1
  
@@ -150,7 +172,8 @@ def get_string(source :str, cursor :int) -> tuple:
         return (-1, 0, 0)
  
     return (cur+1, lni, buffer)  #跳过最后一个引号
- 
+
+
 class Cursor:  #字符指针类型
     '''
     指向源码中的字符的指针
@@ -302,13 +325,43 @@ class Lex:
                     LAP_ENTER,
                     self.__ln
                 ))
+
+            elif c == '-':
+                if self.__nextch() == '-':
+                    self.__stream.append(Token('--',
+                                               LAP_SUB_SUB,
+                                               self.__ln))
+                    self.__movchr(2)
+
+                elif self.__nextch().isdigit():
+                    self.__movchr()
+
+                    mov, buf = get_number(self.__source, self.__chp)
+                    self.__stream.append(Token(
+                        '-' + buf,
+                        LAP_NUMBER,
+                        self.__ln
+                    ))
+                    self.__movchr(mov)
+
+                elif self.__nextch() == '=':
+                    self.__stream.append(
+                        Token('-=',
+                              LAP_INP_SUB,
+                              self.__ln
+                              ))
+                    self.__movchr(2)
+                else:
+                    self.__stream.append(Token(c,
+                            LAP_SUB,
+                            self.__ln))
+                    self.__movchr(1)
  
-            elif c in ('+', '-', '*', '^', '%', '|', '&'):  #除法有点特殊
+            elif c in ('+', '*', '^', '%', '|', '&'):  #除法和减法有点特殊
                 if self.__nextch() == '=':  #原地运算
                     self.__stream.append(Token(c+'=', 
                         {
                             '+':LAP_INP_PLUS,
-                            '-':LAP_INP_SUB,
                             '*':LAP_INP_MUIT,
                             '%':LAP_INP_MOD,
                             '^':LAP_INP_XOR,
@@ -316,10 +369,10 @@ class Lex:
                     self.__ln))
                     self.__movchr(2)
  
-                elif self.__nextch() in ('+', '-'):  #自增自减
+                elif self.__nextch() == '+':  #自增自减
                     self.__stream.append(Token(c+c,
-                    LAP_PLUS_PLUS if self.__nextch() == '+' else LAP_SUB_SUB, 
-                    self.__ln))
+                        LAP_PLUS_PLUS if self.__nextch() == '+' else LAP_SUB_SUB,
+                        self.__ln))
                     self.__movchr(2)
  
                 elif c == '|' and self.__nextch() == '|':  # ||
@@ -342,7 +395,6 @@ class Lex:
                     self.__stream.append(Token(c,
                         {
                             '+':LAP_PLUS,
-                            '-':LAP_SUB,
                             '*':LAP_MUIT,
                             '%':LAP_MOD,
                             '^':LAP_XOR,
@@ -578,4 +630,8 @@ class Lex:
         return self.__stream
  
 if __name__ == '__main__':
-    print(Lex('tests/test.ail').lex())
+    import pprint
+
+    ts = Lex('tests/test.ail').lex()
+
+    pprint.pprint(ts.token_list)

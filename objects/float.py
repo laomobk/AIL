@@ -8,6 +8,10 @@ def float_str(self :obj.AILObject):
     return '%s' % self['__value__']
 
 
+def float_repr(self):
+    return '<%s>' % self['__value__']
+
+
 def float_init(self :obj.AILObject, value :obj.AILObject):
     if type(value) in (float, int):
         self['__value__'] = value
@@ -16,7 +20,7 @@ def float_init(self :obj.AILObject, value :obj.AILObject):
 
 
 def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -31,7 +35,7 @@ def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
 
 
 def float_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -46,7 +50,7 @@ def float_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
 
 
 def float_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     if other['__value__'] == 0:
@@ -64,7 +68,7 @@ def float_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
 
 
 def float_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -83,4 +87,7 @@ FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __add__=float_add,
                              __str__=float_str,
                              __div__=float_div,
-                             __muit__=float_muit)
+                             __sub__=float_sub,
+                             __muit__=float_muit,
+                             __repr__=float_repr,
+                             )

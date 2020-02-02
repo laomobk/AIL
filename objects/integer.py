@@ -1,25 +1,33 @@
 # Integer
 import aobjects as obj
 from error import AILRuntimeError
-from . import float, types
+from . import float as afloat, types
 import objects.bool as abool
 
-POOL_RANGE = (-5, 128)
+POOL_RANGE = (-1, 0)
 
 
 def int_str(self :obj.AILObject):
     return '%d' % self['__value__']
 
 
+def int_repr(self):
+    return '<%d>' % self['__value__']
+
+
 def int_init(self :obj.AILObject, value :obj.AILObject):
     if isinstance(value, int):
         self['__value__'] = value
+    elif isinstance(value, float):
+        o = obj.ObjectCreater.new_object(afloat.FLOAT_TYPE, value)
+        self.reference = o.reference
+        self.properties = o.properties
     elif obj.compare_type(value, INTEGER_TYPE):
         self['__value__'] = value['__value__']
 
 
 def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -31,12 +39,12 @@ def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
     if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(res - POOL_RANGE[0])]
+        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
 def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -48,12 +56,12 @@ def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
     if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(POOL_RANGE[0] + res)]
-    return obj.ObjectCreater(INTEGER_TYPE, res)
+        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
 def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'/\' with type %s' % str(other), 'TypeError')
 
     if other['__value__'] == 0:
@@ -67,11 +75,11 @@ def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    return obj.ObjectCreater.new_object(float.FLOAT_TYPE, res)
+    return obj.ObjectCreater.new_object(afloat.FLOAT_TYPE, res)
 
 
 def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if not other['__value__']:   # do not have __value__ property
+    if other['__value__'] is None:   # do not have __value__ property
         return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -83,7 +91,7 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
     if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(POOL_RANGE[0] + res)]
+        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
@@ -98,8 +106,11 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __add__=int_add,
                              __str__=int_str,
                              __div__=int_div,
-                             __muit__=int_muit, 
-                             __eq__=int_eq)
+                             __muit__=int_muit,
+                             __sub__=int_sub,
+                             __eq__=int_eq,
+                             __repr__=int_repr
+                             )
 
 
 class _IntegerPool:
@@ -113,6 +124,7 @@ class _IntegerPool:
 
         for num in range(mi, ma):
             num = obj.ObjectCreater.new_object(INTEGER_TYPE, num)
+            num.reference += 1
             self.__pool.append(num)
 
     @property

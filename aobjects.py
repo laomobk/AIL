@@ -91,7 +91,11 @@ class AILObject:
         except TypeError:
             return super().__eq__(o)
 
-    __repr__ = __str__
+    def __repr__(self):
+        try:
+            return self['__repr__'](self)
+        except TypeError:
+            return self.__str__()
 
 
 class AILObjectType:
@@ -138,8 +142,6 @@ class ObjectCreater:
         # call init method
         init_mthd = obj['__init__']
         init_mthd(obj, *args)
-
-        obj.reference += 1
 
         return obj
 

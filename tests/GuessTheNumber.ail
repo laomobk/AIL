@@ -18,11 +18,11 @@ fun guess_it(number) is
 end
 
 print "Let's guess this number (300 ~ 1000)"
-print "You have 5 lives!"
 
 lives = 5
 
 do
+    print "You have " ; lives ; " lives!"
 	input "Guess :" ; num
 
 	s = guess_it(num)
@@ -35,9 +35,14 @@ do
 		print "too large!!!"
 	endif
 
+	if s == 0 then
+	    print "You win!"
+	    break
+	endif
+
 	if (lives = lives - 1) == 0 then
 		print "all lives run out!  game over!"
 	endif
-loop until s == 0
+loop until lives == 0
 
 end
