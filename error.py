@@ -1,7 +1,6 @@
 import sys
 import os.path
 
-import aobjects as objs
 
 def get_line_from_line_no(lno :int, fp :str):
     '''

@@ -5,7 +5,6 @@ from typing import List
 from agc import GC
 from astate import InterpreterState
 import error
-from test_utils import get_opname
 import types
 import inspect
 
@@ -25,6 +24,8 @@ import re
 
 from opcodes import *
 
+__author__ = 'LaomoBK'
+
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
 _BYTE_CODE_SIZE = 2
@@ -34,7 +35,9 @@ _MAX_BREAK_POINT_NUMBER = 50
 _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
     'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
-    'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input)
+    'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
+    '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, "1.0Beta"),
+    '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1)
 }
 
 
@@ -184,8 +187,6 @@ class Interpreter:
         bv = b['__value__']
 
         if cop in opcs.COMPARE_OPERATORS:
-            if cop == '<>':
-                cop = '!='
             res = eval('%s %s %s' % (av, cop, bv))
         else:
             self.__raise_error(

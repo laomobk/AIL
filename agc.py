@@ -1,7 +1,7 @@
 '''garbage collector'''
 import sys
 
-from error import error_msg, AILRuntimeError
+from error import AILRuntimeError
 import aobjects as obj
 from objects import integer
 
