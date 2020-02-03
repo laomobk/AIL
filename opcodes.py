@@ -38,6 +38,9 @@ load_varname = 0x1b
 
 pop_top = 0x1c
 
+binary_subscr = 0x1d
+build_array = 0x1e
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

@@ -7,3 +7,4 @@ I_FUNC_TYPE         = 0x5
 I_PYFUNC_TYPE       = 0x6
 I_TYPE_TYPE         = 0x7
 I_NULL_TYPE         = 0x8
+I_ARRAY_TYPE        = 0x9 

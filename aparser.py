@@ -117,7 +117,76 @@ class Parser:
 
         return ast.ValueListAST(idl, self.__now_ln)
 
-    def __parse_cell_or_call_expr(self) -> ast.ExprAST:
+    def __parse_item_list(self) -> ast.ItemListAST:
+        if self.__now_tok.ttype == LAP_LRBASKET:
+            return ast.ItemListAST([], self.__now_ln)
+
+        il = []
+
+        while self.__now_tok.ttype != LAP_LRBASKET:
+            eitem = self.__parse_binary_expr()
+            
+            if eitem is None:
+                self.__syntax_error()
+
+            il.append(eitem)
+
+            if self.__now_tok.ttype == LAP_COMMA:        
+                self.__next_tok()
+
+        return ast.ItemListAST(il, self.__now_ln)
+
+    def __parse_array_expr(self) -> ast.ArrayAST:
+        if self.__now_tok.ttype != LAP_LLBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '{'
+
+        if self.__now_tok.ttype == LAP_LRBASKET:
+            return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), self.__now_ln)
+        
+        items = self.__parse_item_list()
+
+        if self.__now_tok.ttype != LAP_LRBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()
+
+        if items is None:
+            self.__syntax_error()
+
+        return ast.ArrayAST(items, self.__now_ln)
+
+    def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
+        # in fact, it is for subscript
+
+        ca = self.__parse_low_cell_or_call_expr()
+
+        if self.__now_tok.ttype == LAP_MLBASKET:
+            self.__next_tok()  # eat '['
+
+            e = self.__parse_binary_expr()
+            
+            if e is None:
+                self.__syntax_error()
+
+            if self.__now_tok != ']':
+                self.__syntax_error()
+
+            self.__next_tok()  # eat ']'
+
+            return ast.SubscriptExprAST(ca, e, self.__now_ln)
+        return ca
+
+    def __parse_low_cell_or_call_expr(self) -> ast.ExprAST:
+        if self.__now_tok.ttype == LAP_LLBASKET:
+            a = self.__parse_array_expr()
+
+            if a is None:
+                self.__syntax_error()
+
+            return a
+
         if self.__now_tok == '(':
             self.__next_tok()
             e = self.__parse_binary_expr()
@@ -130,7 +199,7 @@ class Parser:
 
             self.__next_tok()  # eat ')'
             return e
-
+        
         if self.__now_tok in ('+', '-') and self.__now_tok.ttype != LAP_STRING:
             ntv = self.__now_tok.value
 
@@ -155,13 +224,15 @@ class Parser:
 
         net = self.__next_tok()
 
-        if net != '(' and nt.ttype in (LAP_IDENTIFIER, LAP_NUMBER, LAP_STRING):  # is not call expr
+        if net.ttype != LAP_SLBASKET:  # is not call expr
             return ast.CellAST(name, nt.ttype, self.__now_ln)
 
         if net != '(':
             self.__syntax_error()
 
-        self.__next_tok()
+        # self.__next_tok()  # move to '('
+
+        self.__next_tok()  # eat '('
 
         al = self.__parse_arg_list()
         if al is None:
@@ -608,7 +679,7 @@ class Parser:
         elif nt == 'fun':
             a = self.__parse_func_def_stmt()
 
-        elif nt.ttype in (LAP_IDENTIFIER, LAP_NUMBER, LAP_STRING) and \
+        elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr()
 

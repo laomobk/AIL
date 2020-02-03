@@ -30,14 +30,14 @@ test := or_test
 or_test := and_test ['or' and_test]*
 and_test := cmp_test ['and' cmp_test]
 cmp_test := expr [cmp_op expr]* 
-cmp_op := '>' | '<' | '=' | '<>' | '>=' | '<='
+cmp_op := '>' | '<' | '=' | '!=' | '>=' | '<='
 
 # expr := real_expr | '(' expr ')'
 real_expr := md_expr [('+' | '-') md_expr]*
 md_expr := mod_expr [('*' | '/') mod_expr]
 mod_expr := pow_expr ['MOD' pow_expr]
 pow_expr := cell ['^' cell]
-cell := NUMBER | NAME | STRING | call_expr | '(' real_expr ')'
+cell := NUMBER | NAME | STRING | call_expr | '(' real_expr ')' | array
 call_expr := NAME '(' arg_list ')'
 arg_list := expr [',' expr]*
 
@@ -55,3 +55,6 @@ program := BLOCK 'END'
 continue_stmt := 'continue'
 break_stmt := 'break'
 return_stmt := 'return' expr
+
+array := '{' item_list '}'
+item_list := cell [',' cell]*

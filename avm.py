@@ -17,6 +17,7 @@ import objects.float as afloat
 import objects.function as afunc
 import objects.wrapper as awrapper
 import objects.null as null
+import objects.array as array
 
 import opcodes as opcs
 
@@ -486,6 +487,28 @@ class Interpreter:
 
                     n = self.__tof.varnames[argv]
                     self.__store_var(n, tosf)
+
+                elif op == build_array:
+                    l = [self.__stack.pop() for _ in range(argv)][::-1]
+
+                    o = objs.ObjectCreater.new_object(
+                            array.ARRAY_TYPE, l)
+
+                    self.__incref(o)
+                    self.__push_back(o)
+
+                elif op == binary_subscr:
+                    v = self.__pop_top()
+                    l = self.__pop_top()
+                    
+                    if isinstance(l, objs.AILObject):
+                        if l['__getitem__'] is None:
+                            self.__raise_error('%s object is not subscriptable' % 
+                                    l['__class__'].name, 'TypeError')
+                        
+                        rtn = self.__check_object(l['__getitem__'](l, v))
+                        
+                        self.__push_back(rtn)
 
                 if jump_to != cp:
                     cp = jump_to

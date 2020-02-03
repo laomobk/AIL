@@ -274,6 +274,24 @@ class EOFAST:
         self.ln = ln
 
 
+class ItemListAST:
+    def __init__(self, item_list :list, ln :int):
+        self.item_list = item_list
+        self.ln = ln
+
+
+class ArrayAST:
+    def __init__(self, items :ItemListAST, ln :int):
+        self.items = items
+        self.ln = ln
+
+
+class SubscriptExprAST:
+    def __init__(self, left :ExprAST, expr :ExprAST, ln :int):
+        self.expr = expr
+        self.left = left
+        self.ln = ln
+
 
 BINARY_AST_TYPES = (
         CellAST,
@@ -282,5 +300,7 @@ BINARY_AST_TYPES = (
         MuitDivExprAST,
         BinaryExprAST,
         DefineExprAST,
-        CallExprAST
+        CallExprAST,
+        ArrayAST,
+        SubscriptExprAST
         )

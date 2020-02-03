@@ -97,6 +97,17 @@ def make_ast_tree(a) -> dict:
     
     elif isinstance(a, ast.ContinueAST):
         return 'ContinueAST'
+
+    elif isinstance(a, ast.ArrayAST):
+        return {'ArrayAST' : {'items' : make_ast_tree(a.items)}}
+
+    elif isinstance(a, ast.ItemListAST):
+        return unpack_list(a.item_list)
+
+    elif isinstance(a, ast.SubscriptExprAST):
+        return {'SubscriptExprAST' : 
+                {'expr' : make_ast_tree(a.expr),
+                 'left' : make_ast_tree(a.left)}}
  
     elif isinstance(a, list):
         return unpack_list(a)

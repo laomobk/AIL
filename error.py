@@ -1,5 +1,7 @@
 import sys
 import os.path
+import debugger
+
 
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
@@ -29,6 +31,7 @@ def get_line_from_line_no(lno :int, fp :str):
     return '<NULL>'
 
 
+# @debugger.debug_python_runtime
 def error_msg(line :int, msg :str, filename :str, errcode=1):
     '''
     line : 行号
@@ -39,14 +42,15 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     emsg = '\tLine {2}: {3}\nFile: {0} :{2}, error: {1}\n'.format(
         filename, msg, line, get_line_from_line_no(line, filename))
 
-    if not ERR_NOT_EXIT:
-        sys.exit(errcode)
-    
     if THROW_ERROR_TO_PYTHON:
         raise _AILRuntimeError('\n' + emsg)
     else:
         sys.stderr.write(emsg)
+        sys.stderr.flush()
 
+    if not ERR_NOT_EXIT:
+        sys.exit(errcode)    
+ 
 
 class AILRuntimeError:
     def __init__(self, msg :str=None, err_type :str=None):

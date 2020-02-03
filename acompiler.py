@@ -259,6 +259,12 @@ class Compiler:
         elif isinstance(tree, ast.DefineExprAST):
             bc += self.__compile_define_expr(tree, single=False)
 
+        elif isinstance(tree, ast.SubscriptExprAST):
+            bc += self.__compile_subscript_expr(tree)
+
+        elif isinstance(tree, ast.ArrayAST):
+            bc += self.__compile_array_expr(tree)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -303,6 +309,32 @@ class Compiler:
             bc += etc
 
         bc.add_bytecode(call_func, len(expl))
+
+        return bc
+
+    def __compile_subscript_expr(self, tree :ast.SubscriptExprAST) -> ByteCode:
+        bc = ByteCode()
+        
+        lc = self.__compile_binary_expr(tree.left)
+        ec = self.__compile_binary_expr(tree.expr)
+
+        bc += lc
+        bc += ec
+
+        bc.add_bytecode(binary_subscr, 0)
+
+        return bc
+
+    def __compile_array_expr(self, tree :ast.ArrayAST) -> ByteCode:
+        bc = ByteCode()
+
+        items = tree.items
+
+        for et in items.item_list:
+            etc = self.__compile_binary_expr(et)
+            bc += etc
+
+        bc.add_bytecode(build_array, len(items.item_list))
 
         return bc
 
