@@ -27,6 +27,23 @@ def func_neg(x :objs.AILObject):
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
 
 
+def py_getattr(pyobj, name):
+    if isinstance(pyobj, objs.AILObject) and \
+            pyobj['__class__'] == awrapper.WRAPPER_TYPE:
+        o = pyobj['__pyobject__']
+
+        if isinstance(name, objs.AILObject) and \
+            name['__class__'] == astr.STRING_TYPE:
+                n = name['__value__']
+                if hasattr(o, n):
+                    return getattr(o, n)
+        else:
+            return AILRuntimeError('attribute name must be string ', 'TypeError')
+        return AILRuntimeError('\'%s\' object has attribute \'%s\'' % (str(type(o)), str(name)))
+    else:
+        return AILRuntimeError('A python object wrapper required.', 'TypeError')
+
+
 def func_int_input(msg :objs.AILObject):
     try:
         i = int(input(str(msg)))

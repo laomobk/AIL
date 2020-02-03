@@ -1,5 +1,4 @@
 import sys
-import readline
 
 from alex import TokenStream, Token, Lex
 from aparser import Parser
@@ -14,6 +13,11 @@ import aobjects as objs
 import tokentype as tokent
 
 import error
+
+try:
+    import readline
+except ImportError:
+    pass
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True

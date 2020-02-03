@@ -10,7 +10,7 @@ _keywords_uc = (
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS', 'ELSE',  'ENDIF'
+        'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -647,6 +647,23 @@ class Parser:
 
         return ast.ReturnAST(expr, self.__now_ln)
 
+    def __parse_load_stmt(self) -> ast.LoadAST:
+        if self.__now_tok != 'load':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'load'
+
+        if self.__now_tok.ttype != LAP_STRING:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        self.__next_tok()  # eat name
+
+        return ast.LoadAST(name, ln)
+
     def __parse_stmt(self, limit :tuple=()) -> ast.ExprAST:
         nt = self.__now_tok
 
@@ -678,6 +695,9 @@ class Parser:
 
         elif nt == 'fun':
             a = self.__parse_func_def_stmt()
+
+        elif nt == 'load':
+            a = self.__parse_load_stmt()
 
         elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):

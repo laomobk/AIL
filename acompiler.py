@@ -597,6 +597,15 @@ class Compiler:
 
         return bc
 
+    def __compile_load_stmt(self, tree :ast.LoadAST) -> ByteCode:
+        bc = ByteCode()
+
+        ni = self.__buffer.add_const(tree.name)
+
+        bc.add_bytecode(load_module, ni)
+
+        return bc
+
     def __compile_function(self, tree :ast.FunctionDefineAST) -> ByteCode:
         bc = ByteCode()
 
@@ -675,6 +684,9 @@ class Compiler:
 
             elif isinstance(et, ast.CallExprAST):
                 tbc = self.__compile_plain_call(et)
+
+            elif isinstance(et, ast.LoadAST):
+                tbc = self.__compile_load_stmt(et)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et)

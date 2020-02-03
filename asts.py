@@ -293,6 +293,12 @@ class SubscriptExprAST:
         self.ln = ln
 
 
+class LoadAST:
+    def __init__(self, name :str, ln :int):
+        self.name = name
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
         CellAST,
         PowerExprAST,

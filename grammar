@@ -58,3 +58,5 @@ return_stmt := 'return' expr
 
 array := '{' item_list '}'
 item_list := cell [',' cell]*
+
+load_stmt := 'load' STRING

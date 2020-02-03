@@ -108,6 +108,10 @@ def make_ast_tree(a) -> dict:
         return {'SubscriptExprAST' : 
                 {'expr' : make_ast_tree(a.expr),
                  'left' : make_ast_tree(a.left)}}
+
+    elif isinstance(a, ast.LoadAST):
+        return {'LoadAST' : {
+                 'name' : a.name}}
  
     elif isinstance(a, list):
         return unpack_list(a)
@@ -122,6 +126,7 @@ class ByteCodeDisassembler:
                 opcs.load_local,
                 opcs.store_function,
                 opcs.load_varname,
+                opcs.load_module
             )
 
     __SHOW_CONST = (

@@ -19,6 +19,8 @@ import objects.wrapper as awrapper
 import objects.null as null
 import objects.array as array
 
+from aloader import ModuleLoader, LOAD_MODULE_PATH
+
 import opcodes as opcs
 
 import re
@@ -37,18 +39,20 @@ _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
     'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
     'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
+    'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.py_getattr),
     '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, "1.0Beta"),
     '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1)
 }
 
 
 class Frame:
-    def __init__(self):
-        self.code :objs.AILCodeObject = None
+    def __init__(self, code :objs.AILCodeObject=None, varnames=[],
+                 consts=[], globals={}):
+        self.code :objs.AILCodeObject = code
         self.stack = []
-        self.varnames = []
-        self.consts = []
-        self.variable = {}
+        self.varnames = varnames
+        self.consts = consts
+        self.variable = globals
         self.break_stack = []
 
     def __str__(self):
@@ -408,7 +412,7 @@ class Interpreter:
                     jump_to = self.__check_continue()
 
                 elif op == call_func:
-                    argl = [self.__pop_top() for _ in range(argv)]
+                    argl = [self.__pop_top() for _ in range(argv)][::-1]
                     func :objs.AILObject = self.__pop_top()
 
                     if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
@@ -447,7 +451,7 @@ class Interpreter:
 
                                 if fc.co_argcount != argv:
                                     self.__raise_error(
-                                        'function \'%s\' need %s argument(s)' % fc.co_argcount,
+                                        'function \'%s\' need %s argument(s)' % (pyf.__name__, fc.co_argcount),
                                         'TypeError'
                                     )
 
@@ -509,6 +513,16 @@ class Interpreter:
                         rtn = self.__check_object(l['__getitem__'](l, v))
                         
                         self.__push_back(rtn)
+
+                elif op == load_module:
+                    name = self.__tof.consts[argv]['__value__']
+
+                    v = self.__check_object(ModuleLoader(LOAD_MODULE_PATH).load_namespace(name))
+
+                    if v is None:
+                        self.__raise_error('No module named \'%s\'' % name, 'LoadError')
+
+                    self.__tof.variable.update(v)
 
                 if jump_to != cp:
                     cp = jump_to
