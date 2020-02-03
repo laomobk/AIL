@@ -9,7 +9,7 @@ def float_str(self :obj.AILObject):
 
 
 def float_repr(self):
-    return '<%s>' % self['__value__']
+    return '< %s >' % self['__value__']
 
 
 def float_init(self :obj.AILObject, value :obj.AILObject):

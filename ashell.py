@@ -18,7 +18,7 @@ import error
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
 
-_MORE_KEYWORD = ('is', 'then')
+_MORE_KEYWORD = ('is', 'then', 'do')
 _END_KEYWORD = ('loop', 'end', 'endif', 'wend')
 
 

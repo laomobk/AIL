@@ -12,7 +12,7 @@ def int_str(self :obj.AILObject):
 
 
 def int_repr(self):
-    return '<%d>' % self['__value__']
+    return '< %d >' % self['__value__']
 
 
 def int_init(self :obj.AILObject, value :obj.AILObject):
