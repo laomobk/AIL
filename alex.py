@@ -137,13 +137,6 @@ def get_string(source :str, cursor :int) -> tuple:
     tcur = 0
  
     while ccur < len(source):
-        if instr and source[ccur] == schr and source[ccur - 1] != '\\':
-            hasEND = True  #是否是因为while的条件而退出
-            break
- 
-        if source[ccur] == '\n':
-            lni += 1
-
         if instr and source[ccur] == '\\' and slen > ccur + 1 \
                 and source[ccur + 1] in ('n', 'r', 't', 'a'):  # escape character
             target = {
@@ -157,6 +150,13 @@ def get_string(source :str, cursor :int) -> tuple:
 
             ccur += 2
             cur += 2
+
+        if instr and source[ccur] == schr and source[ccur - 1] != '\\':
+            hasEND = True  #是否是因为while的条件而退出
+            break
+ 
+        if source[ccur] == '\n':
+            lni += 1
 
         if instr:
             buffer += source[ccur]

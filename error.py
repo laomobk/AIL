@@ -1,6 +1,9 @@
 import sys
 import os.path
 
+ERR_NOT_EXIT = False
+THROW_ERROR_TO_PYTHON = False
+
 
 def get_line_from_line_no(lno :int, fp :str):
     '''
@@ -33,10 +36,16 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     filename : 文件名
     errcode : 错误码 / 程序返回值
     '''
-    sys.stderr.write('\tLine {2}: {3}\nFile: {0} :{2}, error: {1}\n'.format(
-        filename, msg, line, get_line_from_line_no(line, filename)))
+    emsg = '\tLine {2}: {3}\nFile: {0} :{2}, error: {1}\n'.format(
+        filename, msg, line, get_line_from_line_no(line, filename))
 
-    sys.exit(errcode)
+    if not ERR_NOT_EXIT:
+        sys.exit(errcode)
+    
+    if THROW_ERROR_TO_PYTHON:
+        raise _AILRuntimeError('\n' + emsg)
+    else:
+        sys.stderr.write(emsg)
 
 
 class AILRuntimeError:
@@ -49,6 +58,9 @@ class AILRuntimeError:
 
 
 def print_global_error(err :AILRuntimeError, where :str=''):
+    if THROW_ERROR_TO_PYTHON:
+        raise_error_as_python(err, where)
+
     msg = err.msg
     t = err.err_type
 
@@ -58,14 +70,20 @@ def print_global_error(err :AILRuntimeError, where :str=''):
     sys.stderr.write(('\t' if where else '') + '%s : %s \n' % (t, msg))
     sys.stderr.flush()
 
-    sys.exit(1)
+    if not ERR_NOT_EXIT:
+        sys.exit(1)
 
 
-def raise_error_as_python(err :AILRuntimeError):
+def raise_error_as_python(err :AILRuntimeError, where :str=''):
     msg = err.msg
     t = err.err_type
 
-    raise _AILRuntimeError('%s : %s' % (t, msg))
+    w = ''
+
+    if where:
+        w = 'in \'%s\' :\n\t' % where
+
+    raise _AILRuntimeError('%s%s : %s' % (w, t, msg))
 
 
 class _AILRuntimeError(Exception):

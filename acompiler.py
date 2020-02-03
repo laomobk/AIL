@@ -160,8 +160,9 @@ class ByteCodeFileBuffer:
 
 
 class Compiler:
-    def __init__(self, astree :ast.BlockExprAST, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
-                 ext_varname :tuple=()):
+    def __init__(self, astree :ast.BlockExprAST, 
+            mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
+                 ext_varname :tuple=(), single_line=False):
         self.__now_ast :ast.ExprAST = astree
         self.__general_bytecode = ByteCode()
         self.__buffer = ByteCodeFileBuffer()
@@ -181,6 +182,8 @@ class Compiler:
         self.__flag = 0x0
 
         self.__mode = mode
+
+        self.__is_single_line = single_line
 
         self.__init_ext_varname(ext_varname)
 
@@ -591,7 +594,9 @@ class Compiler:
             bc += self.__compile_binary_expr(et)
 
         bc.add_bytecode(call_func, len(tree.arg_list.exp_list))
-        bc.add_bytecode(pop_top, 0)
+        
+        if not self.__is_single_line:
+            bc.add_bytecode(pop_top, 0)
 
         return bc
 
@@ -641,7 +646,9 @@ class Compiler:
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et)
-                tbc.add_bytecode(pop_top, 0)
+
+                if not self.__is_single_line:
+                    tbc.add_bytecode(pop_top, 0)
 
             else:
                 print('W: Unknown AST type: %s' % type(et))
@@ -662,6 +669,9 @@ class Compiler:
 
     def __make_final_return(self) -> ByteCode:
         bc = ByteCode()
+
+        if self.__is_single_line:
+            return bc
 
         ni = self.__buffer.add_const(null)
 

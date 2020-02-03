@@ -204,7 +204,7 @@ class Interpreter:
 
     def __add_break_point(self, cp):
         if len(self.__break_stack) + 1 > _MAX_BREAK_POINT_NUMBER:
-            self.__break_stack = []  # reset stack
+            self.__break_stack.clear()  # reset stack
         self.__break_stack.append(cp)
 
     def __check_continue(self) -> int:
@@ -230,273 +230,283 @@ class Interpreter:
 
         cp = 0
         jump_to = 0
+            
+        
+        try:
+            while cp < len(code) - 1:  # included argv index
+                op = code[cp]
+                argv = code[cp + 1]
 
-        while cp < len(code) - 1:  # included argv index
-            op = code[cp]
-            argv = code[cp + 1]
+                # 解释字节码选用类似 ceval.c 的巨型switch做法
+                # 虽然可能不太美观，但是能提高运行速度
+                # 如果有时间，我会写一个新的（动态获取attr）解释方法
+                # 速度可能会慢些
 
-            # 解释字节码选用类似 ceval.c 的巨型switch做法
-            # 虽然可能不太美观，但是能提高运行速度
-            # 如果有时间，我会写一个新的（动态获取attr）解释方法
-            # 速度可能会慢些
+                # print(cp, get_opname(op), self.__tof, self.__stack)
 
-            # print(cp, get_opname(op), self.__tof, self.__stack)
+                if op == pop_top:
+                    tos = self.__pop_top()
+                    self.__decref(tos)
 
-            if op == pop_top:
-                tos = self.__pop_top()
-                self.__decref(tos)
+                elif op == print_value:
+                    tosl = [self.__pop_top() for _ in range(argv)][::-1]
+                    
+                    for tos in tosl:
+                        if isinstance(tos, objs.AILObject):
+                            tosm = self.__check_object(tos['__str__'](tos))
+                        else:
+                            tosm = str(tos)
 
-            elif op == print_value:
-                tosl = [self.__pop_top() for _ in range(argv)][::-1]
-                
-                for tos in tosl:
-                    if isinstance(tos, objs.AILObject):
-                        tosm = self.__check_object(tos['__str__'](tos))
-                    else:
-                        tosm = str(tos)
+                        print(tosm, end=' ')
+                    print()
 
-                    print(tosm, end=' ')
-                print()
+                elif op == input_value:
+                    vc = argv
 
-            elif op == input_value:
-                vc = argv
-
-                vl = [self.__pop_top() for _ in range(vc)][::-1]
-                tos = self.__pop_top()
-
-                if isinstance(tos, objs.AILObject):
-                    msg = self.__check_object(tos['__str__'](tos))
-                else:
-                    msg = str(tos)
-
-                inp = input(msg)
-
-                sip = [astr.convert_to_string(x)
-                        for x in re.split(r'\s+', inp) if x]  
-                # Remove empty string
-
-                if vl and len(vl) != len(sip):
-                    self.__raise_error(
-                        'required input value is not enough',
-                        'ValueError')
-
-                for k, v in zip(vl, sip):
-                    self.__store_var(k, v)
-
-            elif op == store_var:
-                v = self.__pop_top()
-                n = self.__tof.varnames[argv]
-
-                if v is None:
-                    self.__raise_error(
-                            'Pop from empty stack', 'VMError')
-
-                if n in self.__tof.variable.keys():
-                    self.__decref(self.__tof.variable[n])
-
-                self.__incref(v)
-
-                self.__store_var(n, v)
-
-                self.__push_back(v)
-
-                self.__incref(v)
-
-            elif op == load_const:
-                self.__push_back(
-                        self.__tof.consts[argv])
-
-            elif op == load_varname:
-                self.__push_back(
-                    self.__tof.varnames[argv]
-                )
-
-            elif op == load_global:
-                var = self.__load_name(argv)
-
-                self.__push_back(var)
-
-            elif op == return_value:
-                tos = self.__pop_top()
-
-                if len(self.__frame_stack) > 1:
-                    self.__frame_stack.pop()
-
-                self.__push_back(tos)
-
-                break  # 结束这个解释循环
-
-            elif op in (setup_doloop, setup_while):
-                if op == setup_while:  # setup_while can test TOS
+                    vl = [self.__pop_top() for _ in range(vc)][::-1]
                     tos = self.__pop_top()
 
-                    if tos['__value__'] is not None and not tos['__value__']:
-                        jump_to = argv
+                    if isinstance(tos, objs.AILObject):
+                        msg = self.__check_object(tos['__str__'](tos))
+                    else:
+                        msg = str(tos)
+
+                    inp = input(msg)
+
+                    sip = [astr.convert_to_string(x)
+                            for x in re.split(r'\s+', inp) if x]  
+                    # Remove empty string
+
+                    if vl and len(vl) != len(sip):
+                        self.__raise_error(
+                            'required input value is not enough',
+                            'ValueError')
+
+                    for k, v in zip(vl, sip):
+                        self.__store_var(k, v)
+
+                elif op == store_var:
+                    v = self.__pop_top()
+                    n = self.__tof.varnames[argv]
+
+                    if v is None:
+                        self.__raise_error(
+                                'Pop from empty stack', 'VMError')
+
+                    if n in self.__tof.variable.keys():
+                        self.__decref(self.__tof.variable[n])
+
+                    self.__incref(v)
+
+                    self.__store_var(n, v)
+
+                    self.__push_back(v)
+
+                    self.__incref(v)
+
+                elif op == load_const:
+                    self.__push_back(
+                            self.__tof.consts[argv])
+
+                elif op == load_varname:
+                    self.__push_back(
+                        self.__tof.varnames[argv]
+                    )
+
+                elif op == load_global:
+                    var = self.__load_name(argv)
+
+                    self.__push_back(var)
+
+                elif op == return_value:
+                    tos = self.__pop_top()
+
+                    if len(self.__frame_stack) > 1:
+                        self.__frame_stack.pop()
+
+                        self.__push_back(tos)
+
+                    else:
+                        self.__decref(tos)
+
+                    break  # 结束这个解释循环
+
+                elif op in (setup_doloop, setup_while):
+                    if op == setup_while:  # setup_while can test TOS
+                        tos = self.__pop_top()
+
+                        if tos['__value__'] is not None and not tos['__value__']:
+                            jump_to = argv
+                        else:
+                            self.__add_break_point(argv)
                     else:
                         self.__add_break_point(argv)
-                else:
-                    self.__add_break_point(argv)
 
-            elif op == jump_absolute:
-                jump_to = argv
+                elif op == jump_absolute:
+                    jump_to = argv
 
-            elif op == jump_if_false:
-                jump_to = self.__get_jump(argv, False, 0)
+                elif op == jump_if_false:
+                    jump_to = self.__get_jump(argv, False, 0)
 
-            elif op == jump_if_false_or_pop:
-                tos = self.__pop_top()
+                elif op == jump_if_false_or_pop:
+                    tos = self.__pop_top()
 
-                if isinstance(tos, objs.AILObject):
-                    if tos['__value__'] is not None and not tos['__value__']:
-                        jump_to = argv
-                else:
-                    if tos:
-                        jump_to = argv
-
-            elif op == jump_if_true_or_pop:
-                tos = self.__pop_top()
-
-                if isinstance(tos, objs.AILObject):
-                    if tos['__value__'] is not None and tos['__value__']:
-                        jump_to = argv
-                    elif tos['__value__'] is None:
+                    if isinstance(tos, objs.AILObject):
+                        if tos['__value__'] is not None and not tos['__value__']:
+                            jump_to = argv
+                    else:
                         if tos:
                             jump_to = argv
-                else:
-                    if tos:
-                        jump_to = argv
 
-            elif op in (binary_add, binary_div, 
-                        binary_mod, binary_muit, 
-                        binary_pow, binary_sub):
-                op, pym, ailm = {
-                    binary_add : ('+', '__add__', '__add__'),
-                    binary_div : ('/', '__truediv__', '__div__'),
-                    binary_mod : ('mod', '__mod__', '__mod__'),
-                    binary_muit : ('*', '__muit__', '__muit__'),
-                    binary_pow : ('pow', '__pow__', '__pow__'),
-                    binary_sub : ('-', '__sub__', '__sub__')
-                }.get(op)
+                elif op == jump_if_true_or_pop:
+                    tos = self.__pop_top()
 
-                b = self.__pop_top()
-                a = self.__pop_top()
+                    if isinstance(tos, objs.AILObject):
+                        if tos['__value__'] is not None and tos['__value__']:
+                            jump_to = argv
+                        elif tos['__value__'] is None:
+                            if tos:
+                                jump_to = argv
+                    else:
+                        if tos:
+                            jump_to = argv
 
-                res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
+                elif op in (binary_add, binary_div, 
+                            binary_mod, binary_muit, 
+                            binary_pow, binary_sub):
+                    op, pym, ailm = {
+                        binary_add : ('+', '__add__', '__add__'),
+                        binary_div : ('/', '__truediv__', '__div__'),
+                        binary_mod : ('mod', '__mod__', '__mod__'),
+                        binary_muit : ('*', '__muit__', '__muit__'),
+                        binary_pow : ('pow', '__pow__', '__pow__'),
+                        binary_sub : ('-', '__sub__', '__sub__')
+                    }.get(op)
 
-                self.__push_back(res)
+                    b = self.__pop_top()
+                    a = self.__pop_top()
 
-            elif op == compare_op:
-                cop = opcs.COMPARE_OPERATORS[argv]
+                    res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
 
-                b = self.__pop_top()
-                a = self.__pop_top()
+                    self.__push_back(res)
 
-                self.__push_back(
-                    self.__compare(a, b, cop)
-                )
+                elif op == compare_op:
+                    cop = opcs.COMPARE_OPERATORS[argv]
 
-            elif op == break_loop:
-                jump_to = self.__check_break()
+                    b = self.__pop_top()
+                    a = self.__pop_top()
 
-            elif op == continue_loop:
-                jump_to = self.__check_continue()
+                    self.__push_back(
+                        self.__compare(a, b, cop)
+                    )
 
-            elif op == call_func:
-                argl = [self.__pop_top() for _ in range(argv)]
-                func :objs.AILObject = self.__pop_top()
+                elif op == break_loop:
+                    jump_to = self.__check_break()
 
-                if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
-                    if func['__class__'] == afunc.FUNCTION_TYPE:
-                        c :objs.AILCodeObject = func['__code__']
+                elif op == continue_loop:
+                    jump_to = self.__check_continue()
 
-                        if c.argcount != argv:
-                            self.__raise_error(
-                                '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
-                                'TypeError'
-                            )
+                elif op == call_func:
+                    argl = [self.__pop_top() for _ in range(argv)]
+                    func :objs.AILObject = self.__pop_top()
 
-                        argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
-                        # init new frame
-                        f = Frame()
-                        f.varnames = c.varnames
-                        f.variable = argd
-                        f.code = c
-                        f.consts = c.consts
+                    if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
+                        if func['__class__'] == afunc.FUNCTION_TYPE:
+                            c :objs.AILCodeObject = func['__code__']
 
-                        try:
-                            self.__run_bytecode(c, f)
-                        except RecursionError as e:
-                            self.__raise_error(str(e), 'PythonError')
-                    elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
-                        pyf = func['__pyfunction__']
-
-                        if not hasattr(pyf, '__call__'):
-                            self.__raise_error(
-                                '\'%s\' object is not callable' % str(type(pyf))
-                            )
-
-                        if not inspect.isbuiltin(pyf):
-                            # check arguments
-                            fc :types.CodeType = pyf.__code__
-
-                            if fc.co_argcount != argv:
+                            if c.argcount != argv:
                                 self.__raise_error(
-                                    'function \'%s\' need %s argument(s)' % fc.co_argcount,
+                                    '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
                                     'TypeError'
                                 )
 
-                        else:
-                            argl = [o['__value__'] for o in argl]
-                            # unpack argl for builtin function
+                            argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
+                            # init new frame
+                            f = Frame()
+                            f.varnames = c.varnames
+                            f.variable = argd
+                            f.code = c
+                            f.consts = c.consts
 
-                        try:
-                            rtn = self.__check_object(pyf(*argl))
-                        except Exception as e:
-                            self.__raise_error(
-                                str(e), 'PythonError'
-                            )
+                            try:
+                                self.__run_bytecode(c, f)
+                            except RecursionError as e:
+                                self.__raise_error(str(e), 'PythonError')
+                        elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
+                            pyf = func['__pyfunction__']
 
-                        if not isinstance(rtn, objs.AILObject):
+                            if not hasattr(pyf, '__call__'):
+                                self.__raise_error(
+                                    '\'%s\' object is not callable' % str(type(pyf))
+                                )
 
-                            target = {
-                                str: astr.STRING_TYPE,
-                                int: aint.INTEGER_TYPE,
-                                float: afloat.FLOAT_TYPE,
-                                bool: abool.BOOL_TYPE,
-                            }.get(type(rtn), awrapper.WRAPPER_TYPE)
+                            if not inspect.isbuiltin(pyf):
+                                # check arguments
+                                fc :types.CodeType = pyf.__code__
 
-                            if rtn is None:
-                                rtn = null.null
+                                if fc.co_argcount != argv:
+                                    self.__raise_error(
+                                        'function \'%s\' need %s argument(s)' % fc.co_argcount,
+                                        'TypeError'
+                                    )
+
                             else:
-                                rtn = objs.ObjectCreater.new_object(target, rtn)
+                                argl = [o['__value__'] for o in argl]
+                                # unpack argl for builtin function
 
-                        self.__push_back(rtn)
+                            try:
+                                rtn = self.__check_object(pyf(*argl))
+                            except Exception as e:
+                                self.__raise_error(
+                                    str(e), 'PythonError'
+                                )
 
-            elif op == store_function:
-                tos = self.__pop_top()
+                            if not isinstance(rtn, objs.AILObject):
 
-                tosf = objs.ObjectCreater.new_object(
-                    afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
-                )
+                                target = {
+                                    str: astr.STRING_TYPE,
+                                    int: aint.INTEGER_TYPE,
+                                    float: afloat.FLOAT_TYPE,
+                                    bool: abool.BOOL_TYPE,
+                                }.get(type(rtn), awrapper.WRAPPER_TYPE)
 
-                n = self.__tof.varnames[argv]
-                self.__store_var(n, tosf)
+                                if rtn is None:
+                                    rtn = null.null
+                                else:
+                                    rtn = objs.ObjectCreater.new_object(target, rtn)
 
-            if jump_to != cp:
-                cp = jump_to
-            else:
-                cp += _BYTE_CODE_SIZE
-                jump_to = cp
+                            self.__push_back(rtn)
 
-    def exec(self, cobj):
+                elif op == store_function:
+                    tos = self.__pop_top()
 
-        f = Frame()
-        f.code = cobj
-        f.consts = cobj.consts
-        f.varnames = cobj.varnames
+                    tosf = objs.ObjectCreater.new_object(
+                        afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
+                    )
 
-        # init namespace
-        f.variable = _BUILTINS
+                    n = self.__tof.varnames[argv]
+                    self.__store_var(n, tosf)
+
+                if jump_to != cp:
+                    cp = jump_to
+                else:
+                    cp += _BYTE_CODE_SIZE
+                    jump_to = cp
+        except (EOFError, KeyboardInterrupt) as e:
+            self.__raise_error(str(type(e).__name__), 'RuntimeError')
+
+    def exec(self, cobj, frame=None):
+
+        if not frame:
+            f = Frame()
+            f.code = cobj
+            f.consts = cobj.consts
+            f.varnames = cobj.varnames
+
+            # init namespace
+            f.variable = _BUILTINS
+        else:
+            f = frame
 
         self.__run_bytecode(cobj, f)
 

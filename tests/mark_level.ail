@@ -1,0 +1,31 @@
+begin
+
+print "Type -1 to exit"
+
+do
+	mark = int_input("Your mark: ")
+
+	if mark == -1 then
+		break
+	endif
+
+	if mark >= 100 then
+		print "A+"
+	else if mark < 100 and mark >= 90 then
+		print "A"
+	else if mark < 90 and mark >= 80 then
+		print "B"
+	else if mark < 80 and mark >= 70 then
+		print "C"
+	else if mark < 70 and mark >= 60 then
+		print "D"
+	else
+		print "E"
+	endif
+	endif
+	endif
+	endif
+	endif
+loop until 0
+
+end

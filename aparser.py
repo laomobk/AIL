@@ -608,7 +608,8 @@ class Parser:
         elif nt == 'fun':
             a = self.__parse_func_def_stmt()
 
-        elif nt.ttype == LAP_IDENTIFIER and nt.value not in (_keywords + limit):
+        elif nt.ttype in (LAP_IDENTIFIER, LAP_NUMBER, LAP_STRING) and \
+                nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr()
 
         elif nt.ttype == LAP_ENTER:

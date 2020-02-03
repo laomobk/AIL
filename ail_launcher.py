@@ -2,7 +2,7 @@
 
 import sys
 from importlib import import_module
-
+import ashell
 
 def launch_py_test(test_name):
     try:
@@ -16,7 +16,11 @@ def launch_py_test(test_name):
 
 
 def launch_main(argv :list):
-    if len(argv) != 1:
+    if len(argv) == 0:
+        ashell.Shell().run_shell()
+        return
+
+    if len(argv) > 1:
         print('Usage : ./ail_launcher.py file')
         sys.exit(1)
 

@@ -23,7 +23,7 @@ lives = 5
 
 do
     print "You have " ; lives ; " lives!"
-	input "Guess :" ; num
+	num = int_input("Guess :")
 
 	s = guess_it(num)
 
