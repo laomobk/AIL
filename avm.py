@@ -484,6 +484,9 @@ class Interpreter:
                                     rtn = objs.ObjectCreater.new_object(target, rtn)
 
                             self.__push_back(rtn)
+                        else:
+                            self.__raise_error(
+                                '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
 
                 elif op == store_function:
                     tos = self.__pop_top()

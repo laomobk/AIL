@@ -38,12 +38,14 @@ md_expr := mod_expr [('*' | '/') mod_expr]
 mod_expr := pow_expr ['MOD' pow_expr]
 pow_expr := cell ['^' cell]
 cell := NUMBER | NAME | STRING | call_expr | '(' real_expr ')' | array
+        member_expr
 call_expr := NAME '(' arg_list ')'
 arg_list := expr [',' expr]*
 
 val_list := NAME [',' NAME]
 
 def_expr := NAME '=' expr NEWLINE
+assi_expr := cell '=' expr NEWLINE
 
 stmt := while_expr | if_expr | if_else_expr | do_loop_expr | def_expr |
 	print_expr | input_expr
@@ -60,3 +62,5 @@ array := '{' item_list '}'
 item_list := cell [',' cell]*
 
 load_stmt := 'load' STRING
+
+member_expr := cell '.' NAME

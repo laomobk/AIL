@@ -1,8 +1,4 @@
 begin
-
-load 'test'
-load 'test'
-load 'test'
-
+a.b.c
 end
 

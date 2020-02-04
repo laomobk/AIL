@@ -33,7 +33,7 @@ def make_ast_tree(a) -> dict:
         return {'BinAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.CallExprAST):
-        return {'CallAST' : {'name' : a.name, 'arg_list' : make_ast_tree(a.arg_list)}}
+        return {'CallAST' : {'left' : make_ast_tree(a.left), 'arg_list' : make_ast_tree(a.arg_list)}}
 
     elif isinstance(a, ast.PrintExprAST):
         return {'PrintAST' : {'value' : unpack_list(a.value_list)}}
@@ -112,6 +112,16 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.LoadAST):
         return {'LoadAST' : {
                  'name' : a.name}}
+
+    elif isinstance(a, ast.MemberAccessAST):
+        return {'MemberAccessAST':{
+                 'left' : make_ast_tree(a.left),
+                 'member' : a.member}}
+
+    elif isinstance(a, ast.AssignExprAST):
+        return {'AssignExprAST' : {
+                 'left' : make_ast_tree(a.left),
+                 'value' : make_ast_tree(a.value)}}
  
     elif isinstance(a, list):
         return unpack_list(a)

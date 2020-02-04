@@ -17,17 +17,6 @@ class ArgListAST:
         self.ln = ln
 
 
-class CallExprAST:
-    '''
-    call_expr := NAME '(' arg_list ')'
-    '''
-
-    def __init__(self, call_name :str, arg_list :ArgListAST, ln :int):
-        self.name = call_name
-        self.arg_list = arg_list
-        self.ln = ln
-
-
 class CellAST:
     '''
     cell := NUMBER | NAME | STRING | call_expr
@@ -87,6 +76,17 @@ class BinaryExprAST:
         self.ln = ln
 
 
+class CallExprAST:
+    '''
+    call_expr := NAME '(' arg_list ')'
+    '''
+
+    def __init__(self, left :BinaryExprAST, arg_list :ArgListAST, ln :int):
+        self.left = left
+        self.arg_list = arg_list
+        self.ln = ln
+
+
 class ValueListAST:
     '''
     val_list := NAME [',' NAME]
@@ -97,6 +97,16 @@ class ValueListAST:
 
     def __str__(self):
         return '<ValueList %s>' % str(self.v_list)
+
+
+class AssignExprAST(ExprAST):
+    '''
+    assi_expr := cell '=' expr NEWLINE
+    '''
+    def __init__(self, left :BinaryExprAST, value :ExprAST, ln :int):
+        self.value = value
+        self.left = left
+        self.ln = ln
 
 
 class DefineExprAST(ExprAST):
@@ -297,6 +307,13 @@ class LoadAST:
     def __init__(self, name :str, ln :int):
         self.name = name
         self.ln = ln
+
+
+class MemberAccessAST:
+    def __init__(self, left :BinaryExprAST, member :str, ln :int):
+        self.left = left
+        self.ln = ln
+        self.member = member
 
 
 BINARY_AST_TYPES = (

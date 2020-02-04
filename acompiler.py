@@ -257,7 +257,7 @@ class Compiler:
             bc += self.__compile_call_expr(tree)
 
         elif isinstance(tree, ast.DefineExprAST):
-            bc += self.__compile_define_expr(tree, single=False)
+            bc += self.__compile_assign_expr(tree, single=False)
 
         elif isinstance(tree, ast.SubscriptExprAST):
             bc += self.__compile_subscript_expr(tree)
@@ -282,7 +282,31 @@ class Compiler:
 
         return bc
 
-    def __compile_define_expr(self, tree :ast.DefineExprAST, single=False)  -> ByteCode:
+    def __compile_assign_expr(self, tree :ast.AssignExprAST, single=False) -> ByteCode:
+        bc = ByteCode()
+
+        left = tree.left
+
+        store_target = {
+            ast.CellAST : store_var,
+            ast.SubscriptExprAST : store_subscr,
+            ast.MemberAccessAST : store_attr
+        }[type(left)]
+
+        vc = self.__compile_binary_expr(tree.value)
+
+        bc += vc
+
+        if store_target == store_var:
+            ni = self.__buffer.get_or_add_varname_index(left.value)
+            bc.add_bytecode(store_target, ni)
+
+            return bc
+        elif store_target == store_attr:
+            ni = self.__buffer.get_or_add_varname_index(left.member)
+
+
+    def __compile_assign_expr0(self, tree :ast.DefineExprAST, single=False)  -> ByteCode:
         bc = ByteCode()
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
@@ -659,7 +683,7 @@ class Compiler:
                 tbc = self.__compile_print_expr(et)
 
             elif isinstance(et, ast.DefineExprAST):
-                tbc = self.__compile_define_expr(et, single=True)
+                tbc = self.__compile_assign_expr(et, single=True)
             
             elif isinstance(et, ast.IfExprAST):
                 tbc = self.__compile_if_else_stmt(et, total_offset)

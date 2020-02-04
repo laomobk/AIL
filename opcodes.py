@@ -43,6 +43,9 @@ build_array = 0x1e
 
 load_module = 0x1f
 
+store_subscr = 0x20
+store_attr = 0x21
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2
