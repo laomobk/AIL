@@ -19,7 +19,7 @@ import objects.wrapper as awrapper
 import objects.null as null
 import objects.array as array
 
-from aloader import ModuleLoader, LOAD_MODULE_PATH
+import aloader
 
 import opcodes as opcs
 
@@ -39,9 +39,12 @@ _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
     'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
     'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
-    'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.py_getattr),
+    'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_py_getattr),
     '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, "1.0Beta"),
-    '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1)
+    '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1,),
+    'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
+    'ord' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_ord),
+    'hex' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_hex),
 }
 
 
@@ -517,7 +520,7 @@ class Interpreter:
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 
-                    v = self.__check_object(ModuleLoader(LOAD_MODULE_PATH).load_namespace(name))
+                    v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name))
 
                     if v is None:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')

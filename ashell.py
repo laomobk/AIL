@@ -39,8 +39,8 @@ class Shell:
     def __init__(self):
         self.__buffer = []
 
-        self.ps1 = '>>> '
-        self.ps2 = '... '
+        self.ps1 = '>> '
+        self.ps2 = '.. '
 
         self.__more_level = 0
 
@@ -160,20 +160,19 @@ class Shell:
                     else:
                         self.__run_single_line(line)
 
+            except error._AILRuntimeError as e:
+                in_more = False
+                print(str(e))
+                self.__main_frame.stack = []
+                self.__buffer = []
+
             except EOFError as e:
                 print()
                 break
 
             except KeyboardInterrupt as e:
                 in_more = False
-                error.print_global_error(
-                        error.AILRuntimeError(type(e).__name__, 'Error'))
-                self.__buffer = []
-
-            except error._AILRuntimeError as e:
-                in_more = False
-                print(str(e))
-                self.__main_frame.stack = []
+                print('\n%s' % str(type(e).__name__))
                 self.__buffer = []
 
             self.__main_frame.variable['__temp__'] = \

@@ -90,6 +90,9 @@ def get_number(source :str, cursor :int) -> tuple:
     '''
     source : 源码文件
     cursor : 源码字符指针
+
+    指针错误值原因：
+    -1 不正确的数字 （如7.2.6, 1x7x9）
     
     返回一个元祖
     ( 字符指针增量 , 数字字符串)
@@ -97,11 +100,29 @@ def get_number(source :str, cursor :int) -> tuple:
     buffer = ''   #数字字符串内容缓冲区
     ccur = cursor  #原始字符指针
     cur = 0  #字符指针增量
+
+    seen_d = False
+    seen_hex = False
  
     while ccur < len(source):
         if not (source[ccur].isnumeric() or source[ccur] in ('.', 'x', 'X')):
             break
- 
+
+        if source[ccur] == '.':
+            if seen_d or seen_hex:
+                return (-1, 0)
+            seen_d = True
+            pass
+
+        if source[ccur] in ('x', 'X'):
+            if seen_hex:
+                return (-1, 0)
+            
+            if len(buffer) != 1 or source[ccur - 1] != '0':
+                return (-1, 0)
+
+            seen_hex = True
+
         buffer += source[ccur]
         cur += 1
         ccur += 1
@@ -138,12 +159,15 @@ def get_string(source :str, cursor :int) -> tuple:
  
     while ccur < len(source):
         if instr and source[ccur] == '\\' and slen > ccur + 1 \
-                and source[ccur + 1] in ('n', 'r', 't', 'a'):  # escape character
+                and source[ccur + 1] in ('n', 'r', 't', 'a', '\'', '"'):
+            # escape character
             target = {
                 'n' : '\n',
                 'r' : '\r',
                 't' : '\t',
-                'a' : '\a'
+                'a' : '\a',
+                '\'' : '\'',
+                '"' : '"',
             }.get(source[ccur + 1])
 
             buffer += target
@@ -570,6 +594,9 @@ class Lex:
             elif c.isnumeric():
                 #如果是数字，先用一个字符串存起来，以后再分析
                 mov, buf = get_number(self.__source, self.__chp)
+                if mov == -1:
+                    error_msg(self.__ln, 'SyntaxError', self.__filename)
+
                 self.__stream.append(Token(
                     buf,
                     LAP_NUMBER,

@@ -1,6 +1,8 @@
 begin
 
-print "Hello Nezha"
+load 'test'
+load 'test'
+load 'test'
 
 end
 

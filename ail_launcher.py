@@ -2,7 +2,6 @@
 
 import sys
 from importlib import import_module
-import ashell
 
 def launch_py_test(test_name):
     try:
@@ -17,6 +16,7 @@ def launch_py_test(test_name):
 
 def launch_main(argv :list):
     if len(argv) == 0:
+        import ashell
         ashell.Shell().run_shell()
         return
 
@@ -36,7 +36,7 @@ def launch_main(argv :list):
         Interpreter().exec(Compiler(ast, filename=fpath).compile(ast).code_object)
 
     except Exception as e:
-        print('AIL : can\'t open file \'%s\' : %s' % str(e))
+        print('AIL : can\'t open file \'%s\' : %s' % (fpath, str(e)))
         sys.exit(1)
 
 

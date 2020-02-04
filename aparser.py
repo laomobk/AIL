@@ -143,6 +143,7 @@ class Parser:
         self.__next_tok()  # eat '{'
 
         if self.__now_tok.ttype == LAP_LRBASKET:
+            self.__next_tok()  # eat '{'
             return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), self.__now_ln)
         
         items = self.__parse_item_list()

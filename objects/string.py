@@ -46,6 +46,27 @@ def str_muit(self, times :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(STRING_TYPE, rs)
 
 
+def str_getitem(self, index :int):
+    if isinstance(index, obj.AILObject) and \
+            index['__class__'] == integer.INTEGER_TYPE:
+        i = index['__value__']
+
+    elif isinstance(index, int):
+        i = index
+    
+    else:
+        return AILRuntimeError('array subscript index must be integer.', 
+                'TypeError')
+
+    l = self['__value__']
+
+    if i >= len(l):
+        return AILRuntimeError('index out of range (len %s, index %s)' % 
+                (len(l), str(i)), 'IndexError')
+
+    return obj.convert_to_ail_object(l[i])
+
+
 def str_str(self):
     return '%s' % self['__value__']
 
@@ -84,4 +105,5 @@ STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __muit__=str_muit,
                                 __str__=str_str,
                                 __repr__=str_repr,
-                                __eq__=str_eq)
+                                __eq__=str_eq,
+                                __getitem__=str_getitem)

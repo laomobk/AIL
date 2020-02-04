@@ -8,6 +8,8 @@ import error
 
 import aobjects as objs
 
+import debugger
+
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
 LOAD_MODULE_PATH = ('.', 'lib/')
@@ -23,6 +25,7 @@ AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 class ModuleLoader:
     def __init__(self, paths :list):
         self.__load_path = paths
+        self.__loaded = {}
 
     def __search_module(self, name :str) -> str:
         '''
@@ -66,8 +69,16 @@ class ModuleLoader:
         if len(fns) > 1 and fns[-1] in _ALLOW_FILE_TYPE:
             return fns[-1]
 
+    def __add_to_loaded(self, name :str, namespace :dict):
+        if namespace is not None:
+            self.__loaded[name] = namespace
+        return namespace
+
     def load_namespace(self, module_name :str) -> dict:
         from avm import Interpreter, Frame
+
+        if module_name in self.__loaded.keys():
+            return self.__loaded[module_name]
 
         p = self.__search_module(module_name)
 
@@ -75,7 +86,7 @@ class ModuleLoader:
             return None
 
         if self.__get_type(p) == 'py':
-            return self.__load_py_namespace(p)
+            return self.__add_to_loaded(module_name, self.__load_py_namespace(p))
 
         elif self.__get_type(p) == 'ail':
             ast = Parser(Lex(p).lex(), p).parse()
@@ -87,6 +98,10 @@ class ModuleLoader:
 
             v = frame.variable
 
-            return v
+            return self.__add_to_loaded(module_name, v)
 
         return None
+
+
+MAIN_LOADER = ModuleLoader(LOAD_MODULE_PATH)
+

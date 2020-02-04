@@ -27,7 +27,7 @@ def func_neg(x :objs.AILObject):
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
 
 
-def py_getattr(pyobj, name):
+def func_py_getattr(pyobj, name):
     if isinstance(pyobj, objs.AILObject) and \
             pyobj['__class__'] == awrapper.WRAPPER_TYPE:
         o = pyobj['__pyobject__']
@@ -42,6 +42,42 @@ def py_getattr(pyobj, name):
         return AILRuntimeError('\'%s\' object has attribute \'%s\'' % (str(type(o)), str(name)))
     else:
         return AILRuntimeError('A python object wrapper required.', 'TypeError')
+
+
+def func_chr(x):
+    if isinstance(x, objs.AILObject) and \
+            x['__class__'] == aint.INTEGER_TYPE:
+        v = x['__value__']
+    elif isinstance(x, int):
+        v = x
+    else:
+        return AILRuntimeError('chr() needs an integer', 'TypeError')
+
+    return chr(v)
+
+
+def func_ord(x):
+    if isinstance(x, objs.AILObject) and \
+            x['__class__'] == astr.STRING_TYPE:
+        v = x['__value__']
+    elif isinstance(x, int):
+        v = x
+    else:
+        return AILRuntimeError('ord() needs a string', 'TypeError')
+
+    return ord(v)
+
+
+def func_hex(x):
+    if isinstance(x, objs.AILObject) and \
+            x['__class__'] == aint.INTEGER_TYPE:
+        v = x['__value__']
+    elif isinstance(x, int):
+        v = x
+    else:
+        return AILRuntimeError('hex() needs an integer', 'TypeError')
+
+    return hex(v)
 
 
 def func_int_input(msg :objs.AILObject):
