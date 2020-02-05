@@ -1,2 +1,2 @@
-*.py
-*.ail
+*.py[cod]
+*.swp
