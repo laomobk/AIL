@@ -293,11 +293,11 @@ class Compiler:
         # 先 left 后 right
         left = tree.left
         if isinstance(left, ast.SubscriptExprAST):
-            bc += self.__compile_subscript_expr(bc)
+            bc += self.__compile_subscript_expr(left)
         elif isinstance(left, ast.CallExprAST):
-            bc += self.__compile_call_expr()
+            bc += self.__compile_call_expr(left)
         elif type(left) in ast.BINARY_AST_TYPES:
-            bc += self.__compile_binary_expr()
+            bc += self.__compile_binary_expr(left)
 
         # right
 
@@ -308,8 +308,8 @@ class Compiler:
             if isinstance(et, ast.CellAST):
                 s, i = self.__do_cell_ast(et)
                 bc.add_bytecode(load_attr, i)
-            else:
-                bc = {
+            elif not set_attr:
+                etc = {
                         ast.CallExprAST : self.__compile_call_expr,
                         ast.SubscriptExprAST : self.__compile_subscript_expr
                      }[type(et)](et, True)
