@@ -158,45 +158,33 @@ class Parser:
 
         return ast.ArrayAST(items, self.__now_ln)
 
-    def __parse_cell_or_call_expr(self) -> ast.MemberAccessAST:
-        c = self.__parse_low_cell_or_call_expr()
+    def __parse_member_access_expr(self) -> ast.MemberAccessAST:
+        left = self.__parse_cell_or_call_expr()
 
-        if c is None:
+        if left is None:
             self.__syntax_error()
 
-        if self.__now_tok == '.':
-            self.__next_tok()  # eat '.'
+        if self.__now_tok != '.':
+            return left
 
-            if self.__now_tok.ttype != LAP_IDENTIFIER:
+        rl = []
+
+        while self.__now_tok == '.':
+            self.__next_tok()  # eat '.'
+            ert = self.__parse_cell_or_call_expr()
+
+            if ert is None or type(ert) in (
+                    ast.SubscriptExprAST, ast.CallExprAST, ast.CellAST):
                 self.__syntax_error()
 
-            n = self.__now_tok.value
+            rl.append(ert)
 
-            self.__next_tok()  # eat member
+        return ast.MemberAccessAST(left, rl, self.__now_ln)
 
-            if self.__now_tok == '(':
-                self.__next_tok()  # eat '('
-
-                if self.__now_tok == ')':
-                    a = ast.ArgListAST([], self.__now_ln)
-                else:
-                    a = self.__parse_arg_list()
-
-                if self.__now_tok != ')':
-                    self.__syntax_error()
-
-                self.__next_tok()
-
-                return ast.CallExprAST(
-                        ast.MemberAccessAST(c, n, self.__now_ln), a, self.__now_ln)
-
-            return ast.MemberAccessAST(c, n, self.__now_ln)
-        return c
-
-    def __parse_low_cell_or_call_expr(self) -> ast.SubscriptExprAST:
+    def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
 
-        ca = self.__parse_low_low_cell_or_call_expr()
+        ca = self.__parse_low_cell_or_call_expr()
 
         if self.__now_tok.ttype == LAP_MLBASKET:
             self.__next_tok()  # eat '['
@@ -230,7 +218,7 @@ class Parser:
             return ast.SubscriptExprAST(ca, e, self.__now_ln)
         return ca
 
-    def __parse_low_low_cell_or_call_expr(self) -> ast.ExprAST:
+    def __parse_low_cell_or_call_expr(self) -> ast.ExprAST:
         if self.__now_tok.ttype == LAP_LLBASKET:
             a = self.__parse_array_expr()
 
@@ -277,7 +265,7 @@ class Parser:
         return ast.CallExprAST(name, al, self.__now_ln)
 
     def __parse_power_expr(self) -> ast.PowerExprAST:
-        left = self.__parse_cell_or_call_expr()
+        left = self.__parse_member_access_expr()
         
         if left is None:
             self.__syntax_error()
@@ -289,7 +277,7 @@ class Parser:
         
         while self.__now_tok == '^':
             self.__next_tok()
-            r = self.__parse_cell_or_call_expr()
+            r = self.__parse_member_access_expr()
             if r is None:
                 self.__syntax_error()
             rl.append(('^', r))
@@ -412,26 +400,8 @@ class Parser:
 
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
-    def __parse_member_access_expr(self) -> ast.MemberAccessAST:
-        left = self.__parse_binary_expr()
-
-        if left is None:
-            self.__syntax_error()
-
-        if self.__now_tok != '.':
-            self.__syntax_error()
-
-        self.__next_tok()  # eat '.'
-
-        if self.__now_tok.ttype != LAP_IDENTIFIER:
-            self.__syntax_error()
-
-        n = self.__now_tok.value
-
-        return ast.MemberAccessAST(left, n, self.__now_ln)
-
     def __parse_assign_expr(self) -> ast.AssignExprAST:
-        left = self.__parse_cell_or_call_expr()
+        left = self.__parse_member_access_expr()
 
         if self.__now_tok != '=':
             return None

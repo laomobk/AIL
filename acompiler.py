@@ -241,7 +241,7 @@ class Compiler:
                 '^' : binary_pow
                }[op]
 
-    def __compile_binary_expr(self, tree :ast.BinaryExprAST) -> ByteCode:
+    def __compile_binary_expr(self, tree :ast.BinaryExprAST, is_attr=False) -> ByteCode:
         bc = ByteCode()
 
         # 先递归处理 left，然后再递归处理right
@@ -249,7 +249,8 @@ class Compiler:
         if isinstance(tree, ast.CellAST):
             s, i = self.__do_cell_ast(tree)
 
-            bc.add_bytecode(load_const if s == 0 else load_global, i)
+            bc.add_bytecode(
+                    load_const if s == 0 else (load_attr if is_attr else load_global), i)
 
             return bc
 
@@ -265,6 +266,9 @@ class Compiler:
         elif isinstance(tree, ast.ArrayAST):
             bc += self.__compile_array_expr(tree)
 
+        elif isinstance(tree, ast.MemberAccessAST):
+            bc += self.__compile_member_access_expr(tree)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -279,6 +283,38 @@ class Compiler:
             bc += rbc
 
             bc.add_bytecode(opc, 0)
+
+        return bc
+
+    def __compile_member_access_expr(self, tree :ast.MemberAccessAST,
+            set_attr=False) -> ByteCode:
+        bc = ByteCode()
+        
+        # 先 left 后 right
+        left = tree.left
+        if isinstance(left, ast.SubscriptExprAST):
+            bc += self.__compile_subscript_expr(bc)
+        elif isinstance(left, ast.CallExprAST):
+            bc += self.__compile_call_expr()
+        elif type(left) in ast.BINARY_AST_TYPES:
+            bc += self.__compile_binary_expr()
+
+        # right
+
+        if not hasattr(tree, 'right'):
+            return bc
+
+        for et in tree.right:
+            if isinstance(et, ast.CellAST):
+                s, i = self.__do_cell_ast(et)
+                bc.add_bytecode(load_attr, i)
+            else:
+                bc = {
+                        ast.CallExprAST : self.__compile_call_expr,
+                        ast.SubscriptExprAST : self.__compile_subscript_expr
+                     }[type(et)](et, True)
+
+                bc += etc
 
         return bc
 
@@ -303,7 +339,7 @@ class Compiler:
 
             return bc
         elif store_target == store_attr:
-            ni = self.__buffer.get_or_add_varname_index(left.member)
+            pass
 
 
     def __compile_assign_expr0(self, tree :ast.DefineExprAST, single=False)  -> ByteCode:
@@ -320,11 +356,11 @@ class Compiler:
 
         return bc
 
-    def __compile_call_expr(self, tree :ast.CallExprAST) -> ByteCode:
+    def __compile_call_expr(self, tree :ast.CallExprAST, is_attr=False) -> ByteCode:
         bc = ByteCode()
 
         fni = self.__buffer.get_or_add_varname_index(tree.name)
-        bc.add_bytecode(load_global, fni)
+        bc.add_bytecode(load_global if not is_attr else load_attr, fni)
 
         expl = tree.arg_list.exp_list
         
@@ -336,7 +372,8 @@ class Compiler:
 
         return bc
 
-    def __compile_subscript_expr(self, tree :ast.SubscriptExprAST) -> ByteCode:
+    def __compile_subscript_expr(self, tree :ast.SubscriptExprAST, 
+            is_attr=False) -> ByteCode:
         bc = ByteCode()
         
         lc = self.__compile_binary_expr(tree.left)
@@ -344,8 +381,8 @@ class Compiler:
 
         bc += lc
         bc += ec
-
-        bc.add_bytecode(binary_subscr, 0)
+        
+        bc.add_bytecode(binary_subscr if not store else store_subscr, 0)
 
         return bc
 

@@ -33,12 +33,19 @@ class CellAST:
     __repr__ = __str__
 
 
+class MemberAccessAST:
+    def __init__(self, left :CellAST, right :CellAST, ln :int):
+        self.left = left
+        self.right = right
+        self.ln = ln
+
+
 class PowerExprAST:
     '''
-    pow_expr := cell ['^' cell]
+    pow_expr := member_expr ['^' member_expr]
     '''
 
-    def __init__(self, left :CellAST, right :CellAST, ln :int):
+    def __init__(self, left :MemberAccessAST, right :MemberAccessAST, ln :int):
         self.left = left
         self.right = right
         self.ln = ln
@@ -309,13 +316,6 @@ class LoadAST:
         self.ln = ln
 
 
-class MemberAccessAST:
-    def __init__(self, left :BinaryExprAST, member :str, ln :int):
-        self.left = left
-        self.ln = ln
-        self.member = member
-
-
 BINARY_AST_TYPES = (
         CellAST,
         PowerExprAST,
@@ -325,5 +325,6 @@ BINARY_AST_TYPES = (
         DefineExprAST,
         CallExprAST,
         ArrayAST,
-        SubscriptExprAST
+        SubscriptExprAST,
+        MemberAccessAST
         )

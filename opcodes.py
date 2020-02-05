@@ -45,6 +45,7 @@ load_module = 0x1f
 
 store_subscr = 0x20
 store_attr = 0x21
+load_attr = 0x22
 
 COMP_EQ     = 0
 COMP_LEQ    = 1
