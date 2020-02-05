@@ -47,6 +47,8 @@ store_subscr = 0x20
 store_attr = 0x21
 load_attr = 0x22
 
+call_method = 0x23
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

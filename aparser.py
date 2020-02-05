@@ -158,7 +158,7 @@ class Parser:
 
         return ast.ArrayAST(items, self.__now_ln)
 
-    def __parse_member_access_expr(self) -> ast.MemberAccessAST:
+    def __parse_member_access_expr(self, set_attr=False) -> ast.MemberAccessAST:
         left = self.__parse_cell_or_call_expr()
 
         if left is None:
@@ -173,11 +173,17 @@ class Parser:
             self.__next_tok()  # eat '.'
             ert = self.__parse_cell_or_call_expr()
 
-            if ert is None or type(ert) in (
+            if ert is None or type(ert) not in (
                     ast.SubscriptExprAST, ast.CallExprAST, ast.CellAST):
                 self.__syntax_error()
 
+            if isinstance(ert, ast.CellAST) and ert.type != LAP_IDENTIFIER:
+                self.__syntax_error()
+
             rl.append(ert)
+
+        if type(rl[-1]) not in (ast.SubscriptExprAST, ast.CellAST):
+            self.__syntax_error()
 
         return ast.MemberAccessAST(left, rl, self.__now_ln)
 
@@ -260,7 +266,6 @@ class Parser:
 
         if al is None:
             self.__syntax_error()
-
 
         return ast.CallExprAST(name, al, self.__now_ln)
 
@@ -401,7 +406,7 @@ class Parser:
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
-        left = self.__parse_member_access_expr()
+        left = self.__parse_member_access_expr(True)
 
         if self.__now_tok != '=':
             return None

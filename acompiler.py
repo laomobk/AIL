@@ -304,17 +304,26 @@ class Compiler:
         if not hasattr(tree, 'right'):
             return bc
 
-        for et in tree.right:
+        for et in tree.right[:-1]:
             if isinstance(et, ast.CellAST):
                 s, i = self.__do_cell_ast(et)
                 bc.add_bytecode(load_attr, i)
-            elif not set_attr:
+
+            else:
                 etc = {
                         ast.CallExprAST : self.__compile_call_expr,
                         ast.SubscriptExprAST : self.__compile_subscript_expr
                      }[type(et)](et, True)
 
                 bc += etc
+
+        lt = tree.right[-1]
+        if isinstance(lt, ast.CellAST):
+            ni = self.__buffer.get_or_add_varname_index(lt.value)
+            bc.add_bytecode(store_attr if set_attr else load_attr, ni)
+
+        elif isinstance(lt, ast.SubscriptExprAST):
+            bc += self.__compile_subscript_expr(lt, True, True)
 
         return bc
 
@@ -337,10 +346,14 @@ class Compiler:
             ni = self.__buffer.get_or_add_varname_index(left.value)
             bc.add_bytecode(store_target, ni)
 
-            return bc
         elif store_target == store_attr:
-            pass
+            ebc = self.__compile_member_access_expr(tree.left, True)
+            bc += ebc
 
+        elif store_target == store_subscr:
+            bc += self.__compile_subscript_expr(tree.left, False, True)
+
+        return bc
 
     def __compile_assign_expr0(self, tree :ast.DefineExprAST, single=False)  -> ByteCode:
         bc = ByteCode()
@@ -368,12 +381,12 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
             bc += etc
 
-        bc.add_bytecode(call_func, len(expl))
+        bc.add_bytecode(call_func if not is_attr else call_method, len(expl))
 
         return bc
 
     def __compile_subscript_expr(self, tree :ast.SubscriptExprAST, 
-            is_attr=False) -> ByteCode:
+            is_attr=False, store=False) -> ByteCode:
         bc = ByteCode()
         
         lc = self.__compile_binary_expr(tree.left)
@@ -748,6 +761,9 @@ class Compiler:
 
             elif isinstance(et, ast.LoadAST):
                 tbc = self.__compile_load_stmt(et)
+
+            elif isinstance(et, ast.AssignExprAST):
+                tbc = self.__compile_assign_expr(et, True)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et)

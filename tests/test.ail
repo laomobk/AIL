@@ -1,4 +1,6 @@
 begin
 
+a.b().e[6] = c
+
 end
 

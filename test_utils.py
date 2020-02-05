@@ -33,7 +33,7 @@ def make_ast_tree(a) -> dict:
         return {'BinAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.CallExprAST):
-        return {'CallAST' : {'left' : make_ast_tree(a.left), 'arg_list' : make_ast_tree(a.arg_list)}}
+        return {'CallAST' : {'name' : make_ast_tree(a.name), 'arg_list' : make_ast_tree(a.arg_list)}}
 
     elif isinstance(a, ast.PrintExprAST):
         return {'PrintAST' : {'value' : unpack_list(a.value_list)}}
@@ -136,7 +136,9 @@ class ByteCodeDisassembler:
                 opcs.load_local,
                 opcs.store_function,
                 opcs.load_varname,
-                opcs.load_module
+                opcs.load_module,
+                opcs.load_attr,
+                opcs.store_attr
             )
 
     __SHOW_CONST = (

@@ -88,8 +88,8 @@ class CallExprAST:
     call_expr := NAME '(' arg_list ')'
     '''
 
-    def __init__(self, left :BinaryExprAST, arg_list :ArgListAST, ln :int):
-        self.left = left
+    def __init__(self, name :str, arg_list :ArgListAST, ln :int):
+        self.name = name
         self.arg_list = arg_list
         self.ln = ln
 
