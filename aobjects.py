@@ -4,6 +4,24 @@ import error
 
 from objects import types
 
+
+INVISIBLE_ATTRS = (
+        '__value__',
+        '__class__',
+        '__init__',
+        '__add__',
+        '__div__',
+        '__muit__',
+        '__sub__',
+        '__div__',
+        '__getattr__',
+        '__setattr__',
+        '__getitem__',
+        '__setitem__',
+        '__name__'
+    )
+
+
 class AILConstant:
     __slots__ = ['const', 'type_']
 
@@ -43,8 +61,8 @@ class AILCodeObject:
 
 class AILObject:
     '''Base object, do noting...'''
-    def __init__(self, **kwargs):
-        self.properties = kwargs
+    def __init__(self, **ps):
+        self.properties = ps
         self.reference = 0
 
     def __getitem__(self, key :str):
@@ -110,13 +128,16 @@ class AILObjectType:
 
     __repr__ = __str__
 
+
 class ObjectCreater:
     from objects import ailobject as __aobj
 
     __required_normal = {
         '__str__' : __aobj.obj_func_str,
         '__init__' : __aobj.obj_func_init,
-        '__eq__' : __aobj.obj_func_eq
+        '__eq__' : __aobj.obj_func_eq,
+        '__getattr__' : __aobj.obj_getattr,
+        '__setattr__' : __aobj.obj_setattr,
     }
 
     @staticmethod
@@ -172,5 +193,7 @@ def convert_to_ail_object(pyobj :object) -> AILObject:
     return ObjectCreater.new_object(target_t, pyobj)
 
 
-def compare_type(a :AILObject, b :AILObject) -> bool:
-    return a['__class__'] == b
+def compare_type(o, t):
+    if isinstance(o, AILObject):
+        return o['__class__'] == t
+    return False

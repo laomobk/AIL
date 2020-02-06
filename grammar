@@ -64,3 +64,7 @@ item_list := cell [',' cell]*
 load_stmt := 'load' STRING
 
 member_expr := cell '.' NAME
+
+struct_def := 'struct' NAME 'is' NEWLINE
+                NAME NEWLINE [NAME NEWLINE]*
+               'end'

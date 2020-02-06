@@ -116,12 +116,17 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.MemberAccessAST):
         return {'MemberAccessAST':{
                  'left' : make_ast_tree(a.left),
-                 'right' : make_ast_tree(a.right)}}
+                 'members' : make_ast_tree(a.members)}}
 
     elif isinstance(a, ast.AssignExprAST):
         return {'AssignExprAST' : {
                  'left' : make_ast_tree(a.left),
                  'value' : make_ast_tree(a.value)}}
+
+    elif isinstance(a, ast.StructDefineAST):
+        return {'StructDefineAST': {
+                'name': make_ast_tree(a.name),
+                'name_list': make_ast_tree(a.name_list)}}
  
     elif isinstance(a, list):
         return unpack_list(a)

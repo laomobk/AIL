@@ -133,3 +133,21 @@ class _IntegerPool:
 
 
 INTEGER_POOL = _IntegerPool().pool
+
+
+def convert_to_integer(pyint :int):
+    from objects import string
+
+    try:
+        if pyint['__class__'] in (
+                INTEGER_TYPE, afloat.FLOAT_TYPE, string.STRING_TYPE):
+                pyint['__value__'] = int(pyint['__value__'])
+                return pyint
+
+        elif type(pyint) in (int, float, str):
+                return obj.ObjectCreater.new_object(INTEGER_TYPE, int(pyint))
+
+    except ValueError as e:
+        return AILRuntimeError(str(e), 'ValueError')
+
+    return AILRuntimeError('argument must be a string or a number', 'TypeError')

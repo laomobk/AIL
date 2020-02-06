@@ -301,10 +301,10 @@ class Compiler:
 
         # right
 
-        if not hasattr(tree, 'right'):
+        if not hasattr(tree, 'members'):
             return bc
 
-        for et in tree.right[:-1]:
+        for et in tree.members[:-1]:
             if isinstance(et, ast.CellAST):
                 s, i = self.__do_cell_ast(et)
                 bc.add_bytecode(load_attr, i)
@@ -317,13 +317,16 @@ class Compiler:
 
                 bc += etc
 
-        lt = tree.right[-1]
+        lt = tree.members[-1]
         if isinstance(lt, ast.CellAST):
             ni = self.__buffer.get_or_add_varname_index(lt.value)
             bc.add_bytecode(store_attr if set_attr else load_attr, ni)
 
         elif isinstance(lt, ast.SubscriptExprAST):
-            bc += self.__compile_subscript_expr(lt, True, True)
+            bc += self.__compile_subscript_expr(lt, True, set_attr)
+
+        elif isinstance(lt, ast.CallExprAST):
+            bc += self.__compile_call_expr(lt, True)
 
         return bc
 
@@ -381,7 +384,7 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
             bc += etc
 
-        bc.add_bytecode(call_func if not is_attr else call_method, len(expl))
+        bc.add_bytecode(call_func, len(expl))
 
         return bc
 
@@ -389,7 +392,7 @@ class Compiler:
             is_attr=False, store=False) -> ByteCode:
         bc = ByteCode()
         
-        lc = self.__compile_binary_expr(tree.left)
+        lc = self.__compile_binary_expr(tree.left, is_attr=is_attr)
         ec = self.__compile_binary_expr(tree.expr)
 
         bc += lc
@@ -715,6 +718,20 @@ class Compiler:
 
         return bc
 
+    def __compile_struct(self, tree :ast.StructDefineAST) -> ByteCode:
+        bc = ByteCode()
+
+        for n in tree.name_list:
+            ni = self.__buffer.get_or_add_varname_index(n)
+            bc.add_bytecode(load_varname, ni)
+
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+
+        bc.add_bytecode(load_varname, ni)
+        bc.add_bytecode(store_struct, len(tree.name_list))
+
+        return bc
+
     def __compile_block(self, tree :ast.BlockExprAST, firstoffset=0) -> ByteCode:
         bc = self.__general_bytecode = ByteCode()
         last_ln = 0
@@ -764,6 +781,9 @@ class Compiler:
 
             elif isinstance(et, ast.AssignExprAST):
                 tbc = self.__compile_assign_expr(et, True)
+
+            elif isinstance(et, ast.StructDefineAST):
+                tbc = self.__compile_struct(et)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et)

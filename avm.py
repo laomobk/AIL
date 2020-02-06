@@ -18,6 +18,7 @@ import objects.function as afunc
 import objects.wrapper as awrapper
 import objects.null as null
 import objects.array as array
+import objects.struct as struct
 
 import aloader
 
@@ -45,6 +46,9 @@ _BUILTINS = {
     'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
     'ord' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_ord),
     'hex' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_hex),
+    'type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_type),
+    'new' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.new_struct),
+    'null' : null.null
 }
 
 
@@ -173,6 +177,7 @@ class Interpreter:
                     'TypeError')
 
             r = m(a, b)
+
         else:
             if hasattr(a, pymth):
                 r = getattr(a, pymth)(b)
@@ -230,6 +235,81 @@ class Interpreter:
                 return f.variable[n]
         else:
             self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
+
+    def __call_function(self, func, argv, argl):
+        if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
+            if func['__class__'] == afunc.FUNCTION_TYPE:
+                c: objs.AILCodeObject = func['__code__']
+
+                if c.argcount != argv:
+                    self.__raise_error(
+                        '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
+                        'TypeError'
+                    )
+
+                argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
+                # init new frame
+                f = Frame()
+                f.varnames = c.varnames
+                f.variable = argd
+                f.code = c
+                f.consts = c.consts
+
+                try:
+                    self.__run_bytecode(c, f)
+                except RecursionError as e:
+                    self.__raise_error(str(e), 'PythonError')
+            elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
+                pyf = func['__pyfunction__']
+
+                if not hasattr(pyf, '__call__'):
+                    self.__raise_error(
+                        '\'%s\' object is not callable' % str(type(pyf))
+                    )
+
+                if not inspect.isbuiltin(pyf):
+                    # check arguments
+                    fc: types.CodeType = pyf.__code__
+
+                    fd = pyf.__defaults__
+                    fcc = fc.co_argcount
+                    fac = fc.co_argcount - (len(fd) if fd is not None else 0)
+
+                    if fac > argv or (argv not in range(fac, fcc + 1)):
+                        self.__raise_error(
+                            'function \'%s\' need %s positional argument(s)' % (pyf.__name__, fac),
+                            'TypeError'
+                        )
+
+                else:
+                    argl = [o['__value__'] for o in argl]
+                    # unpack argl for builtin function
+
+                try:
+                    rtn = self.__check_object(pyf(*argl))
+                except Exception as e:
+                    self.__raise_error(
+                        str(e), 'PythonError'
+                    )
+
+                if not isinstance(rtn, objs.AILObject):
+
+                    target = {
+                        str: astr.STRING_TYPE,
+                        int: aint.INTEGER_TYPE,
+                        float: afloat.FLOAT_TYPE,
+                        bool: abool.BOOL_TYPE,
+                    }.get(type(rtn), awrapper.WRAPPER_TYPE)
+
+                    if rtn is None:
+                        rtn = null.null
+                    else:
+                        rtn = objs.ObjectCreater.new_object(target, rtn)
+
+                self.__push_back(rtn)
+            else:
+                self.__raise_error(
+                    '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
 
     def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
         # push a new frame
@@ -418,75 +498,7 @@ class Interpreter:
                     argl = [self.__pop_top() for _ in range(argv)][::-1]
                     func :objs.AILObject = self.__pop_top()
 
-                    if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
-                        if func['__class__'] == afunc.FUNCTION_TYPE:
-                            c :objs.AILCodeObject = func['__code__']
-
-                            if c.argcount != argv:
-                                self.__raise_error(
-                                    '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
-                                    'TypeError'
-                                )
-
-                            argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
-                            # init new frame
-                            f = Frame()
-                            f.varnames = c.varnames
-                            f.variable = argd
-                            f.code = c
-                            f.consts = c.consts
-
-                            try:
-                                self.__run_bytecode(c, f)
-                            except RecursionError as e:
-                                self.__raise_error(str(e), 'PythonError')
-                        elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
-                            pyf = func['__pyfunction__']
-
-                            if not hasattr(pyf, '__call__'):
-                                self.__raise_error(
-                                    '\'%s\' object is not callable' % str(type(pyf))
-                                )
-
-                            if not inspect.isbuiltin(pyf):
-                                # check arguments
-                                fc :types.CodeType = pyf.__code__
-
-                                if fc.co_argcount != argv:
-                                    self.__raise_error(
-                                        'function \'%s\' need %s argument(s)' % (pyf.__name__, fc.co_argcount),
-                                        'TypeError'
-                                    )
-
-                            else:
-                                argl = [o['__value__'] for o in argl]
-                                # unpack argl for builtin function
-
-                            try:
-                                rtn = self.__check_object(pyf(*argl))
-                            except Exception as e:
-                                self.__raise_error(
-                                    str(e), 'PythonError'
-                                )
-
-                            if not isinstance(rtn, objs.AILObject):
-
-                                target = {
-                                    str: astr.STRING_TYPE,
-                                    int: aint.INTEGER_TYPE,
-                                    float: afloat.FLOAT_TYPE,
-                                    bool: abool.BOOL_TYPE,
-                                }.get(type(rtn), awrapper.WRAPPER_TYPE)
-
-                                if rtn is None:
-                                    rtn = null.null
-                                else:
-                                    rtn = objs.ObjectCreater.new_object(target, rtn)
-
-                            self.__push_back(rtn)
-                        else:
-                            self.__raise_error(
-                                '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
+                    self.__call_function(func, argv, argl)
 
                 elif op == store_function:
                     tos = self.__pop_top()
@@ -529,6 +541,44 @@ class Interpreter:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
 
                     self.__tof.variable.update(v)
+
+                elif op == store_subscr:
+                    i = self.__pop_top()
+                    o = self.__pop_top()
+                    v = self.__pop_top()
+
+                    if isinstance(o, objs.AILObject):
+                        if o['__setitem__'] is None:
+                            self.__raise_error('%s object is not subscriptable' %
+                                               o['__class__'].name, 'TypeError')
+
+                        rtn = self.__check_object(afunc.call(o['__setitem__'], o, i, v))
+
+                        self.__push_back(rtn)
+
+                elif op == load_attr:
+                    o = self.__pop_top()
+                    vn = self.__tof.varnames[argv]
+
+                    r = self.__check_object(o['__getattr__'](o, vn))
+
+                    self.__push_back(r)
+
+                elif op == store_attr:
+                    o = self.__pop_top()
+                    ni = self.__tof.varnames[argv]
+                    v = self.__pop_top()
+
+                    self.__check_object(o['__setattr__'](o, ni, v))
+
+                elif op == store_struct:
+                    name = self.__pop_top()
+                    nl = [self.__pop_top() for _ in range(argv)][::-1]
+
+                    o = objs.ObjectCreater.new_object(
+                        struct.STRUCT_TYPE, name, nl)
+
+                    self.__store_var(name, o)
 
                 if jump_to != cp:
                     cp = jump_to

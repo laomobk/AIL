@@ -38,7 +38,7 @@ def func_func_str(self :obj.AILObject):
     return '<AIL function \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
-def call_function(pyfw :obj.AILObject, *args):
+def call(pyfw :obj.AILObject, *args):
     if inspect.isfunction(pyfw):
         try:
             return pyfw(*args)

@@ -10,7 +10,8 @@ _keywords_uc = (
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD'
+        'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
+        'STRUCT'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -158,7 +159,7 @@ class Parser:
 
         return ast.ArrayAST(items, self.__now_ln)
 
-    def __parse_member_access_expr(self, set_attr=False) -> ast.MemberAccessAST:
+    def __parse_member_access_expr(self, set_attr=False, try_=False) -> ast.MemberAccessAST:
         left = self.__parse_cell_or_call_expr()
 
         if left is None:
@@ -182,7 +183,9 @@ class Parser:
 
             rl.append(ert)
 
-        if type(rl[-1]) not in (ast.SubscriptExprAST, ast.CellAST):
+        if set_attr and type(rl[-1]) not in (ast.SubscriptExprAST, ast.CellAST):
+            if try_:
+                return None
             self.__syntax_error()
 
         return ast.MemberAccessAST(left, rl, self.__now_ln)
@@ -406,7 +409,7 @@ class Parser:
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
-        left = self.__parse_member_access_expr(True)
+        left = self.__parse_member_access_expr(True, True)
 
         if self.__now_tok != '=':
             return None
@@ -633,6 +636,44 @@ class Parser:
 
         return ast.DoLoopExprAST(test, block, ln)
 
+    def __parse_struct_def_stmt(self) -> ast.StructDefineAST:
+        if self.__now_tok != 'struct':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'struct'
+
+        if self.__now_tok.ttype != LAP_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        if self.__next_tok() != 'is' or \
+                self.__next_tok().ttype != LAP_ENTER:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ENTER
+
+        vl = []
+
+        while self.__now_tok != 'end':
+            if self.__now_tok.ttype != LAP_IDENTIFIER:
+                self.__syntax_error()
+            vl.append(self.__now_tok.value)
+
+            if self.__next_tok().ttype != LAP_ENTER:
+                self.__syntax_error()
+
+            self.__next_tok()  # eat ENTER
+
+        if self.__now_tok != 'end':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'end'
+
+        return ast.StructDefineAST(name, vl, ln)
+
     def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
@@ -748,6 +789,9 @@ class Parser:
 
         elif nt == 'load':
             a = self.__parse_load_stmt()
+
+        elif nt == 'struct':
+            a = self.__parse_struct_def_stmt()
 
         elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):

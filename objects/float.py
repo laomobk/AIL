@@ -91,3 +91,21 @@ FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __muit__=float_muit,
                              __repr__=float_repr,
                              )
+
+
+def convert_to_integer(pyint :int):
+    from objects import integer, string
+
+    try:
+        if pyint['__class__'] in (
+                integer.INTEGER_TYPE, FLOAT_TYPE, string.STRING_TYPE):
+                pyint['__value__'] = float(pyint['__value__'])
+                return pyint
+
+        elif type(pyint) in (int, float, str):
+                return obj.ObjectCreater.new_object(integer.INTEGER_TYPE, float(pyint))
+
+    except ValueError as e:
+        return AILRuntimeError(str(e), 'ValueError')
+
+    return AILRuntimeError('argument must be a string or a number', 'TypeError')

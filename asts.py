@@ -34,9 +34,9 @@ class CellAST:
 
 
 class MemberAccessAST:
-    def __init__(self, left :CellAST, right :CellAST, ln :int):
+    def __init__(self, left :CellAST, members :CellAST, ln :int):
         self.left = left
-        self.right = right
+        self.members = members
         self.ln = ln
 
 
@@ -313,6 +313,13 @@ class SubscriptExprAST:
 class LoadAST:
     def __init__(self, name :str, ln :int):
         self.name = name
+        self.ln = ln
+
+
+class StructDefineAST:
+    def __init__(self, name :str, name_list :list, ln :int):
+        self.name = name
+        self.name_list = name_list
         self.ln = ln
 
 
