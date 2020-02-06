@@ -122,6 +122,10 @@ class Parser:
         if self.__now_tok.ttype == LAP_LRBASKET:
             return ast.ItemListAST([], self.__now_ln)
 
+        while self.__now_tok.ttype == LAP_ENTER or \
+                self.__now_tok.value == '\n':  # ignore ENTER
+            self.__next_tok()  # eat ENTER
+
         il = []
 
         while self.__now_tok.ttype != LAP_LRBASKET:
@@ -132,8 +136,16 @@ class Parser:
 
             il.append(eitem)
 
+            while self.__now_tok.ttype == LAP_ENTER or \
+                    self.__now_tok.value == '\n':  # ignore ENTER
+                self.__next_tok()  # eat ENTER
+
             if self.__now_tok.ttype == LAP_COMMA:        
                 self.__next_tok()
+
+            while self.__now_tok.ttype == LAP_ENTER or \
+                    self.__now_tok.value == '\n':  # ignore ENTER
+                self.__next_tok()  # eat ENTER
 
         return ast.ItemListAST(il, self.__now_ln)
 

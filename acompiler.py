@@ -216,6 +216,7 @@ class Compiler:
             1 : identifier
         return : (sign, index)
         '''
+
         if cell.type in (LAP_NUMBER, LAP_STRING):
             c = {
                     LAP_NUMBER : lambda n : convert_numeric_str_to_number(n),

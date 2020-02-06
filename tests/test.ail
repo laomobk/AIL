@@ -4,14 +4,11 @@ struct Human is
     name
     age
     height
-    friends
 end
 
-aobing = new(Human, {'Aobing', 3, 1.6, {}})
-nezha = new(Human, {'Nezha', 3, 0.8, {aobing}})
-aobing.friends = {nezha}
+nezha = new (Human, {'Nezha', 3, 0.8})
 
-print nezha.friends[0].name
+print nezha.name
 
 end
 
