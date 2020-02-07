@@ -1,0 +1,17 @@
+begin
+
+str_t       = 0x0
+int_t       = 0x1
+float_t     = 0x2
+bool_t      = 0x3
+wrapper_t   = 0x4
+func_t      = 0x5
+pyfunc_t    = 0x6
+type_t      = 0x7
+null_t      = 0x8
+array_t     = 0x9
+struct_t    = 0xa
+struct_t    = 0xb
+
+
+end

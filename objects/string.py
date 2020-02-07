@@ -23,7 +23,7 @@ def str_add(self, ostr :obj.AILObject) -> obj.AILObject:
     if type(ostr) != obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
     if ostr['__class__'] != STRING_TYPE:
-        return AILRuntimeError('Not support \'+\' with type %s' % ostr['__class__'])
+        return AILRuntimeError('Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
 
     ss = self['__value__']
     os = ostr['__value__']
@@ -106,7 +106,7 @@ def convert_to_string(aobj) -> obj.AILObject:
 STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __init__=str_init,
                                 __add__=str_add,
-                                __muit__=str_muit,
+                                # __muit__=str_muit,
                                 __str__=str_str,
                                 __repr__=str_repr,
                                 __eq__=str_eq,

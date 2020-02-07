@@ -376,8 +376,9 @@ class Compiler:
     def __compile_call_expr(self, tree :ast.CallExprAST, is_attr=False) -> ByteCode:
         bc = ByteCode()
 
-        fni = self.__buffer.get_or_add_varname_index(tree.name)
-        bc.add_bytecode(load_global if not is_attr else load_attr, fni)
+        lbc = self.__compile_binary_expr(tree.left, is_attr=is_attr)
+
+        bc += lbc
 
         expl = tree.arg_list.exp_list
         
@@ -445,7 +446,7 @@ class Compiler:
 
         return bc
 
-    def __compile_comp_expr(self, tree :ast.CmpTestAST) -> ByteCode:
+    def __compile_comp_expr(self, tree :ast.CmpTestAST, extofs :int=0) -> ByteCode:
         bc = ByteCode()
         
         # left
@@ -462,6 +463,9 @@ class Compiler:
         elif isinstance(tree, ast.CallExprAST):
             return self.__compile_call_expr(tree)
 
+        elif isinstance(tree, ast.TestExprAST):
+            return self.__compile_test_expr(tree, extofs)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -477,6 +481,17 @@ class Compiler:
 
         return bc
 
+    def __compile_not_test_expr(self, tree :ast.NotTestAST, extofs :int=0):
+        bc = ByteCode()
+
+        if isinstance(tree, ast.NotTestAST):
+            bce = self.__compile_comp_expr(tree.expr, extofs)
+            bc += bce
+            bc.add_bytecode(binary_not, 0)
+
+            return bc
+        return self.__compile_comp_expr(tree, extofs)
+
     def __compile_or_expr(self, tree :ast.AndTestAST, extofs :int=0) -> ByteCode:
         '''
         extofs : 当 and 不成立约过的除右部以外的字节码偏移量
@@ -486,13 +501,21 @@ class Compiler:
         
         if isinstance(tree, ast.AndTestAST):
             return self.__compile_and_expr(tree, extofs)
+        if isinstance(tree, ast.NotTestAST):
+            return self.__compile_not_test_expr(tree, extofs)
+        if isinstance(tree, ast.TestExprAST):
+            return self.__compile_test_expr(tree, extofs)
+        if isinstance(tree.left, ast.TestExprAST):
+            return self.__compile_test_expr(tree.left, extofs)
 
         lbc = self.__compile_and_expr(tree.left, with_or=True)
 
         rbcl = []
 
+        r_ext = len(lbc.blist) + extofs + _BYTE_CODE_SIZE
+
         for rt in tree.right:
-            tbc = self.__compile_and_expr(rt)
+            tbc = self.__compile_and_expr(rt, r_ext)
             rbcl.append(tbc)
 
         # count right total offset
@@ -514,6 +537,10 @@ class Compiler:
         extofs : 当 and 不成立约过的除右部以外的字节码偏移量
                  当为 0 时，则不处理extofs
         '''
+
+        if isinstance(tree, ast.NotTestAST):
+            return self.__compile_not_test_expr(tree)
+
         bc = ByteCode()
 
         # similar to or
@@ -521,15 +548,23 @@ class Compiler:
         if type(tree) in ast.BINARY_AST_TYPES:
             return self.__compile_binary_expr(tree)
 
-        if isinstance(tree, ast.CmpTestAST):
+        elif isinstance(tree, ast.CmpTestAST):
             return self.__compile_comp_expr(tree)
 
-        lbc = self.__compile_comp_expr(tree.left)
+        elif isinstance(tree, ast.TestExprAST):
+            return self.__compile_test_expr(tree, extofs)
+
+        elif isinstance(tree.left, ast.TestExprAST):
+            return self.__compile_test_expr(tree.left, extofs)
+
+        lbc = self.__compile_not_test_expr(tree.left)
 
         rbcl = []
 
+        r_ext = len(lbc.blist) + extofs + _BYTE_CODE_SIZE
+
         for rt in tree.right:
-            tbc = self.__compile_comp_expr(rt)
+            tbc = self.__compile_not_test_expr(rt, r_ext)
             rbcl.append(tbc)
             
         # count right total offset
@@ -553,7 +588,7 @@ class Compiler:
         if type(test) in ast.BINARY_AST_TYPES:
             return self.__compile_binary_expr(test)
         elif isinstance(test, ast.CmpTestAST):
-            return self.__compile_comp_expr(test)
+            return self.__compile_comp_expr(test, extofs)
         else:
             return self.__compile_or_expr(test, extofs)
 
@@ -706,9 +741,9 @@ class Compiler:
     def __compile_plain_call(self, tree :ast.CallExprAST) -> ByteCode:
         bc = ByteCode()
 
-        ni = self.__buffer.get_or_add_varname_index(tree.name)
+        lbc = self.__compile_binary_expr(tree.left)
 
-        bc.add_bytecode(load_global, ni)
+        bc += lbc
 
         for et in tree.arg_list.exp_list:
             bc += self.__compile_binary_expr(et)

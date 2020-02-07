@@ -20,8 +20,8 @@ def float_init(self :obj.AILObject, value :obj.AILObject):
 
 
 def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
-        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+    if type(other['__value__']) not in (int , float):   # do not have __value__ property
+        return AILRuntimeError('Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
@@ -97,6 +97,21 @@ def float_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(FLOAT_TYPE, res)
 
 
+def float_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:   # do not have __value__ property
+        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+
+    sv = self['__value__']
+    so = other['__value__']
+
+    try:
+        res = sv ** so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return obj.ObjectCreater.new_object(FLOAT_TYPE, res)
+
+
 FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __init__=float_init,
                              __add__=float_add,
@@ -105,7 +120,8 @@ FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __sub__=float_sub,
                              __muit__=float_muit,
                              __repr__=float_repr,
-                             __mod__=float_mod
+                             __mod__=float_mod,
+                             __pow__=float_pow
                              )
 
 

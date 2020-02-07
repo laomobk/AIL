@@ -11,8 +11,10 @@ def struct_init(self, name :str, name_list :list):
     self['__name__'] = name
 
 
-def structobj_init(self, name :str, members :dict):
+def structobj_init(self, name :str, members :dict, type :obj.AILObject):
     self.members = members
+
+    self['__type__'] = type
     self['__name__'] = name
 
 
@@ -41,14 +43,14 @@ def struct_setattr(self, name :str, value):
 
 
 def struct_str(self):
-    return '<struct \'%s\'>' % self['__name__']
+    return '<struct \'%s\' at %d>' % (self['__name__'], hex(id(self)))
 
 
 def structobj_str(self):
     return '<struct \'%s\' object at %s>' % (self['__name__'], hex(id(self)))
 
 
-STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct type>', types.I_STRUCT_TYPE,
+STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', types.I_STRUCT_OBJ_TYPE,
                                 __init__=structobj_init,
                                 __strattr__=structobj_setattr,
                                 __getattr__=struct_getattr,

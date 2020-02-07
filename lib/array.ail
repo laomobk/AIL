@@ -12,7 +12,7 @@ fun _check_t(o) is
 end
 
 fun List() is
-    lo = new(list_t, {{}, 0})
+    lo = new(list_t, {}, 0)
 
     return lo
 end
@@ -27,7 +27,7 @@ fun _copy_new(a, elen, eleo) is
 end
 
 fun append(a, o) is
-    if not _check_t(a) then
+    if not _check_t(o) then
         return null
     endif
 
@@ -38,11 +38,6 @@ fun append(a, o) is
     a._ele[-1] = o
 
     a.size = a.size + 1
-
-    return true
 end
-
-l = List()
-append(l, 10)
 
 end

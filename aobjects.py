@@ -121,7 +121,7 @@ class AILObjectType:
     def __init__(self, tname :str, otype=None,**required):
         self.name = tname
         self.required = required
-        self.otype = types.I_TYPE_TYPE if not otype else otype
+        self.otype = types.I_TYPE_TYPE if otype is None else otype
 
     def __str__(self):
         return '<AIL Type \'%s\'>' % self.name

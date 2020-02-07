@@ -27,8 +27,8 @@ def int_init(self :obj.AILObject, value :obj.AILObject):
 
 
 def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
-        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+    if other['__class__'] not in (INTEGER_TYPE, afloat.FLOAT_TYPE):   # do not have __value__ property
+        return AILRuntimeError('Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
@@ -112,6 +112,22 @@ def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
+def int_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:   # do not have __value__ property
+        return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
+
+    sv = self['__value__']
+    so = other['__value__']
+
+    try:
+        res = sv ** so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    if res in range(*POOL_RANGE):
+        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+
 
 def int_eq(self :obj.AILObject, o :obj.AILObject):
     if isinstance(o, obj.AILObject):
@@ -128,7 +144,8 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __sub__=int_sub,
                              __eq__=int_eq,
                              __repr__=int_repr,
-                             __mod__=int_mod
+                             __mod__=int_mod,
+                             __pow__=int_pow
                              )
 
 

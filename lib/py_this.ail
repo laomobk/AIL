@@ -32,8 +32,27 @@ Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"
 res = ''
 
 i = 0
+p = 0
 while i < len(s) then
-	if 
+    if ord(s[i]) + 13 - 97 > 0 then
+        p = 97
+    else
+        p = 65
+    endif
 
+    if equal(s[i], '\n') or equal(s[i], ' ') or equal(s[i], '.') or equal(s[i], ',') or equal(s[i], "'") then
+        c = s[i]
+    else if equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*') then
+        c = s[i]
+    else
+	    c = chr((ord(s[i]) - p + 13) mod 26 + p)
+	endif
+	endif
+
+	res = res + c
+	i = i + 1
+wend
+
+print res
 
 end

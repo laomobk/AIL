@@ -7,6 +7,7 @@ from astate import InterpreterState
 import error
 import types
 import inspect
+import test_utils
 
 import abuiltins
 
@@ -54,9 +55,11 @@ _BUILTINS = {
     'len' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_len),
     'equal' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal),
     'type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_type),
-    'array' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_array)
-
-
+    'array' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_array),
+    'equal_type' :
+        objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal_type),
+    'isinstance' :
+        objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_isinstance),
 }
 
 
@@ -180,12 +183,15 @@ class Interpreter:
             m = a[ailmth]
             mb = b[ailmth]
 
-            if (m is None or mb is None):
+            if m is None or mb is None:
                 self.__raise_error(
                     'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
                     'TypeError')
             
             r = m(a, b)
+
+            if isinstance(r, error.AILRuntimeError):
+                r = mb(b, a)
 
         else:
             if hasattr(a, pymth):
@@ -217,6 +223,12 @@ class Interpreter:
             )
 
         return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
+
+    def __bool_test(self, obj):
+        if isinstance(obj, objs.AILObject):
+            if obj['__value__'] is not None:
+                return bool(obj['__value__'])
+        return bool(obj)
 
     def __check_break(self) -> int:
         jump_to = 0
@@ -486,6 +498,14 @@ class Interpreter:
                     res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
 
                     self.__push_back(res)
+
+                elif op == binary_not:
+                    o = self.__pop_top()
+
+                    b = not self.__bool_test(o)
+
+                    self.__push_back(
+                        objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
 
                 elif op == compare_op:
                     cop = opcs.COMPARE_OPERATORS[argv]

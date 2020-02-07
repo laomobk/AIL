@@ -9,7 +9,7 @@ def _is_reserved_attr_name(name :str):
     所有以双下划线开头并以之结尾的，
     都属于保留属性名，不能在 AIL 中访问
     '''
-    if (name[:2], name[-2:]) == '__':
+    if (name[:2], name[-2:]) == ('__', '__'):
         return True
     return False
 

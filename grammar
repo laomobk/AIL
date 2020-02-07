@@ -28,7 +28,8 @@ func_def := 'fun' NAME '(' arg_list ')' NEWLINE
 
 test := or_test
 or_test := and_test ['or' and_test]*
-and_test := cmp_test ['and' cmp_test]
+and_test := not_test ['and' not_test]
+not_test := 'not' cmp_test
 cmp_test := expr [cmp_op expr]* 
 cmp_op := '>' | '<' | '=' | '!=' | '>=' | '<='
 

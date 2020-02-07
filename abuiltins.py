@@ -137,7 +137,7 @@ def new_struct(struct_type, default_list=None):
     n = struct_type['__name__']
 
     return objs.ObjectCreater.new_object(
-        struct.STRUCT_OBJ_TYPE, n, md)
+        struct.STRUCT_OBJ_TYPE, n, md, struct_type)
 
 
 def func_len(o :objs.AILObject):
@@ -149,6 +149,8 @@ def func_len(o :objs.AILObject):
 
 
 def func_type(o :objs.AILObject):
+    if o['__class__'] == struct.STRUCT_OBJ_TYPE:
+        return o['__type__']
     return o['__class__'].otype
 
 
@@ -162,3 +164,16 @@ def func_array(size):
         o = objs.ObjectCreater.new_object(array.ARRAY_TYPE, l)
         return o
     return AILRuntimeError('array() needs an integer.', 'TypeError')
+
+
+def func_isinstance(o, stype):
+    if objs.compare_type(o, struct.STRUCT_OBJ_TYPE) and \
+            objs.compare_type(stype, struct.STRUCT_TYPE):
+        return o['__type__'] == stype
+    return False
+
+
+def func_equal_type(a, b):
+    if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
+        return a['__class__'].otype == b['__class__'].otype
+    return False

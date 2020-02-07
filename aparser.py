@@ -91,9 +91,10 @@ class Parser:
             if a is None:
                 self.__syntax_error()
             alist.append(a)
+
         if self.__now_tok != ')':
             self.__syntax_error()
-        self.__next_tok()
+        self.__next_tok()  # eat ')'
 
         return ast.ArgListAST(alist, self.__now_ln)
 
@@ -177,7 +178,7 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok != '.':
+        if self.__now_tok.ttype != LAP_DOT:
             return left
 
         rl = []
@@ -205,41 +206,38 @@ class Parser:
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
 
-        ca = self.__parse_low_cell_or_call_expr()
+        ca = self.__parse_low_cell_expr()
 
-        if self.__now_tok.ttype == LAP_MLBASKET:
-            self.__next_tok()  # eat '['
+        left = ca
 
-            e = self.__parse_binary_expr()
-            
-            if e is None:
-                self.__syntax_error()
+        while self.__now_tok.ttype in (LAP_MLBASKET, LAP_SLBASKET):
+            nt = self.__now_tok.ttype
 
-            if self.__now_tok != ']':
-                self.__syntax_error()
-
-            self.__next_tok()  # eat ']'
-
-            if self.__now_tok == '(':
-                self.__next_tok()
-
-                if self.__now_tok == ')':
-                    arg = ast.ArgListAST([], self.__now_ln)
-                else:
-                    arg = self.__parse_arg_list()
-
-                if self.__now_tok != ')':
+            if nt == LAP_MLBASKET:
+                self.__next_tok()  # eat '['
+                if self.__now_tok == ']':
                     self.__syntax_error()
 
-                self.__next_tok()  # eat ')'
+                expr = self.__parse_binary_expr()
 
-                return ast.CallExprAST(
-                    ast.SubscriptExprAST(ca, e, self.__now_ln), arg, self.__now_ln)
+                if self.__now_tok != ']':
+                    self.__syntax_error()
+                self.__next_tok()  # eat ']'
 
-            return ast.SubscriptExprAST(ca, e, self.__now_ln)
-        return ca
+                left = ast.SubscriptExprAST(left, expr, self.__now_ln)
 
-    def __parse_low_cell_or_call_expr(self) -> ast.ExprAST:
+            elif nt == LAP_SLBASKET:
+                self.__next_tok()  # eat '('
+                if self.__now_tok == ')':
+                    argl = ast.ArgListAST([], self.__now_ln)
+                    self.__next_tok()  # eat ')'
+                else:
+                    argl = self.__parse_arg_list()
+
+                left = ast.CallExprAST(left, argl, self.__now_ln)
+        return left
+
+    def __parse_low_cell_expr(self) -> ast.ExprAST:
         if self.__now_tok.ttype == LAP_LLBASKET:
             a = self.__parse_array_expr()
 
@@ -263,29 +261,11 @@ class Parser:
 
         nt = self.__now_tok
 
-        if self.__now_tok.ttype not in (LAP_IDENTIFIER, LAP_STRING, LAP_NUMBER):
-            self.__syntax_error()
-
         name = nt.value  # it can be string, number or identifier
 
-        net = self.__next_tok()
+        self.__next_tok()  # eat NAME
 
-        if net.ttype != LAP_SLBASKET:  # is not call expr
-            return ast.CellAST(name, nt.ttype, self.__now_ln)
-
-        if net != '(':
-            self.__syntax_error()
-
-        # self.__next_tok()  # move to '('
-
-        self.__next_tok()  # eat '('
-
-        al = self.__parse_arg_list()
-
-        if al is None:
-            self.__syntax_error()
-
-        return ast.CallExprAST(name, al, self.__now_ln)
+        return ast.CellAST(name, nt.ttype, self.__now_ln)
 
     def __parse_power_expr(self) -> ast.PowerExprAST:
         left = self.__parse_member_access_expr()
@@ -359,6 +339,9 @@ class Parser:
             return at
 
         self.__tc = ntc
+
+        if self.__now_tok.ttype == LAP_ENTER:
+            self.__syntax_error()
             
         left = self.__parse_muit_div_expr()
         
@@ -449,6 +432,17 @@ class Parser:
             return ast.DefineExprAST(n, v, self.__now_ln)
 
     def __parse_comp_test_expr(self) -> ast.CmpTestAST:
+        if self.__now_tok == '(':
+            self.__next_tok()  # eat '('
+
+            expr = self.__parse_test_expr()
+
+            if self.__now_tok != ')':
+                self.__syntax_error()
+            self.__next_tok()  # eat ')'
+
+            return expr
+
         left = self.__parse_binary_expr()
 
         if left is None:
@@ -471,8 +465,16 @@ class Parser:
 
         return ast.CmpTestAST(left, rl, self.__now_ln)
 
+    def __parse_not_test_expr(self) -> ast.NotTestAST:
+        if self.__now_tok == 'not':
+            self.__next_tok()  # eat 'not'
+            expr = self.__parse_comp_test_expr()
+
+            return ast.NotTestAST(expr, self.__now_ln)
+        return self.__parse_comp_test_expr()
+
     def __parse_and_test_expr(self) -> ast.AndTestAST:
-        left = self.__parse_comp_test_expr()
+        left = self.__parse_not_test_expr()
 
         if left is None:
             self.__syntax_error()
@@ -484,7 +486,7 @@ class Parser:
 
         while self.__now_tok == 'and':
             self.__next_tok()   # eat 'and'
-            r = self.__parse_comp_test_expr()
+            r = self.__parse_not_test_expr()
 
             if r is None:
                 self.__syntax_error()

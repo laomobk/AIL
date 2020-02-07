@@ -88,8 +88,8 @@ class CallExprAST:
     call_expr := NAME '(' arg_list ')'
     '''
 
-    def __init__(self, name :str, arg_list :ArgListAST, ln :int):
-        self.name = name
+    def __init__(self, left :BinaryExprAST, arg_list :ArgListAST, ln :int):
+        self.left = left
         self.arg_list = arg_list
         self.ln = ln
 
@@ -304,7 +304,7 @@ class ArrayAST:
 
 
 class SubscriptExprAST:
-    def __init__(self, left :ExprAST, expr :ExprAST, ln :int):
+    def __init__(self, left :BinaryExprAST, expr :BinaryExprAST, ln :int):
         self.expr = expr
         self.left = left
         self.ln = ln
@@ -321,6 +321,14 @@ class StructDefineAST:
         self.name = name
         self.name_list = name_list
         self.ln = ln
+
+
+class NotTestAST:
+    def __init__(self, expr :CmpTestAST, ln):
+        self.expr = expr
+        self.ln = ln
+
+
 
 
 BINARY_AST_TYPES = (

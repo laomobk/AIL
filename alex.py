@@ -103,9 +103,11 @@ def get_number(source :str, cursor :int) -> tuple:
 
     seen_d = False
     seen_hex = False
+
+    e_char = 'xXABCDEFabcdef.'
  
     while ccur < len(source):
-        if not (source[ccur].isnumeric() or source[ccur] in ('.', 'x', 'X')):
+        if not (source[ccur].isnumeric() or source[ccur] in e_char):
             break
 
         if source[ccur] == '.':
