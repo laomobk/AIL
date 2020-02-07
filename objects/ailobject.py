@@ -4,6 +4,16 @@ from objects import bool
 from error import AILRuntimeError
 
 
+def _is_reserved_attr_name(name :str):
+    '''
+    所有以双下划线开头并以之结尾的，
+    都属于保留属性名，不能在 AIL 中访问
+    '''
+    if (name[:2], name[-2:]) == '__':
+        return True
+    return False
+
+
 def obj_func_str(aobj):
     oid = id(aobj)
     hex_id = hex(oid)
@@ -25,9 +35,11 @@ def obj_func_eq(aobj, oobj):
 
 
 def obj_getattr(aobj, name):
-    if name not in obj.INVISIBLE_ATTRS and name in aobj.properties:
+    if not _is_reserved_attr_name(name) and name in aobj.properties:
         return aobj[name]
-    return AILRuntimeError('\'%s\' object has no attribute \'%s\'' % (aobj['__class__'].name, name),
+
+    return AILRuntimeError('\'%s\' object has no attribute \'%s\'' % 
+                           (aobj['__class__'].name, name),
                            'AttributeError')
 
 
@@ -36,4 +48,10 @@ def obj_setattr(aobj, name, value):
 
     if obj.compare_type(name, string.STRING_TYPE):
         name = string.convert_to_string(name)
+
+    if not _is_reserved_attr_name(name):
+        return AILRuntimeError('\'%s\' object has no attribute \'%s\'' %
+                               (aobj['__class__'].name, name),
+                               'AttributeError')
+
     aobj.properties[name] = value

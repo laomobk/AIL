@@ -238,7 +238,7 @@ class Compiler:
                 '-' : binary_sub,
                 '*' : binary_muit,
                 '/' : binary_div,
-                'MOD' : binary_mod,
+                'mod' : binary_mod,
                 '^' : binary_pow
                }[op]
 
@@ -564,7 +564,8 @@ class Compiler:
 
         tc = self.__compile_test_expr(tree.test, extofs)
 
-        bcc = self.__compile_block(b, len(tc.blist) + extofs)
+        bcc = self.__compile_block(b, len(tc.blist) + extofs + _BYTE_CODE_SIZE)
+        # _byte_code_size for 'setup_while'
 
         jump_over = extofs + len(bcc.blist) + _BYTE_CODE_SIZE * 2
         # three times of _byte_code_size means (
@@ -615,10 +616,10 @@ class Compiler:
         bc = ByteCode()
 
         has_else = len(tree.else_block.stmts) > 0
-
+        
         tc = self.__compile_test_expr(tree.test, extofs)
 
-        ifbc_ext = extofs + len(tc.blist) + _BYTE_CODE_SIZE  # jump_if_false_or_pop
+        ifbc_ext = extofs + len(tc.blist)  + _BYTE_CODE_SIZE  # jump_if_false_or_pop
 
         ifbc = self.__compile_block(tree.block, ifbc_ext)
 
@@ -635,7 +636,7 @@ class Compiler:
         jump_over = extofs + len(tc.blist) + len(ifbc.blist) \
                         + len(elbc.blist) + (_BYTE_CODE_SIZE
                                                 if has_else
-                                                else 0) + _BYTE_CODE_SIZE
+                                                else 0) #+ _BYTE_CODE_SIZE
         # include 'jump_absolute' at the end of ifbc
         # last _byte_code_size is for 'jump_if_false_or_pop'
         

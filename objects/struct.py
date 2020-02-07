@@ -20,7 +20,8 @@ def struct_getattr(self, name :str):
     if name in self.members:
         return self.members[name]
 
-    return AILRuntimeError('struct \'%s\' has no attribute \'%s\'',
+    return AILRuntimeError('struct \'%s\' has no attribute \'%s\'' % 
+                           (self['__name__'], name),
                            'AttributeError')
 
 

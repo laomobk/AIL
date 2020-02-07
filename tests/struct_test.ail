@@ -1,0 +1,19 @@
+begin
+
+fun say_slogan(human) is
+	print human.slogan
+end
+
+struct Human is
+    name
+    age
+    height
+    slogan
+end
+
+nezha = new (Human, {'Nezha', 3, 0.8, '我命由我不由天'})
+
+say_slogan(nezha)
+
+end
+

@@ -58,9 +58,14 @@ def array_setitem(self, index, value):
     l[i] = value
 
 
+def array_len(self):
+    return len(self['__value__'])
+
+
 ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
                                 __init__=array_init,
                                 __getitem__=array_getitem,
                                 __setitem__=array_setitem,
                                 __str__=array_str,
-                                __repr__=array_str)
+                                __repr__=array_str,
+                                __len__=array_len)

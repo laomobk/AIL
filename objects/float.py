@@ -24,7 +24,7 @@ def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
-    so = self['__value__']
+    so = other['__value__']
 
     try:
         res = sv + so
@@ -39,7 +39,7 @@ def float_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
-    so = self['__value__']
+    so = other['__value__']
 
     try:
         res = sv - so
@@ -57,7 +57,7 @@ def float_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('0 cannot be used as a divisor', 'ZeroDivisonError')
 
     sv = self['__value__']
-    so = self['__value__']
+    so = other['__value__']
 
     try:
         res = sv / so
@@ -72,10 +72,25 @@ def float_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
-    so = self['__value__']
+    so = other['__value__']
 
     try:
         res = sv * so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return obj.ObjectCreater.new_object(FLOAT_TYPE, res)
+
+
+def float_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:   # do not have __value__ property
+        return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
+
+    sv = self['__value__']
+    so = other['__value__']
+
+    try:
+        res = sv % so
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
@@ -90,6 +105,7 @@ FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
                              __sub__=float_sub,
                              __muit__=float_muit,
                              __repr__=float_repr,
+                             __mod__=float_mod
                              )
 
 

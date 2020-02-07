@@ -33,12 +33,14 @@ class ModuleLoader:
         '''
         maybe_file = ['%s.%s' % (name, x) for x in _ALLOW_FILE_TYPE]
 
-        for p in self.__load_path:
-            for f in os.listdir(p):
-                fp = os.path.join(p, f)
-                if os.path.exists(fp) and os.path.isfile(fp):
-                    if os.path.split(fp)[-1] in maybe_file:
-                        return fp
+        for mfp in maybe_file:
+            for sp in self.__load_path:
+                absfp = os.path.abspath(sp)
+                jfp = os.path.join(absfp, mfp)
+
+                if os.path.exists(jfp) and os.path.isfile(jfp):
+                    return jfp
+
         return None
 
     def __load_py_namespace(self, pypath):
@@ -76,6 +78,8 @@ class ModuleLoader:
 
     def load_namespace(self, module_name :str) -> dict:
         from avm import Interpreter, Frame
+
+        module_name = module_name.replace('.', '/')
 
         if module_name in self.__loaded.keys():
             return self.__loaded[module_name]

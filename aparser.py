@@ -11,7 +11,7 @@ _keywords_uc = (
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
         'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
-        'STRUCT'
+        'STRUCT', 'MOD'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -263,6 +263,9 @@ class Parser:
 
         nt = self.__now_tok
 
+        if self.__now_tok.ttype not in (LAP_IDENTIFIER, LAP_STRING, LAP_NUMBER):
+            self.__syntax_error()
+
         name = nt.value  # it can be string, number or identifier
 
         net = self.__next_tok()
@@ -309,17 +312,17 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok != 'MOD':
+        if self.__now_tok != 'mod':
             return left
 
         rl = []
         
-        while self.__now_tok == 'MOD':
+        while self.__now_tok == 'mod':
             self.__next_tok()
             r = self.__parse_power_expr()
             if r is None:
                 self.__syntax_error()
-            rl.append(('MOD', r))
+            rl.append(('mod', r))
         return ast.ModExprAST(left, rl, self.__now_ln)
 
     def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:
@@ -669,6 +672,9 @@ class Parser:
 
         vl = []
 
+        while self.__now_tok.ttype == LAP_ENTER:
+            self.__next_tok()
+
         while self.__now_tok != 'end':
             if self.__now_tok.ttype != LAP_IDENTIFIER:
                 self.__syntax_error()
@@ -678,6 +684,9 @@ class Parser:
                 self.__syntax_error()
 
             self.__next_tok()  # eat ENTER
+        
+            while self.__now_tok.ttype == LAP_ENTER:
+                self.__next_tok()
 
         if self.__now_tok != 'end':
             self.__syntax_error()

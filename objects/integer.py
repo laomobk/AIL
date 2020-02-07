@@ -95,6 +95,24 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
 
 
+def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:   # do not have __value__ property
+        return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
+
+    sv = self['__value__']
+    so = other['__value__']
+
+    try:
+        res = sv % so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    if res in range(*POOL_RANGE):
+        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+
+
+
 def int_eq(self :obj.AILObject, o :obj.AILObject):
     if isinstance(o, obj.AILObject):
         return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o['__value__'])
@@ -109,7 +127,8 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __muit__=int_muit,
                              __sub__=int_sub,
                              __eq__=int_eq,
-                             __repr__=int_repr
+                             __repr__=int_repr,
+                             __mod__=int_mod
                              )
 
 

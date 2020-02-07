@@ -92,7 +92,7 @@ def func_int_input(msg :objs.AILObject):
         return AILRuntimeError(str(e), 'ValueError')
 
 
-def func_type(name, default_attrs :objs.AILObject=None):
+def func_make_type(name, default_attrs :objs.AILObject=None):
     if default_attrs is not None and \
             not objs.compare_type(default_attrs, array.ARRAY_TYPE):
         return AILRuntimeError('type() needs an array to set default attribute.')
@@ -107,6 +107,10 @@ def new_struct(struct_type, default_list=None):
         return AILRuntimeError('member initialize need an array')
     elif default_list is not None:
         default_list = default_list['__value__']
+
+    if objs.compare_type(struct_type, struct.STRUCT_OBJ_TYPE):
+        return AILRuntimeError('new() needs a struct type, not a struct object', 
+                               'TypeError')
 
     if not objs.compare_type(struct_type, struct.STRUCT_TYPE):
         return AILRuntimeError('new() need a struct type')
@@ -134,3 +138,27 @@ def new_struct(struct_type, default_list=None):
 
     return objs.ObjectCreater.new_object(
         struct.STRUCT_OBJ_TYPE, n, md)
+
+
+def func_len(o :objs.AILObject):
+    if isinstance(o, objs.AILObject):
+        if o['__len__'] is not None:
+            return o['__len__'](o)
+        return AILRuntimeError('\'%s\' object has no len()' %
+                o['__class__'].name, 'TypeError')
+
+
+def func_type(o :objs.AILObject):
+    return o['__class__'].otype
+
+
+def func_equal(a, b):
+    return a == b
+
+
+def func_array(size):
+    if objs.compare_type(size, aint.INTEGER_TYPE):
+        l = [null.null for _ in range(size['__value__'])]
+        o = objs.ObjectCreater.new_object(array.ARRAY_TYPE, l)
+        return o
+    return AILRuntimeError('array() needs an integer.', 'TypeError')

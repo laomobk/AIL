@@ -46,9 +46,17 @@ _BUILTINS = {
     'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
     'ord' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_ord),
     'hex' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_hex),
-    'type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_type),
+    'make_type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_make_type),
     'new' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.new_struct),
-    'null' : null.null
+    'null' : null.null,
+    'true' : objs.ObjectCreater.new_object(abool.BOOL_TYPE, True),
+    'false' : objs.ObjectCreater.new_object(abool.BOOL_TYPE, False),
+    'len' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_len),
+    'equal' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal),
+    'type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_type),
+    'array' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_array)
+
+
 }
 
 
@@ -170,12 +178,13 @@ class Interpreter:
     def __binary_op(self, op :str, pymth :str, ailmth :str, a, b):
         if isinstance(a, objs.AILObject):
             m = a[ailmth]
+            mb = b[ailmth]
 
-            if not m:
+            if (m is None or mb is None):
                 self.__raise_error(
-                    'Not support \'%s\' with %s and %s' % (op, str(a), str(b)),
+                    'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
                     'TypeError')
-
+            
             r = m(a, b)
 
         else:

@@ -1,14 +1,21 @@
 begin
 
-struct Human is
-    name
-    age
-    height
+struct _HashMap is
+	size
+
+	_kpS
 end
 
-nezha = new (Human, {'Nezha', 3, 0.8})
 
-print nezha.name
+fun HashMap(len) is
+	if type(len) != type(0) then
+		return null
+	endif
 
+	m = new(_HashMap, {len, array(len), 2})
+
+	return m
 end
 
+
+end

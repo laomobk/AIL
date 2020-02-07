@@ -92,6 +92,10 @@ def str_eq(self, ostr :obj.AILObject) -> obj.AILObject:
         return obj.ObjectCreater.new_object(bool.BOOL_TYPE, s == len(os))
 
 
+def str_len(self):
+    return len(self['__value__'])
+
+
 def convert_to_string(aobj) -> obj.AILObject:
     if isinstance(aobj, obj.AILObject):
         return aobj['__str__'](aobj)
@@ -106,4 +110,5 @@ STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __str__=str_str,
                                 __repr__=str_repr,
                                 __eq__=str_eq,
-                                __getitem__=str_getitem)
+                                __getitem__=str_getitem,
+                                __len__=str_len)
