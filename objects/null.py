@@ -3,7 +3,7 @@ from objects import types
 
 
 def null_init(self):
-    self['__value__'] = 0
+    self['__value__'] = None
 
 
 def null_str(self):

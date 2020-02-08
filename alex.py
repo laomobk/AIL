@@ -294,6 +294,8 @@ class Lex:
         self.__cursor = Cursor()  #源码的字符指针
         self.__stream = TokenStream()
         self.__ln = 1  #行号
+
+        self.__blevel = 0
         
     
     @property
@@ -346,11 +348,12 @@ class Lex:
                 self.__ln += 1
                 self.__movchr(1)
 
-                self.__stream.append(Token(
-                    '\n',
-                    LAP_ENTER,
-                    self.__ln
-                ))
+                if self.__blevel == 0:
+                    self.__stream.append(Token(
+                        '\n',
+                        LAP_ENTER,
+                        self.__ln
+                    ))
 
             elif c == '-':
                 if self.__nextch() == '-':
@@ -537,6 +540,10 @@ class Lex:
  
             elif c in ('(', ')', '[', ']', '{', '}', 
                        ',', '.', ';', '$', '@', '#', '\\',':'):
+                if c in ('(', '[', '{'):
+                    self.__blevel += 1
+                elif c in (')', ']', '}'):
+                    self.__blevel -= 1 if self.__blevel > 0 else 0
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
                 else:

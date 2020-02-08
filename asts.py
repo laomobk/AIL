@@ -238,6 +238,7 @@ class DoLoopExprAST:
         self.ln = ln
 
 
+
 class FunctionDefineAST:
     '''
     func_def := 'fun' NAME '(' arg_list ')' NEWLINE
@@ -329,6 +330,27 @@ class NotTestAST:
         self.ln = ln
 
 
+class AssignExprListAST:
+    def __init__(self, expr_list :list, ln):
+        self.expr_list = expr_list
+        self.ln = ln
+
+
+class BinaryExprListAST:
+    def __init__(self, expr_list :list, ln):
+        self.expr_list = expr_list
+        self.ln = ln
+
+
+class ForExprAST:
+    def __init__(self, init_list :AssignExprListAST,
+                 test :TestExprAST, update_list :BinaryExprListAST,
+                 block :BlockExprAST, ln):
+        self.init_list = init_list
+        self.test = test
+        self.update_list = update_list
+        self.block = block
+        self.ln = ln
 
 
 BINARY_AST_TYPES = (

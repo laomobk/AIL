@@ -131,6 +131,19 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.NotTestAST):
         return {'NotTestAST' : {'expr' : make_ast_tree(a.expr)}}
 
+    elif isinstance(a, ast.ForExprAST):
+        return {'ForExprAST' : {
+                'init' : make_ast_tree(a.init_list),
+                'test' : make_ast_tree(a.test),
+                'update' : make_ast_tree(a.update_list),
+                'block' : make_ast_tree(a.block)}}
+
+    elif isinstance(a, ast.BinaryExprListAST):
+        return {'BinExprListAST' : make_ast_tree(a.expr_list)}
+
+    elif isinstance(a, ast.AssignExprListAST):
+        return {'AssignListAST' : make_ast_tree(a.expr_list)}
+
     elif isinstance(a, list):
         return unpack_list(a)
 

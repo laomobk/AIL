@@ -242,7 +242,8 @@ class Compiler:
                 '^' : binary_pow
                }[op]
 
-    def __compile_binary_expr(self, tree :ast.BinaryExprAST, is_attr=False) -> ByteCode:
+    def __compile_binary_expr(self, tree :ast.BinaryExprAST, is_attr=False,
+                              is_single=False) -> ByteCode:
         bc = ByteCode()
 
         # 先递归处理 left，然后再递归处理right
@@ -269,6 +270,9 @@ class Compiler:
 
         elif isinstance(tree, ast.MemberAccessAST):
             bc += self.__compile_member_access_expr(tree)
+
+        elif isinstance(tree, ast.AssignExprAST):
+            bc += self.__compile_assign_expr(tree, single=is_single)
 
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
@@ -356,6 +360,9 @@ class Compiler:
 
         elif store_target == store_subscr:
             bc += self.__compile_subscript_expr(tree.left, False, True)
+
+        if single:
+            bc.add_bytecode(pop_top, 0)
 
         return bc
 
@@ -647,6 +654,46 @@ class Compiler:
 
         return bc
 
+    def __compile_for_stmt(self, tree :ast.ForExprAST, extofs :int):
+        bc = ByteCode()
+
+        extofs += _BYTE_CODE_SIZE  # for setup_forloop
+
+        initbc = ByteCode()
+
+        for et in tree.init_list.expr_list:
+            initbc += self.__compile_assign_expr(et, single=True)
+
+        test_ext = extofs + len(initbc.blist)
+
+        jump_back = test_ext
+
+        tbc = self.__compile_test_expr(tree.test, test_ext)
+
+        block_ext = extofs + len(tbc.blist) + len(initbc.blist) + _BYTE_CODE_SIZE
+        # _byte_code_size is for jump_if_false_or_pop and setup_forloop
+
+        blc = self.__compile_block(tree.block, block_ext)
+
+        updbc = ByteCode()
+
+        for et in tree.update_list.expr_list:
+            updbc += self.__compile_binary_expr(et, is_single=True)
+
+        jump_over = block_ext + len(blc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
+        # _byte_code_size for jump_absolute
+
+        bc.add_bytecode(setup_for, jump_over)
+        bc += initbc
+        bc += tbc
+        bc.add_bytecode(jump_if_false_or_pop, jump_over)
+        bc += blc
+        bc += updbc
+        bc.add_bytecode(jump_absolute, jump_back)
+        bc.add_bytecode(clean_for, 0)
+
+        return bc
+
     def __compile_if_else_stmt(self, tree :ast.IfExprAST, extofs :int):
         bc = ByteCode()
 
@@ -669,9 +716,9 @@ class Compiler:
         # 如果拥有 if 则 条件为false时跳到else块
         
         jump_over = extofs + len(tc.blist) + len(ifbc.blist) \
-                        + len(elbc.blist) + (_BYTE_CODE_SIZE
-                                                if has_else
-                                                else 0) #+ _BYTE_CODE_SIZE
+                        + len(elbc.blist) + _BYTE_CODE_SIZE * (2
+                                                    if has_else
+                                                    else 1) #+ _BYTE_CODE_SIZE
         # include 'jump_absolute' at the end of ifbc
         # last _byte_code_size is for 'jump_if_false_or_pop'
         
@@ -821,6 +868,9 @@ class Compiler:
 
             elif isinstance(et, ast.StructDefineAST):
                 tbc = self.__compile_struct(et)
+
+            elif isinstance(et, ast.ForExprAST):
+                tbc = self.__compile_for_stmt(et, total_offset)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et)

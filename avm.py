@@ -67,6 +67,10 @@ _BUILTINS = {
 }
 
 
+class ForEnvironment:
+    def __init__(self, temp_var=[]):
+        self.temp_var = temp_var
+
 class Frame:
     def __init__(self, code :objs.AILCodeObject=None, varnames=[],
                  consts=[], globals={}):
@@ -76,6 +80,7 @@ class Frame:
         self.consts = consts
         self.variable = globals
         self.break_stack = []
+        self.for_env_stack = []
 
     def __str__(self):
         return '<Frame object for code object \'%s\'>' % self.code.name
@@ -110,6 +115,10 @@ class Interpreter:
     def __break_stack(self) -> list:
         return self.__tof.break_stack
 
+    @property
+    def __for_env_stack(self) -> list:
+        return self.__tof.for_env_stack
+
     def __push_back(self, obj :objs.AILObject):
         self.__stack.append(obj)
 
@@ -142,6 +151,8 @@ class Interpreter:
         return aobj
 
     def __store_var(self, name, value):
+        if self.__for_env_stack and name not in self.__tof.variable:
+            self.__for_env_stack[-1].temp_var.append(name)
         self.__tof.variable[name] = value
 
     def __raise_error(self, msg :str, err_type :str):
@@ -444,6 +455,10 @@ class Interpreter:
 
                     break  # 结束这个解释循环
 
+                elif op == setup_for:
+                    self.__for_env_stack.append(ForEnvironment())
+                    self.__add_break_point(argv)
+
                 elif op in (setup_doloop, setup_while):
                     if op == setup_while:  # setup_while can test TOS
                         tos = self.__pop_top()
@@ -454,6 +469,13 @@ class Interpreter:
                             self.__add_break_point(argv)
                     else:
                         self.__add_break_point(argv)
+
+                elif op == clean_for:
+                    tfs = self.__for_env_stack.pop()
+                    tv = tfs.temp_var
+
+                    for vn in tv:
+                        del self.__tof.variable[vn]
 
                 elif op == jump_absolute:
                     jump_to = argv

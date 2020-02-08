@@ -261,6 +261,9 @@ class Parser:
 
         nt = self.__now_tok
 
+        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER):
+            self.__syntax_error()
+
         name = nt.value  # it can be string, number or identifier
 
         self.__next_tok()  # eat NAME
@@ -635,6 +638,70 @@ class Parser:
 
         return ast.WhileExprAST(test, block,ln)
 
+    def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
+        f = self.__parse_assign_expr()
+
+        el = [f]
+
+        while self.__now_tok == ',':
+            self.__next_tok()  # eat ','
+            e = self.__parse_assign_expr()
+            if e is None:
+                self.__syntax_error()
+            el.append(e)
+
+        return ast.AssignExprListAST(el, self.__now_ln)
+
+    def __parse_binary_expr_list(self) -> ast.BinaryExprListAST:
+        f = self.__parse_binary_expr()
+
+        el = [f]
+
+        while self.__now_tok == ',':
+            self.__next_tok()  # eat ','
+            e = self.__parse_binary_expr()
+            if e is None:
+                self.__syntax_error()
+            el.append(e)
+
+        return ast.BinaryExprListAST(el, self.__now_ln)
+
+    def __parse_for_expr(self) -> ast.ForExprAST:
+        if self.__now_tok != 'for':
+            self.__syntax_error()
+
+        if self.__next_tok() != '(':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '('
+
+        mt = [None, None, None]
+        pt = (self.__parse_assign_expr_list,
+              self.__parse_test_expr,
+              self.__parse_binary_expr_list)
+        ct = (ast.AssignExprListAST,
+              None,
+              ast.BinaryExprListAST)
+        dt = (';', ';', ')')
+
+        for i in range(3):
+            if self.__now_tok == dt[i]:
+                if ct[i] is not None:
+                    mt[i] = ct[i]([], self.__now_ln)
+                self.__next_tok()
+            else:
+                mt[i] = pt[i]()
+
+                if self.__now_tok != dt[i]:
+                    self.__syntax_error()
+                self.__next_tok()
+
+        initl, test, binl = mt
+
+        forb = self.__parse_block()
+
+        return ast.ForExprAST(initl, test, binl, forb, self.__now_ln)
+
     def __parse_do_loop_expr(self) -> ast.DoLoopExprAST:
         ln = self.__now_ln
         block = self.__parse_block('do', 'loop', 
@@ -792,6 +859,9 @@ class Parser:
 
         elif nt == 'while':
             a = self.__parse_while_expr()
+
+        elif nt == 'for':
+            a = self.__parse_for_expr()
 
         elif nt == 'do':
             a = self.__parse_do_loop_expr()

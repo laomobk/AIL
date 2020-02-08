@@ -53,6 +53,9 @@ store_struct = 0x24
 
 binary_not = 0x25
 
+setup_for = 0x26
+clean_for = 0x27
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

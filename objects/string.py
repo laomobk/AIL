@@ -22,13 +22,13 @@ def str_init(self, anystr :str):
 def str_add(self, ostr :obj.AILObject) -> obj.AILObject:
     if type(ostr) != obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
-    if ostr['__class__'] != STRING_TYPE:
-        return AILRuntimeError('Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
+    # if ostr['__class__'] != STRING_TYPE:
+    #     return AILRuntimeError('Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
 
     ss = self['__value__']
     os = ostr['__value__']
 
-    rs = ss + os
+    rs = ss + str(os)
 
     return obj.ObjectCreater.new_object(STRING_TYPE, rs)
 
