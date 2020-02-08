@@ -37,12 +37,14 @@ _BYTE_CODE_SIZE = 2
 _MAX_RECURSION_DEPTH = 888
 _MAX_BREAK_POINT_NUMBER = 50
 
+_AIL_VERSION = '1.1 build'
+
 _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
     'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
     'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
     'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_py_getattr),
-    '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, "1.0Beta"),
+    '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, _AIL_VERSION),
     '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1,),
     'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
     'ord' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_ord),
@@ -60,6 +62,8 @@ _BUILTINS = {
         objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal_type),
     'isinstance' :
         objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_isinstance),
+    'str' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_str),
+    'repr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_repr),
 }
 
 

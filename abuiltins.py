@@ -177,3 +177,11 @@ def func_equal_type(a, b):
     if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
         return a['__class__'].otype == b['__class__'].otype
     return False
+
+
+def func_str(a):
+    return str(a)
+
+
+def func_repr(a):
+    return repr(a)

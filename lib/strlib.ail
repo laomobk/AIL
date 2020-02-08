@@ -38,11 +38,3 @@ fun strcmp(a, b) is
 	return 0
 end
 
-
-fun strcat(a, b) is
-    if __check_t(a) or __check_t(b) then
-        return null
-
-
-
-end

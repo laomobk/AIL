@@ -52,7 +52,7 @@ def structobj_str(self):
 
 STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', types.I_STRUCT_OBJ_TYPE,
                                 __init__=structobj_init,
-                                __strattr__=structobj_setattr,
+                                __setattr__=structobj_setattr,
                                 __getattr__=struct_getattr,
                                 __str__=structobj_str,
                                 __repr__=structobj_str)
