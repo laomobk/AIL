@@ -53,8 +53,11 @@ store_struct = 0x24
 
 binary_not = 0x25
 
+init_for  = 0x28
 setup_for = 0x26
 clean_for = 0x27
+
+clean_loop = 0x29
 
 COMP_EQ     = 0
 COMP_LEQ    = 1

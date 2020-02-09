@@ -1,7 +1,7 @@
 # Function and PyFunction
-import aobjects as obj
+from core import aobjects as obj
 import types as t
-from error import AILRuntimeError
+from core.error import AILRuntimeError
 import objects
 import inspect
 from . import types

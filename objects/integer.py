@@ -1,6 +1,6 @@
 # Integer
-import aobjects as obj
-from error import AILRuntimeError
+from core import aobjects as obj
+from core.error import AILRuntimeError
 from . import float as afloat, types
 import objects.bool as abool
 
@@ -24,6 +24,8 @@ def int_init(self :obj.AILObject, value :obj.AILObject):
         self.properties = o.properties
     elif obj.compare_type(value, INTEGER_TYPE):
         self['__value__'] = value['__value__']
+    else:
+        return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
 
 def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:

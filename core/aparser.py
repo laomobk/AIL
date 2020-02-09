@@ -1,7 +1,7 @@
-from alex import Token, TokenStream, Lex
-import asts as ast
-from error import error_msg
-from tokentype import *
+from core.alex import Token, TokenStream, Lex
+from core import asts as ast, test_utils
+from core.error import error_msg
+from core.tokentype import *
 
 __author__ = 'LaomoBK'
 
@@ -28,11 +28,12 @@ _cmp_op = (
 _FROM_MAIN = 0
 _FROM_FUNC = 1
 
+
 class Parser:
-    def __init__(self, ts :TokenStream, filename :str):
+    def __init__(self, filename :str):
         self.__filename = filename
-        self.__tok_stream = ts
-        self.__tok_list = ts.token_list
+        self.__tok_stream = None
+        self.__tok_list = None
 
         self.__tc = 0
 
@@ -960,7 +961,13 @@ class Parser:
 
         return ast.BlockExprAST(stmtl, self.__now_ln)
 
-    def parse(self) -> ast.BlockExprAST:
+    def parse(self, ts :TokenStream) -> ast.BlockExprAST:
+        self.__tok_stream = ts
+        self.__tok_list = ts.token_list
+
+        self.__tc = 0
+        self.__level = 0  # level 0
+
         while self.__now_tok.ttype == LAP_ENTER:  # skip enter at beginning
             self.__next_tok()
 
@@ -968,21 +975,21 @@ class Parser:
                 'A program should starts with \'begin\'',
                 "A program should ends with 'end'")
 
-    def test(self):
-        return self.parse()
+    def test(self, ts):
+        return self.parse(ts)
 
 
 def test_parse():
-    import test_utils
     import pprint
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser(ts, 'tests/test.ail')
-    t = p.test()
+    p = Parser('../tests/test.ail')
+    t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)
+
 
 if __name__ == '__main__':
     test_parse()

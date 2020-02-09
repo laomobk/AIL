@@ -1,6 +1,6 @@
 # String
-import aobjects as obj
-from error import AILRuntimeError
+from core import aobjects as obj
+from core.error import AILRuntimeError
 from objects import bool, integer
 from . import types
 

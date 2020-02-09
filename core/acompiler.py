@@ -1,9 +1,7 @@
-from typing import List, TypeVar, Union, Tuple
-import asts as ast
-from opcodes import *
-from tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
-import aobjects as obj
-import aobjects as objs
+from typing import List, Union, Tuple
+from core.opcodes import *
+from core.tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
+from core import aobjects as obj, aobjects as objs, asts as ast, test_utils
 
 import objects.string as astr
 import objects.integer as aint
@@ -160,10 +158,8 @@ class ByteCodeFileBuffer:
 
 
 class Compiler:
-    def __init__(self, astree :ast.BlockExprAST, 
-            mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
-                 ext_varname :tuple=(), single_line=False):
-        self.__now_ast :ast.ExprAST = astree
+    def __init__(self, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
+                 ext_varname :tuple=()):
         self.__general_bytecode = ByteCode()
         self.__buffer = ByteCodeFileBuffer()
 
@@ -173,17 +169,16 @@ class Compiler:
         self.__buffer.lnotab = self.__lnotab
         self.__buffer.name = filename
 
-        self.__lnotab.firstlineno = astree.stmts[0].ln \
-                if isinstance(astree, ast.BlockExprAST) and astree.stmts  \
-                else 1
-
         self.__lnotab.init_table()
 
         self.__flag = 0x0
 
         self.__mode = mode
 
-        self.__is_single_line = single_line
+        self.__is_single_line = False
+
+        self.__filename = filename
+        self.__ext_varname = ext_varname
 
         self.__init_ext_varname(ext_varname)
 
@@ -601,6 +596,7 @@ class Compiler:
 
     def __compile_while_stmt(self, tree :ast.WhileExprAST, extofs :int):
         bc = ByteCode()
+        extofs += _BYTE_CODE_SIZE
 
         b = tree.block
 
@@ -617,15 +613,17 @@ class Compiler:
         # compile again. first time for the length of test opcodes
         # second time for jump offset
 
-        bc += tc
-
         back = extofs  # move to first opcode in block
         to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2
         # including setup_while and jump over block
-        bc.add_bytecode(setup_while, to)
+
+        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE)  # jump over clean_loop
+        bc += tc
+        bc.add_bytecode(jump_if_false_or_pop, to)
 
         bc += bcc
         bc.add_bytecode(jump_absolute, back)
+        bc.add_bytecode(clean_loop, 0)
 
         return bc
 
@@ -640,7 +638,7 @@ class Compiler:
 
         jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 2
 
-        bc.add_bytecode(setup_doloop, jump_over)
+        bc.add_bytecode(setup_doloop, jump_over + _BYTE_CODE_SIZE)  # jump over clean_loop
 
         test_jump = extofs + len(bcc.blist)
 
@@ -651,13 +649,14 @@ class Compiler:
 
         jump_back = extofs + _BYTE_CODE_SIZE  # over setup_doloop
         bc.add_bytecode(jump_if_false_or_pop, jump_back)
+        bc.add_bytecode(clean_loop, 0)
 
         return bc
 
     def __compile_for_stmt(self, tree :ast.ForExprAST, extofs :int):
         bc = ByteCode()
 
-        extofs += _BYTE_CODE_SIZE  # for setup_forloop
+        extofs += _BYTE_CODE_SIZE  # for init_for
 
         initbc = ByteCode()
 
@@ -671,7 +670,7 @@ class Compiler:
         tbc = self.__compile_test_expr(tree.test, test_ext)
 
         block_ext = extofs + len(tbc.blist) + len(initbc.blist) + _BYTE_CODE_SIZE
-        # _byte_code_size is for jump_if_false_or_pop and setup_forloop
+        # _byte_code_size is for jump_if_false_or_pop
 
         blc = self.__compile_block(tree.block, block_ext)
 
@@ -683,7 +682,7 @@ class Compiler:
         jump_over = block_ext + len(blc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
         # _byte_code_size for jump_absolute
 
-        bc.add_bytecode(setup_for, jump_over)
+        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE)  # jump over clean_loop
         bc += initbc
         bc += tbc
         bc.add_bytecode(jump_if_false_or_pop, jump_over)
@@ -908,7 +907,14 @@ class Compiler:
 
         return bc
 
-    def compile(self, astree :ast.BlockExprAST) -> ByteCodeFileBuffer:
+    def compile(self, astree :ast.BlockExprAST, single_line=False) -> ByteCodeFileBuffer:
+        self.__init__(self.__mode, self.__filename, self.__ext_varname)
+        self.__is_single_line = single_line
+
+        self.__lnotab.firstlineno = astree.stmts[0].ln \
+            if isinstance(astree, ast.BlockExprAST) and astree.stmts \
+            else 1
+
         tbc = self.__compile_block(astree)
 
         # if tbc.blist and tbc.blist[-2] != return_value:
@@ -942,15 +948,14 @@ def convert_numeric_str_to_number(value :str) -> Union[int, float]:
 
 
 def test_compiler():
-    import test_utils
-    from aparser import Parser
-    from alex import Lex
+    from core.aparser import Parser
+    from core.alex import Lex
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser(ts, 'tests/test.ail')
-    t = p.parse()
+    p = Parser('../tests/test.ail')
+    t = p.parse(ts)
     #t = t.stmts[0]
 
     c = Compiler(t)

@@ -1,7 +1,6 @@
 import sys
 import os.path
-import debugger
-
+from core import debugger
 
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False

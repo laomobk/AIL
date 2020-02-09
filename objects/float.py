@@ -1,6 +1,6 @@
 # float
-import aobjects as obj
-from error import AILRuntimeError
+from core import aobjects as obj
+from core.error import AILRuntimeError
 from . import types
 
 
@@ -17,6 +17,8 @@ def float_init(self :obj.AILObject, value :obj.AILObject):
         self['__value__'] = value
     elif obj.compare_type(value, FLOAT_TYPE):
         self['__value__'] = value['__value__']
+    else:
+        return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
 
 def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:

@@ -1,6 +1,6 @@
-import aobjects as obj
+from core import aobjects as obj
 from objects import null
-from error import AILRuntimeError
+from core.error import AILRuntimeError
 from objects import types
 from objects import function as afunc
 

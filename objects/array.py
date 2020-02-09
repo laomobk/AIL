@@ -1,8 +1,8 @@
 
 from objects import types
 from objects import integer
-import aobjects as objs
-from error import AILRuntimeError
+from core import aobjects as objs
+from core.error import AILRuntimeError
 
 
 def array_init(self :objs.AILObject, pylist :list):

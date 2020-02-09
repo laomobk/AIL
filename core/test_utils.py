@@ -1,11 +1,9 @@
-import asts as ast
-import opcodes as opcs
-from acompiler import (
-            ByteCode,
-            ByteCodeFileBuffer, 
+from core.acompiler import (
+    ByteCodeFileBuffer,
             LineNumberTableGenerator
         )
-import aobjects as obj
+from core import aobjects as obj, asts as ast, opcodes as opcs
+
 
 def unpack_list(l :list):
     rl = []

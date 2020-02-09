@@ -1,6 +1,4 @@
-import inspect
-
-import error
+from core import error
 
 from objects import types
 
@@ -162,7 +160,10 @@ class ObjectCreater:
 
         # call init method
         init_mthd = obj['__init__']
-        init_mthd(obj, *args)
+        r = init_mthd(obj, *args)
+
+        if isinstance(r, error.AILRuntimeError):
+            return r
 
         return obj
 

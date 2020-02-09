@@ -1,8 +1,8 @@
 '''garbage collector'''
 import sys
 
-from error import AILRuntimeError
-import aobjects as obj
+from core.error import AILRuntimeError
+from core import aobjects as obj
 from objects import integer
 
 

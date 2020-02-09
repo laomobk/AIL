@@ -1,12 +1,10 @@
 
-from error import AILRuntimeError
-import aobjects as objs
+from core.error import AILRuntimeError
+from core import aobjects as objs
 
-import objects.bool as abool
 import objects.integer as aint
 import objects.string as astr
 import objects.float as afloat
-import objects.function as afunc
 import objects.wrapper as awrapper
 import objects.null as null
 import objects.type as atype

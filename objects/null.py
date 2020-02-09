@@ -1,4 +1,4 @@
-import aobjects as obj
+from core import aobjects as obj
 from objects import types
 
 

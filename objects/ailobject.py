@@ -1,7 +1,7 @@
 # normal methods for ail object
-import aobjects as obj
+from core import aobjects as obj
 from objects import bool
-from error import AILRuntimeError
+from core.error import AILRuntimeError
 
 
 def _is_reserved_attr_name(name :str):

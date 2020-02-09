@@ -1,15 +1,11 @@
 # virtual machine for AIL
 
-import aobjects as objs
+from core import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
 from typing import List
-from agc import GC
-from astate import InterpreterState
-import error
+from core.agc import GC
+from core.astate import MAIN_INTERPRETER_STATE
 import types
 import inspect
-import test_utils
-
-import abuiltins
 
 import objects.bool as abool
 import objects.integer as aint
@@ -21,14 +17,10 @@ import objects.null as null
 import objects.array as array
 import objects.struct as struct
 
-import aloader
-
-import opcodes as opcs
-
 import re
 import copy
 
-from opcodes import *
+from core.opcodes import *
 
 __author__ = 'LaomoBK'
 
@@ -72,6 +64,7 @@ class ForEnvironment:
     def __init__(self, temp_var=[]):
         self.temp_var = temp_var
 
+
 class Frame:
     def __init__(self, code :objs.AILCodeObject=None, varnames=[],
                  consts=[], globals={}):
@@ -91,7 +84,7 @@ class Frame:
 
 class Interpreter:
     def __init__(self):
-        self.__now_state = InterpreterState()  # init state
+        self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
         self.__frame_stack = self.__now_state.frame_stack
@@ -143,7 +136,7 @@ class Interpreter:
 
         self.__frame_stack.append(f)
 
-    def __print_err(self, err :error.AILRuntimeError):
+    def __print_err(self, err : error.AILRuntimeError):
         error.print_global_error(err)
 
     def __check_object(self, aobj :objs.AILObject) -> objs.AILObject:
@@ -204,10 +197,7 @@ class Interpreter:
                     'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
                     'TypeError')
             
-            r = m(a, b)
-
-            if isinstance(r, error.AILRuntimeError):
-                r = mb(b, a)
+            r = self.__check_object(m(a, b))
 
         else:
             if hasattr(a, pymth):
@@ -370,8 +360,7 @@ class Interpreter:
 
         cp = 0
         jump_to = 0
-            
-        
+
         try:
             while cp < len(code) - 1:  # included argv index
                 op = code[cp]
@@ -478,15 +467,7 @@ class Interpreter:
                     self.__add_break_point(argv)
 
                 elif op in (setup_doloop, setup_while):
-                    if op == setup_while:  # setup_while can test TOS
-                        tos = self.__pop_top()
-
-                        if tos['__value__'] is not None and not tos['__value__']:
-                            jump_to = argv
-                        else:
-                            self.__add_break_point(argv)
-                    else:
-                        self.__add_break_point(argv)
+                    self.__add_break_point(argv)
 
                 elif op == clean_for:
                     tfs = self.__for_env_stack.pop()
@@ -494,6 +475,11 @@ class Interpreter:
 
                     for vn in tv:
                         del self.__tof.variable[vn]
+
+                    self.__break_stack.pop()
+
+                elif op == clean_loop:
+                    self.__break_stack.pop()
 
                 elif op == jump_absolute:
                     jump_to = argv
@@ -653,8 +639,6 @@ class Interpreter:
                     o = objs.ObjectCreater.new_object(
                         struct.STRUCT_TYPE, name, nl)
 
-                    self.__store_var(name, o)
-
                 if jump_to != cp:
                     cp = jump_to
                 else:
@@ -664,7 +648,6 @@ class Interpreter:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
 
     def exec(self, cobj, frame=None):
-
         if not frame:
             f = Frame()
             f.code = cobj
@@ -680,16 +663,16 @@ class Interpreter:
 
 
 if __name__ == '__main__':
-    from alex import Lex
-    from aparser import Parser
-    from acompiler import Compiler
+    from core.alex import Lex
+    from core.aparser import Parser
+    from core.acompiler import Compiler
     
     l = Lex('tests/test.ail')
     ts = l.lex()
 
-    t = Parser(ts, 'tests/test.ail').parse()
+    t = Parser('tests/test.ail').parse(ts)
 
-    co = Compiler(t, filename='<TEST>').compile(t)
+    co = Compiler(filename='<TEST>').compile(t)
 
     inter = Interpreter()
     inter.exec(co.code_object)

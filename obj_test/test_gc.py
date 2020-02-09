@@ -1,5 +1,5 @@
-from agc import GC
-import aobjects as obj
+from core.agc import GC
+from core import aobjects as obj
 import sys
 
 def test():

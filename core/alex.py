@@ -1,14 +1,15 @@
 #用于ail的词法分析器
- 
+
+from core.tokentype import *
+from core.error import error_msg
+
 __author__ = 'LaomoBK'
  
 ALEX_VERSION_NUM = (0, 1)   #数字版本号
 ALEX_VERSION_EXTRA = 'Beta' #额外版本信息
 ALEX_VERSION_DATE = (10, 27, 2019)
- 
-from tokentype import *
-from error import error_msg
- 
+
+
 def skip_comment_line(source :str, cursor :int):
     '''
     source : 源码文件
@@ -24,7 +25,8 @@ def skip_comment_line(source :str, cursor :int):
         ccur += 1
     
     return cur + 1  #跳过回车
- 
+
+
 def skip_comment_block(source :str, cursor :int,) -> tuple:
     '''
     source : 源码文件
@@ -128,6 +130,9 @@ def get_number(source :str, cursor :int) -> tuple:
         buffer += source[ccur]
         cur += 1
         ccur += 1
+
+    if not buffer[-1].isnumeric():
+        return (-1, 0)
  
     return (cur, buffer)
 
@@ -341,10 +346,18 @@ class Lex:
             if self.__cursor.value + ni < len(self.__source)       \
             else '<EOF>'
  
-    def lex(self) -> TokenStream:
+    def lex(self, filename=None) -> TokenStream:
+        if filename is not None:
+            self.__filename = filename
+            self.__source = open(filename, 'r', encoding='UTF-8').read()
+
+            self.__cursor = Cursor()  # 源码的字符指针
+            self.__stream = TokenStream()
+            self.__ln = 1  # 行号
+
+            self.__blevel = 0
+
         buffer = ''
- 
-        #print(self.__source)
         
         while self.__chp < len(self.__source):
             c = self.__chnow
@@ -655,7 +668,7 @@ class Lex:
             else:
                 error_msg(self.__ln, 'Unknown character', self.__filename)
  
-        if self.__nextch(-1) == '\\n':
+        if self.__nextch(-1) != '\\n':
             self.__stream.append(Token(
                 '\n',
                 LAP_ENTER,
@@ -669,7 +682,8 @@ class Lex:
             ))  #加回车是有利于语法分析行的检测
  
         return self.__stream
- 
+
+
 if __name__ == '__main__':
     import pprint
 

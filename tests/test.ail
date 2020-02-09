@@ -1,17 +1,16 @@
 begin
 
-struct Human is
-    name
-    say_hi
-end
-
-fun say_hi() is
-    print "Hi, my name is" ; this.name
-end
-
-h = new(Human)
-h.name = 'Nezha'
-h.say_hi = say_hi  // bound function to h
-h.say_hi()
+i = 0
+while i < 10 then
+    j = 0
+    while j < 2 then
+        print j ; i
+        j = j + 1
+    wend
+    i = i + 1
+    if i == 5 then
+        break
+    endif
+wend
 
 end

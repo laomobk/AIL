@@ -1,18 +1,16 @@
 import sys
 
-from alex import TokenStream, Token, Lex
-from aparser import Parser
-from acompiler import Compiler
-from avm import Interpreter, Frame, _BUILTINS
+from core.alex import Lex
+from core.aparser import Parser
+from core.acompiler import Compiler
+from core.avm import Interpreter, Frame, _BUILTINS
 
 from objects import function
 from objects import string
 
-import aobjects as objs
+from core import aobjects as objs, error, tokentype as tokent
 
-import tokentype as tokent
-
-import error
+import os
 
 try:
     import readline
@@ -35,6 +33,7 @@ _SHELL_NAMESPACE = {
 
 _SHELL_NAMESPACE.update(_BUILTINS)
 
+
 class Shell:
     def __init__(self):
         self.__buffer = []
@@ -44,7 +43,6 @@ class Shell:
 
         self.__more_level = 0
 
-
         self.__temp_name = '.temp.tmp'
         self.__fbuffer = open(self.__temp_name,'w')
 
@@ -52,6 +50,11 @@ class Shell:
 
         self.__main_frame = Frame()
         self.__main_frame.variable = _SHELL_NAMESPACE
+
+        self.__lexer = Lex(self.__temp_name)
+        self.__parser = Parser(self.__temp_name)
+        self.__compiler = Compiler(filename='<shell>')
+        self.__inter = Interpreter()
 
     def __write(self, line :str):
         if self.__fbuffer.closed:
@@ -104,16 +107,15 @@ class Shell:
 
         self.__write(self.__program % line)
 
-        ts = Lex(self.__temp_name).lex()
-        t = Parser(ts, self.__temp_name).parse()
-        cobj = Compiler(t, filename='<shell>', 
-                single_line=single_line).compile(t).code_object
-    
+        t = self.__lexer.lex(self.__temp_name)
+        t = self.__parser.parse(t)
+        cobj = self.__compiler.compile(t, single_line=single_line).code_object
+
         self.__main_frame.code = cobj
         self.__main_frame.varnames = cobj.varnames
         self.__main_frame.consts = cobj.consts
 
-        Interpreter().exec(cobj, self.__main_frame)
+        self.__inter.exec(cobj, self.__main_frame)
 
         if self.__main_frame.stack:
             print(repr(self.__main_frame.stack.pop()))
@@ -127,6 +129,12 @@ class Shell:
         return open(self.__temp_name).read()
 
     def run_shell(self):
+        try:
+            self.__run_shell()
+        finally:
+            os.remove(self.__temp_name)
+
+    def __run_shell(self):
         self.__print_welcome_text()
 
         ps = self.ps1
@@ -179,6 +187,7 @@ class Shell:
                     string.convert_to_string(self.__read_temp_file())
 
             open(self.__temp_name, 'w').close()  # reset temp
+
 
 if __name__ == '__main__':
     Shell().run_shell()

@@ -3,6 +3,7 @@
 import sys
 from importlib import import_module
 
+
 def launch_py_test(test_name):
     try:
         mod = import_module('obj_test.%s' % test_name)
@@ -16,7 +17,7 @@ def launch_py_test(test_name):
 
 def launch_main(argv :list):
     if len(argv) == 0:
-        import ashell
+        from core import ashell
         ashell.Shell().run_shell()
         return
 
@@ -27,10 +28,10 @@ def launch_main(argv :list):
     fpath = argv[0]
 
     try:
-        from alex import Lex
-        from aparser import Parser
-        from acompiler import Compiler
-        from avm import Interpreter
+        from core.alex import Lex
+        from core.aparser import Parser
+        from core.acompiler import Compiler
+        from core.avm import Interpreter
 
         ast = Parser(Lex(fpath).lex(), fpath).parse()
         Interpreter().exec(Compiler(ast, filename=fpath).compile(ast).code_object)

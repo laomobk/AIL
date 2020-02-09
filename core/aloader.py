@@ -1,14 +1,11 @@
 # module loader
 
 import os.path
-from alex import Lex
-from aparser import Parser
-from acompiler import Compiler
-import error
+from core.alex import Lex
+from core.aparser import Parser
+from core.acompiler import Compiler
 
-import aobjects as objs
-
-import debugger
+from core import aobjects as objs, error
 
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
@@ -77,7 +74,7 @@ class ModuleLoader:
         return namespace
 
     def load_namespace(self, module_name :str) -> dict:
-        from avm import Interpreter, Frame
+        from core.avm import Interpreter, Frame
 
         module_name = module_name.replace('.', '/')
 
