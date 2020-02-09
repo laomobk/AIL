@@ -1,9 +1,17 @@
 begin
 
-for(i=0 ; i<10 ; i=i+1) then
-    print i
+struct Human is
+    name
+    say_hi
 end
 
-print i
+fun say_hi() is
+    print "Hi, my name is" ; this.name
+end
+
+h = new(Human)
+h.name = 'Nezha'
+h.say_hi = say_hi  // bound function to h
+h.say_hi()
 
 end

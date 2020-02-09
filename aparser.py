@@ -11,7 +11,7 @@ _keywords_uc = (
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
         'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
-        'STRUCT', 'MOD'
+        'STRUCT', 'MOD', 'FOR'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')

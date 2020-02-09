@@ -873,7 +873,7 @@ class Compiler:
                 tbc = self.__compile_for_stmt(et, total_offset)
 
             elif type(et) in ast.BINARY_AST_TYPES:
-                tbc = self.__compile_binary_expr(et)
+                tbc = self.__compile_binary_expr(et, is_single=True)
 
                 if not self.__is_single_line:
                     tbc.add_bytecode(pop_top, 0)

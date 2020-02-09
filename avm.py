@@ -26,6 +26,7 @@ import aloader
 import opcodes as opcs
 
 import re
+import copy
 
 from opcodes import *
 
@@ -290,6 +291,21 @@ class Interpreter:
                 f.variable = argd
                 f.code = c
                 f.consts = c.consts
+                
+                try:
+                    if func['__this__'] is not None \
+                            and objs.compare_type(
+                                    func['__this__'], struct.STRUCT_OBJ_TYPE):
+                        this = copy.copy(func['__this__'])
+                        this._pthis_ = True  # add _pthis_ attr
+
+                        f.variable['this'] = this  # add this pointer
+                        f.variable[this['__type__']['__name__']] = this
+
+                        self.__incref(this)
+                        self.__incref(this)
+                except TypeError:
+                    pass
 
                 try:
                     self.__run_bytecode(c, f)
@@ -446,7 +462,9 @@ class Interpreter:
                     tos = self.__pop_top()
 
                     if len(self.__frame_stack) > 1:
-                        self.__frame_stack.pop()
+                        f = self.__frame_stack.pop()
+                        for o in f.variable.values():
+                            self.__decref(o)
 
                         self.__push_back(tos)
 
@@ -607,9 +625,9 @@ class Interpreter:
                             self.__raise_error('%s object is not subscriptable' %
                                                o['__class__'].name, 'TypeError')
 
-                        rtn = self.__check_object(afunc.call(o['__setitem__'], o, i, v))
+                        self.__check_object(afunc.call(o['__setitem__'], o, i, v))
 
-                        self.__push_back(rtn)
+                    self.__push_back(v)
 
                 elif op == load_attr:
                     o = self.__pop_top()
@@ -625,6 +643,8 @@ class Interpreter:
                     v = self.__pop_top()
 
                     self.__check_object(o['__setattr__'](o, ni, v))
+
+                    self.__push_back(v)
 
                 elif op == store_struct:
                     name = self.__pop_top()

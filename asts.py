@@ -363,5 +363,6 @@ BINARY_AST_TYPES = (
         CallExprAST,
         ArrayAST,
         SubscriptExprAST,
-        MemberAccessAST
+        MemberAccessAST,
+        AssignExprAST
         )

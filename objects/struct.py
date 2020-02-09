@@ -2,6 +2,19 @@ import aobjects as obj
 from objects import null
 from error import AILRuntimeError
 from objects import types
+from objects import function as afunc
+
+
+def _is_reserved_name(name):
+    return name[:2] == '__'
+
+
+def _check_bound(self, aobj :obj.AILObject):
+    if isinstance(aobj, obj.AILObject) and \
+            aobj['__class__'] == afunc.FUNCTION_TYPE:
+        self.reference += 1
+        aobj['__this__'] = self  # bound self to __this__
+    return aobj
 
 
 def struct_init(self, name :str, name_list :list):
@@ -12,14 +25,17 @@ def struct_init(self, name :str, name_list :list):
 
 
 def structobj_init(self, name :str, members :dict, type :obj.AILObject):
-    self.members = members
+    self.members = {k : _check_bound(self, v)
+                        for k, v in members.items() }
 
     self['__type__'] = type
     self['__name__'] = name
 
 
 def struct_getattr(self, name :str):
-    if name in self.members:
+    pthis = hasattr(self, '_pthis_')
+    
+    if name in self.members and (pthis or not _is_reserved_name(name)):
         return self.members[name]
 
     return AILRuntimeError('struct \'%s\' has no attribute \'%s\'' % 
@@ -28,8 +44,10 @@ def struct_getattr(self, name :str):
 
 
 def structobj_setattr(self, name :str, value):
-    if name in self.members:
-        self.members[name] = value
+    pthis = hasattr(self, '_pthis_')   # check _pthis_ attr
+
+    if name in self.members and (pthis or not _is_reserved_name(name)):
+        self.members[name] = _check_bound(self, value)
     else:
         return AILRuntimeError('struct \'%s\' object has no attribute \'%s\'' %
                                (self['__name__'], name),

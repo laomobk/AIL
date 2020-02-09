@@ -161,7 +161,7 @@ def get_string(source :str, cursor :int) -> tuple:
  
     while ccur < len(source):
         if instr and source[ccur] == '\\' and slen > ccur + 1 \
-                and source[ccur + 1] in ('n', 'r', 't', 'a', '\'', '"'):
+                and source[ccur + 1] in ('n', 'r', 't', 'a', '\'', '"', '\\'):
             # escape character
             target = {
                 'n' : '\n',
@@ -170,7 +170,12 @@ def get_string(source :str, cursor :int) -> tuple:
                 'a' : '\a',
                 '\'' : '\'',
                 '"' : '"',
+                '\\' : '\\'
             }.get(source[ccur + 1])
+
+            if target == '\\':
+                source = source[:ccur+1] + 'N' + source[ccur+2:] 
+                # 随意取一个字符，防止发生"转义"
 
             buffer += target
 
