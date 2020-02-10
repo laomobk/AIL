@@ -17,16 +17,20 @@ def _check_bound(self, aobj :obj.AILObject):
     return aobj
 
 
-def struct_init(self, name :str, name_list :list):
+def struct_init(self, name :str, name_list :list,
+                protected_members :list):
     d = {n : null.null for n in name_list}  # init members
-
+    
+    self.protected = protected_members
     self.members = d
     self['__name__'] = name
 
 
-def structobj_init(self, name :str, members :dict, type :obj.AILObject):
+def structobj_init(self, name :str, members :dict, type :obj.AILObject,
+                   protected_members :list):
     self.members = {k : _check_bound(self, v)
-                        for k, v in members.items() }
+                        for k, v in members.items()}
+    self.protected = protected_members
 
     self['__type__'] = type
     self['__name__'] = name
@@ -35,7 +39,8 @@ def structobj_init(self, name :str, members :dict, type :obj.AILObject):
 def struct_getattr(self, name :str):
     pthis = hasattr(self, '_pthis_')
     
-    if name in self.members and (pthis or not _is_reserved_name(name)):
+    if name in self.members and (
+            pthis or not _is_reserved_name(name)):
         return self.members[name]
 
     return AILRuntimeError('struct \'%s\' has no attribute \'%s\'' % 
@@ -45,6 +50,9 @@ def struct_getattr(self, name :str):
 
 def structobj_setattr(self, name :str, value):
     pthis = hasattr(self, '_pthis_')   # check _pthis_ attr
+
+    if name in self.protected:
+        return AILRuntimeError('Cannot modify a protected attribute.', 'AttributeError')
 
     if name in self.members and (pthis or not _is_reserved_name(name)):
         self.members[name] = _check_bound(self, value)

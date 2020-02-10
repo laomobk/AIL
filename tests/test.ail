@@ -1,16 +1,13 @@
 begin
 
-i = 0
-while i < 10 then
-    j = 0
-    while j < 2 then
-        print j ; i
-        j = j + 1
-    wend
-    i = i + 1
-    if i == 5 then
-        break
-    endif
-wend
-
+struct c is
+protected a
+b
+protected c
+end
+cc=new(c, {1, 2, 3})
+cc.b=8
+cc.a = 9
+print cc.a
+print cc.b
 end

@@ -71,3 +71,15 @@ PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_
                                      __str__=pyfunc_func_str,
                                      __repr__=pyfunc_func_str)
 
+
+def convert_to_func_wrapper(pyf):
+    import inspect
+
+    if obj.compare_type(pyf, PY_FUNCTION_TYPE) or \
+            obj.compare_type(pyf, FUNCTION_TYPE):
+                return pyf
+
+    if inspect.isfunction(pyf) or inspect.isbuiltin(pyf):
+        return obj.ObjectCreater.new_object(
+                PY_FUNCTION_TYPE, pyf)
+

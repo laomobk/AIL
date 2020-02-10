@@ -11,7 +11,7 @@ _keywords_uc = (
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
         'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
-        'STRUCT', 'MOD', 'FOR'
+        'STRUCT', 'MOD', 'FOR', 'PROTECTED'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -741,6 +741,7 @@ class Parser:
         self.__next_tok()  # eat ENTER
 
         vl = []
+        pl = []
 
         while self.__now_tok.ttype == LAP_ENTER:
             self.__next_tok()
@@ -748,6 +749,13 @@ class Parser:
         while self.__now_tok != 'end':
             if self.__now_tok.ttype != LAP_IDENTIFIER:
                 self.__syntax_error()
+            
+            if self.__now_tok == 'protected':
+                nt = self.__next_tok()
+                if nt.ttype != LAP_IDENTIFIER:
+                    self.__syntax_error()
+                pl.append(nt.value)
+
             vl.append(self.__now_tok.value)
 
             if self.__next_tok().ttype != LAP_ENTER:
@@ -763,7 +771,7 @@ class Parser:
 
         self.__next_tok()  # eat 'end'
 
-        return ast.StructDefineAST(name, vl, ln)
+        return ast.StructDefineAST(name, vl, pl, ln)
 
     def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
         ln = self.__now_ln
@@ -982,10 +990,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('../tests/test.ail')
+    l = Lex('tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)

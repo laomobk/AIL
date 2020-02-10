@@ -107,6 +107,7 @@ def get_number(source :str, cursor :int) -> tuple:
     seen_hex = False
 
     e_char = 'xXABCDEFabcdef.'
+    e_char2 = 'ABCDEFabcdef'
  
     while ccur < len(source):
         if not (source[ccur].isnumeric() or source[ccur] in e_char):
@@ -131,7 +132,7 @@ def get_number(source :str, cursor :int) -> tuple:
         cur += 1
         ccur += 1
 
-    if not buffer[-1].isnumeric():
+    if not (buffer[-1].isnumeric() or buffer[-1] in e_char2):
         return (-1, 0)
  
     return (cur, buffer)
@@ -684,9 +685,13 @@ class Lex:
         return self.__stream
 
 
-if __name__ == '__main__':
+def test_lex():
     import pprint
 
     ts = Lex('tests/test.ail').lex()
 
     pprint.pprint(ts.token_list)
+
+
+if __name__ == '__main__':
+    test_lex()

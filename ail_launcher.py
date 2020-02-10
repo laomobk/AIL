@@ -1,7 +1,11 @@
 # AIL Launcher
 
+import os.path
 import sys
 from importlib import import_module
+from core import shared
+
+shared.GLOBAL_SHARED_DATA.cwd = os.path.abspath(__file__)
 
 
 def launch_py_test(test_name):
@@ -33,10 +37,10 @@ def launch_main(argv :list):
         from core.acompiler import Compiler
         from core.avm import Interpreter
 
-        ast = Parser(Lex(fpath).lex(), fpath).parse()
+        ast = Parser(fpath).parse(Lex(fpath).lex())
         Interpreter().exec(Compiler(ast, filename=fpath).compile(ast).code_object)
 
-    except Exception as e:
+    except FileExistsError as e:
         print('AIL : can\'t open file \'%s\' : %s' % (fpath, str(e)))
         sys.exit(1)
 

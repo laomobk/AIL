@@ -59,6 +59,8 @@ clean_for = 0x27
 
 clean_loop = 0x29
 
+set_protected = 0x2a
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

@@ -318,9 +318,10 @@ class LoadAST:
 
 
 class StructDefineAST:
-    def __init__(self, name :str, name_list :list, ln :int):
+    def __init__(self, name :str, name_list :list, protected_list :list, ln :int):
         self.name = name
         self.name_list = name_list
+        self.protected_list = protected_list
         self.ln = ln
 
 

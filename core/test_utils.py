@@ -124,7 +124,8 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.StructDefineAST):
         return {'StructDefineAST': {
                 'name': make_ast_tree(a.name),
-                'name_list': make_ast_tree(a.name_list)}}
+                'name_list': make_ast_tree(a.name_list),
+                'protected' : make_ast_tree(a.protected_list)}}
 
     elif isinstance(a, ast.NotTestAST):
         return {'NotTestAST' : {'expr' : make_ast_tree(a.expr)}}

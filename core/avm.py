@@ -4,6 +4,7 @@ from core import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
 from typing import List
 from core.agc import GC
 from core.astate import MAIN_INTERPRETER_STATE
+from core import shared
 import types
 import inspect
 
@@ -22,6 +23,8 @@ import copy
 
 from core.opcodes import *
 
+from core import corecom as ccom
+
 __author__ = 'LaomoBK'
 
 # GLOBAL SETTINGS
@@ -32,11 +35,13 @@ _MAX_BREAK_POINT_NUMBER = 50
 
 _AIL_VERSION = '1.1 build'
 
+shared.GLOBAL_SHARED_DATA = _MAX_RECURSION_DEPTH
+
 _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
     'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
     'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
-    'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_py_getattr),
+    # 'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_py_getattr),
     '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, _AIL_VERSION),
     '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1,),
     'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
@@ -57,12 +62,20 @@ _BUILTINS = {
         objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_isinstance),
     'str' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_str),
     'repr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_repr),
+    '_get_ccom' : afunc.convert_to_func_wrapper(ccom.get_cc_object),
+    'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct)
 }
 
 
 class ForEnvironment:
+    __slots__ = ['temp_var']
     def __init__(self, temp_var=[]):
         self.temp_var = temp_var
+
+
+class _ProtectedSignal:
+    __slots__ = []
+PROTECTED_SIGNAL = _ProtectedSignal()
 
 
 class Frame:
@@ -139,9 +152,23 @@ class Interpreter:
     def __print_err(self, err : error.AILRuntimeError):
         error.print_global_error(err)
 
-    def __check_object(self, aobj :objs.AILObject) -> objs.AILObject:
+    def __check_object(self, aobj :objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
             error.print_global_error(aobj, self.__tof.code.name)
+        if not isinstance(aobj, objs.AILObject) and not not_convert:
+            target = {
+                str: astr.STRING_TYPE,
+                int: aint.INTEGER_TYPE,
+                float: afloat.FLOAT_TYPE,
+                bool: abool.BOOL_TYPE,
+                list: array.ARRAY_TYPE,
+            }.get(type(aobj), awrapper.WRAPPER_TYPE)
+
+            if aobj is None:
+                aobj = null.null
+            else:
+                aobj = objs.ObjectCreater.new_object(target, aobj)
+
         return aobj
 
     def __store_var(self, name, value):
@@ -341,6 +368,7 @@ class Interpreter:
                         int: aint.INTEGER_TYPE,
                         float: afloat.FLOAT_TYPE,
                         bool: abool.BOOL_TYPE,
+                        list: array.ARRAY_TYPE
                     }.get(type(rtn), awrapper.WRAPPER_TYPE)
 
                     if rtn is None:
@@ -594,7 +622,7 @@ class Interpreter:
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 
-                    v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name))
+                    v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
 
                     if v is None:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
@@ -635,9 +663,16 @@ class Interpreter:
                 elif op == store_struct:
                     name = self.__pop_top()
                     nl = [self.__pop_top() for _ in range(argv)][::-1]
+                    pl = [nl[i - 1] for i in range(len(nl)) if nl[i] == PROTECTED_SIGNAL]
+                    nl = [x for x in nl if x != PROTECTED_SIGNAL]
 
                     o = objs.ObjectCreater.new_object(
-                        struct.STRUCT_TYPE, name, nl)
+                        struct.STRUCT_TYPE, name, nl, pl)
+
+                    self.__store_var(name, o)
+
+                elif op == set_protected:
+                    self.__push_back(PROTECTED_SIGNAL)
 
                 if jump_to != cp:
                     cp = jump_to

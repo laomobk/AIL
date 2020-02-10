@@ -6,10 +6,12 @@ from core.aparser import Parser
 from core.acompiler import Compiler
 
 from core import aobjects as objs, error
+from core import shared
 
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
-LOAD_MODULE_PATH = ('.', 'lib/')
+LOAD_MODULE_PATH = ['.', 'lib/']
+shared.GLOBAL_SHARED_DATA.find_path = LOAD_MODULE_PATH
 
 
 '''
@@ -90,8 +92,8 @@ class ModuleLoader:
             return self.__add_to_loaded(module_name, self.__load_py_namespace(p))
 
         elif self.__get_type(p) == 'ail':
-            ast = Parser(Lex(p).lex(), p).parse()
-            cobj = Compiler(ast, filename=p).compile(ast).code_object
+            ast = Parser(p).parse(Lex(p).lex())
+            cobj = Compiler(filename=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
 

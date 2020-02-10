@@ -771,7 +771,7 @@ class Compiler:
 
         ext = [c.value for c in tree.arg_list.exp_list]
 
-        cobj = Compiler(tree.block, mode=COMPILER_MODE_FUNC, filename=tree.name,
+        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=tree.name,
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
 
@@ -804,14 +804,18 @@ class Compiler:
     def __compile_struct(self, tree :ast.StructDefineAST) -> ByteCode:
         bc = ByteCode()
 
+        plist = tree.protected_list
+
         for n in tree.name_list:
             ni = self.__buffer.get_or_add_varname_index(n)
             bc.add_bytecode(load_varname, ni)
+            if n in plist:
+                bc.add_bytecode(set_protected, 0)
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
         bc.add_bytecode(load_varname, ni)
-        bc.add_bytecode(store_struct, len(tree.name_list))
+        bc.add_bytecode(store_struct, len(tree.name_list) + len(plist))
 
         return bc
 
@@ -951,10 +955,10 @@ def test_compiler():
     from core.aparser import Parser
     from core.alex import Lex
 
-    l = Lex('../tests/test.ail')
+    l = Lex('tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('tests/test.ail')
     t = p.parse(ts)
     #t = t.stmts[0]
 

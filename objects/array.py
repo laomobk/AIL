@@ -69,3 +69,8 @@ ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
                                 __str__=array_str,
                                 __repr__=array_str,
                                 __len__=array_len)
+
+
+def convert_to_array(iterable):
+    if type(iterable) in (list, set, tuple):
+        objs.ObjectCreater.new_object(ARRAY_TYPE, list(iterable))

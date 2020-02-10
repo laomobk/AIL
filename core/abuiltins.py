@@ -28,6 +28,7 @@ def func_neg(x :objs.AILObject):
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
 
 
+'''
 def func_py_getattr(pyobj, name):
     if isinstance(pyobj, objs.AILObject) and \
             pyobj['__class__'] == awrapper.WRAPPER_TYPE:
@@ -43,6 +44,7 @@ def func_py_getattr(pyobj, name):
         return AILRuntimeError('\'%s\' object has attribute \'%s\'' % (str(type(o)), str(name)))
     else:
         return AILRuntimeError('A python object wrapper required.', 'TypeError')
+'''
 
 
 def func_chr(x):
@@ -133,9 +135,10 @@ def new_struct(struct_type, default_list=None):
         md = {k:null.null for k in m}
 
     n = struct_type['__name__']
+    pl = struct_type.protected
 
     return objs.ObjectCreater.new_object(
-        struct.STRUCT_OBJ_TYPE, n, md, struct_type)
+        struct.STRUCT_OBJ_TYPE, n, md, struct_type, pl)
 
 
 def func_len(o :objs.AILObject):
@@ -183,3 +186,17 @@ def func_str(a):
 
 def func_repr(a):
     return repr(a)
+
+
+def func_show_struct(sobj):
+    if not (objs.compare_type(sobj, struct.STRUCT_OBJ_TYPE) or
+                objs.compare_type(sobj, struct.STRUCT_TYPE)):
+        return AILRuntimeError('show_struct needs a struct type or object', 'TypeError')
+    
+    ln1 = str(sobj) + '\n'
+    memb = sobj.members.items()
+    meml = '\n'.join(['\t%s : %s' % (k, v) for k, v in memb 
+                        if k[:2] != '__'])
+    block = '{\n%s\n}' % meml
+
+    return ln1 + block
