@@ -9,11 +9,11 @@ from core.shared import GLOBAL_SHARED_DATA
 
 
 def _get_sys_path():
-    return shared.SH_FIND_PATH
+    return shared.GLOBAL_SHARED_DATA.find_path
 
 
 def _get_recur_depth():
-    return shared.MAX_RECURSION_DEPTH
+    return shared.GLOBAL_SHARED_DATA.max_recursion_depth
 
 
 def get_cc_object():
@@ -24,6 +24,7 @@ def get_cc_object():
                 '_refresh' : convert_to_func_wrapper(get_cc_object)
             }
 
-    _ccom_t = ObjectCreater.new_object(STRUCT_OBJ_TYPE, 'CCOM_T', _ccom_t_memb, null)
+    _ccom_t = ObjectCreater.new_object(
+        STRUCT_OBJ_TYPE, 'CCOM_T', _ccom_t_memb, null, _ccom_t_memb.keys())
 
     return _ccom_t

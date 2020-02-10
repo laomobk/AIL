@@ -16,7 +16,7 @@ def array_init(self :objs.AILObject, pylist :list):
 
 
 def array_str(self :objs.AILObject):
-    return '{%s}' % (', '.join([str(x) for x in self['__value__']]))
+    return '{%s}' % (', '.join([repr(x) for x in self['__value__']]))
 
 
 def _check_index(self, index):

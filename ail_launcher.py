@@ -5,7 +5,14 @@ import sys
 from importlib import import_module
 from core import shared
 
-shared.GLOBAL_SHARED_DATA.cwd = os.path.abspath(__file__)
+
+# load AIL_PATH in environ
+try:
+    AIL_DIRECTORY = os.environ['AIL_PATH']
+except KeyError:
+    AIL_DIRECTORY = os.path.split(os.path.abspath(__file__))[0]
+
+shared.GLOBAL_SHARED_DATA.cwd = AIL_DIRECTORY
 
 
 def launch_py_test(test_name):

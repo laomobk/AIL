@@ -11,7 +11,7 @@ def _is_reserved_name(name):
 
 def _check_bound(self, aobj :obj.AILObject):
     if isinstance(aobj, obj.AILObject) and \
-            aobj['__class__'] == afunc.FUNCTION_TYPE:
+            aobj['__class__'] in (afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
         self.reference += 1
         aobj['__this__'] = self  # bound self to __this__
     return aobj
@@ -51,7 +51,7 @@ def struct_getattr(self, name :str):
 def structobj_setattr(self, name :str, value):
     pthis = hasattr(self, '_pthis_')   # check _pthis_ attr
 
-    if name in self.protected:
+    if name in self.protected and not pthis:
         return AILRuntimeError('Cannot modify a protected attribute.', 'AttributeError')
 
     if name in self.members and (pthis or not _is_reserved_name(name)):
@@ -73,7 +73,10 @@ def struct_str(self):
 
 
 def structobj_str(self):
-    return '<struct \'%s\' object at %s>' % (self['__name__'], hex(id(self)))
+    return '<struct \'%s\' object at %s> -> {\n%s\n}' % (self['__name__'], hex(id(self)),
+                                                 '\n'.join(['\t%s%s : %s' % (
+                                                     '' if k not in self.protected else '$P ', k, repr(v)) for k, v in self.members.items()
+                                                            if k[:2] != '__']))
 
 
 STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', types.I_STRUCT_OBJ_TYPE,

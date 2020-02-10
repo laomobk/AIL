@@ -10,9 +10,6 @@ from core import shared
 
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
-LOAD_MODULE_PATH = ['.', 'lib/']
-shared.GLOBAL_SHARED_DATA.find_path = LOAD_MODULE_PATH
-
 
 '''
 如果你想要创建一个 AIL 的 Python 模块

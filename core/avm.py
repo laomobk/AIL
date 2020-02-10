@@ -35,7 +35,7 @@ _MAX_BREAK_POINT_NUMBER = 50
 
 _AIL_VERSION = '1.1 build'
 
-shared.GLOBAL_SHARED_DATA = _MAX_RECURSION_DEPTH
+shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 
 _BUILTINS = {
     'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
@@ -69,6 +69,7 @@ _BUILTINS = {
 
 class ForEnvironment:
     __slots__ = ['temp_var']
+
     def __init__(self, temp_var=[]):
         self.temp_var = temp_var
 
@@ -697,7 +698,7 @@ class Interpreter:
         self.__run_bytecode(cobj, f)
 
 
-if __name__ == '__main__':
+def test_vm():
     from core.alex import Lex
     from core.aparser import Parser
     from core.acompiler import Compiler
@@ -711,3 +712,7 @@ if __name__ == '__main__':
 
     inter = Interpreter()
     inter.exec(co.code_object)
+
+
+if __name__ == '__main__':
+    test_vm()

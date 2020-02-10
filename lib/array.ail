@@ -3,25 +3,7 @@ begin
 load 'types'
 
 
-struct list_t is
-    _ele
-    size
-end
-
-
-fun _check_t(o) is
-    return isinstance(o, list_t)
-end
-
-
-fun List() is
-    lo = new(list_t, {{}, 0})
-
-    return lo
-end
-
-
-fun _copy_new(elen, eleo) is
+fun __copy_new(elen, eleo) is
     // copy old element list to new element list
 
     i = 0
@@ -31,22 +13,19 @@ fun _copy_new(elen, eleo) is
     wend
 end
 
+
 /*
  * lapped(list_t a, any o)
  * append o to the end of a
  */
-fun lappend(a, o) is
-    if not _check_t(a) then
-        return null
-    endif
+fun __append(o) is
+    eleo = this.__ele
+    this.__ele = array(this.size + 1)
 
-    eleo = a._ele
-    a._ele = array(a.size + 1)
+    this.__copy_new(this.__ele, eleo)
+    this.__ele[-1] = o
 
-    _copy_new(a._ele, eleo)
-    a._ele[-1] = o
-
-    a.size = a.size + 1
+    this.size = this.size + 1
 
     return true
 end
@@ -56,12 +35,12 @@ end
  * lremove(list_t a, int index)
  * remove the object at 'index'
  */
-fun lremove(a, index) is
+fun __remove(index) is
     if type(index) != type(0) then
         return null
     endif
 
-    if not _check_t(a) or index >= len(a._ele) then
+    if index >= len(this.__ele) then
         return null
     endif
 
@@ -70,11 +49,11 @@ fun lremove(a, index) is
     left = array(index)
 
     while i < index then  // 填充 left
-        left[i] = a._ele[i]
+        left[i] = this.__ele[i]
         i = i + 1
     wend
 
-    new_a = array(len(a._ele) - 1)
+    new_a = array(len(this.__ele) - 1)
     
     i = 0
     while i < len(left) then
@@ -84,34 +63,48 @@ fun lremove(a, index) is
     
     i = index + 1
     ni = 0
-    while ni < len(new_a) and i < len(a._ele) then
-        new_a[ni] = a._ele[i]
+    while ni < len(new_a) and i < len(this.__ele) then
+        new_a[ni] = this.__ele[i]
         i = i + 1
         ni = ni + 1
     wend
 
-    a._ele = new_a
-    a.size = a.size - 1
+    this.__ele = new_a
+    this.size = this.size - 1
 
     return true
 end
 
 
-/*
- * lto_str(list_t a)
- * return the string form of a.
- */
-fun lto_str(a) is
-    if not _check_t(a) then
-        return null
-    endif
-
-    return str(a._ele)
+fun __to_string() is
+    return repr(this.__ele)
 end
 
 
-fun lto_array(a) is
-    return a._ele
+struct list_t is
+    __ele
+    protected size
+    append
+    remove
+    to_str
+    __copy_new
+end
+
+
+fun List() is
+    lo = new(
+        list_t, 
+        {
+            {}, 
+            0,
+            __append,
+            __remove,
+            __to_string
+            __copy_new,
+            }
+        )
+
+    return lo
 end
 
 end
