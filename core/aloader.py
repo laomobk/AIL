@@ -103,5 +103,5 @@ class ModuleLoader:
         return None
 
 
-MAIN_LOADER = ModuleLoader(LOAD_MODULE_PATH)
+MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)
 
