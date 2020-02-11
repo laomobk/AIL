@@ -136,6 +136,7 @@ class ObjectCreater:
         '__eq__' : __aobj.obj_func_eq,
         '__getattr__' : __aobj.obj_getattr,
         '__setattr__' : __aobj.obj_setattr,
+        '__equals__' : __aobj.obj_equals
     }
 
     @staticmethod
@@ -168,6 +169,11 @@ class ObjectCreater:
         return obj
 
 
+def check_object(obj):
+    if isinstance(obj, error.AILRuntimeError):
+        error.print_global_error(obj)
+
+
 def convert_to_ail_object(pyobj :object) -> AILObject:
     if isinstance(pyobj, AILObject):
         return pyobj
@@ -194,7 +200,20 @@ def convert_to_ail_object(pyobj :object) -> AILObject:
     return ObjectCreater.new_object(target_t, pyobj)
 
 
-def compare_type(o, t):
+def compare_type(o, *t):
     if isinstance(o, AILObject):
-        return o['__class__'] == t
+        if o['__class__'] in t:
+            return True
     return False
+
+
+def has_attr(aobj :AILObject, name :str):
+    if isinstance(aobj, AILObject):
+        return name in aobj.properties
+    return False
+
+
+def unpack_ailobj(ailobj :AILObject):
+    if has_attr(ailobj, '__value__'):
+        return ailobj['__value__']
+    return ailobj

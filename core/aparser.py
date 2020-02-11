@@ -443,11 +443,13 @@ class Parser:
 
             if self.__now_tok != ')':
                 self.__syntax_error()
+
             self.__next_tok()  # eat ')'
 
-            return expr
+            left = expr
 
-        left = self.__parse_binary_expr()
+        else:
+            left = self.__parse_binary_expr()
 
         if left is None:
             self.__syntax_error()
@@ -990,10 +992,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser('tests/test.ail')
+    p = Parser('../tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)

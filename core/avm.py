@@ -18,6 +18,8 @@ import objects.null as null
 import objects.array as array
 import objects.struct as struct
 
+from core.modules._fileio import _open
+
 import re
 import copy
 
@@ -63,7 +65,8 @@ _BUILTINS = {
     'str' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_str),
     'repr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_repr),
     '_get_ccom' : afunc.convert_to_func_wrapper(ccom.get_cc_object),
-    'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct)
+    'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct),
+    'open' : afunc.convert_to_func_wrapper(_open)
 }
 
 
@@ -237,24 +240,22 @@ class Interpreter:
         return r
 
     def __compare(self, a, b, cop :str) -> objs.AILObject:
-        if (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
+        if not (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
                 (a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) or \
                 b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
-            self.__raise_error(
-                'operator \'%s\' can only use between two number' % cop,
-                'TypeError'
-            )
 
-        av = a['__value__']
-        bv = b['__value__']
+            av = a['__value__']
+            bv = b['__value__']
 
-        if cop in opcs.COMPARE_OPERATORS:
-            res = eval('%s %s %s' % (av, cop, bv))
+            if cop in opcs.COMPARE_OPERATORS:
+                res = eval('%s %s %s' % (av, cop, bv))
+            else:
+                self.__raise_error(
+                    'Unknown compare operator \'%s\'' % cop,
+                    'VMError'
+                )
         else:
-            self.__raise_error(
-                'Unknown compare operator \'%s\'' % cop,
-                'VMError'
-            )
+            res = a['__equals__'](a, b)
 
         return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
 
@@ -309,7 +310,7 @@ class Interpreter:
                 f.variable = argd
                 f.code = c
                 f.consts = c.consts
-                
+
                 try:
                     if func['__this__'] is not None \
                             and objs.compare_type(
@@ -318,7 +319,6 @@ class Interpreter:
                         this._pthis_ = True  # add _pthis_ attr
 
                         f.variable['this'] = this  # add this pointer
-                        f.variable[this['__type__']['__name__']] = this
 
                         self.__incref(this)
                         self.__incref(this)
@@ -331,6 +331,13 @@ class Interpreter:
                     self.__raise_error(str(e), 'PythonError')
             elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
                 pyf = func['__pyfunction__']
+
+                if func['__this__'] is not None \
+                        and objs.compare_type(
+                            func['__this__'], struct.STRUCT_OBJ_TYPE):
+                    this = copy.copy(func['__this__'])
+                    argl.insert(0, this)  # add this to 0
+                    argv += 1
 
                 if not hasattr(pyf, '__call__'):
                     self.__raise_error(
@@ -352,9 +359,8 @@ class Interpreter:
                         )
 
                 else:
-                    argl = [o['__value__'] for o in argl]
+                    argl = [o['__value__'] if objs.has_attr(o, '__value__') else o for o in argl]
                     # unpack argl for builtin function
-
                 try:
                     rtn = self.__check_object(pyf(*argl))
                 except Exception as e:

@@ -7,6 +7,7 @@ from core.error import AILRuntimeError
 
 def wrapper_func_init(self, pyobj :object):
     self['__pyobject__'] = pyobj
+    self['__value__'] = pyobj
 
 
 def wrapper_func_str(self):

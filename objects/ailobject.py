@@ -55,3 +55,7 @@ def obj_setattr(aobj, name, value):
                                'AttributeError')
 
     aobj.properties[name] = value
+
+
+def obj_equals(self, other):
+    return self == other

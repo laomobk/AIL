@@ -471,6 +471,9 @@ class Compiler:
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
+        else:
+            bc += self.__compile_comp_expr(tree.left)
+
         # right
 
         for op, et in tree.right:
@@ -955,10 +958,10 @@ def test_compiler():
     from core.aparser import Parser
     from core.alex import Lex
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser('tests/test.ail')
+    p = Parser('../tests/test.ail')
     t = p.parse(ts)
     #t = t.stmts[0]
 

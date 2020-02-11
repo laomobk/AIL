@@ -92,3 +92,44 @@ STRUCT_TYPE = obj.AILObjectType('<AIL struct type>', types.I_STRUCT_TYPE,
                                 __setattr__=struct_setattr,
                                 __str__=struct_str,
                                 __repr__=struct_str)
+
+
+class _StructObjectWrapper:
+    def __init__(self, struct_obj):
+        self.__struct = struct_obj
+        self.__members = struct_obj.members
+
+    def __getattr__(self, item :str):
+        if isinstance(item, str) and item.startswith('__this_'):
+            item = item = item[7:]
+            if item in self.__members:
+                return self.__members[item]
+        else:
+            super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        if isinstance(key, str) and key.startswith('__this_'):
+            item = item = key[7:]
+            if item in self.__members:
+                self.__members[item] = value
+            else:
+                super().__setattr__(key, value)
+        else:
+            super().__setattr__(key, value)
+
+    def to_struct(self):
+        return self.__struct
+
+
+def convert_to_pyobj(struct_obj) -> _StructObjectWrapper:
+    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+        return None
+    st = _StructObjectWrapper(struct_obj)
+
+    return st
+
+
+def new_struct_object(name :str, type :obj.AILObject,
+                      members :dict, protected_members :list):
+    return obj.ObjectCreater.new_object(
+        STRUCT_OBJ_TYPE, name, members, type, protected_members)
