@@ -52,9 +52,10 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
  
 
 class AILRuntimeError:
-    def __init__(self, msg :str=None, err_type :str=None):
+    def __init__(self, msg :str=None, err_type :str=None, frame=None):
         self.msg :str = msg
         self.err_type :str = err_type
+        self.frame = frame
 
     def __str__(self):
         return '<AIL_RT_ERROR %s : %s>' % (self.err_type, self.msg)

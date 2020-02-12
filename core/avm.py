@@ -19,11 +19,13 @@ import objects.array as array
 import objects.struct as struct
 
 from core.modules._fileio import _open
+from core.modules._error import (make_err_struct_object, throw_error, catch_error)
 
 import re
 import copy
 
 from core.opcodes import *
+from core._vmsig import *
 
 from core import corecom as ccom
 
@@ -66,7 +68,8 @@ _BUILTINS = {
     'repr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_repr),
     '_get_ccom' : afunc.convert_to_func_wrapper(ccom.get_cc_object),
     'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct),
-    'open' : afunc.convert_to_func_wrapper(_open)
+    'open' : afunc.convert_to_func_wrapper(_open),
+
 }
 
 
@@ -79,6 +82,8 @@ class ForEnvironment:
 
 class _ProtectedSignal:
     __slots__ = []
+
+
 PROTECTED_SIGNAL = _ProtectedSignal()
 
 
@@ -101,10 +106,13 @@ class Frame:
 
 class Interpreter:
     def __init__(self):
+        MAIN_INTERPRETER_STATE.global_interpreter = self
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
         self.__frame_stack = self.__now_state.frame_stack
+
+        self.__can = 0  # 1 -> continue | 0 -> break
 
     @property
     def __tof(self) -> Frame:
@@ -181,8 +189,13 @@ class Interpreter:
         self.__tof.variable[name] = value
 
     def __raise_error(self, msg :str, err_type :str):
+        errs = make_err_struct_object(
+            error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
+
+        self.__now_state.err_stack.append(errs)
+
         error.print_global_error(
-                error.AILRuntimeError(msg, err_type), self.__tof.code.name)
+                error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
 
     def __chref(self, ailobj :objs.AILObject, mode :int):
         '''
@@ -259,6 +272,10 @@ class Interpreter:
 
         return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
 
+    def interrupt(self, signal):
+        if signal == MII_DO_ERR:
+            pass
+
     def __bool_test(self, obj):
         if isinstance(obj, objs.AILObject):
             if obj['__value__'] is not None:
@@ -331,10 +348,12 @@ class Interpreter:
                     self.__raise_error(str(e), 'PythonError')
             elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
                 pyf = func['__pyfunction__']
+                has_this = False
 
                 if func['__this__'] is not None \
                         and objs.compare_type(
                             func['__this__'], struct.STRUCT_OBJ_TYPE):
+                    has_this = True
                     this = copy.copy(func['__this__'])
                     argl.insert(0, this)  # add this to 0
                     argv += 1
@@ -354,7 +373,8 @@ class Interpreter:
 
                     if fac > argv or (argv not in range(fac, fcc + 1)):
                         self.__raise_error(
-                            'function \'%s\' need %s positional argument(s)' % (pyf.__name__, fac),
+                            'function \'%s\' need %s positional argument(s)' %
+                            (pyf.__name__, fac - (1 if has_this else 0)),
                             'TypeError'
                         )
 
@@ -387,6 +407,21 @@ class Interpreter:
             else:
                 self.__raise_error(
                     '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
+
+    def __return(self):
+        tos = self.__pop_top()
+
+        if len(self.__frame_stack) > 1:
+            f = self.__frame_stack.pop()
+            for o in f.variable.values():
+                self.__decref(o)
+
+            self.__push_back(tos)
+
+        else:
+            self.__decref(tos)
+
+        self.__can = 0
 
     def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
         # push a new frame
@@ -483,19 +518,7 @@ class Interpreter:
                     self.__push_back(var)
 
                 elif op == return_value:
-                    tos = self.__pop_top()
-
-                    if len(self.__frame_stack) > 1:
-                        f = self.__frame_stack.pop()
-                        for o in f.variable.values():
-                            self.__decref(o)
-
-                        self.__push_back(tos)
-
-                    else:
-                        self.__decref(tos)
-
-                    break  # 结束这个解释循环
+                    self.__return()
 
                 elif op == setup_for:
                     self.__for_env_stack.append(ForEnvironment())
@@ -686,6 +709,11 @@ class Interpreter:
                 else:
                     cp += _BYTE_CODE_SIZE
                     jump_to = cp
+
+                if not self.__can:
+                    can = 1
+                    break
+
         except (EOFError, KeyboardInterrupt) as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
 

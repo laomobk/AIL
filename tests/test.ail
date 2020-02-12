@@ -1,5 +1,5 @@
 begin
 
-print _get_ccom().get_err_stack().pop()
+print _get_ccom().exit()
 
 end

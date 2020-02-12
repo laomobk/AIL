@@ -7,6 +7,7 @@ class InterpreterState:
         self.gc : agc.GC = None
 
         self.err_stack = []
+        self.global_interpreter = None  # global interpreter reference
 
 
 MAIN_INTERPRETER_STATE = InterpreterState()
