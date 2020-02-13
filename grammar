@@ -78,3 +78,6 @@ for_stmt := 'for' '(' assi_expr_list | NONE ';'
                                 real_expr_list | NONE ')' 'then' NEWLINE
              BLOCK
              'end'
+
+throw_expr := 'throw' real_expr
+assert_expr :; 'assert' real_expr
