@@ -1,0 +1,17 @@
+begin
+
+try
+    f = open('lovely_Nezha.jpg')
+    f.upload()
+
+    if msg == 'Like' then
+        like = like + 1
+    else
+        dislike = dislike - 1
+    endif
+
+catch err then
+    print err.to_string()
+end
+
+end

@@ -12,10 +12,10 @@ _keywords_uc = (
         'UNTIL', 'LOOP', 'WEND',
         'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
         'STRUCT', 'MOD', 'FOR', 'PROTECTED',
-        'ASSERT', 'THROW'
+        'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY'
         )
 
-_end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
+_end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
 
 _keywords = tuple([x.lower() for x in _keywords_uc])
 _end_signs = tuple([x.lower() for x in _end_signs_uc])
@@ -886,6 +886,60 @@ class Parser:
 
         return ast.LoadAST(name, ln)
 
+    def __parse_try_catch_expr(self) -> ast.TryCatchExprAST:
+        if self.__now_tok != 'try':
+            self.__syntax_error()
+
+        try_b = self.__parse_block(start='try', end='catch')
+
+        if try_b is None or self.__now_tok.ttype != LAP_IDENTIFIER:
+            self.__syntax_error()
+
+        cname = self.__now_tok.value
+
+        self.__next_tok()  # eat NAME
+
+        if self.__now_tok != 'then' or self.__next_tok().ttype != LAP_ENTER:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ENTER
+
+        catch_sl = []
+        finally_sl = []
+
+        now = catch_sl
+        in_finally = False
+
+        while self.__now_tok != 'end':
+            s = self.__parse_stmt()
+
+            if isinstance(s, ast.NullLineAST):
+                pass
+            elif isinstance(s, ast.EOFAST):
+                self.__syntax_error("try statement should ends with 'end'")
+            else:
+                now.append(s)
+
+            if self.__now_tok == 'finally':
+                if in_finally:
+                    self.__syntax_error()
+
+                in_finally = True
+
+                if self.__next_tok().ttype != LAP_ENTER:
+                    self.__syntax_error()
+
+                self.__next_tok()  # eat ENTER
+
+                now = finally_sl
+
+        cab = ast.BlockExprAST(catch_sl, self.__now_ln)
+        fnb = ast.BlockExprAST(finally_sl, self.__now_ln)
+
+        self.__next_tok()  # eat 'end'
+
+        return ast.TryCatchExprAST(try_b, cab, fnb, cname, self.__now_ln)
+
     def __parse_stmt(self, limit :tuple=()) -> ast.ExprAST:
         nt = self.__now_tok
 
@@ -932,6 +986,9 @@ class Parser:
 
         elif nt == 'throw':
             a = self.__parse_throw_expr()
+
+        elif nt == 'try':
+            a = self.__parse_try_catch_expr()
 
         elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):
@@ -1003,7 +1060,7 @@ class Parser:
             self.__syntax_error()
         '''
 
-        #self.__next_tok()
+        # self.__next_tok()
 
         return ast.BlockExprAST(stmtl, self.__now_ln)
 

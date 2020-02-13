@@ -63,6 +63,11 @@ set_protected = 0x2a
 
 throw_error = 0x2b
 
+setup_try = 0x2c
+setup_catch = 0x2d
+clean_catch = 0x2e
+clean_try = 0x2f
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

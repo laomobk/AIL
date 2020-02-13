@@ -366,6 +366,18 @@ class AssertExprAST:
         self.ln = ln
 
 
+class TryCatchExprAST:
+    def __init__(self, try_block :BlockExprAST,
+                 catch_block :BlockExprAST,
+                 finally_block :BlockExprAST,
+                 name :str, ln :int):
+        self.try_block = try_block
+        self.catch_block = catch_block
+        self.finally_block = finally_block
+        self.name = name
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
         CellAST,
         PowerExprAST,

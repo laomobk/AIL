@@ -448,6 +448,42 @@ class Compiler:
 
         return bc
 
+    def __compile_try_catch_expr(self, tree :ast.TryCatchExprAST, extofs :int=0):
+        bc = ByteCode()
+
+        extofs += _BYTE_CODE_SIZE  # for setup_try
+        has_finally = len(tree.finally_block.stmts) > 0
+
+        tbc = self.__compile_block(tree.try_block, extofs)
+
+        cat_ext = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
+        # for setup_catch and jump_absolute
+        cabc = self.__compile_block(tree.catch_block, cat_ext)
+
+        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
+        # for clean_catch
+        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE
+        # for jump_absoulte
+
+        if has_finally:
+            fn_ext = jump_over
+            fnbc = self.__compile_block(tree.finally_block, jump_over)
+        else:
+            fnbc = ByteCode()
+
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+
+        bc.add_bytecode(setup_try, to_catch)
+        bc += tbc
+        bc.add_bytecode(jump_absolute, jump_over)
+        bc.add_bytecode(setup_catch, ni)
+        bc += cabc
+        bc.add_bytecode(clean_catch, 0)
+        bc += fnbc
+        bc.add_bytecode(clean_try, 0)
+
+        return bc
+
     def __compile_comp_expr(self, tree :ast.CmpTestAST, extofs :int=0) -> ByteCode:
         bc = ByteCode()
         
@@ -914,6 +950,9 @@ class Compiler:
 
             elif isinstance(et, ast.ThrowExprAST):
                 tbc = self.__compile_throw_expr(et)
+
+            elif isinstance(et, ast.TryCatchExprAST):
+                tbc = self.__compile_try_catch_expr(et, total_offset)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et, is_single=True)

@@ -149,6 +149,13 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ThrowExprAST):
         return {'ThrowExprAST' : make_ast_tree(a.expr)}
 
+    elif isinstance(a, ast.TryCatchExprAST):
+        return {'TryCatchExprAST' :
+                    {'try_block' : make_ast_tree(a.try_block),
+                     'catch_block' : make_ast_tree(a.catch_block),
+                     'finally_block' : make_ast_tree(a.finally_block),
+                     'error_name' : make_ast_tree(a.name)}}
+
     elif isinstance(a, list):
         return unpack_list(a)
 
@@ -164,7 +171,8 @@ class ByteCodeDisassembler:
                 opcs.load_varname,
                 opcs.load_module,
                 opcs.load_attr,
-                opcs.store_attr
+                opcs.store_attr,
+                opcs.setup_catch
             )
 
     __SHOW_CONST = (

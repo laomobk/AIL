@@ -99,6 +99,7 @@ class Frame:
         self.variable = globals
         self.break_stack = []
         self.for_env_stack = []
+        self.try_stack = []
 
     def __str__(self):
         return '<Frame object for code object \'%s\'>' % self.code.name

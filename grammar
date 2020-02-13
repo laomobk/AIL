@@ -80,4 +80,12 @@ for_stmt := 'for' '(' assi_expr_list | NONE ';'
              'end'
 
 throw_expr := 'throw' real_expr
-assert_expr :; 'assert' real_expr
+assert_expr := 'assert' real_expr
+
+try_catch_expr := 'try' NEWLINE
+                    BLOCK
+                  'catch' NAME 'then'
+                    BLOCK
+                  'finally' then
+                    BLOCK
+                  'end'
