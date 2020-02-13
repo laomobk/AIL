@@ -7,20 +7,14 @@ def bool_init(self :obj.AILObject, v :obj.AILObject):
     if not isinstance(v, obj.AILObject):
         vv = False if not v else True
     else:
-        if v['__class__'].otype in (types.I_INT_TYPE, types.I_FLOAT_TYPE):
-            vv = False if not v['__value__'] else True
-        elif v['__class__'].otype == types.I_STR_TYPE:
-            vv = False if not v['__value__'] else True
-        elif v == obj.null:
-            vv = False
-        else:
-            vv = True
+        if obj.has_attr(v, '__value__'):
+            vv = bool(v['__value__'])
 
     self['__value__'] = vv
 
 
 def bool_eq(self :obj.AILObject, o :obj.AILObject) -> obj.AILObject:
-    return obj.ObjectCreater.new_object(BOOL_TYPE, o)
+    return obj.ObjectCreater.new_object(BOOL_TYPE, o == self)
 
 
 def bool_str(self :obj.AILObject):

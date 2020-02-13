@@ -354,6 +354,18 @@ class ForExprAST:
         self.ln = ln
 
 
+class ThrowExprAST:
+    def __init__(self, expr :BinaryExprAST, ln :int):
+        self.expr = expr
+        self.ln = ln
+
+
+class AssertExprAST:
+    def __init__(self, expr :TestExprAST, ln :int):
+        self.expr = expr
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
         CellAST,
         PowerExprAST,

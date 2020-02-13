@@ -19,7 +19,9 @@ import objects.array as array
 import objects.struct as struct
 
 from core.modules._fileio import _open
-from core.modules._error import (make_err_struct_object, throw_error, catch_error)
+from core.modules._error import (
+        make_err_struct_object, throw_error, catch_error, 
+        print_all_error, print_err)
 
 import re
 import copy
@@ -69,7 +71,7 @@ _BUILTINS = {
     '_get_ccom' : afunc.convert_to_func_wrapper(ccom.get_cc_object),
     'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct),
     'open' : afunc.convert_to_func_wrapper(_open),
-
+    'catch_err' : afunc.convert_to_func_wrapper(catch_error),
 }
 
 
@@ -112,7 +114,7 @@ class Interpreter:
         self.__now_state.gc = self.__gc
         self.__frame_stack = self.__now_state.frame_stack
 
-        self.__can = 0  # 1 -> continue | 0 -> break
+        self.__can = 1  # 1 -> pass | 0 -> break
 
     @property
     def __tof(self) -> Frame:
@@ -192,9 +194,10 @@ class Interpreter:
         errs = make_err_struct_object(
             error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
 
-        self.__now_state.err_stack.append(errs)
-
-        error.print_global_error(
+        if err_type not in ('VMError', 'PythonError'):
+            self.__now_state.err_stack.append(errs)
+        else:
+            error.print_global_error(
                 error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
 
     def __chref(self, ailobj :objs.AILObject, mode :int):
@@ -278,7 +281,7 @@ class Interpreter:
 
     def __bool_test(self, obj):
         if isinstance(obj, objs.AILObject):
-            if obj['__value__'] is not None:
+            if objs.has_attr(obj, '__value__'):
                 return bool(obj['__value__'])
         return bool(obj)
 
@@ -421,6 +424,9 @@ class Interpreter:
         else:
             self.__decref(tos)
 
+            if self.__now_state.err_stack:
+                print_all_error(True)
+
         self.__can = 0
 
     def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
@@ -548,25 +554,14 @@ class Interpreter:
                 elif op == jump_if_false_or_pop:
                     tos = self.__pop_top()
 
-                    if isinstance(tos, objs.AILObject):
-                        if tos['__value__'] is not None and not tos['__value__']:
-                            jump_to = argv
-                    else:
-                        if tos:
-                            jump_to = argv
+                    if not self.__bool_test(tos):
+                        jump_to = argv
 
                 elif op == jump_if_true_or_pop:
                     tos = self.__pop_top()
 
-                    if isinstance(tos, objs.AILObject):
-                        if tos['__value__'] is not None and tos['__value__']:
-                            jump_to = argv
-                        elif tos['__value__'] is None:
-                            if tos:
-                                jump_to = argv
-                    else:
-                        if tos:
-                            jump_to = argv
+                    if self.__bool_test(tos):
+                        jump_to = argv
 
                 elif op in (binary_add, binary_div, 
                             binary_mod, binary_muit, 
@@ -703,6 +698,10 @@ class Interpreter:
 
                 elif op == set_protected:
                     self.__push_back(PROTECTED_SIGNAL)
+
+                elif op == throw_error:
+                    msg = str(self.__pop_top())
+                    self.__raise_error(msg, 'Throw')
 
                 if jump_to != cp:
                     cp = jump_to

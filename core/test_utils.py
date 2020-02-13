@@ -143,6 +143,12 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.AssignExprListAST):
         return {'AssignListAST' : make_ast_tree(a.expr_list)}
 
+    elif isinstance(a, ast.AssertExprAST):
+        return {'AssertExprAST' : make_ast_tree(a.expr)}
+
+    elif isinstance(a, ast.ThrowExprAST):
+        return {'ThrowExprAST' : make_ast_tree(a.expr)}
+
     elif isinstance(a, list):
         return unpack_list(a)
 

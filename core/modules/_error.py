@@ -1,3 +1,4 @@
+import sys
 
 from core.error import AILRuntimeError
 from objects.string import convert_to_string
@@ -16,7 +17,7 @@ def _err_to_string(this):
     where = this.__this_err_where
 
     return '%s%s : %s' % ('in %s :\n\t' % where if where else '',
-                          type, where)
+                          type, msg)
 
 
 def make_err_struct_object(err_obj :AILRuntimeError, where :str):
@@ -37,8 +38,24 @@ def make_err_struct_object(err_obj :AILRuntimeError, where :str):
 
 def catch_error():
     estack = MAIN_INTERPRETER_STATE.err_stack[::-1]
+    te = estack.pop() if estack else None
 
-    return estack.pop() if estack else None
+    return te
+
+
+def print_all_error(exit=False, exit_code=1):
+    es = MAIN_INTERPRETER_STATE.err_stack[::-1]
+    
+    for e in es:
+        eo = convert_to_pyobj(e)
+        print(unpack_ailobj(eo.__this_to_string)(e))
+
+    if exit:
+        sys.exit(exit_code)
+
+
+# for AIL Runtime
+print_err = lambda : print_all_error(False)
 
 
 def throw_error(msg, etype=None):

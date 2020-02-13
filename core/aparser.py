@@ -11,7 +11,8 @@ _keywords_uc = (
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
         'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
-        'STRUCT', 'MOD', 'FOR', 'PROTECTED'
+        'STRUCT', 'MOD', 'FOR', 'PROTECTED',
+        'ASSERT', 'THROW'
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF')
@@ -262,7 +263,8 @@ class Parser:
 
         nt = self.__now_tok
 
-        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER):
+        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER) or \
+                nt in _keywords:
             self.__syntax_error()
 
         name = nt.value  # it can be string, number or identifier
@@ -839,6 +841,34 @@ class Parser:
 
         return ast.ReturnAST(expr, self.__now_ln)
 
+    def __parse_throw_expr(self) -> ast.ThrowExprAST:
+        if self.__now_tok != 'throw':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'throw'
+
+        expr = self.__parse_binary_expr()
+
+        if expr is None or \
+                self.__now_tok.ttype != LAP_ENTER:
+            self.__syntax_error()
+        
+        return ast.ThrowExprAST(expr, self.__now_ln)
+
+    def __parse_assert_expr(self) -> ast.AssertExprAST:
+        if self.__now_tok != 'assert':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'assert'
+
+        expr = self.__parse_test_expr()
+
+        if expr is None or \
+                self.__now_tok.ttype != LAP_ENTER:
+            self.__syntax_error()
+        
+        return ast.AssertExprAST(expr, self.__now_ln)
+
     def __parse_load_stmt(self) -> ast.LoadAST:
         if self.__now_tok != 'load':
             self.__syntax_error()
@@ -896,6 +926,12 @@ class Parser:
 
         elif nt == 'struct':
             a = self.__parse_struct_def_stmt()
+
+        elif nt == 'assert':
+            a = self.__parse_assert_expr()
+
+        elif nt == 'throw':
+            a = self.__parse_throw_expr()
 
         elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):
@@ -992,10 +1028,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('../tests/test.ail')
+    l = Lex('tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)

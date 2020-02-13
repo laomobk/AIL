@@ -1,5 +1,9 @@
 begin
 
-print _get_ccom().exit()
+assert 0
+
+if catch_err() then
+    print_err()
+endif
 
 end

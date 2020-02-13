@@ -61,6 +61,8 @@ clean_loop = 0x29
 
 set_protected = 0x2a
 
+throw_error = 0x2b
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

@@ -669,8 +669,12 @@ class Compiler:
         test_ext = extofs + len(initbc.blist)
 
         jump_back = test_ext
-
-        tbc = self.__compile_test_expr(tree.test, test_ext)
+        
+        if tree.test is not None:
+            tbc = self.__compile_test_expr(tree.test, test_ext)
+        else:
+            tbc = ByteCode()
+            tbc.add_bytecode(load_const, self.__buffer.add_const(True))
 
         block_ext = extofs + len(tbc.blist) + len(initbc.blist) + _BYTE_CODE_SIZE
         # _byte_code_size is for jump_if_false_or_pop
@@ -757,6 +761,33 @@ class Compiler:
     def __compile_continue_expr(self, tree :ast.ContinueAST) -> ByteCode:
         bc = ByteCode()
         bc.add_bytecode(continue_loop, 0)
+
+        return bc
+
+    def __compile_assert_expr(self, tree :ast.AssertExprAST, extofs :int) -> ByteCode:
+        bc = ByteCode()
+
+        ec = self.__compile_test_expr(tree.expr, extofs) 
+        ci = self.__buffer.add_const('AssertionError')
+
+        jump = extofs + len(ec.blist) + _BYTE_CODE_SIZE * 3
+
+        bc += ec
+
+        bc.add_bytecode(jump_if_true_or_pop, jump)
+        bc.add_bytecode(load_const, ci)
+        bc.add_bytecode(throw_error, 0)
+
+        return bc
+
+
+    def __compile_throw_expr(self, tree :ast.ThrowExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        ec = self.__compile_binary_expr(tree.expr)
+
+        bc += ec
+        bc.add_bytecode(throw_error, 0)
 
         return bc
 
@@ -878,6 +909,12 @@ class Compiler:
             elif isinstance(et, ast.ForExprAST):
                 tbc = self.__compile_for_stmt(et, total_offset)
 
+            elif isinstance(et, ast.AssertExprAST):
+                tbc = self.__compile_assert_expr(et, total_offset)
+
+            elif isinstance(et, ast.ThrowExprAST):
+                tbc = self.__compile_throw_expr(et)
+
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et, is_single=True)
 
@@ -958,10 +995,10 @@ def test_compiler():
     from core.aparser import Parser
     from core.alex import Lex
 
-    l = Lex('../tests/test.ail')
+    l = Lex('tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('tests/test.ail')
     t = p.parse(ts)
     #t = t.stmts[0]
 
