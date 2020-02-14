@@ -1,0 +1,20 @@
+begin
+
+fun f2() is
+    throw 'Houston, we have a problem'
+end
+
+fun f() is
+    throw 'Nezha is a MAN!'
+end
+
+try
+    f()
+catch err then
+    throw 'Another Error'
+    print err
+finally
+    print "Finally..."
+end
+
+end

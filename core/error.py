@@ -65,6 +65,12 @@ def print_global_error(err :AILRuntimeError, where :str=''):
     if THROW_ERROR_TO_PYTHON:
         raise_error_as_python(err, where)
 
+    if isinstance(where, list):
+        for w in where[:-1]:
+            print('in \'%s\' :' % w)
+
+        where = where[-1]
+
     msg = err.msg
     t = err.err_type
 

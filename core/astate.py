@@ -6,6 +6,7 @@ class InterpreterState:
         self.frame_stack :list = []
         self.gc : agc.GC = None
 
+        self.handling_err_stack = []
         self.err_stack = []
         self.global_interpreter = None  # global interpreter reference
 

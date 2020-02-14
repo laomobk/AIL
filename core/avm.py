@@ -75,7 +75,7 @@ _BUILTINS = {
 }
 
 
-class ForEnvironment:
+class TempEnvironment:
     __slots__ = ['temp_var']
 
     def __init__(self, temp_var=[]):
@@ -98,8 +98,11 @@ class Frame:
         self.consts = consts
         self.variable = globals
         self.break_stack = []
-        self.for_env_stack = []
+        self.temp_env_stack = []
         self.try_stack = []
+
+        self._marked_opcounter = 0
+        self._latest_call_opcounter = 0
 
     def __str__(self):
         return '<Frame object for code object \'%s\'>' % self.code.name
@@ -114,8 +117,14 @@ class Interpreter:
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
         self.__frame_stack = self.__now_state.frame_stack
+        self.__opcounter = 0
+
+        self.__interrupted = False
+        self.__interrupt_signal = 0
 
         self.__can = 1  # 1 -> pass | 0 -> break
+
+        self.__can_update_opc = True
 
     @property
     def __tof(self) -> Frame:
@@ -138,8 +147,8 @@ class Interpreter:
         return self.__tof.break_stack
 
     @property
-    def __for_env_stack(self) -> list:
-        return self.__tof.for_env_stack
+    def __temp_env_stack(self) -> list:
+        return self.__tof.temp_env_stack
 
     def __push_back(self, obj :objs.AILObject):
         self.__stack.append(obj)
@@ -187,19 +196,59 @@ class Interpreter:
         return aobj
 
     def __store_var(self, name, value):
-        if self.__for_env_stack and name not in self.__tof.variable:
-            self.__for_env_stack[-1].temp_var.append(name)
+        if self.__temp_env_stack and name not in self.__tof.variable:
+            self.__temp_env_stack[-1].temp_var.append(name)
         self.__tof.variable[name] = value
 
     def __raise_error(self, msg :str, err_type :str):
         errs = make_err_struct_object(
             error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
-
+        
         if err_type not in ('VMError', 'PythonError'):
             self.__now_state.err_stack.append(errs)
         else:
             error.print_global_error(
-                error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
+                error.AILRuntimeError(msg, err_type, self.__tof), 
+                    '%s +%s' % 
+                    (self.__tof.code.name, hex(self.__tof._marked_opcounter)))
+
+        if self.__tof.try_stack:
+            to = self.__tof.try_stack[-1]
+
+            self.__opcounter = to
+
+            self.__interrupted = True
+            self.__interrupt_signal = MII_DO_JUMP
+
+            return
+
+        for f in self.__frame_stack[::-1]:
+            if f.try_stack:
+                break
+        else:
+            self.__raise_error(
+                    error.AILRuntimeError(
+                        msg, err_type, self.__tof),
+                        ['%s +%s' % 
+                         (f.code.name, hex(f._marked_opcounter))
+                          for f in self.__frame_stack])
+    
+        # set interrupt signal.
+        self.__interrupted = True
+        self.__interrupt_signal = MII_ERR_POP_TO_TRY
+
+    def __handle_error(self):
+        if self.__tof.try_stack:
+            to = self.__tof.try_stack[-1]
+
+            self.__opcounter = to
+
+            self.__interrupted = True
+            self.__interrupt_signal = MII_DO_JUMP
+
+        else:
+            self.__interrupted = True
+            self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
     def __chref(self, ailobj :objs.AILObject, mode :int):
         '''
@@ -276,9 +325,19 @@ class Interpreter:
 
         return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
 
-    def interrupt(self, signal):
-        if signal == MII_DO_ERR:
-            pass
+    def __goto_catch(self):
+        to = self.__tof.try_stack[-1]
+
+        self.__opcounter = to
+
+        self.__interrupted = True
+        self.__interrupt_signal = MII_DO_JUMP
+
+    def interrupt(self, signal, argv):
+        if signal == MII_DO_JUMP:
+            self.__opcounter = argv
+            self.__interrupted = True
+            self.__interrupt_signal = MII_DO_JUMP
 
     def __bool_test(self, obj):
         if isinstance(obj, objs.AILObject):
@@ -314,6 +373,8 @@ class Interpreter:
             self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
 
     def __call_function(self, func, argv, argl):
+        self.__tof._marked_opcounter = self.__opcounter
+
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
             if func['__class__'] == afunc.FUNCTION_TYPE:
                 c: objs.AILCodeObject = func['__code__']
@@ -347,7 +408,19 @@ class Interpreter:
                     pass
 
                 try:
-                    self.__run_bytecode(c, f)
+                    self.__tof._latest_call_opcounter = self.__opcounter
+
+                    why = self.__run_bytecode(c, f)
+
+                    if why == WHY_ERROR:
+                        self.__goto_catch()
+                    elif why == WHY_HANDLING_ERR:
+                        # do nothing
+                        pass
+                    else:
+                        self.__opcounter = self.__tof._latest_call_opcounter
+                        # 如无异常，则还原字节码计数器
+ 
                 except RecursionError as e:
                     self.__raise_error(str(e), 'PythonError')
             elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
@@ -435,13 +508,15 @@ class Interpreter:
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
 
-        cp = 0
+        self.__opcounter = 0
         jump_to = 0
 
+        why = WHY_NORMAL
+
         try:
-            while cp < len(code) - 1:  # included argv index
-                op = code[cp]
-                argv = code[cp + 1]
+            while self.__opcounter < len(code) - 1:  # included argv index
+                op = code[self.__opcounter]
+                argv = code[self.__opcounter + 1]
 
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
@@ -528,15 +603,15 @@ class Interpreter:
                     self.__return()
 
                 elif op == setup_for:
-                    self.__for_env_stack.append(ForEnvironment())
+                    self.__temp_env_stack.append(TempEnvironment())
                     self.__add_break_point(argv)
 
                 elif op in (setup_doloop, setup_while):
                     self.__add_break_point(argv)
 
                 elif op == clean_for:
-                    tfs = self.__for_env_stack.pop()
-                    tv = tfs.temp_var
+                    ts = self.__temp_env_stack.pop()
+                    tv = ts.temp_var
 
                     for vn in tv:
                         del self.__tof.variable[vn]
@@ -701,21 +776,67 @@ class Interpreter:
                     self.__push_back(PROTECTED_SIGNAL)
 
                 elif op == throw_error:
+                    self.__tof._marked_opcounter = self.__opcounter
                     msg = str(self.__pop_top())
                     self.__raise_error(msg, 'Throw')
 
-                if jump_to != cp:
-                    cp = jump_to
-                else:
-                    cp += _BYTE_CODE_SIZE
-                    jump_to = cp
+                elif op == setup_try:
+                    self.__tof.try_stack.append(argv)
 
+                elif op == setup_catch:
+                    name = self.__tof.varnames[argv]
+                    self.__temp_env_stack.append(TempEnvironment())
+
+                    err = self.__now_state.err_stack.pop()
+                    self.__now_state.handling_err_stack.append(err)
+                    self.__store_var(name, err) # store this error with 'name'
+
+                elif op == clean_try:
+                    self.__tof.try_stack.pop()
+
+                elif op == clean_catch:
+                    ts = self.__temp_env_stack.pop()
+                    tn = ts.temp_var
+
+                    for n in tn:
+                        del self.__tof.variable[n]
+
+                if self.__interrupted:
+                    self.__interrupted = False
+                    if self.__interrupt_signal == MII_DO_JUMP:
+                        jump_to = self.__opcounter
+                        continue
+
+                    elif self.__interrupt_signal == MII_ERR_BREAK:
+                        why = WHY_ERROR
+                        self.__can_update_opc = False
+
+                        break
+                    
+                    elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_POP_TO_TRY
+                        
+                        self.__frame_stack.pop()
+                        self.__handle_error()
+
+                        why = WHY_HANDLING_ERR
+                        break
+                
                 if not self.__can:
                     can = 1
                     break
 
+                if jump_to != self.__opcounter:
+                    self.__opcounter = jump_to
+                else: 
+                    self.__opcounter += _BYTE_CODE_SIZE
+                    jump_to = self.__opcounter
+
         except (EOFError, KeyboardInterrupt) as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
+
+        return why
 
     def exec(self, cobj, frame=None):
         if not frame:
