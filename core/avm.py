@@ -20,11 +20,12 @@ import objects.struct as struct
 
 from core.modules._fileio import _open
 from core.modules._error import (
-        make_err_struct_object, throw_error, catch_error, 
-        print_all_error, print_err)
+        make_err_struct_object, throw_error, catch_error,
+        print_all_error, _err_to_string)
 
 import re
 import copy
+import sys
 
 from core.opcodes import *
 from core._vmsig import *
@@ -203,7 +204,7 @@ class Interpreter:
     def __raise_error(self, msg :str, err_type :str):
         errs = make_err_struct_object(
             error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
-        
+
         if err_type not in ('VMError', 'PythonError'):
             self.__now_state.err_stack.append(errs)
         else:
@@ -211,6 +212,8 @@ class Interpreter:
                 error.AILRuntimeError(msg, err_type, self.__tof), 
                     '%s +%s' % 
                     (self.__tof.code.name, hex(self.__tof._marked_opcounter)))
+
+        self.__now_state.handling_err_stack.append(errs)
 
         if self.__tof.try_stack:
             to = self.__tof.try_stack[-1]
@@ -226,20 +229,20 @@ class Interpreter:
             if f.try_stack:
                 break
         else:
-            self.__raise_error(
-                    error.AILRuntimeError(
-                        msg, err_type, self.__tof),
-                        ['%s +%s' % 
-                         (f.code.name, hex(f._marked_opcounter))
-                          for f in self.__frame_stack])
-    
+            for err in self.__now_state.handling_err_stack[:-1]:
+                sys.stderr.write(_err_to_string(err) + '\n')
+                sys.stderr.write('\n%s\n\n' %
+                      'During handling of the above exception, another exception occurred:')
+            sys.stderr.write(_err_to_string(errs) + '\n')
+            sys.exit(1)
+
         # set interrupt signal.
         self.__interrupted = True
         self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
     def __handle_error(self):
         if self.__tof.try_stack:
-            to = self.__tof.try_stack[-1]
+            to = self.__tof.try_stack.pop()
 
             self.__opcounter = to
 
@@ -518,6 +521,8 @@ class Interpreter:
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
 
+                print(self.__opcounter)
+
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
@@ -788,7 +793,6 @@ class Interpreter:
                     self.__temp_env_stack.append(TempEnvironment())
 
                     err = self.__now_state.err_stack.pop()
-                    self.__now_state.handling_err_stack.append(err)
                     self.__store_var(name, err) # store this error with 'name'
 
                 elif op == clean_try:
@@ -797,6 +801,10 @@ class Interpreter:
                 elif op == clean_catch:
                     ts = self.__temp_env_stack.pop()
                     tn = ts.temp_var
+
+                    self.__now_state.handling_err_stack.pop(0)  # queue
+
+                    self.__tof.try_stack.pop()
 
                     for n in tn:
                         del self.__tof.variable[n]
@@ -835,7 +843,6 @@ class Interpreter:
 
         except (EOFError, KeyboardInterrupt) as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
-
         return why
 
     def exec(self, cobj, frame=None):

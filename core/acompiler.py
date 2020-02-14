@@ -460,9 +460,9 @@ class Compiler:
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
-        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
+        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 2
         # for clean_catch
-        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE
+        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
         # for jump_absoulte
 
         if has_finally:
@@ -475,12 +475,12 @@ class Compiler:
 
         bc.add_bytecode(setup_try, to_catch)
         bc += tbc
+        bc.add_bytecode(clean_try, 0)
         bc.add_bytecode(jump_absolute, jump_over)
         bc.add_bytecode(setup_catch, ni)
         bc += cabc
         bc.add_bytecode(clean_catch, 0)
         bc += fnbc
-        bc.add_bytecode(clean_try, 0)
 
         return bc
 

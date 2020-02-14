@@ -48,11 +48,21 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
         sys.stderr.flush()
 
     if not ERR_NOT_EXIT:
-        sys.exit(errcode)    
- 
+        sys.exit(errcode)
+
+
+def print_stack_trace():
+    from core.astate import MAIN_INTERPRETER_STATE as state
+
+    for f in state.frame_stack[1:][::-1]:
+        cp = f._latest_call_opcounter
+        n = f.code.name
+
+        print('in \'%s \' +%s' % (n, cp))
+
 
 class AILRuntimeError:
-    def __init__(self, msg :str=None, err_type :str=None, frame=None):
+    def __init__(self, msg :str=None, err_type :str=None, frame=None, stack_trace=None):
         self.msg :str = msg
         self.err_type :str = err_type
         self.frame = frame
@@ -67,7 +77,8 @@ def print_global_error(err :AILRuntimeError, where :str=''):
 
     if isinstance(where, list):
         for w in where[:-1]:
-            print('in \'%s\' :' % w)
+            sys.stderr.write('in \'%s\' :\n' % w)
+            sys.stderr.flush()
 
         where = where[-1]
 
@@ -82,6 +93,16 @@ def print_global_error(err :AILRuntimeError, where :str=''):
 
     if not ERR_NOT_EXIT:
         sys.exit(1)
+
+
+def format_error(error :AILRuntimeError):
+    msg = error.err_type
+    f = error.frame
+    t = error.err_type
+    p = f._marked_opcounter
+
+    return 'in \'%s\' +%s :\n\t%s : %s' % \
+           (f.code.name, p, t, msg)
 
 
 def raise_error_as_python(err :AILRuntimeError, where :str=''):

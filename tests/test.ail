@@ -5,14 +5,15 @@ fun f2() is
 end
 
 fun f() is
+    f2()
     throw 'Nezha is a MAN!'
 end
+
 
 try
     f()
 catch err then
-    throw 'Another Error'
-    print err
+
 finally
     print "Finally..."
 end

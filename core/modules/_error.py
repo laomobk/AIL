@@ -12,11 +12,13 @@ from core.aobjects import unpack_ailobj
 def _err_to_string(this):
     this = convert_to_pyobj(this)
 
+    f = this.__this___frame
     msg = this.__this_err_msg
     type = this.__this_err_type
     where = this.__this_err_where
 
-    return '%s%s : %s' % ('in %s :\n\t' % where if where else '',
+    return '%s%s : %s' % ('in \'%s\' + %s :\n\t' %
+                          (where, f._latest_call_opcounter) if where else '',
                           type, msg)
 
 

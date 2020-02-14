@@ -1,17 +1,21 @@
 begin
 
+fun f2() is
+    throw 'Houston, we have a problem'
+end
+
+fun f() is
+    f2()
+    throw 'Nezha is a MAN!'
+end
+
+
 try
-    f = open('lovely_Nezha.jpg')
-    f.upload()
-
-    if msg == 'Like' then
-        like = like + 1
-    else
-        dislike = dislike - 1
-    endif
-
+    f()
 catch err then
-    print err.to_string()
+
+finally
+    print "Finally..."
 end
 
 end

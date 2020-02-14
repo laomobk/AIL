@@ -1085,10 +1085,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser('tests/test.ail')
+    p = Parser('../tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)
