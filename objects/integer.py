@@ -137,7 +137,12 @@ def int_eq(self :obj.AILObject, o :obj.AILObject):
     return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o)
 
 
+def int_to_string(self):
+   return str(self)
+
+
 INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
+                             methods={'to_string' : int_to_string},
                              __init__=int_init,
                              __add__=int_add,
                              __str__=int_str,

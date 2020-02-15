@@ -84,3 +84,4 @@ def convert_to_func_wrapper(pyf):
         return obj.ObjectCreater.new_object(
                 PY_FUNCTION_TYPE, pyf)
 
+    return obj.convert_to_ail_object(pyf)

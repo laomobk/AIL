@@ -45,42 +45,38 @@ _AIL_VERSION = '1.1 build'
 shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 
 _BUILTINS = {
-    'abs' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_abs),
-    'ng' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_neg),
-    'int_input' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_int_input),
-    # 'py_getattr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_py_getattr),
-    '__version__' : objs.ObjectCreater.new_object(astr.STRING_TYPE, _AIL_VERSION),
-    '__main_version__' : objs.ObjectCreater.new_object(aint.INTEGER_TYPE, 1,),
-    'chr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_chr),
-    'ord' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_ord),
-    'hex' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_hex),
-    'make_type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_make_type),
-    'new' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.new_struct),
+    'abs' : objs.convert_to_ail_object(abuiltins.func_abs),
+    'ng' : objs.convert_to_ail_object(abuiltins.func_neg),
+    'int_input' : objs.convert_to_ail_object(abuiltins.func_int_input),
+    '__version__' : objs.convert_to_ail_object(_AIL_VERSION),
+    '__main_version__' : objs.convert_to_ail_object(1),
+    'chr' : objs.convert_to_ail_object(abuiltins.func_chr),
+    'ord' : objs.convert_to_ail_object(abuiltins.func_ord),
+    'hex' : objs.convert_to_ail_object(abuiltins.func_hex),
+    'make_type' : objs.convert_to_ail_object(abuiltins.func_make_type),
+    'new' : objs.convert_to_ail_object(abuiltins.new_struct),
     'null' : null.null,
-    'true' : objs.ObjectCreater.new_object(abool.BOOL_TYPE, True),
-    'false' : objs.ObjectCreater.new_object(abool.BOOL_TYPE, False),
-    'len' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_len),
-    'equal' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal),
-    'type' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_type),
-    'array' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_array),
-    'equal_type' :
-        objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_equal_type),
-    'isinstance' :
-        objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_isinstance),
-    'str' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_str),
-    'repr' : objs.ObjectCreater.new_object(afunc.PY_FUNCTION_TYPE, abuiltins.func_repr),
-    '_get_ccom' : afunc.convert_to_func_wrapper(ccom.get_cc_object),
-    'show_struct' : afunc.convert_to_func_wrapper(abuiltins.func_show_struct),
-    'open' : afunc.convert_to_func_wrapper(_open),
-    'catch_err' : afunc.convert_to_func_wrapper(catch_error),
+    'true' : objs.convert_to_ail_object(True),
+    'false' : objs.convert_to_ail_object(False),
+    'len' : objs.convert_to_ail_object(abuiltins.func_len),
+    'equal' : objs.convert_to_ail_object(abuiltins.func_equal),
+    'type' : objs.convert_to_ail_object(abuiltins.func_type),
+    'array' : objs.convert_to_ail_object(abuiltins.func_array),
+    'equal_type' : objs.convert_to_ail_object(abuiltins.func_equal_type),
+    'isinstance' : objs.convert_to_ail_object(abuiltins.func_isinstance),
+    'str' : objs.convert_to_ail_object(abuiltins.func_str),
+    'repr' : objs.convert_to_ail_object(abuiltins.func_repr),
+    '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
+    'open' : objs.convert_to_ail_object(_open),
+    'int' : objs.convert_to_ail_object(abuiltins.func_int)
 }
 
 
 class TempEnvironment:
     __slots__ = ['temp_var']
 
-    def __init__(self, temp_var=[]):
-        self.temp_var = temp_var
+    def __init__(self):
+        self.temp_var = list()
 
     def __str__(self):
         return '<TEnv(%s) at %s>' % (str(self.temp_var), hex(id(self)))
@@ -213,7 +209,7 @@ class Interpreter:
         errs = make_err_struct_object(
             error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
 
-        if err_type not in ('VMError', 'PythonError'):
+        if err_type not in ('VMError'):
             self.__now_state.err_stack.append(errs)
         else:
             error.print_global_error(
@@ -405,9 +401,7 @@ class Interpreter:
                 f.consts = c.consts
 
                 try:
-                    if func['__this__'] is not None \
-                            and objs.compare_type(
-                                    func['__this__'], struct.STRUCT_OBJ_TYPE):
+                    if func['__this__'] is not None :
                         this = copy.copy(func['__this__'])
                         this._pthis_ = True  # add _pthis_ attr
 
@@ -438,9 +432,7 @@ class Interpreter:
                 pyf = func['__pyfunction__']
                 has_this = False
 
-                if func['__this__'] is not None \
-                        and objs.compare_type(
-                            func['__this__'], struct.STRUCT_OBJ_TYPE):
+                if func['__this__'] is not None:
                     has_this = True
                     this = copy.copy(func['__this__'])
                     argl.insert(0, this)  # add this to 0
@@ -509,9 +501,6 @@ class Interpreter:
         else:
             self.__decref(tos)
 
-            if self.__now_state.err_stack:
-                print_all_error(True)
-
         self.__can = 0
 
     def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
@@ -536,7 +525,7 @@ class Interpreter:
 
                 # print(cp, get_opname(op), self.__tof, self.__stack)
 
-                print(self.__opcounter)
+                # print(self.__opcounter)
 
                 if op == pop_top:
                     tos = self.__pop_top()
@@ -808,7 +797,7 @@ class Interpreter:
 
                 elif op == clean_catch:
                     ts = self.__temp_env_stack.pop()
-                    print(self.__temp_env_stack)
+
                     tn = ts.temp_var
 
                     self.__now_state.handling_err_stack.pop(0)  # queue
@@ -841,7 +830,7 @@ class Interpreter:
                         break
                 
                 if not self.__can:
-                    can = 1
+                    self.__can = 1
                     break
 
                 if jump_to != self.__opcounter:

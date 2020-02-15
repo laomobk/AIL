@@ -200,3 +200,12 @@ def func_show_struct(sobj):
     block = '{\n%s\n}' % meml
 
     return ln1 + block
+
+
+def func_int(obj):
+    v = objs.unpack_ailobj(obj)
+
+    try:
+        return int(v)
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonError')

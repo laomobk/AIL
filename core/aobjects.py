@@ -1,6 +1,7 @@
 from core import error
-
 from objects import types
+
+import inspect
 
 
 INVISIBLE_ATTRS = (
@@ -116,10 +117,11 @@ class AILObject:
 
 class AILObjectType:
     '''Object Type'''
-    def __init__(self, tname :str, otype=None,**required):
+    def __init__(self, tname :str, otype=None, methods :dict=None,**required):
         self.name = tname
         self.required = required
         self.otype = types.I_TYPE_TYPE if otype is None else otype
+        self.methods = methods
 
     def __str__(self):
         return '<AIL Type \'%s\'>' % self.name
@@ -129,6 +131,8 @@ class AILObjectType:
 
 class ObjectCreater:
     from objects import ailobject as __aobj
+    from objects.function import \
+        convert_to_func_wrapper as __to_wrapper
 
     __required_normal = {
         '__str__' : __aobj.obj_func_str,
@@ -151,6 +155,17 @@ class ObjectCreater:
 
         for k, v in obj_type.required.items():
             obj.properties[k] = v
+
+        if obj_type.methods is not None:
+            for mn, mo in obj_type.methods.items():
+                if inspect.isfunction(mo):
+                    f = ObjectCreater.__to_wrapper(mo)
+
+                    f.reference += 1
+                    obj.reference += 1
+
+                    f['__this__'] = obj  # bound self to __this__
+                    obj.properties[mn] = f
 
         # check normal required
 
@@ -217,3 +232,4 @@ def unpack_ailobj(ailobj :AILObject):
     if has_attr(ailobj, '__value__'):
         return ailobj['__value__']
     return ailobj
+

@@ -460,7 +460,7 @@ class Compiler:
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
-        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 2
+        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
         # for clean_catch
         to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
         # for jump_absoulte
@@ -1034,10 +1034,10 @@ def test_compiler():
     from core.aparser import Parser
     from core.alex import Lex
 
-    l = Lex('tests/test.ail')
+    l = Lex('../tests/test.ail')
     ts = l.lex()
 
-    p = Parser('tests/test.ail')
+    p = Parser('../tests/test.ail')
     t = p.parse(ts)
     #t = t.stmts[0]
 

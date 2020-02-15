@@ -69,7 +69,7 @@ def struct_setattr(self, name :str, value):
 
 
 def struct_str(self):
-    return '<struct \'%s\' at %d>' % (self['__name__'], hex(id(self)))
+    return '<struct \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
 def structobj_str(self):
