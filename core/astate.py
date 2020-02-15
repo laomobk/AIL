@@ -8,7 +8,7 @@ class InterpreterState:
 
         self.handling_err_stack = []
         self.err_stack = []
-        self.global_interpreter = None  # global interpreter reference
+        self.global_interpreters = []  # global interpreter reference
 
 
 MAIN_INTERPRETER_STATE = InterpreterState()

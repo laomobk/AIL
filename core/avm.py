@@ -82,6 +82,11 @@ class TempEnvironment:
     def __init__(self, temp_var=[]):
         self.temp_var = temp_var
 
+    def __str__(self):
+        return '<TEnv(%s) at %s>' % (str(self.temp_var), hex(id(self)))
+
+    __repr__ = __str__
+
 
 class _ProtectedSignal:
     __slots__ = []
@@ -113,7 +118,7 @@ class Frame:
 
 class Interpreter:
     def __init__(self):
-        MAIN_INTERPRETER_STATE.global_interpreter = self
+        MAIN_INTERPRETER_STATE.global_interpreters.append(self)
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
@@ -126,6 +131,9 @@ class Interpreter:
         self.__can = 1  # 1 -> pass | 0 -> break
 
         self.__can_update_opc = True
+
+    def __del__(self):
+        MAIN_INTERPRETER_STATE.global_interpreters.pop()
 
     @property
     def __tof(self) -> Frame:
@@ -179,7 +187,7 @@ class Interpreter:
 
     def __check_object(self, aobj :objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
-            error.print_global_error(aobj, self.__tof.code.name)
+            self.__raise_error(aobj.msg, aobj.err_type)
         if not isinstance(aobj, objs.AILObject) and not not_convert:
             target = {
                 str: astr.STRING_TYPE,
@@ -203,7 +211,7 @@ class Interpreter:
 
     def __raise_error(self, msg :str, err_type :str):
         errs = make_err_struct_object(
-            error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name)
+            error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
 
         if err_type not in ('VMError', 'PythonError'):
             self.__now_state.err_stack.append(errs)
@@ -211,12 +219,12 @@ class Interpreter:
             error.print_global_error(
                 error.AILRuntimeError(msg, err_type, self.__tof), 
                     '%s +%s' % 
-                    (self.__tof.code.name, hex(self.__tof._marked_opcounter)))
+                    (self.__tof.code.name, self.__opcounter))
 
         self.__now_state.handling_err_stack.append(errs)
 
         if self.__tof.try_stack:
-            to = self.__tof.try_stack[-1]
+            to = self.__tof.try_stack.pop()
 
             self.__opcounter = to
 
@@ -225,7 +233,7 @@ class Interpreter:
 
             return
 
-        for f in self.__frame_stack[::-1]:
+        for f in self.__frame_stack:
             if f.try_stack:
                 break
         else:
@@ -521,14 +529,14 @@ class Interpreter:
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
 
-                print(self.__opcounter)
-
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
                 # 速度可能会慢些
 
                 # print(cp, get_opname(op), self.__tof, self.__stack)
+
+                print(self.__opcounter)
 
                 if op == pop_top:
                     tos = self.__pop_top()
@@ -800,11 +808,12 @@ class Interpreter:
 
                 elif op == clean_catch:
                     ts = self.__temp_env_stack.pop()
+                    print(self.__temp_env_stack)
                     tn = ts.temp_var
 
                     self.__now_state.handling_err_stack.pop(0)  # queue
 
-                    self.__tof.try_stack.pop()
+                    # self.__tof.try_stack.pop()
 
                     for n in tn:
                         del self.__tof.variable[n]

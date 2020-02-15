@@ -1,38 +1,38 @@
 import sys
 
-from core.error import AILRuntimeError
+from core.error import AILRuntimeError 
 from objects.string import convert_to_string
 from objects.struct import new_struct_object, convert_to_pyobj
 from objects.null import null
 from core.astate import MAIN_INTERPRETER_STATE
-from objects.function import convert_to_func_wrapper
-from core.aobjects import unpack_ailobj
+from core.aobjects import unpack_ailobj, convert_to_ail_object
 
 
 def _err_to_string(this):
     this = convert_to_pyobj(this)
 
-    f = this.__this___frame
+    ofs = this.__this___offset
     msg = this.__this_err_msg
     type = this.__this_err_type
     where = this.__this_err_where
 
     return '%s%s : %s' % ('in \'%s\' + %s :\n\t' %
-                          (where, f._latest_call_opcounter) if where else '',
+                          (where, ofs) if where else '',
                           type, msg)
 
 
-def make_err_struct_object(err_obj :AILRuntimeError, where :str):
+def make_err_struct_object(err_obj :AILRuntimeError, where :str, offset=-1):
     msg = err_obj.msg
     type = err_obj.err_type
     frame = err_obj.frame
 
     err_d = {
-        'err_msg' : convert_to_string(msg),
-        'err_type' : convert_to_string(type),
-        'err_where' : convert_to_string(where),
-        'to_string' : convert_to_func_wrapper(_err_to_string),
-        '__frame' : frame
+        'err_msg' : convert_to_ail_object(msg),
+        'err_type' : convert_to_ail_object(type),
+        'err_where' : convert_to_ail_object(where),
+        'to_string' : convert_to_ail_object(_err_to_string),
+        '__offset' : offset,
+        '__frame' : frame,
     }
 
     return new_struct_object('ERR_T', null, err_d, err_d.keys())

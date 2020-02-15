@@ -456,7 +456,7 @@ class Compiler:
 
         tbc = self.__compile_block(tree.try_block, extofs)
 
-        cat_ext = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
+        cat_ext = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 3
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 

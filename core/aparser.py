@@ -911,15 +911,6 @@ class Parser:
         in_finally = False
 
         while self.__now_tok != 'end':
-            s = self.__parse_stmt()
-
-            if isinstance(s, ast.NullLineAST):
-                pass
-            elif isinstance(s, ast.EOFAST):
-                self.__syntax_error("try statement should ends with 'end'")
-            else:
-                now.append(s)
-
             if self.__now_tok == 'finally':
                 if in_finally:
                     self.__syntax_error()
@@ -932,6 +923,18 @@ class Parser:
                 self.__next_tok()  # eat ENTER
 
                 now = finally_sl
+
+            if self.__now_tok == 'end':
+                break
+
+            s = self.__parse_stmt()
+
+            if isinstance(s, ast.NullLineAST):
+                pass
+            elif isinstance(s, ast.EOFAST):
+                self.__syntax_error("try statement should ends with 'end'")
+            else:
+                now.append(s)
 
         cab = ast.BlockExprAST(catch_sl, self.__now_ln)
         fnb = ast.BlockExprAST(finally_sl, self.__now_ln)
@@ -1085,10 +1088,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('../tests/test.ail')
+    l = Lex('tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)

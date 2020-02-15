@@ -6,16 +6,17 @@ end
 
 fun f() is
     f2()
-    throw 'Nezha is a MAN!'
 end
 
 
 try
-    f()
+    throw 'A'
 catch err then
-
-finally
-    print "Finally..."
+    try
+        throw 'B'
+    catch err2 then
+        print err2
+    end
 end
 
 end
