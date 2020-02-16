@@ -32,6 +32,8 @@ from core._vmsig import *
 
 from core import corecom as ccom
 
+from core.test_utils import get_opname
+
 __author__ = 'LaomoBK'
 
 # GLOBAL SETTINGS
@@ -513,10 +515,16 @@ class Interpreter:
 
         why = WHY_NORMAL
 
+        from utils.timer import Timer
+        tmr = Timer()
+
         try:
+            tmr.start()
             while self.__opcounter < len(code) - 1:  # included argv index
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
+
+                tmr.lap(get_opname(op))
 
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
@@ -575,16 +583,14 @@ class Interpreter:
                     if v is None:
                         self.__raise_error(
                                 'Pop from empty stack', 'VMError')
-
+                    
+                    
                     if n in self.__tof.variable.keys():
                         self.__decref(self.__tof.variable[n])
-
+                    
                     self.__incref(v)
-
                     self.__store_var(n, v)
-
                     self.__push_back(v)
-
                     self.__incref(v)
 
                 elif op == load_const:
@@ -841,6 +847,8 @@ class Interpreter:
 
         except (EOFError, KeyboardInterrupt) as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
+        tmr.print_analytical_table()
+        
         return why
 
     def exec(self, cobj, frame=None):
