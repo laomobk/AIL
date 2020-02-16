@@ -68,6 +68,9 @@ setup_catch = 0x2d
 clean_catch = 0x2e
 clean_try = 0x2f
 
+pop_jump_if_false_or_pop = 0x30
+pop_jump_if_true_or_pop = 0x31
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

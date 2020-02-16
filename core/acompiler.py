@@ -10,6 +10,8 @@ import objects.wrapper as awrapper
 import objects.float as afloat
 from objects.null import null
 
+import pickle
+
 __author__ = 'LaomoBK'
 
 ___doc__ = ''' Compiler for AIL
@@ -155,6 +157,15 @@ class ByteCodeFileBuffer:
         return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes.blist, 
                                  self.lnotab.firstlineno, self.argcount,
                                  self.name, self.lnotab)
+
+    def dump_obj(self):
+        '''
+        dump code object with pickle.
+        '''
+        import re
+        fnc = re.compile(r'<|>')
+        fn = fnc.sub('_', 'ail.%s.compiled.ailc' % self.name)
+        pickle.dump(self.code_object, open(fn, 'wb'))
 
 
 class Compiler:
@@ -771,7 +782,7 @@ class Compiler:
         # 不需要加elbc的长度
 
         # tc = self.__compile_test_expr(tree.test, test_jump)
-        tc.add_bytecode(jump_if_false_or_pop, test_jump)
+        tc.add_bytecode(pop_jump_if_false_or_pop, test_jump)
 
         bc += tc
         bc += ifbc
@@ -1039,7 +1050,6 @@ def test_compiler():
 
     p = Parser('../tests/test.ail')
     t = p.parse(ts)
-    #t = t.stmts[0]
 
     c = Compiler(t)
     bf = c.compile(t)

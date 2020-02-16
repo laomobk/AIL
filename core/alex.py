@@ -373,39 +373,8 @@ class Lex:
                         LAP_ENTER,
                         self.__ln
                     ))
-
-            elif c == '-':
-                if self.__nextch() == '-':
-                    self.__stream.append(Token('--',
-                                               LAP_SUB_SUB,
-                                               self.__ln))
-                    self.__movchr(2)
-
-                elif self.__nextch().isdigit():
-                    self.__movchr()
-
-                    mov, buf = get_number(self.__source, self.__chp)
-                    self.__stream.append(Token(
-                        '-' + buf,
-                        LAP_NUMBER,
-                        self.__ln
-                    ))
-                    self.__movchr(mov)
-
-                elif self.__nextch() == '=':
-                    self.__stream.append(
-                        Token('-=',
-                              LAP_INP_SUB,
-                              self.__ln
-                              ))
-                    self.__movchr(2)
-                else:
-                    self.__stream.append(Token(c,
-                            LAP_SUB,
-                            self.__ln))
-                    self.__movchr(1)
  
-            elif c in ('+', '*', '^', '%', '|', '&'):  #除法和减法有点特殊
+            elif c in ('+', '*', '^', '%', '|', '&', '-'):  #除法有点特殊
                 if self.__nextch() == '=':  #原地运算
                     self.__stream.append(Token(c+'=', 
                         {
@@ -413,11 +382,12 @@ class Lex:
                             '*':LAP_INP_MUIT,
                             '%':LAP_INP_MOD,
                             '^':LAP_INP_XOR,
+                            '-':LAP_INP_SUB
                         }[c],   #根据c得到单词类型 
                     self.__ln))
                     self.__movchr(2)
  
-                elif self.__nextch() == '+':  #自增自减
+                elif self.__nextch() in ('+', '-'):  #自增自减
                     self.__stream.append(Token(c+c,
                         LAP_PLUS_PLUS if self.__nextch() == '+' else LAP_SUB_SUB,
                         self.__ln))
@@ -447,7 +417,8 @@ class Lex:
                             '%':LAP_MOD,
                             '^':LAP_XOR,
                             '|':LAP_BIN_OR,
-                            '&':LAP_BIN_AND
+                            '&':LAP_BIN_AND,
+                            '-':LAP_SUB
                         }[c], 
                     self.__ln))
                     self.__movchr(1)

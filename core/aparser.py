@@ -263,11 +263,24 @@ class Parser:
 
         nt = self.__now_tok
 
-        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER) or \
+        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER, LAP_SUB) or \
                 nt in _keywords:
             self.__syntax_error()
 
-        name = nt.value  # it can be string, number or identifier
+        if self.__now_tok.ttype == LAP_SUB:
+            v = self.__now_tok.value
+            self.__next_tok()  # eat '-'
+
+            if self.__now_tok.ttype != LAP_NUMBER:
+                self.__syntax_error()
+
+            v += self.__now_tok.value
+
+            self.__next_tok()  # eat NUMBER
+
+            return ast.CellAST(v, LAP_NUMBER, self.__now_ln)
+
+        name = nt.value  # it can be sub, string, number or identifier
 
         self.__next_tok()  # eat NAME
 

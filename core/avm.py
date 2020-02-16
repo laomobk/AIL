@@ -34,6 +34,8 @@ from core import corecom as ccom
 
 from core.test_utils import get_opname
 
+from utils.timer import Timer
+
 __author__ = 'LaomoBK'
 
 # GLOBAL SETTINGS
@@ -94,13 +96,17 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 
 
 class Frame:
-    def __init__(self, code :objs.AILCodeObject=None, varnames=[],
-                 consts=[], globals={}):
+    __slots__ = ['code', 'stack', 'varnames', 'consts',
+                 'variable', 'break_stack', 'temp_env_stack',
+                 'try_stack', '_marked_opcounter', '_latest_call_opcounter']
+
+    def __init__(self, code :objs.AILCodeObject=None, varnames :list=None,
+                 consts :list=None, globals :dict=None):
         self.code :objs.AILCodeObject = code
         self.stack = []
-        self.varnames = varnames
-        self.consts = consts
-        self.variable = globals
+        self.varnames = varnames if varnames else list()
+        self.consts = consts if consts else list()
+        self.variable = globals if globals else dict()
         self.break_stack = []
         self.temp_env_stack = []
         self.try_stack = []
@@ -135,15 +141,11 @@ class Interpreter:
 
     @property
     def __tof(self) -> Frame:
-        return self.__now_state.frame_stack[-1]   \
-            if self.__now_state.frame_stack   \
-            else None
+        return self.__now_state.frame_stack[-1]
 
     @property
     def __tos(self) -> objs.AILObject:
-        return self.__tof.stack[-1]   \
-            if self.__tof.stack   \
-            else None
+        return self.__tof.stack[-1]
 
     @property
     def __stack(self) -> List[objs.AILObject]:
@@ -264,14 +266,14 @@ class Interpreter:
         :param mode: 0 -> increase  |  1 -> decrease
         '''
 
-        if isinstance(ailobj, objs.AILObject):
-            ailobj.reference -= 1 if mode else -1
+    def __decref(self, ailobj):
+        ailobj.reference -= 1
 
-            if not ailobj.reference:
-                del ailobj
+        if not ailobj.reference:
+            del ailobj
 
-    __incref = lambda self, obj : self.__chref(obj, 0)
-    __decref = lambda self, obj : self.__chref(obj, 1)
+    def __incref(self, ailobj):
+        ailobj.reference += 1
 
     def __get_jump(self, jump_to :int, pop :bool, why :int) -> int:
         '''
@@ -349,10 +351,8 @@ class Interpreter:
             self.__interrupt_signal = MII_DO_JUMP
 
     def __bool_test(self, obj):
-        if isinstance(obj, objs.AILObject):
-            if objs.has_attr(obj, '__value__'):
-                return bool(obj['__value__'])
-        return bool(obj)
+        if '__value__' in obj.properties:
+            return bool(obj.properties['__value__'])
 
     def __check_break(self) -> int:
         jump_to = 0
@@ -373,10 +373,10 @@ class Interpreter:
         return jump_to
 
     def __load_name(self, index :int) -> objs.AILObject:
-        for f in self.__frame_stack[::-1]:
-            n = self.__tof.varnames[index]
+        n = self.__tof.varnames[index]
 
-            if n in f.variable.keys():
+        for f in self.__frame_stack[::-1]:
+            if n in f.variable:
                 return f.variable[n]
         else:
             self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
@@ -485,7 +485,7 @@ class Interpreter:
                     else:
                         rtn = objs.ObjectCreater.new_object(target, rtn)
 
-                self.__push_back(rtn)
+                self.__tof.stack.append(rtn)
             else:
                 self.__raise_error(
                     '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
@@ -498,7 +498,7 @@ class Interpreter:
             for o in f.variable.values():
                 self.__decref(o)
 
-            self.__push_back(tos)
+            self.__tof.stack.append(tos)
 
         else:
             self.__decref(tos)
@@ -515,8 +515,7 @@ class Interpreter:
 
         why = WHY_NORMAL
 
-        from utils.timer import Timer
-        tmr = Timer()
+        tmr = Timer(cobj.name)
 
         try:
             tmr.start()
@@ -536,20 +535,17 @@ class Interpreter:
                 # print(self.__opcounter)
 
                 if op == pop_top:
-                    tos = self.__pop_top()
+                    tos = self.__tof.stack.pop()
                     self.__decref(tos)
 
                 elif op == print_value:
                     tosl = [self.__pop_top() for _ in range(argv)][::-1]
                     
                     for tos in tosl:
-                        if isinstance(tos, objs.AILObject):
-                            tosm = self.__check_object(tos['__str__'](tos))
-                        else:
-                            tosm = str(tos)
+                        tosm = self.__check_object(tos['__str__'](tos), not_convert=True)
 
-                        print(tosm, end=' ')
-                    print()
+                        sys.stdout.write(tosm + ' ')
+                    sys.stdout.write('\n')
 
                 elif op == input_value:
                     vc = argv
@@ -577,42 +573,55 @@ class Interpreter:
                         self.__store_var(k, v)
 
                 elif op == store_var:
-                    v = self.__pop_top()
+                    v = self.__tof.stack.pop()
                     n = self.__tof.varnames[argv]
 
-                    if v is None:
-                        self.__raise_error(
-                                'Pop from empty stack', 'VMError')
-                    
-                    
                     if n in self.__tof.variable.keys():
                         self.__decref(self.__tof.variable[n])
                     
-                    self.__incref(v)
+                    v.reference += 1
                     self.__store_var(n, v)
-                    self.__push_back(v)
-                    self.__incref(v)
+                    self.__tof.stack.append(v)
+                    v.reference += 1
 
                 elif op == load_const:
-                    self.__push_back(
+                    self.__tof.stack.append(
                             self.__tof.consts[argv])
 
                 elif op == load_varname:
-                    self.__push_back(
+                    self.__tof.stack.append(
                         self.__tof.varnames[argv]
                     )
 
                 elif op == load_global:
-                    var = self.__load_name(argv)
+                    n = self.__tof.varnames[argv]
 
-                    self.__push_back(var)
+                    if len(self.__now_state.frame_stack) == 1:
+                        tof = self.__now_state.frame_stack[-1]
+                        if n in tof.variable:
+                            o = tof.variable[n]
+                            o.reference += 1
+                            tof.stack.append(o)
+                        else:
+                            self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
+
+                    else:
+                        for f in self.__frame_stack[::-1]:
+                            if n in f.variable:
+                                o = f.variable[n]
+                                o.reference += 1
+                                self.__tof.stack.append(o)
+
+                                break
+                        else:
+                            self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
 
                 elif op == return_value:
                     self.__return()
 
                 elif op == setup_for:
                     self.__temp_env_stack.append(TempEnvironment())
-                    self.__add_break_point(argv)
+                    self.__break_stack.append(argv)
 
                 elif op in (setup_doloop, setup_while):
                     self.__add_break_point(argv)
@@ -636,13 +645,28 @@ class Interpreter:
                     jump_to = self.__get_jump(argv, False, 0)
 
                 elif op == jump_if_false_or_pop:
-                    tos = self.__pop_top()
+                    tos = self.__tof.stack.pop()
+
+                    if not self.__bool_test(tos):
+                        jump_to = argv
+                        self.__tof.stack.append(tos)
+
+                elif op == jump_if_true_or_pop:
+                    tos = self.__tof.stack[-1]
+
+                    if self.__bool_test(tos):
+                        jump_to = argv
+                    else:
+                        self.__tof.stack.pop()
+
+                elif op == pop_jump_if_false_or_pop:
+                    tos = self.__tof.stack.pop()
 
                     if not self.__bool_test(tos):
                         jump_to = argv
 
-                elif op == jump_if_true_or_pop:
-                    tos = self.__pop_top()
+                elif op == pop_jump_if_false_or_pop:
+                    tos = self.__tof.stack.pop()
 
                     if self.__bool_test(tos):
                         jump_to = argv
@@ -664,14 +688,14 @@ class Interpreter:
 
                     res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
 
-                    self.__push_back(res)
+                    self.__tof.stack.append(res)
 
                 elif op == binary_not:
                     o = self.__pop_top()
 
                     b = not self.__bool_test(o)
 
-                    self.__push_back(
+                    self.__tof.stack.append(
                         objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
 
                 elif op == compare_op:
@@ -680,7 +704,7 @@ class Interpreter:
                     b = self.__pop_top()
                     a = self.__pop_top()
 
-                    self.__push_back(
+                    self.__tof.stack.append(
                         self.__compare(a, b, cop)
                     )
 
@@ -713,7 +737,7 @@ class Interpreter:
                             array.ARRAY_TYPE, l)
 
                     self.__incref(o)
-                    self.__push_back(o)
+                    self.__tof.stack.append(o)
 
                 elif op == binary_subscr:
                     v = self.__pop_top()
@@ -726,7 +750,7 @@ class Interpreter:
                         
                         rtn = self.__check_object(l['__getitem__'](l, v))
                         
-                        self.__push_back(rtn)
+                        self.__tof.stack.append(rtn)
 
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
@@ -750,7 +774,7 @@ class Interpreter:
 
                         self.__check_object(afunc.call(o['__setitem__'], o, i, v))
 
-                    self.__push_back(v)
+                    self.__tof.stack.append(v)
 
                 elif op == load_attr:
                     o = self.__pop_top()
@@ -758,7 +782,7 @@ class Interpreter:
 
                     r = self.__check_object(o['__getattr__'](o, vn))
 
-                    self.__push_back(r)
+                    self.__tof.stack.append(r)
 
                 elif op == store_attr:
                     o = self.__pop_top()
@@ -767,7 +791,7 @@ class Interpreter:
 
                     self.__check_object(o['__setattr__'](o, ni, v))
 
-                    self.__push_back(v)
+                    self.__tof.stack.append(v)
 
                 elif op == store_struct:
                     name = self.__pop_top()
@@ -781,7 +805,7 @@ class Interpreter:
                     self.__store_var(name, o)
 
                 elif op == set_protected:
-                    self.__push_back(PROTECTED_SIGNAL)
+                    self.__tof.stack.append(PROTECTED_SIGNAL)
 
                 elif op == throw_error:
                     self.__tof._marked_opcounter = self.__opcounter
@@ -852,6 +876,8 @@ class Interpreter:
         return why
 
     def exec(self, cobj, frame=None):
+        import time
+
         if not frame:
             f = Frame()
             f.code = cobj
@@ -863,23 +889,28 @@ class Interpreter:
         else:
             f = frame
 
+        print('[W] 编译完成，开始计时')
+        ft = time.time() * 1000
         self.__run_bytecode(cobj, f)
-
+        print('除去编译用时实际运行时间 : %s ms' % (time.time() * 1000 - ft))
 
 def test_vm():
+    import pickle
     from core.alex import Lex
     from core.aparser import Parser
     from core.acompiler import Compiler
-    
+
     l = Lex('tests/test.ail')
     ts = l.lex()
 
     t = Parser('tests/test.ail').parse(ts)
 
-    co = Compiler(filename='<TEST>').compile(t)
+    cbf = Compiler(filename='<TEST>').compile(t)
+
+    co = cbf.code_object
 
     inter = Interpreter()
-    inter.exec(co.code_object)
+    inter.exec(co)
 
 
 if __name__ == '__main__':
