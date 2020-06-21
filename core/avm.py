@@ -242,7 +242,12 @@ class Interpreter:
                 sys.stderr.write('\n%s\n\n' %
                       'During handling of the above exception, another exception occurred:')
             sys.stderr.write(_err_to_string(errs) + '\n')
-            sys.exit(1)
+
+            if not error.ERR_NOT_EXIT:
+                sys.exit(1)
+            
+            self.__now_state.handling_err_stack.clear()
+            return
 
         # set interrupt signal.
         self.__interrupted = True
@@ -518,12 +523,12 @@ class Interpreter:
         tmr = Timer(cobj.name)
 
         try:
-            tmr.start()
+            # tmr.start()
             while self.__opcounter < len(code) - 1:  # included argv index
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
 
-                tmr.lap(get_opname(op))
+                # tmr.lap(get_opname(op))
 
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
@@ -871,7 +876,7 @@ class Interpreter:
 
         except (EOFError, KeyboardInterrupt) as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
-        tmr.print_analytical_table()
+        # tmr.print_analytical_table()
         
         return why
 
@@ -889,10 +894,10 @@ class Interpreter:
         else:
             f = frame
 
-        print('[W] 编译完成，开始计时')
-        ft = time.time() * 1000
+        # print('[W] 编译完成，开始计时')
+        # ft = time.time() * 1000
         self.__run_bytecode(cobj, f)
-        print('除去编译用时实际运行时间 : %s ms' % (time.time() * 1000 - ft))
+        # print('除去编译用时实际运行时间 : %s ms' % (time.time() * 1000 - ft))
 
 def test_vm():
     import pickle
