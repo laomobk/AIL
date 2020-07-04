@@ -1,21 +1,15 @@
 begin
 
-fun f2() is
-    throw 'Houston, we have a problem'
+s = 0
+
+for (i=10000 ; i < 20000 ; i = i + 1) then 
+    a = i mod 10
+    b = int(i / 100) mod 10
+    if a == b then
+        s = s + 1
+    endif
 end
 
-fun f() is
-    f2()
-    throw 'Nezha is a MAN!'
-end
-
-
-try
-    f()
-catch err then
-
-finally
-    print "Finally..."
-end
+print "相同的有:" ; s
 
 end

@@ -1,5 +1,15 @@
 begin
 
-234 + ( 234 - 324 ) * 234234 - ( 234234 / 123 )
+s = 0
+
+for (i=10000 ; i < 20000 ; i = i + 1) then 
+    a = i mod 10
+    b = int(i / 100) mod 10
+    if a == b then
+        s = s + 1
+    endif
+end
+
+print "相同的有:" ; s
 
 end
