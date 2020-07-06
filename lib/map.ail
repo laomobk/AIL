@@ -1,0 +1,19 @@
+begin
+
+struct _Map is
+	size
+
+	__k
+	__v
+end
+
+
+fun HashMap(len) is
+	len
+
+	m = new(_HashMap, {len, array(len)})
+
+	return m
+end
+
+end
