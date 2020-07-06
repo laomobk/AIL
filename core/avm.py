@@ -22,6 +22,7 @@ from core.modules._fileio import _open
 from core.modules._error import (
         make_err_struct_object, throw_error, catch_error,
         print_all_error, _err_to_string)
+from core.version import AIL_VERSION
 
 import re
 import copy
@@ -44,7 +45,7 @@ _BYTE_CODE_SIZE = 2
 _MAX_RECURSION_DEPTH = 888
 _MAX_BREAK_POINT_NUMBER = 50
 
-_AIL_VERSION = '1.1 build'
+_AIL_VERSION = AIL_VERSION
 
 shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 
@@ -247,7 +248,7 @@ class Interpreter:
                 sys.exit(1)
             
             self.__now_state.handling_err_stack.clear()
-            return
+            # return
 
         # set interrupt signal.
         self.__interrupted = True
@@ -474,9 +475,9 @@ class Interpreter:
                     self.__raise_error(
                         str(e), 'PythonError'
                     )
+                    return
 
                 if not isinstance(rtn, objs.AILObject):
-
                     target = {
                         str: astr.STRING_TYPE,
                         int: aint.INTEGER_TYPE,
@@ -535,7 +536,7 @@ class Interpreter:
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
                 # 速度可能会慢些
 
-                # print(cp, get_opname(op), self.__tof, self.__stack)
+                print(get_opname(op), self.__tof, self.__stack)
 
                 # print(self.__opcounter)
 
@@ -762,10 +763,12 @@ class Interpreter:
 
                     v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
 
-                    if v is None:
+                    if isinstance(v, error.AILRuntimeError):
+                        pass
+                    elif v is None:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
-
-                    self.__tof.variable.update(v)
+                    else:
+                        self.__tof.variable.update(v)
 
                 elif op == store_subscr:
                     i = self.__pop_top()
@@ -857,8 +860,12 @@ class Interpreter:
                     elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_POP_TO_TRY
-                        
-                        self.__frame_stack.pop()
+
+                        if len(self.__frame_stack) > 1:
+                            self.__frame_stack.pop()
+                        else:
+                            self.__stack.clear()
+
                         self.__handle_error()
 
                         why = WHY_HANDLING_ERR

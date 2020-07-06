@@ -10,15 +10,17 @@ from core import shared
 AIL_DIRECTORY = os.path.split(os.path.abspath(__file__))[0]
 
 shared.GLOBAL_SHARED_DATA.cwd = os.getcwd()
+shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIRECTORY
 
 
 def init_paths():
     # init_lib_path
     core_p = os.path.join(AIL_DIRECTORY, 'core')
     lib_p = os.path.join(AIL_DIRECTORY, 'lib')
+    builtins_p = os.path.join(core_p, 'modules')
     work_p = os.getcwd()
     
-    shared.GLOBAL_SHARED_DATA.find_path = [core_p, lib_p, work_p]
+    shared.GLOBAL_SHARED_DATA.find_path = [builtins_p, lib_p, work_p]
 
 
 def launch_py_test(test_name):

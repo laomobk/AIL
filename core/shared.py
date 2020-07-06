@@ -3,10 +3,11 @@
 
 
 class _ShardData:
-    find_path = None
-    max_recursion_depth = None
-    cwd = None
-    base_dir = None
+    find_path: str = None
+    max_recursion_depth: int = None
+    cwd: str = None
+    base_dir: str = None
+    ail_path: str = None
 
 
 GLOBAL_SHARED_DATA = _ShardData()

@@ -14,6 +14,7 @@ _ALLOW_FILE_TYPE = ('ail', 'py')
 '''
 如果你想要创建一个 AIL 的 Python 模块
 请务必在模块中定义一个 '_AIL_NAMESPACE_' 字典
+且要在该Python模块中设置 _IS_AIL_MODULE_ = True 字段！
 AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 '''
 
@@ -43,11 +44,17 @@ class ModuleLoader:
         v = {}
 
         try:
-            cobj = compile(open(pypath).read(), pypath, 'exec')
+            cobj = compile(open(pypath, encoding='UTF-8').read(), pypath, 'exec')
             exec(cobj, v)
         except Exception as e:
             return error.AILRuntimeError(
                 '%s : %s' % (type(e).__name__, str(e)), 'ErrorWhileLoading')
+
+        is_mod = v.get('_IS_AIL_MODULE_', None)
+
+        if is_mod is not True:
+            return error.AILRuntimeError(
+                '%s is not an AIL MODULE!' % pypath, 'ErrorWhileLoading')
 
         if '_AIL_NAMESPACE_' in v:
             nsp = v['_AIL_NAMESPACE_']

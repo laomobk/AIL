@@ -1,7 +1,6 @@
 import sys
 
-from core.error import AILRuntimeError 
-from objects.string import convert_to_string
+from core.error import AILRuntimeError
 from objects.struct import new_struct_object, convert_to_pyobj
 from objects.null import null
 from core.astate import MAIN_INTERPRETER_STATE
