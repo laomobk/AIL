@@ -1,4 +1,6 @@
 # AIL-Language 1.2 Build
 
 
-**May never release...**
+#### **Wait and see...
+
+***see branch 'refactoring' to learn more***
