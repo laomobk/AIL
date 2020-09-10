@@ -1,10 +1,10 @@
 # map module
 # 2020 / 7 / 7
 
-from core.aobjects import convert_to_ail_object, unpack_ailobj
-from objects.struct import convert_to_pyobj, new_struct_object
-from objects.null import null
-from core.error import AILRuntimeError
+from ..aobjects import convert_to_ail_object, unpack_ailobj
+from ...objects.struct import convert_to_pyobj, new_struct_object
+from ...objects.null import null
+from ..error import AILRuntimeError
 
 
 _KEY_NOT_EXISTS = object()

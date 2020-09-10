@@ -1,8 +1,8 @@
-from core.acompiler import (
+from .acompiler import (
     ByteCodeFileBuffer,
             LineNumberTableGenerator
         )
-from core import aobjects as obj, asts as ast, opcodes as opcs
+from . import aobjects as obj, asts as ast, opcodes as opcs
 
 
 def unpack_list(l :list):

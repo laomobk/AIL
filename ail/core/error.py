@@ -1,6 +1,6 @@
 import sys
 import os.path
-from core import debugger
+from . import debugger
 
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
@@ -52,7 +52,7 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
 
 
 def print_stack_trace():
-    from core.astate import MAIN_INTERPRETER_STATE as state
+    from .astate import MAIN_INTERPRETER_STATE as state
 
     for f in state.frame_stack[1:][::-1]:
         cp = f._latest_call_opcounter

@@ -1,5 +1,5 @@
 
-from core.version import (AIL_VERSION, AIL_VERSION_STATE,
+from ..version import (AIL_VERSION, AIL_VERSION_STATE,
                           AIL_SUB_VERSION, AIL_MAIN_VERSION)
 
 _IS_AIL_MODULE_ = True

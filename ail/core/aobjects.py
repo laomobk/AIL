@@ -1,5 +1,5 @@
-from core import error
-from objects import types
+from . import error
+from ..objects import types
 
 import inspect
 
@@ -130,8 +130,8 @@ class AILObjectType:
 
 
 class ObjectCreater:
-    from objects import ailobject as __aobj
-    from objects.function import \
+    from ..objects import ailobject as __aobj
+    from ..objects.function import \
         convert_to_func_wrapper as __to_wrapper
 
     __required_normal = {
@@ -193,13 +193,13 @@ def convert_to_ail_object(pyobj :object) -> AILObject:
     if isinstance(pyobj, AILObject):
         return pyobj
 
-    from objects import string
-    from objects import integer
-    from objects import float
-    from objects import bool
-    from objects import array
-    from objects import wrapper
-    from objects import function
+    from ..objects import string
+    from ..objects import integer
+    from ..objects import float
+    from ..objects import bool
+    from ..objects import array
+    from ..objects import wrapper
+    from ..objects import function
 
     from types import FunctionType
 

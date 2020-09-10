@@ -1,8 +1,8 @@
 # Object wrapper
 
-from core import aobjects as obj
+from ..core import aobjects as obj
 from . import types
-from core.error import AILRuntimeError
+from ..core.error import AILRuntimeError
 
 
 def wrapper_func_init(self, pyobj :object):

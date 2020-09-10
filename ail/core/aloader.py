@@ -1,12 +1,12 @@
 # module loader
 
 import os.path
-from core.alex import Lex
-from core.aparser import Parser
-from core.acompiler import Compiler
+from .alex import Lex
+from .aparser import Parser
+from .acompiler import Compiler
 
-from core import aobjects as objs, error
-from core import shared
+from . import aobjects as objs, error
+from . import shared
 
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
@@ -81,7 +81,7 @@ class ModuleLoader:
 
     def load_namespace(self, module_name :str) -> dict:
         '''return -1 if module not found'''
-        from core.avm import Interpreter, Frame
+        from .avm import Interpreter, Frame
 
         module_name = module_name.replace('.', '/')
 

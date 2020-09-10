@@ -1,9 +1,9 @@
 '''garbage collector'''
 import sys
 
-from core.error import AILRuntimeError
-from core import aobjects as obj
-from objects import integer
+from .error import AILRuntimeError
+from . import aobjects as obj
+from ..objects import integer
 
 
 class GC:

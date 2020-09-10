@@ -1,7 +1,7 @@
 # String
-from core import aobjects as obj
-from core.error import AILRuntimeError
-from objects import bool, integer
+from ..core import aobjects as obj
+from ..core.error import AILRuntimeError
+from . import bool, integer
 from . import types
 
 

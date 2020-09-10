@@ -1,7 +1,7 @@
 # normal methods for ail object
-from core import aobjects as obj
-from objects import bool
-from core.error import AILRuntimeError
+from ..core import aobjects as obj
+from . import bool
+from ..core.error import AILRuntimeError
 
 
 def _is_reserved_attr_name(name :str):
@@ -44,7 +44,7 @@ def obj_getattr(aobj, name):
 
 
 def obj_setattr(aobj, name, value):
-    from objects import string
+    from . import string
 
     if obj.compare_type(name, string.STRING_TYPE):
         name = string.convert_to_string(name)

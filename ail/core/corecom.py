@@ -1,13 +1,13 @@
-from core import shared
-from core.aobjects import ObjectCreater, AILObject, compare_type, unpack_ailobj
-from core.error import AILRuntimeError
-from objects.struct import STRUCT_OBJ_TYPE, convert_to_pyobj, new_struct_object
-from objects.function import convert_to_func_wrapper
-from objects.null import null
-from core.astate import MAIN_INTERPRETER_STATE
-from objects.integer import INTEGER_TYPE
+from . import shared
+from .aobjects import ObjectCreater, AILObject, compare_type, unpack_ailobj
+from .error import AILRuntimeError
+from ..objects.struct import STRUCT_OBJ_TYPE, convert_to_pyobj, new_struct_object
+from ..objects.function import convert_to_func_wrapper
+from ..objects.null import null
+from .astate import MAIN_INTERPRETER_STATE
+from ..objects.integer import INTEGER_TYPE
 
-from core.shared import GLOBAL_SHARED_DATA
+from .shared import GLOBAL_SHARED_DATA
 
 
 def _get_sys_path():

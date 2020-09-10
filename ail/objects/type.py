@@ -1,5 +1,5 @@
-from core import aobjects as obj
-from objects import types
+from ..core import aobjects as obj
+from . import types
 
 
 def type_init(self, name :str):

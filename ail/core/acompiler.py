@@ -1,14 +1,14 @@
 from typing import List, Union, Tuple
-from core.opcodes import *
-from core.tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
-from core import aobjects as obj, aobjects as objs, asts as ast, test_utils
+from .opcodes import *
+from .tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
+from . import aobjects as obj, aobjects as objs, asts as ast, test_utils
 
-import objects.string as astr
-import objects.integer as aint
-import objects.bool as abool
-import objects.wrapper as awrapper
-import objects.float as afloat
-from objects.null import null
+from ..objects import string as astr
+from ..objects import integer as aint
+from ..objects import bool as abool
+from ..objects import wrapper as awrapper
+from ..objects import float as afloat
+from ..objects.null import null
 
 import pickle
 
@@ -1046,8 +1046,8 @@ def convert_numeric_str_to_number(value :str) -> Union[int, float]:
 
 
 def test_compiler():
-    from core.aparser import Parser
-    from core.alex import Lex
+    from .aparser import Parser
+    from .alex import Lex
 
     l = Lex('../tests/test.ail')
     ts = l.lex()

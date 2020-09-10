@@ -1,10 +1,10 @@
 import sys
 
-from core.error import AILRuntimeError
-from objects.struct import new_struct_object, convert_to_pyobj
-from objects.null import null
-from core.astate import MAIN_INTERPRETER_STATE
-from core.aobjects import unpack_ailobj, convert_to_ail_object
+from ..error import AILRuntimeError
+from ...objects.struct import new_struct_object, convert_to_pyobj
+from ...objects.null import null
+from ..astate import MAIN_INTERPRETER_STATE
+from ..aobjects import unpack_ailobj, convert_to_ail_object
 
 
 def _err_to_string(this):

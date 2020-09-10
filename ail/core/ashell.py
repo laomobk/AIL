@@ -1,16 +1,16 @@
 import sys
 
-from core.alex import Lex
-from core.aparser import Parser
-from core.acompiler import Compiler
-from core.avm import Interpreter, Frame, _BUILTINS
-from core.version import AIL_VERSION
+from .alex import Lex
+from .aparser import Parser
+from .acompiler import Compiler
+from .avm import Interpreter, Frame, _BUILTINS
+from .version import AIL_VERSION
 
-from objects import function
-from objects import string
-from objects import null
+from ..objects import function
+from ..objects import string
+from ..objects import null
 
-from core import aobjects as objs, error, tokentype as tokent
+from . import aobjects as objs, error, tokentype as tokent
 
 import os
 
@@ -187,7 +187,7 @@ class Shell:
             self.__main_frame.variable['__temp__'] = \
                     string.convert_to_string(self.__read_temp_file())
 
-            os.remove(self.__temp_name)
+        os.remove(self.__temp_name)
 
 
 if __name__ == '__main__':

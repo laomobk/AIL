@@ -1,15 +1,15 @@
 
-from core.error import AILRuntimeError
-from core import aobjects as objs
+from .error import AILRuntimeError
+from . import aobjects as objs
 
-import objects.integer as aint
-import objects.string as astr
-import objects.float as afloat
-import objects.wrapper as awrapper
-import objects.null as null
-import objects.type as atype
-import objects.array as array
-import objects.struct as struct
+from ..objects import integer as aint
+from ..objects import string as astr
+from ..objects import float as afloat
+from ..objects import wrapper as awrapper
+from ..objects import null as null
+from ..objects import type as atype
+from ..objects import array as array
+from ..objects import struct as struct
 
 
 def func_abs(x :objs.AILObject):

@@ -1,8 +1,8 @@
 # Integer
-from core import aobjects as obj
-from core.error import AILRuntimeError
+from ..core import aobjects as obj
+from ..core.error import AILRuntimeError
 from . import float as afloat, types
-import objects.bool as abool
+from . import bool as abool
 
 POOL_RANGE = (-1, 0)
 
@@ -179,7 +179,7 @@ INTEGER_POOL = _IntegerPool().pool
 
 
 def convert_to_integer(pyint :int):
-    from objects import string
+    from . import string
 
     try:
         if pyint['__class__'] in (

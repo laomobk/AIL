@@ -1,5 +1,5 @@
 # Bool
-from core import aobjects as obj
+from ..core import aobjects as obj
 from . import types
 
 

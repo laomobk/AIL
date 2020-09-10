@@ -1,6 +1,6 @@
 # float
-from core import aobjects as obj
-from core.error import AILRuntimeError
+from ..core import aobjects as obj
+from ..core.error import AILRuntimeError
 from . import types
 
 
@@ -128,7 +128,7 @@ FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
 
 
 def convert_to_integer(pyint :int):
-    from objects import integer, string
+    from . import integer, string
 
     try:
         if pyint['__class__'] in (

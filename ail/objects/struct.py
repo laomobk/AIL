@@ -1,8 +1,8 @@
-from core import aobjects as obj
-from objects import null
-from core.error import AILRuntimeError
-from objects import types
-from objects import function as afunc
+from ..core import aobjects as obj
+from . import null
+from ..core.error import AILRuntimeError
+from . import types
+from . import function as afunc
 
 
 def _is_reserved_name(name):

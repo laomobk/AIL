@@ -1,41 +1,41 @@
 # virtual machine for AIL
 
-from core import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
+from . import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
 from typing import List
-from core.agc import GC
-from core.astate import MAIN_INTERPRETER_STATE
-from core import shared
+from .agc import GC
+from .astate import MAIN_INTERPRETER_STATE
+from . import shared
 import types
 import inspect
 
-import objects.bool as abool
-import objects.integer as aint
-import objects.string as astr
-import objects.float as afloat
-import objects.function as afunc
-import objects.wrapper as awrapper
-import objects.null as null
-import objects.array as array
-import objects.struct as struct
+from ..objects import bool as abool
+from ..objects import integer as aint
+from ..objects import string as astr
+from ..objects import float as afloat
+from ..objects import function as afunc
+from ..objects import wrapper as awrapper
+from ..objects import null as null
+from ..objects import array as array
+from ..objects import struct as struct
 
-from core.modules._fileio import _open
-from core.modules._error import (
+from .modules._fileio import _open
+from .modules._error import (
         make_err_struct_object, throw_error, catch_error,
         print_all_error, _err_to_string)
-from core.version import AIL_VERSION
+from .version import AIL_VERSION
 
 import re
 import copy
 import sys
 
-from core.opcodes import *
-from core._vmsig import *
+from .opcodes import *
+from ._vmsig import *
 
-from core import corecom as ccom
+from . import corecom as ccom
 
-from core.test_utils import get_opname
+from .test_utils import get_opname
 
-from utils.timer import Timer
+from ..utils.timer import Timer
 
 __author__ = 'LaomoBK'
 
@@ -914,9 +914,9 @@ class Interpreter:
 
 def test_vm():
     import pickle
-    from core.alex import Lex
-    from core.aparser import Parser
-    from core.acompiler import Compiler
+    from .alex import Lex
+    from .aparser import Parser
+    from .acompiler import Compiler
 
     l = Lex('tests/test.ail')
     ts = l.lex()

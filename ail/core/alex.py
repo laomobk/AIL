@@ -1,7 +1,7 @@
 #用于ail的词法分析器
 
-from core.tokentype import *
-from core.error import error_msg
+from .tokentype import *
+from .error import error_msg
 
 __author__ = 'LaomoBK'
  

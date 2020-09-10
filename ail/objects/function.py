@@ -1,8 +1,8 @@
 # Function and PyFunction
-from core import aobjects as obj
+from ..core import aobjects as obj
 import types as t
-from core.error import AILRuntimeError
-import objects
+from ..core.error import AILRuntimeError
+from . import wrapper
 import inspect
 from . import types
 
@@ -19,7 +19,7 @@ def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
         rtn = fobj(*args)
         if rtn is None:
             return obj.null
-        return obj.ObjectCreater.new_object(objects.wrapper.WRAPPER_TYPE, rtn)
+        return obj.ObjectCreater.new_object(wrapper.WRAPPER_TYPE, rtn)
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonError')
 

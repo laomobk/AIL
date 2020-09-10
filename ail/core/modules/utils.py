@@ -1,9 +1,9 @@
-from core.error import AILRuntimeError
 
-from objects.array import convert_to_array
-from objects.function import convert_to_func_wrapper
-from core.aobjects import compare_type, unpack_ailobj
-from objects.integer import INTEGER_TYPE
+from ..error import AILRuntimeError
+from ..aobjects import compare_type, unpack_ailobj
+from ...objects.array import convert_to_array
+from ...objects.function import convert_to_func_wrapper
+from ...objects.integer import INTEGER_TYPE
 
 
 def func_range(a, b, step=1):
