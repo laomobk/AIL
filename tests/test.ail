@@ -1,15 +1,9 @@
 begin
 
-s = 0
+load 'utils'
 
-for (i=10000 ; i < 20000 ; i = i + 1) then 
-    a = i mod 10
-    b = int(i / 100) mod 10
-    if a == b then
-        s = s + 1
-    endif
+for (i = 0, r = range(0, 10, 2); i < 5; i = i + 1) then
+    print r[i]
 end
-
-print "相同的有:" ; s
 
 end

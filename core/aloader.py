@@ -80,6 +80,7 @@ class ModuleLoader:
         return namespace
 
     def load_namespace(self, module_name :str) -> dict:
+        '''return -1 if module not found'''
         from core.avm import Interpreter, Frame
 
         module_name = module_name.replace('.', '/')
@@ -90,7 +91,7 @@ class ModuleLoader:
         p = self.__search_module(module_name)
 
         if p is None:
-            return None
+            return -1
 
         if self.__get_type(p) == 'py':
             return self.__add_to_loaded(module_name, self.__load_py_namespace(p))
@@ -107,7 +108,7 @@ class ModuleLoader:
 
             return self.__add_to_loaded(module_name, v)
 
-        return None
+        return -1
 
 
 MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)

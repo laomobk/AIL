@@ -14,12 +14,12 @@ _aobing_info = {
 }
 
 _nezha_info = {
-        'name': convert_to_ail_object('Nezha'),
-        'age': convert_to_ail_object(3),
-        'friend': convert_to_ail_object(
-            new_struct_object('Aobing', null, _aobing_info, _aobing_info.keys()),
+    'name': convert_to_ail_object('Nezha'),
+    'age': convert_to_ail_object(3),
+    'friend': convert_to_ail_object(
+        new_struct_object('Aobing', null, _aobing_info, _aobing_info.keys()),
         ),
-        'location': convert_to_ail_object('陈塘关')
+    'location': convert_to_ail_object('陈塘关')
 }
 
 

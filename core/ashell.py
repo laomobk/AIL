@@ -57,7 +57,6 @@ class Shell:
         self.__lexer = Lex(self.__temp_name)
         self.__parser = Parser(self.__temp_name)
         self.__compiler = Compiler(filename='<shell>')
-        self.__inter = Interpreter()
 
     def __write(self, line :str):
         if self.__fbuffer.closed:
@@ -118,7 +117,7 @@ class Shell:
         self.__main_frame.varnames = cobj.varnames
         self.__main_frame.consts = cobj.consts
 
-        self.__inter.exec(cobj, self.__main_frame)
+        Interpreter().exec(cobj, self.__main_frame)
 
         if self.__main_frame.stack:
             tof = self.__main_frame.stack.pop()
@@ -134,10 +133,7 @@ class Shell:
         return open(self.__temp_name).read()
 
     def run_shell(self):
-        try:
-            self.__run_shell()
-        finally:
-            os.remove(self.__temp_name)
+        self.__run_shell()
 
     def __run_shell(self):
         self.__print_welcome_text()

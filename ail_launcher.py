@@ -57,7 +57,7 @@ def launch_main(argv :list):
         ast = Parser(fpath).parse(Lex(fpath).lex())
         Interpreter().exec(Compiler(ast, filename=fpath).compile(ast).code_object)
 
-    except FileExistsError as e:
+    except FileNotFoundError as e:
         print('AIL : can\'t open file \'%s\' : %s' % (fpath, str(e)))
         sys.exit(1)
 

@@ -1035,7 +1035,11 @@ def convert_numeric_str_to_number(value :str) -> Union[int, float]:
     return : eval(value)    若value是数字型字符串
     return : None           若value不是数字型字符串
     '''
-    v = eval(value)
+    try:
+        v = eval(value)
+    except SyntaxError:
+        return -1
+
     if type(v) in (int, float):
         return v
     return None

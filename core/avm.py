@@ -189,6 +189,7 @@ class Interpreter:
     def __check_object(self, aobj :objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
             self.__raise_error(aobj.msg, aobj.err_type)
+            aobj = None
         if not isinstance(aobj, objs.AILObject) and not not_convert:
             target = {
                 str: astr.STRING_TYPE,
@@ -243,12 +244,19 @@ class Interpreter:
                 sys.stderr.write('\n%s\n\n' %
                       'During handling of the above exception, another exception occurred:')
             sys.stderr.write(_err_to_string(errs) + '\n')
+            
+            # if not ERR_NOT_EXIT (usually), the following code will not execute.
 
+            # Used to be to get used to shell, it's useless now.
             if not error.ERR_NOT_EXIT:
                 sys.exit(1)
             
+            # for interactive mode.
             self.__now_state.handling_err_stack.clear()
-            # return
+            self.__stack.clear()
+            self.__can = 0
+
+            return
 
         # set interrupt signal.
         self.__interrupted = True
@@ -536,7 +544,7 @@ class Interpreter:
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
                 # 速度可能会慢些
 
-                print(get_opname(op), self.__tof, self.__stack)
+                # print(get_opname(op), self.__tof, self.__stack)
 
                 # print(self.__opcounter)
 
@@ -763,9 +771,9 @@ class Interpreter:
 
                     v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
 
-                    if isinstance(v, error.AILRuntimeError):
+                    if v is None:
                         pass
-                    elif v is None:
+                    elif v == -1:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
                     else:
                         self.__tof.variable.update(v)
@@ -863,8 +871,6 @@ class Interpreter:
 
                         if len(self.__frame_stack) > 1:
                             self.__frame_stack.pop()
-                        else:
-                            self.__stack.clear()
 
                         self.__handle_error()
 
