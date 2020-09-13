@@ -1,4 +1,3 @@
-'''garbage collector'''
 import sys
 
 from .error import AILRuntimeError

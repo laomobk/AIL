@@ -10,6 +10,9 @@ ALEX_VERSION_EXTRA = 'Beta' #额外版本信息
 ALEX_VERSION_DATE = (10, 27, 2019)
 
 
+__all__ = ['Token', 'TokenStream', 'Lex']
+
+
 def skip_comment_line(source :str, cursor :int):
     '''
     source : 源码文件
@@ -22,8 +25,7 @@ def skip_comment_line(source :str, cursor :int):
         if source[ccur] == '\n':
             break
         cur += 1
-        ccur += 1
-    
+        ccur += 1 
     return cur + 1  #跳过回车
 
 

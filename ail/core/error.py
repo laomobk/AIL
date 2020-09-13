@@ -2,6 +2,7 @@ import sys
 import os.path
 from . import debugger
 
+
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
 

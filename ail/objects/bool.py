@@ -26,3 +26,4 @@ BOOL_TYPE = obj.AILObjectType('<AIL bool type>', types.I_TYPE_TYPE,
                               __eq__=bool_eq,
                               __str__=bool_str)
 
+

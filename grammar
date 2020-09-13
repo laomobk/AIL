@@ -1,30 +1,29 @@
-print_expr := 'PRINT' expr [';' expr]* NEWLINE
-input_expr := 'INPUT' expr ';' val_list NEWLINE
+print_expr := 'print' expr [';' expr]* NEWLINE
+input_expr := 'input' expr ';' val_list NEWLINE
 
 assi_expr := NAME '=' expr NEWLINE
-call_expr := NAME '(' arg_list ')' NEWLINE
 
  if_else_expr := 'if' test 'then' NEWLINE
 	BLOCK
-	(
+	[
 	 'else' NEWLINE
 	 BLOCK
-	)
+	]
 	'endif'
 
 
 while_expr := 'while' test NEWLINE
-	      BLOCK
-	      'wend' NEWLINE
+	BLOCK
+'wend' NEWLINE
 
 do_loop_expr := 'do' NEWLINE
-		BLOCK
-		'loop' 'until' test NEWLINE
+	BLOCK
+'loop' 'until' test NEWLINE
 
 
 func_def := 'fun' NAME '(' arg_list ')' NEWLINE
-		BLOCK
-	    'end'
+	BLOCK
+'end'
 
 test := or_test
 or_test := and_test ['or' and_test]*

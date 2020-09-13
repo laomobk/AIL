@@ -14,9 +14,10 @@ from ..objects import string as astr
 from ..objects import float as afloat
 from ..objects import function as afunc
 from ..objects import wrapper as awrapper
-from ..objects import null as null
-from ..objects import array as array
-from ..objects import struct as struct
+from ..objects import null
+from ..objects import array
+from ..objects import struct
+from ..objects import fastnum
 
 from .modules._fileio import _open
 from .modules._error import (
@@ -49,6 +50,9 @@ _AIL_VERSION = AIL_VERSION
 
 shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 
+true = objs.convert_to_ail_object(True)
+false = objs.convert_to_ail_object(False)
+
 _BUILTINS = {
     'abs' : objs.convert_to_ail_object(abuiltins.func_abs),
     'ng' : objs.convert_to_ail_object(abuiltins.func_neg),
@@ -61,8 +65,8 @@ _BUILTINS = {
     'make_type' : objs.convert_to_ail_object(abuiltins.func_make_type),
     'new' : objs.convert_to_ail_object(abuiltins.new_struct),
     'null' : null.null,
-    'true' : objs.convert_to_ail_object(True),
-    'false' : objs.convert_to_ail_object(False),
+    'true' : true,
+    'false' : false,
     'len' : objs.convert_to_ail_object(abuiltins.func_len),
     'equal' : objs.convert_to_ail_object(abuiltins.func_equal),
     'type' : objs.convert_to_ail_object(abuiltins.func_type),
@@ -73,7 +77,9 @@ _BUILTINS = {
     'repr' : objs.convert_to_ail_object(abuiltins.func_repr),
     '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
     'open' : objs.convert_to_ail_object(_open),
-    'int' : objs.convert_to_ail_object(abuiltins.func_int)
+    'int' : objs.convert_to_ail_object(abuiltins.func_int),
+    'addr': objs.convert_to_ail_object(abuiltins.func_addr),
+    'fnum': objs.convert_to_ail_object(abuiltins.func_fnum)
 }
 
 
@@ -310,6 +316,18 @@ class Interpreter:
         return 0
 
     def __binary_op(self, op :str, pymth :str, ailmth :str, a, b):
+        if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
+            op_method = getattr(a._value, pymth, None)
+
+            if op_method:
+                return fastnum.FastNumber(op_method(b._value))
+            else:
+                self.__raise_error(
+                    'Not support fast numbers \'%s\' between %s and %s' % (
+                        op, str(a), str(b)),
+                    'TypeError')
+
+
         if isinstance(a, objs.AILObject):
             m = a[ailmth]
             mb = b[ailmth]
@@ -318,9 +336,9 @@ class Interpreter:
                 self.__raise_error(
                     'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
                     'TypeError')
+                return
             
             r = self.__check_object(m(a, b))
-
         else:
             if hasattr(a, pymth):
                 r = getattr(a, pymth)(b)
@@ -328,9 +346,16 @@ class Interpreter:
                 self.__raise_error(
                         'Not support \'%s\' with %s and %s' % (op, str(a), str(b)), 
                         'TypeError')
+                return
         return r
 
     def __compare(self, a, b, cop :str) -> objs.AILObject:
+        if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
+            av = a._value
+            bv = b._value
+
+            return true if eval('%s %s %s' % (av, cop, bv)) else false
+
         if not (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
                 (a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) or \
                 b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
@@ -348,7 +373,7 @@ class Interpreter:
         else:
             res = a['__equals__'](a, b)
 
-        return objs.ObjectCreater.new_object(abool.BOOL_TYPE, res)
+        return true if res else false
 
     def __goto_catch(self):
         to = self.__tof.try_stack[-1]
@@ -520,7 +545,6 @@ class Interpreter:
         self.__can = 0
 
     def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
-        # push a new frame
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
 
@@ -529,15 +553,11 @@ class Interpreter:
 
         why = WHY_NORMAL
 
-        tmr = Timer(cobj.name)
-
         try:
             # tmr.start()
             while self.__opcounter < len(code) - 1:  # included argv index
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
-
-                # tmr.lap(get_opname(op))
 
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
@@ -692,7 +712,7 @@ class Interpreter:
                         binary_add : ('+', '__add__', '__add__'),
                         binary_div : ('/', '__truediv__', '__div__'),
                         binary_mod : ('mod', '__mod__', '__mod__'),
-                        binary_muit : ('*', '__muit__', '__muit__'),
+                        binary_muit : ('*', '__mul__', '__muit__'),
                         binary_pow : ('pow', '__pow__', '__pow__'),
                         binary_sub : ('-', '__sub__', '__sub__')
                     }.get(op)
@@ -894,8 +914,6 @@ class Interpreter:
         return why
 
     def exec(self, cobj, frame=None):
-        import time
-
         if not frame:
             f = Frame()
             f.code = cobj
@@ -907,10 +925,8 @@ class Interpreter:
         else:
             f = frame
 
-        # print('[W] 编译完成，开始计时')
-        # ft = time.time() * 1000
         self.__run_bytecode(cobj, f)
-        # print('除去编译用时实际运行时间 : %s ms' % (time.time() * 1000 - ft))
+
 
 def test_vm():
     import pickle

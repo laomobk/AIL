@@ -9,7 +9,8 @@ from ..objects import wrapper as awrapper
 from ..objects import null as null
 from ..objects import type as atype
 from ..objects import array as array
-from ..objects import struct as struct
+from ..objects import struct as struc
+from ..objects import fastnum
 
 
 def func_abs(x :objs.AILObject):
@@ -209,3 +210,14 @@ def func_int(obj):
         return int(v)
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonError')
+
+
+def func_addr(obj):
+    return id(obj)
+
+
+def func_fnum(obj):
+    v = objs.unpack_ailobj(obj)
+
+    if type(v) in (int, float):
+        return fastnum.FastNumber(v)

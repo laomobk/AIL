@@ -1,9 +1,7 @@
 begin
 
-load 'utils'
+f = fnum(726)
 
-for (i = 0, r = range(0, 10, 2); i < 5; i = i + 1) then
-    print r[i]
-end
+print f + f
 
 end

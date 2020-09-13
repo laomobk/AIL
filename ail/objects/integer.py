@@ -4,7 +4,10 @@ from ..core.error import AILRuntimeError
 from . import float as afloat, types
 from . import bool as abool
 
-POOL_RANGE = (-1, 0)
+
+POOL_RANGE_MIN = -1
+POOL_RANGE_MAX = 100
+POOL_RANGE = (POOL_RANGE_MIN, POOL_RANGE_MAX)
 
 
 def int_str(self :obj.AILObject):
@@ -40,9 +43,7 @@ def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
-    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+    return get_integer(res)
 
 
 def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
@@ -57,9 +58,7 @@ def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
-    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+    return get_integer(res)
 
 
 def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
@@ -77,7 +76,7 @@ def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    return obj.ObjectCreater.new_object(afloat.FLOAT_TYPE, res)
+    return get_integer(res)
 
 
 def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
@@ -92,9 +91,7 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
-    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+    return get_integer(res)
 
 
 def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
@@ -109,9 +106,7 @@ def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
-    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+    return get_integer(res)
 
 
 def int_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
@@ -126,9 +121,7 @@ def int_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
-    if res in range(*POOL_RANGE):
-        return INTEGER_POOL[int(abs(POOL_RANGE[0]) + res)]
-    return obj.ObjectCreater.new_object(INTEGER_TYPE, res)
+    return get_integer(res)
 
 
 def int_eq(self :obj.AILObject, o :obj.AILObject):
@@ -154,6 +147,20 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                              __mod__=int_mod,
                              __pow__=int_pow
                              )
+
+
+def get_integer(pyint: int) -> obj.AILObject:
+    """
+    get an integer object.
+
+    if pyint in [POOL_RANGE_MIN, POOL_RANGE_MAX), returns the integer in pool,
+    otherwise, create an integer object.
+
+    :return: Integer object
+    """
+    if POOL_RANGE_MIN < pyint < POOL_RANGE_MAX:
+        return INTEGER_POOL[pyint - POOL_RANGE_MIN]
+    return obj.ObjectCreater.new_object(INTEGER_TYPE, pyint)
 
 
 class _IntegerPool:

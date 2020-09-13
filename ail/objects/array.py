@@ -1,3 +1,4 @@
+from typing import Iterable
 
 from . import types
 from . import integer
@@ -71,7 +72,7 @@ ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
                                 __len__=array_len)
 
 
-def convert_to_array(iterable):
+def convert_to_array(iterable: Iterable):
     if type(iterable) in (list, set, tuple):
         return objs.ObjectCreater.new_object(ARRAY_TYPE, list(iterable))
     return None
