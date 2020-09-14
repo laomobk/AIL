@@ -28,13 +28,18 @@ from ..objects.struct import (
 from ..objects.type import _TYPE_TYPE
 from ..objects.wrapper import WRAPPER_TYPE
 
-from ..core.aobjects import convert_to_ail_object
+from ..core.aobjects import (
+    convert_to_ail_object as _convert_to_ail_object,
+    unpack_ailobj as _unpack_ailobj,
+)
 
 
 __all__ = [
     'ARRAY_TYPE', 'BOOL_TYPE', 'FLOAT_TYPE', 'FUNCTION_TYPE', 
     'INTEGER_TYPE', 'STRING_TYPE', 'STRUCT_TYPE', 'WRAPPER_TYPE',
-    'null, convert_to_ail_object'
+    'null, convert_to_ail_object', 'unpack_ailobj'
 ]
 
 
+def convert_to_ail_object():
+    return _convert_to_ail_object

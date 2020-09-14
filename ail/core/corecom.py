@@ -22,7 +22,7 @@ def _get_recur_depth():
     return shared.GLOBAL_SHARED_DATA.max_recursion_depth
 
 
-def _get_err_stack_object(*_):
+def _get_err_stack_object():
     es = MAIN_INTERPRETER_STATE.err_stack
 
     def _empty(this):
@@ -57,12 +57,12 @@ def _sys_exit(_, code):
         return AILRuntimeError(str(e), 'PythonError')
 
 
-def get_cc_object():
+def _get_cc_object(_):
     _ccom_t_memb = {
                 'paths' : GLOBAL_SHARED_DATA.find_path,
                 'max_recursion_depth' : GLOBAL_SHARED_DATA.max_recursion_depth,
                 'cwd' : GLOBAL_SHARED_DATA.cwd,
-                '_refresh' : convert_to_func_wrapper(get_cc_object),
+                '_refresh' : convert_to_func_wrapper(_get_cc_object),
                 # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
                 'exit' : convert_to_func_wrapper(_sys_exit),
                 'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv)
@@ -72,3 +72,7 @@ def get_cc_object():
         STRUCT_OBJ_TYPE, 'CCOM_T', _ccom_t_memb, null, _ccom_t_memb.keys())
 
     return _ccom_t
+
+
+def get_cc_object():
+    return _get_cc_object(None)
