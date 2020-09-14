@@ -1,7 +1,5 @@
 begin
 
-f = fnum(726)
-
-print f + f
+print _get_ccom()
 
 end

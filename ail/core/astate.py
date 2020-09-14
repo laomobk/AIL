@@ -1,3 +1,5 @@
+from typing import List
+
 from . import agc
 
 
@@ -9,6 +11,8 @@ class InterpreterState:
         self.handling_err_stack = []
         self.err_stack = []
         self.global_interpreters = []  # global interpreter reference
+
+        self.prog_argv: List[str] = list()
 
 
 MAIN_INTERPRETER_STATE = InterpreterState()

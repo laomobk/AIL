@@ -10,6 +10,10 @@ setup(
         'console_scripts': [
             'ail = ail.__main__:main',
         ]
+    },
+
+    package_data={
+        'ail': ['lib/*.ail']
     }
 )
 

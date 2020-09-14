@@ -1,10 +1,14 @@
 from . import shared
-from .aobjects import ObjectCreater, AILObject, compare_type, unpack_ailobj
+
+from .aobjects import (
+    ObjectCreater, AILObject, compare_type, unpack_ailobj, convert_to_ail_object
+)
+
+from .astate import MAIN_INTERPRETER_STATE
 from .error import AILRuntimeError
 from ..objects.struct import STRUCT_OBJ_TYPE, convert_to_pyobj, new_struct_object
 from ..objects.function import convert_to_func_wrapper
 from ..objects.null import null
-from .astate import MAIN_INTERPRETER_STATE
 from ..objects.integer import INTEGER_TYPE
 
 from .shared import GLOBAL_SHARED_DATA
@@ -60,7 +64,8 @@ def get_cc_object():
                 'cwd' : GLOBAL_SHARED_DATA.cwd,
                 '_refresh' : convert_to_func_wrapper(get_cc_object),
                 # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
-                'exit' : convert_to_func_wrapper(_sys_exit)
+                'exit' : convert_to_func_wrapper(_sys_exit),
+                'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv)
             }
 
     _ccom_t = ObjectCreater.new_object(

@@ -79,7 +79,16 @@ _BUILTINS = {
     'open' : objs.convert_to_ail_object(_open),
     'int' : objs.convert_to_ail_object(abuiltins.func_int),
     'addr': objs.convert_to_ail_object(abuiltins.func_addr),
-    'fnum': objs.convert_to_ail_object(abuiltins.func_fnum)
+    'fnum': objs.convert_to_ail_object(abuiltins.func_fnum),
+}
+
+
+_obj_type_dict = {
+    str: astr.STRING_TYPE,
+    int: aint.INTEGER_TYPE,
+    float: afloat.FLOAT_TYPE,
+    bool: abool.BOOL_TYPE,
+    list: array.ARRAY_TYPE,
 }
 
 
@@ -128,8 +137,12 @@ class Frame:
 
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self, argv: List[str]=None):
         MAIN_INTERPRETER_STATE.global_interpreters.append(self)
+
+        if argv is not None:
+            MAIN_INTERPRETER_STATE.prog_argv = argv
+
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
@@ -197,13 +210,7 @@ class Interpreter:
             self.__raise_error(aobj.msg, aobj.err_type)
             aobj = None
         if not isinstance(aobj, objs.AILObject) and not not_convert:
-            target = {
-                str: astr.STRING_TYPE,
-                int: aint.INTEGER_TYPE,
-                float: afloat.FLOAT_TYPE,
-                bool: abool.BOOL_TYPE,
-                list: array.ARRAY_TYPE,
-            }.get(type(aobj), awrapper.WRAPPER_TYPE)
+            target = _obj_type_dict.get(type(aobj), awrapper.WRAPPER_TYPE)
 
             if aobj is None:
                 aobj = null.null
