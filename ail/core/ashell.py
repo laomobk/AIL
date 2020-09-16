@@ -1,10 +1,11 @@
 import sys
 
+from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser
-from .acompiler import Compiler
-from .avm import Interpreter, Frame, _BUILTINS
+from .avm import Interpreter, Frame
 from .version import AIL_VERSION
+from .acompiler import Compiler
 
 from ..objects import function
 from ..objects import string

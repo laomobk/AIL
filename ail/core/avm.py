@@ -1,12 +1,19 @@
 # virtual machine for AIL
 
+__author__ = 'LaomoBK'
+
+
+import re
+import copy
+import sys
+import types
+import inspect
+
 from . import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
 from typing import List
 from .agc import GC
 from .astate import MAIN_INTERPRETER_STATE
 from . import shared
-import types
-import inspect
 
 from ..objects import bool as abool
 from ..objects import integer as aint
@@ -25,20 +32,14 @@ from .modules._error import (
         print_all_error, _err_to_string)
 from .version import AIL_VERSION
 
-import re
-import copy
-import sys
-
 from .opcodes import *
 from ._vmsig import *
 
-from . import corecom as ccom
-
 from .test_utils import get_opname
 
-from ..utils.timer import Timer
 
-__author__ = 'LaomoBK'
+_BUILTINS = abuiltins.BUILTINS
+
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
@@ -53,34 +54,6 @@ shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 true = objs.convert_to_ail_object(True)
 false = objs.convert_to_ail_object(False)
 
-_BUILTINS = {
-    'abs' : objs.convert_to_ail_object(abuiltins.func_abs),
-    'ng' : objs.convert_to_ail_object(abuiltins.func_neg),
-    'int_input' : objs.convert_to_ail_object(abuiltins.func_int_input),
-    '__version__' : objs.convert_to_ail_object(_AIL_VERSION),
-    '__main_version__' : objs.convert_to_ail_object(1),
-    'chr' : objs.convert_to_ail_object(abuiltins.func_chr),
-    'ord' : objs.convert_to_ail_object(abuiltins.func_ord),
-    'hex' : objs.convert_to_ail_object(abuiltins.func_hex),
-    'make_type' : objs.convert_to_ail_object(abuiltins.func_make_type),
-    'new' : objs.convert_to_ail_object(abuiltins.new_struct),
-    'null' : null.null,
-    'true' : true,
-    'false' : false,
-    'len' : objs.convert_to_ail_object(abuiltins.func_len),
-    'equal' : objs.convert_to_ail_object(abuiltins.func_equal),
-    'type' : objs.convert_to_ail_object(abuiltins.func_type),
-    'array' : objs.convert_to_ail_object(abuiltins.func_array),
-    'equal_type' : objs.convert_to_ail_object(abuiltins.func_equal_type),
-    'isinstance' : objs.convert_to_ail_object(abuiltins.func_isinstance),
-    'str' : objs.convert_to_ail_object(abuiltins.func_str),
-    'repr' : objs.convert_to_ail_object(abuiltins.func_repr),
-    '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
-    'open' : objs.convert_to_ail_object(_open),
-    'int' : objs.convert_to_ail_object(abuiltins.func_int),
-    'addr': objs.convert_to_ail_object(abuiltins.func_addr),
-    'fnum': objs.convert_to_ail_object(abuiltins.func_fnum),
-}
 
 
 _obj_type_dict = {

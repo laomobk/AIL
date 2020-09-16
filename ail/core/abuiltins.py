@@ -1,6 +1,14 @@
 
 from .error import AILRuntimeError
 from . import aobjects as objs
+from . import corecom as ccom
+
+from .version import (
+    AIL_MAIN_VERSION as _AIL_MAIN_VERSION, 
+    AIL_VERSION as _AIL_VERSION
+)
+
+from .modules._fileio import _open
 
 from ..objects import integer as aint
 from ..objects import string as astr
@@ -11,6 +19,7 @@ from ..objects import type as atype
 from ..objects import array as array
 from ..objects import struct as struc
 from ..objects import fastnum
+from ..objects import bool as abool
 
 
 def func_abs(x :objs.AILObject):
@@ -221,3 +230,37 @@ def func_fnum(obj):
 
     if type(v) in (int, float):
         return fastnum.FastNumber(v)
+
+
+true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
+false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
+
+
+BUILTINS = {
+    'abs' : objs.convert_to_ail_object(func_abs),
+    'ng' : objs.convert_to_ail_object(func_neg),
+    'int_input' : objs.convert_to_ail_object(func_int_input),
+    '__version__' : objs.convert_to_ail_object(_AIL_VERSION),
+    '__main_version__' : objs.convert_to_ail_object(_AIL_MAIN_VERSION),
+    'chr' : objs.convert_to_ail_object(func_chr),
+    'ord' : objs.convert_to_ail_object(func_ord),
+    'hex' : objs.convert_to_ail_object(func_hex),
+    'make_type' : objs.convert_to_ail_object(func_make_type),
+    'new' : objs.convert_to_ail_object(new_struct),
+    'null' : null.null,
+    'true' : true,
+    'false' : false,
+    'len' : objs.convert_to_ail_object(func_len),
+    'equal' : objs.convert_to_ail_object(func_equal),
+    'type' : objs.convert_to_ail_object(func_type),
+    'array' : objs.convert_to_ail_object(func_array),
+    'equal_type' : objs.convert_to_ail_object(func_equal_type),
+    'isinstance' : objs.convert_to_ail_object(func_isinstance),
+    'str' : objs.convert_to_ail_object(func_str),
+    'repr' : objs.convert_to_ail_object(func_repr),
+    '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
+    'open' : objs.convert_to_ail_object(_open),
+    'int' : objs.convert_to_ail_object(func_int),
+    'addr': objs.convert_to_ail_object(func_addr),
+    'fnum': objs.convert_to_ail_object(func_fnum),
+}
