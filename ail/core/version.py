@@ -6,3 +6,6 @@ AIL_VERSION = '%s.%s %s' % (AIL_MAIN_VERSION,
                             '.'.join([str(v) for v in AIL_SUB_VERSION]),
                             AIL_VERSION_STATE)
 
+
+AIL_COPYRIGHT = '2020 Chenhongbo'
+

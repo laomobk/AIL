@@ -1,5 +1,5 @@
 begin
 
-print _get_ccom()
+load 'strlib'
 
 end

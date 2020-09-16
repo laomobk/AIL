@@ -10,16 +10,17 @@ from .version import (
 
 from .modules._fileio import _open
 
-from ..objects import integer as aint
-from ..objects import string as astr
-from ..objects import float as afloat
-from ..objects import wrapper as awrapper
-from ..objects import null as null
-from ..objects import type as atype
-from ..objects import array as array
-from ..objects import struct as struc
-from ..objects import fastnum
-from ..objects import bool as abool
+from ..objects import (
+    string  as astr,
+    integer as aint,
+    bool    as abool,
+    wrapper as awrapper,
+    float   as afloat,
+    array   as array,
+    struct  as struct,
+    fastnum,
+    null,
+)
 
 
 def func_abs(x :objs.AILObject):

@@ -1,7 +1,7 @@
-from .acompiler import (
+from .abytecode import (
     ByteCodeFileBuffer,
-            LineNumberTableGenerator
-        )
+    LineNumberTableGenerator
+)
 from . import aobjects as obj, asts as ast, opcodes as opcs
 
 

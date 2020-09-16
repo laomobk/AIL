@@ -1,5 +1,5 @@
 from .alex import Token, TokenStream, Lex
-from .import asts as ast, test_utils
+from . import asts as ast, test_utils
 from .error import error_msg
 from .tokentype import *
 

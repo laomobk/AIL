@@ -1,11 +1,12 @@
+
 import sys
 
+from .acompiler import Compiler
 from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser
 from .avm import Interpreter, Frame
-from .version import AIL_VERSION
-from .acompiler import Compiler
+from .version import AIL_VERSION, AIL_COPYRIGHT
 
 from ..objects import function
 from ..objects import string
@@ -31,8 +32,13 @@ def _sh_exit():
     sys.exit(0)
 
 
+def _sh_copyright():
+    return AIL_COPYRIGHT
+
+
 _SHELL_NAMESPACE = {
-        'exit' : objs.ObjectCreater.new_object(function.PY_FUNCTION_TYPE, _sh_exit),
+        'exit': objs.convert_to_ail_object(_sh_exit),
+        'copyright': objs.convert_to_ail_object(_sh_copyright),
         }
 
 _SHELL_NAMESPACE.update(_BUILTINS)

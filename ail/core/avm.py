@@ -9,22 +9,33 @@ import sys
 import types
 import inspect
 
-from . import aobjects as objs, abuiltins, error, opcodes as opcs, aloader
 from typing import List
+
+from . import (
+    aobjects as objs, 
+    abuiltins, 
+    error, 
+    opcodes as opcs, 
+    aloader
+)
+
 from .agc import GC
 from .astate import MAIN_INTERPRETER_STATE
 from . import shared
 
-from ..objects import bool as abool
-from ..objects import integer as aint
-from ..objects import string as astr
-from ..objects import float as afloat
-from ..objects import function as afunc
-from ..objects import wrapper as awrapper
-from ..objects import null
-from ..objects import array
-from ..objects import struct
-from ..objects import fastnum
+from ..objects import (
+    string   as astr,
+    integer  as aint,
+    bool     as abool,
+    wrapper  as awrapper,
+    float    as afloat,
+    array    as array,
+    function as afunc,
+    struct,
+    fastnum,
+)
+
+from ..objects.null import null
 
 from .modules._fileio import _open
 from .modules._error import (
