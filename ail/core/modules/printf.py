@@ -1,5 +1,5 @@
-from ..aobjects import unpack_ailobj, convert_to_ail_object
-from ..error import AILRuntimeError
+from ail.core.aobjects import unpack_ailobj, convert_to_ail_object
+from ail.core.error import AILRuntimeError
 
 
 _IS_AIL_MODULE_ = True

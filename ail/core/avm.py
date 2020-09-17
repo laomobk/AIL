@@ -31,11 +31,10 @@ from ..objects import (
     float    as afloat,
     array    as array,
     function as afunc,
+    null as null,
     struct,
     fastnum,
 )
-
-from ..objects.null import null
 
 from .modules._fileio import _open
 from .modules._error import (

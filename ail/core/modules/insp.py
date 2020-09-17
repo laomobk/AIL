@@ -1,11 +1,10 @@
-from inspect import isfunction
 from types import FunctionType
 
-from ..error import AILRuntimeError
-from ..aobjects import convert_to_ail_object, compare_type
+from ail.core.error import AILRuntimeError
+from ail.core.aobjects import convert_to_ail_object, compare_type
 
-from ...objects.function import PY_FUNCTION_TYPE
-from ...objects.struct import new_struct_object
+from ail.objects.function import PY_FUNCTION_TYPE
+from ail.objects.struct import new_struct_object
 
 
 def inspect_see_function(ailfunc):

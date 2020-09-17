@@ -1,8 +1,8 @@
 # A info of a movie NEZHA
 
-from ...objects.struct import new_struct_object
-from ...objects.null import null
-from ..aobjects import convert_to_ail_object
+from ail.core.aobjects import convert_to_ail_object
+from ail.objects.struct import new_struct_object
+from ail.objects.null import null
 
 _IS_AIL_MODULE_ = True
 

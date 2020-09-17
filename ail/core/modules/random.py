@@ -1,7 +1,8 @@
 import random
 import time
-from ..aobjects import convert_to_ail_object, unpack_ailobj
-from ..error import AILRuntimeError
+
+from ail.core.aobjects import convert_to_ail_object, unpack_ailobj
+from ail.core.error import AILRuntimeError
 
 _IS_AIL_MODULE_ = True
 
