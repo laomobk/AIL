@@ -488,6 +488,7 @@ class Interpreter:
                             (pyf.__name__, fac - (1 if has_this else 0)),
                             'TypeError'
                         )
+                        return
 
                 else:
                     argl = [o['__value__'] if objs.has_attr(o, '__value__') else o for o in argl]
