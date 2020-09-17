@@ -1,6 +1,9 @@
 # module loader
 
 import os.path
+
+from traceback import format_exc
+
 from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
@@ -47,8 +50,9 @@ class ModuleLoader:
             cobj = compile(open(pypath, encoding='UTF-8').read(), pypath, 'exec')
             exec(cobj, v)
         except Exception as e:
+            excs = format_exc()
             return error.AILRuntimeError(
-                '%s : %s' % (type(e).__name__, str(e)), 'ErrorWhileLoading')
+                '%s' % excs, 'ErrorWhileLoading')
 
         is_mod = v.get('_IS_AIL_MODULE_', None)
 
