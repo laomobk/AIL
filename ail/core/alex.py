@@ -14,11 +14,11 @@ __all__ = ['Token', 'TokenStream', 'Lex']
 
 
 def skip_comment_line(source :str, cursor :int):
-    '''
+    """
     source : 源码文件
     cursor : 源码字符指针
     返回指针右移增量
-    '''
+    """
     cur = 0  #增量
     ccur = cursor  #原始字符指针
     while ccur < len(source):
@@ -30,7 +30,7 @@ def skip_comment_line(source :str, cursor :int):
 
 
 def skip_comment_block(source :str, cursor :int,) -> tuple:
-    '''
+    """
     source : 源码文件
     cursor : 源码字符指针
     返回一个元祖
@@ -39,8 +39,8 @@ def skip_comment_block(source :str, cursor :int,) -> tuple:
     -1 : 注释块不完整
  
     ( 字符指针右移增量 , 行号增量)
-    '''
- 
+    """
+
     ccur = cursor
     cur = 0  #指针右移增量
     lni = 0  #行号增量
@@ -63,13 +63,13 @@ def skip_comment_block(source :str, cursor :int,) -> tuple:
 
 
 def get_identifier(source :str, cursor :int) -> tuple:
-    '''
+    """
     source : 源码文件
     cursor : 源码字符指针
     
     返回一个元祖
     ( 字符指针增量 , 标识符内容)
-    '''
+    """
  
     buffer = ''   #标识符内容缓冲区
     ccur = cursor  #原始字符指针
@@ -91,7 +91,7 @@ def get_identifier(source :str, cursor :int) -> tuple:
 
 
 def get_number(source :str, cursor :int) -> tuple:
-    '''
+    """
     source : 源码文件
     cursor : 源码字符指针
 
@@ -100,7 +100,7 @@ def get_number(source :str, cursor :int) -> tuple:
     
     返回一个元祖
     ( 字符指针增量 , 数字字符串)
-    '''
+    """
     buffer = ''   #数字字符串内容缓冲区
     ccur = cursor  #原始字符指针
     cur = 0  #字符指针增量
@@ -141,7 +141,7 @@ def get_number(source :str, cursor :int) -> tuple:
 
 
 def get_string(source :str, cursor :int) -> tuple:
-    '''
+    """
     source : 源码文件
     cursor : 源码字符指针
  
@@ -152,7 +152,7 @@ def get_string(source :str, cursor :int) -> tuple:
     
     返回一个元祖
     ( 字符指针增量, 行号增量 , 数字字符串)
-    '''
+    """
     buffer = ''   #字符串内容缓冲区
     ccur = cursor   #原始字符指针，跳过引号
     cur = 0  #字符指针增量
@@ -214,9 +214,9 @@ def get_string(source :str, cursor :int) -> tuple:
 
 
 class Cursor:  #字符指针类型
-    '''
+    """
     指向源码中的字符的指针
-    '''
+    """
     def __init__(self, value=0):
         self.value = value
  
@@ -254,9 +254,9 @@ class Token:
  
  
 class TokenStream:
-    '''
+    """
     单词流
-    '''
+    """
     def __init__(self):
         self.__tli = []
  
@@ -264,9 +264,9 @@ class TokenStream:
         return iter(self.__tli)
  
     def append(self, tok :Token):
-        '''
+        """
         将 tok 增加到尾部
-        '''
+        """
  
         self.__tli.append(tok)
  
@@ -293,29 +293,34 @@ class TokenStream:
  
 class Lex:
     def __init__(self, filename :str, testmode=False):
-        '''
+        """
         fp : 源码路径，当以'.$str:'开头且testmode=True时，则是分析.$str:以后的内容
-        '''
+        """
  
         self.__filename = filename
+        self.__ln = 1  # 行号
  
-        self.__source = open(filename, 'r', encoding='UTF-8').read()     \
+        self.__source = self.__get_source(filename)     \
             if not filename.startswith('.$str:')      \
             else (filename[len('.$str:'):] if testmode else open(filename, 'r', encoding='UTF-8').read())            
-            #源码文件
+        # 源码文件
  
-        self.__cursor = Cursor()  #源码的字符指针
+        self.__cursor = Cursor()  # 源码的字符指针
         self.__stream = TokenStream()
-        self.__ln = 1  #行号
 
         self.__blevel = 0
-        
+
+    def __get_source(self, filename: str) -> str:
+        try:
+            return open(filename, encoding='utf-8').read()
+        except UnicodeDecodeError as e:
+            return error_msg(-1, str(e), filename)
     
     @property
     def __chp(self):
-        '''
+        """
         指向源码字符的指针
-        '''
+        """
         return self.__cursor.value
     
     @__chp.setter
@@ -323,28 +328,28 @@ class Lex:
         self.__cursor.value = v
  
     def __movchr(self, step=1):
-        '''
+        """
         移动字符指针
-        '''
+        """
  
         self.__cursor.value += step
  
     @property
     def __chnow(self):
-        '''
+        """
         此时此刻的字符
         越界则报语法错误
-        '''
+        """
  
         return self.__source[self.__cursor.value]   \
             if self.__cursor.value < len(self.__source)     \
             else error_msg(-1, 'Syntax error', self.__filename)
  
     def __nextch(self, ni=1):
-        '''
+        """
         返回__source[self.__cursor.value + ni]
         如果越界，则报语法错误
-        '''
+        """
         return self.__source[self.__cursor.value + ni]      \
             if self.__cursor.value + ni < len(self.__source)       \
             else '<EOF>'
