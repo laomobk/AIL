@@ -1,0 +1,22 @@
+begin
+
+input 'what is your name: ' ; name
+
+repeat = 0
+
+while true then
+    try
+        input 'repeat time: ' ; repeat
+        repeat = int(repeat)
+        
+        break
+    catch _ then
+        print 'please enter a number!'
+    end
+wend
+
+for (n = 0 ; n < repeat ; n = n + 1) then
+    print name
+end
+
+end
