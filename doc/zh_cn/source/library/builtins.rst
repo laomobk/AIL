@@ -72,7 +72,8 @@ builtins.chr(x: integer) -> string
 builtins.ord(x: string) -> integer
 ##################################
 
-返回 **单字符字符串串** :code:`x` 的 **Unicode Point** 。若x不符合要求，则抛出 :code:`PythonError`
+返回 **单字符字符串串** :code:`x` 的 **Unicode Point** 。若x不符合要求，则抛出 :code:`PythonError` 。
+
 **x 必须是单字符字符串，即len(x) == 1**
 
 ::
