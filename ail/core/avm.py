@@ -518,7 +518,8 @@ class Interpreter:
                 self.__tof.stack.append(rtn)
             else:
                 self.__raise_error(
-                    '\'%s\' object is not callable.' % func['__class__'].name, 'TypeError')
+                    '\'%s\' object is not callable.' % 
+                        func['__class__'].name, 'TypeError')
 
     def __return(self):
         tos = self.__pop_top()

@@ -1,5 +1,15 @@
 begin
 
-load 'strlib'
+load 'map'
+
+m1 = map()
+m2 = map()
+
+m1.put('name', 'Nezha')
+
+print m1.get
+print m2.get
+
+print m2.get('name')
 
 end

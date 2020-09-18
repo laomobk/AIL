@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from ..core import aobjects as obj
 from . import null
 from ..core.error import AILRuntimeError
@@ -9,9 +11,19 @@ def _is_reserved_name(name):
     return name[:2] == '__'
 
 
+def _copy_function(f: obj.AILObject) -> obj.AILObject:
+    new_f = deepcopy(f)
+    new_f.properties = f.properties.copy()
+
+    return new_f
+
+
 def _check_bound(self, aobj :obj.AILObject):
     if isinstance(aobj, obj.AILObject) and \
             aobj['__class__'] in (afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
+
+        aobj = _copy_function(aobj)
+
         self.reference += 1
         aobj['__this__'] = self  # bound self to __this__
     return aobj
@@ -73,10 +85,11 @@ def struct_str(self):
 
 
 def structobj_str(self):
-    return '<struct \'%s\' object at %s> -> {\n%s\n}' % (self['__name__'], hex(id(self)),
-                                                 '\n'.join(['\t%s%s : %s' % (
-                                                     '' if k not in self.protected else '$P ', k, repr(v)) for k, v in self.members.items()
-                                                            if k[:2] != '__']))
+    return '<struct \'%s\' object at %s> -> {\n%s\n}' % (
+            self['__name__'], hex(id(self)),
+            '\n'.join(['\t%s%s : %s' % (
+                            '' if k not in self.protected else '$P ', k, repr(v)) 
+                        for k, v in self.members.items() if k[:2] != '__']))
 
 
 STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', types.I_STRUCT_OBJ_TYPE,
