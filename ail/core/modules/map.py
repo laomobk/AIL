@@ -37,7 +37,7 @@ def _map_get(this, k, default=None):
 
 def _new_map():
     return new_struct_object(
-            'hash_map', null, map_obj_dict, map_obj_dict.keys())
+            'hash_map', null, map_obj_dict.copy(), map_obj_dict.keys())
 
 
 map_obj_dict = {
