@@ -36,12 +36,15 @@ def _map_get(this, k, default=None):
 
 
 def _new_map():
+    new_dict = map_obj_dict.copy()
+    new_dict['__base_map'] = dict()
+
     return new_struct_object(
-            'hash_map', null, map_obj_dict.copy(), map_obj_dict.keys())
+            'hash_map', null, new_dict, map_obj_dict.keys())
 
 
 map_obj_dict = {
-        '__base_map': {},
+        '__base_map': None,
         'get': convert_to_ail_object(_map_get),
         'put': convert_to_ail_object(_map_put),
 }

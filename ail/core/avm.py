@@ -491,7 +491,8 @@ class Interpreter:
                         return
 
                 else:
-                    argl = [o['__value__'] if objs.has_attr(o, '__value__') else o for o in argl]
+                    argl = [o['__value__'] if objs.has_attr(o, '__value__')  \
+                                           else o for o in argl]
                     # unpack argl for builtin function
                 try:
                     rtn = self.__check_object(pyf(*argl))

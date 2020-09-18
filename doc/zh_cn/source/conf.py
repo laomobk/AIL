@@ -62,13 +62,3 @@ html_theme_path = [get_html_theme_path()]
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['tools/static']
 
-
-# use markdown
-
-from recommonmark.parser import CommonMarkParser
-
-source_parses = {
-    '.md': CommonMarkParser
-}
-
-source_suffix = ['.md', '.rst']

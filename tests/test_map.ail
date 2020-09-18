@@ -10,6 +10,10 @@ m1.put('name', 'Nezha')
 print m1.get
 print m2.get
 
+print m2
+print m1
+
+print m1.get('name')
 print m2.get('name')
 
 end

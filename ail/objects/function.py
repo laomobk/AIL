@@ -26,7 +26,7 @@ def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
 
 def pyfunc_func_str(self :obj.AILObject):
     return '<AIL Python function wrapper \'%s\' at %s>' % (
-            self['__pyfunction__'].__name__,  hex(id(self['__pyfunction__'])))
+            self['__pyfunction__'].__name__,  hex(id(self)))
 
 
 def func_func_init(self, cobj :t.CodeType, globals :dict, name :str):
