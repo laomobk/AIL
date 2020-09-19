@@ -13,61 +13,196 @@ builtins是AIL运行时启动后自动加载的 **"模块"** ，提供了一些�
 type string
 ###########
 
+表示基本字符串
 
-type number
-###########
+::
+
+    >> 'nezha'
+    'nezha'
+    >> "Nezha"
+    'Nezha'
+
 
 
 type integer
 ############
 
+表示整数。
+
+::
+
+    >> 3
+    < 3 >
+    >> -15
+    < -15 >
+
 
 type float
 ##########
+
+表示64位浮点数。
+
+::
+
+    >> 10 / 3
+    < 3.3333333333333335 >
+    >> 1.0
+    < 1.0 >
+    >> 3 / 1.0  // convert to float
+    < 3.0>
+
+
+type array
+##########
+
+表示定长数组类型。其容纳的类型是任意的。
+
+::
+
+    >> {1, 2.0, '3', fnum(4), _get_ccom}
+    {
+        < 1 >, 
+        < 2.0 >, 
+        '3', 
+        < 4 >,
+        <AIL Python function wrapper 'get_cc_object' at 0x7d97609c40>
+    }
+
+
+*（由于输出过长，上面REPL部分输出经过调整，实际输出并没有换行）*
 
 
 type CCOM_T
 ###########
 
+由 :code:`_get_ccom()` 函数返回其对象。不能被实例化。
 
-type FileIO
-###########
+
+type iobuffer_t
+###############
+
+文件IO缓冲类型，由 :code:`open(...)` 返回其对象。用于对文件进行操作。不能被初始化。
+
+
+type longish
+############
+
+具有长度的对象，即可以使用 :code:`len(...)` 的对象。
+一般情况下，longish对象包括:
+
+* string
+* array
 
 
 type fast_number
 ################
 
+fast_number 类型是AIL中的特殊类型。由 :code:`fnum(...)` 返回其对象。不能被初始化。引入的目的是为了使得AIL运行得更快。
+fast_number 之间的运算相比普通的数字类型运算，效率会高很多。
+
+::
+    
+    >> fnum(1)
+    < 1 >
+    >> a = fnum(3)
+    >> b = fnum(1)
+    >> a + b
+    < 35 >
+
 
 type struct_type
 ################
+
+**struct类型** 类型。struct_type 用于生成struct_object, 即 **object** 。
+
+::
+
+    >> struct Person is
+    ..      name
+    .. end
+    >> Person  // struct_type
+    <struct 'Person' at 0x7d97631df0>
 
 
 type object
 ###########
 
+**object** 指struct_type经过实例化后，得到的 **struct_object** 。
+
+::
+    
+    >> struct Person is
+    ..      name
+    .. end
+    >> Person
+    <struct 'Person' at 0x7d97631df0>
+
+    >> new(Person)
+    >> new(Person)
+    <struct 'Person' object at 0x7d973c0340> -> {
+        name : null
+    }
+
 
 type any
 ########
 
-
-var null
-########
+表示任意类型。
 
 
-var true
-########
-
-
-var false
+type null
 #########
 
+null 类型。
 
-var __version__
+
+type bool
+#########
+
+表示布尔类型。
+
+
+union number
+############
+
+表示 **float类型** 或者 **integer类型** 。
+
+
+var null: null
+##############
+
+null 表示“空”，在AIL中，null是一个变量名，一般情况下，null可以被赋值 *（但不建议这么做）* 。
+
+::
+    
+    >> if null then
+    ..     print 'Should not be printed'
+    .. end
+    >>
+
+
+var true: bool
+##############
+
+表示“真”。
+
+
+var false: bool
 ###############
 
+表示“假”。
 
-var __main_version__
-####################
+
+var __version__: string
+#######################
+
+AIL版本字符串。
+
+
+var __main_version__: integer
+#############################
+
+AIL主版本号。
 
 
 builtins.abs(x: number) -> number
@@ -187,8 +322,8 @@ builtins.repr(x: any) -> string
 ###############################
 
 
-builtins.open(fp: string, mode: string) -> FileIO
-#################################################
+builtins.open(fp: string, mode: string) -> iobuffer_t
+#####################################################
 
 
 builtins.addr(obj: any) -> integer

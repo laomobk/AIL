@@ -785,6 +785,9 @@ class Interpreter:
                         self.__tof.stack.append(objs.convert_to_ail_object(vnum))
 
                         self.__decref(v)
+                    else:
+                        self.__raise_error(
+                                'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
 
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']

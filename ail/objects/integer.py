@@ -158,6 +158,9 @@ def get_integer(pyint: int) -> obj.AILObject:
 
     :return: Integer object
     """
+    if not isinstance(pyint, int):
+        return pyint
+
     if POOL_RANGE_MIN < pyint < POOL_RANGE_MAX:
         return INTEGER_POOL[pyint - POOL_RANGE_MIN]
     return obj.ObjectCreater.new_object(INTEGER_TYPE, pyint)
