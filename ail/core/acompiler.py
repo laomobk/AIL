@@ -154,6 +154,9 @@ class Compiler:
         elif isinstance(tree, ast.AssignExprAST):
             bc += self.__compile_assign_expr(tree, single=is_single)
 
+        elif isinstance(tree, ast.UnaryExprAST):
+            bc += self.__compile_unary_expr(tree)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -168,6 +171,18 @@ class Compiler:
             bc += rbc
 
             bc.add_bytecode(opc, 0)
+
+        return bc
+
+    def __compile_unary_expr(self, tree: ast.UnaryExprAST) -> ByteCode:
+        bc = ByteCode()
+
+        rbc = self.__compile_binary_expr(tree.right_expr)
+
+        bc += rbc
+
+        if tree.op == '-':
+            bc.add_bytecode(unary_negative, 0)
 
         return bc
 
@@ -923,10 +938,10 @@ def test_compiler():
     from .aparser import Parser
     from .alex import Lex
 
-    l = Lex('../tests/test.ail')
+    l = Lex('./tests/test.ail')
     ts = l.lex()
 
-    p = Parser('../tests/test.ail')
+    p = Parser('./tests/test.ail')
     t = p.parse(ts)
 
     c = Compiler(t)

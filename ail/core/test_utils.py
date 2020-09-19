@@ -14,9 +14,13 @@ def unpack_list(l :list):
             rl.append(make_ast_tree(d))
     return rl
 
+
 def make_ast_tree(a) -> dict:
     if isinstance(a, ast.CellAST):
         return {'Cell' : {'value' : a.value, 'type' : a.type}}
+
+    elif isinstance(a, ast.UnaryExprAST):
+        return {'UnaryAST': {'op': a.op, 'right': make_ast_tree(a.right_expr)}}
 
     elif isinstance(a, ast.PowerExprAST):
         return {'PowerAST' : {'left' : make_ast_tree(a.left), 'right' : make_ast_tree(a.right)}}

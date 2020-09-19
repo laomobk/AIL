@@ -206,7 +206,8 @@ class Interpreter:
 
     def __raise_error(self, msg :str, err_type :str):
         errs = make_err_struct_object(
-            error.AILRuntimeError(msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
+            error.AILRuntimeError(
+                msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
 
         if err_type not in ('VMError'):
             self.__now_state.err_stack.append(errs)
@@ -776,10 +777,20 @@ class Interpreter:
                         
                         self.__tof.stack.append(rtn)
 
+                elif op == unary_negative:
+                    v = self.__pop_top()
+
+                    if v['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
+                        vnum = -objs.unpack_ailobj(v)
+                        self.__tof.stack.append(objs.convert_to_ail_object(vnum))
+
+                        self.__decref(v)
+
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 
-                    v = self.__check_object(aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
+                    v = self.__check_object(
+                            aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
 
                     if v is None:
                         pass

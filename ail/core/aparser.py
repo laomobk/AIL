@@ -266,19 +266,19 @@ class Parser:
         if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER, LAP_SUB) or \
                 nt in _keywords:
             self.__syntax_error()
+        
+        # if self.__now_tok.ttype == LAP_SUB:
+        #     v = self.__now_tok.value
+        #     self.__next_tok()  # eat '-'
 
-        if self.__now_tok.ttype == LAP_SUB:
-            v = self.__now_tok.value
-            self.__next_tok()  # eat '-'
+        #     if self.__now_tok.ttype != LAP_NUMBER:
+        #         self.__syntax_error()
 
-            if self.__now_tok.ttype != LAP_NUMBER:
-                self.__syntax_error()
+        #     v += self.__now_tok.value
 
-            v += self.__now_tok.value
+        #     self.__next_tok()  # eat NUMBER
 
-            self.__next_tok()  # eat NUMBER
-
-            return ast.CellAST(v, LAP_NUMBER, self.__now_ln)
+        #     return ast.CellAST(v, LAP_NUMBER, self.__now_ln)
 
         name = nt.value  # it can be sub, string, number or identifier
 
@@ -286,8 +286,21 @@ class Parser:
 
         return ast.CellAST(name, nt.ttype, self.__now_ln)
 
+    def __parse_unary_expr(self) -> ast.UnaryExprAST:
+        if self.__now_tok.ttype == LAP_SUB:
+            self.__next_tok()
+
+            right = self.__parse_member_access_expr()
+            
+            if right is None:
+                self.__syntax_error()
+
+            return ast.UnaryExprAST('-', right, self.__now_ln)
+
+        return self.__parse_member_access_expr()
+
     def __parse_power_expr(self) -> ast.PowerExprAST:
-        left = self.__parse_member_access_expr()
+        left = self.__parse_unary_expr()
         
         if left is None:
             self.__syntax_error()
@@ -1101,10 +1114,10 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('tests/test.ail')
+    l = Lex('./tests/test.ail')
     ts = l.lex()
 
-    p = Parser('tests/test.ail')
+    p = Parser('./tests/test.ail')
     t = p.test(ts)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)

@@ -666,7 +666,7 @@ class Lex:
 def test_lex():
     import pprint
 
-    ts = Lex('tests/test.ail').lex()
+    ts = Lex('./tests/test.ail').lex()
 
     pprint.pprint(ts.token_list)
 

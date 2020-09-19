@@ -40,12 +40,22 @@ class MemberAccessAST:
         self.ln = ln
 
 
+class UnaryExprAST:
+    """
+    unary_expr := [unary_op] member_expr
+    """
+    def __init__(self, op: str, right_expr: MemberAccessAST, ln: int):
+        self.op = op
+        self.right_expr = right_expr
+        self.ln = ln
+
+
 class PowerExprAST:
     '''
-    pow_expr := member_expr ['^' member_expr]
+    pow_expr := unary_expr ['^' unary_expr]
     '''
 
-    def __init__(self, left :MemberAccessAST, right :MemberAccessAST, ln :int):
+    def __init__(self, left :UnaryExprAST, right :UnaryExprAST, ln :int):
         self.left = left
         self.right = right
         self.ln = ln
@@ -379,15 +389,16 @@ class TryCatchExprAST:
 
 
 BINARY_AST_TYPES = (
-        CellAST,
-        PowerExprAST,
-        ModExprAST,
-        MuitDivExprAST,
-        BinaryExprAST,
-        DefineExprAST,
-        CallExprAST,
-        ArrayAST,
-        SubscriptExprAST,
-        MemberAccessAST,
-        AssignExprAST
-        )
+    CellAST,
+    PowerExprAST,
+    ModExprAST,
+    MuitDivExprAST,
+    BinaryExprAST,
+    DefineExprAST,
+    CallExprAST,
+    ArrayAST,
+    SubscriptExprAST,
+    MemberAccessAST,
+    AssignExprAST,
+    UnaryExprAST,
+)
