@@ -72,7 +72,7 @@ builtins.chr(x: integer) -> string
 builtins.ord(x: string) -> integer
 ##################################
 
-返回 **单字符字符串串** :code:`x` 的 **Unicode Point** 。若x不符合要求，则抛出 :code:`PythonError` 。
+返回 **单字符字符串** :code:`x` 的 **Unicode Point** 。若x不符合要求，则抛出 :code:`PythonError` 。
 
 **x 必须是单字符字符串，即len(x) == 1**
 
@@ -85,3 +85,30 @@ builtins.ord(x: string) -> integer
         PythonError : ord() expected a character, but string of length 2 found
 
 
+::
+abs
+ng
+int_input
+__version__
+__main_version__
+chr
+ord
+hex
+make_type
+new
+null
+true
+false
+len
+equal
+type
+array
+equal_type
+isinstance
+str
+repr
+_get_ccom
+open
+int
+addr
+fnu

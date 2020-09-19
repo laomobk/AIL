@@ -36,7 +36,6 @@ from ..objects import (
     fastnum,
 )
 
-from .modules._fileio import _open
 from .modules._error import (
         make_err_struct_object, throw_error, catch_error,
         print_all_error, _err_to_string)
@@ -44,8 +43,6 @@ from .version import AIL_VERSION
 
 from .opcodes import *
 from ._vmsig import *
-
-from .test_utils import get_opname
 
 
 _BUILTINS = abuiltins.BUILTINS
