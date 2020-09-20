@@ -1,5 +1,15 @@
 begin
 
-print -(a - b - c - -d)
+
+if 0 then
+    print 'Nezha'
+elif 0
+    print 'Zhaer'
+elif 1
+    print 'Xiaozha'
+else 
+    print 'Aobing'
+endif
+
 
 end

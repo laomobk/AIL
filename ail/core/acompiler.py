@@ -655,7 +655,7 @@ class Compiler:
         else:
             elbc = ByteCode()
 
-        # 如果拥有 if 则 条件为false时跳到else块
+        # 如果拥有 if 则条件为false时跳到else块
         
         jump_over = extofs + len(tc.blist) + len(ifbc.blist) \
                         + len(elbc.blist) + _BYTE_CODE_SIZE * (2

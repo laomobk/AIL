@@ -70,7 +70,8 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.IfExprAST):
         return {'IfAST' : 
                 {'test' : make_ast_tree(a.test), 
-                 'body' : make_ast_tree(a.block), 
+                 'body' : make_ast_tree(a.block),
+                 'elif_block': make_ast_tree(a.elif_list),
                  'else_block' : make_ast_tree(a.else_block)}}
 
     elif isinstance(a, ast.WhileExprAST):

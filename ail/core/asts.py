@@ -215,9 +215,10 @@ class IfExprAST:
     '''
 
     def __init__(self, test :TestExprAST, 
-            block :BlockExprAST, else_block :BlockExprAST, ln :int):
+            block :BlockExprAST, elif_list: list, else_block :BlockExprAST, ln :int):
         self.test = test
         self.block = block
+        self.elif_list = elif_list
         self.else_block = else_block
         self.ln = ln
 

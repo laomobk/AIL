@@ -4,11 +4,9 @@ input_expr := 'input' expr ';' val_list NEWLINE
 assi_expr := NAME '=' expr NEWLINE
 
  if_else_expr := 'if' test 'then' NEWLINE
-	BLOCK
-	[
-	 'else' NEWLINE
-	 BLOCK
-	]
+    BLOCK
+    ['elif' test NEWLINE BLOCK]* 
+    ['else' BLOCK]
 'endif'
 
 

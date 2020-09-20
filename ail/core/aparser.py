@@ -10,7 +10,7 @@ _keywords_uc = (
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS', 'ELSE',  'ENDIF', 'LOAD',
+        'FUN', 'IS', 'ELSE',  'ENDIF', 'ELIF', 'LOAD',
         'STRUCT', 'MOD', 'FOR', 'PROTECTED',
         'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY'
         )
@@ -288,7 +288,7 @@ class Parser:
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
         if self.__now_tok.ttype == LAP_SUB:
-            self.__next_tok()
+            self.__next_tok()  # eat '-'
 
             right = self.__parse_member_access_expr()
             
@@ -559,94 +559,83 @@ class Parser:
 
         return ast.TestExprAST(t, self.__now_ln)
 
-    def __parse_if_else_expr(self) -> ast.IfExprAST:
+    def __parse_if_else_expr0(self) -> ast.IfExprAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'if'
 
-        test = self.__parse_test_expr()
+        if_test = self.__parse_test_expr()
+
+        if if_test is None:
+            self.__syntax_error()
 
         if self.__now_tok != 'then':
             self.__syntax_error()
 
-        if self.__next_tok().ttype != LAP_ENTER:
-            self.__syntax_error()
+        self.__next_tok()  # eat 'then'
 
-        if_stmts = []
-        el_stmts = []
+        if_block = self.__parse_block(for_if_else=True)
+        else_block = ast.BlockExprAST([], self.__now_ln)
+        elif_list = []
 
-        in_else = False
-        is_elif = False
-
-        now = if_stmts
-
-        while self.__now_tok != 'endif':
-            s = self.__parse_stmt()
-
-            # check s
-            if isinstance(s, ast.NullLineAST):
-                pass
-            elif isinstance(s, ast.EOFAST):
-                self.__syntax_error("if statement should ends with 'endif'")
-            else:
-                now.append(s)
-
+        while self.__now_tok.ttype != LAP_EOF:
             if self.__now_tok == 'else':
-                if in_else:
-                    self.__syntax_error()
                 self.__next_tok()  # eat 'else'
-
-                is_elif = self.__now_tok == 'if'
+                else_block = self.__parse_block(for_if_else=True)
                 
-                if self.__now_tok.ttype != LAP_ENTER and not is_elif:
+                if else_block is None:
                     self.__syntax_error()
 
-                if not is_elif:
-                    self.__next_tok()
+                if self.__now_tok == 'endif':
+                    self.__next_tok()  # eat 'endif'
+                    return ast.IfExprAST(
+                            if_test, if_block, elif_list, else_block, self.__now_ln)
+                else:
+                    self.__syntax_error()
+                
+            elif self.__now_tok == 'elif':
+                self.__next_tok()  # eat 'elif'
+                elif_test = self.__parse_test_expr()
+                
+                if elif_list is None:
+                    self.__syntax_error()
 
-                in_else = True
-                now = el_stmts
+                elif_block = self.__parse_block(for_if_else=True)
+                
+                if elif_block is None:
+                    self.__syntax_error()
 
-        ifb = ast.BlockExprAST(if_stmts, self.__now_ln)
-        elb = ast.BlockExprAST(el_stmts, self.__now_ln)
+                elif_list.append(
+                        ast.IfExprAST(elif_test, elif_block, [], None, self.__now_ln))
 
-        self.__next_tok()  # eat 'endif'
+            elif self.__now_tok == 'endif':
+                self.__next_tok()  # eat 'endif'
+                return ast.IfExprAST(
+                        if_test, if_block, elif_list, else_block, self.__now_ln)
 
-        return ast.IfExprAST(test, ifb, elb, ln)
+            else:
+                self.__syntax_error()
 
-    def __oparse_if_else_expr(self) -> ast.IfExprAST:
-        ln = self.__now_ln
-        self.__next_tok()  # eat 'if'
+    def __parse_if_else_expr(self) -> ast.IfExprAST:
+        base_tree = self.__parse_if_else_expr0()
+        
+        if len(base_tree.elif_list) == 0:
+            return base_tree
 
-        test = self.__parse_test_expr()
+        elif_list = base_tree.elif_list
 
-        if test is None:
-            self.__syntax_error()
+        last_if_else_block = elif_list.pop()
+        last_if_else_block.else_block = base_tree.else_block
+        base_tree.else_block = None
 
-        if self.__now_tok != 'then':
-            self.__syntax_error()
+        for elif_block in elif_list[::-1]:
+            elif_block.else_block = ast.BlockExprAST([last_if_else_block], self.__now_ln)
+            last_if_else_block = elif_block
 
-        block = self.__parse_block('then', 'endif', 
-                "if block should starts with 'then'",
-                "if block should ends with 'endif'")
+        base_tree.else_block = ast.BlockExprAST([last_if_else_block], self.__now_ln)
+        base_tree.elif_list = []
 
-        if block is None:
-            self.__syntax_error()
+        return base_tree
 
-        if self.__now_tok.ttype != LAP_ENTER:
-            self.__syntax_error()
-
-        if self.__peek() != 'else':
-            return ast.IfExprAST(test, block, 
-                    ast.BlockExprAST([], self.__now_ln), self.__now_ln)
-
-        self.__next_tok()  # move to else
-        #self.__next_tok()  # eat else
-
-        elseb = self.__parse_block('else', 'endel',
-                "else block should starts with 'else'",
-                "else block should ends with 'endif'")
-
-        return ast.IfExprAST(test, block, elseb, ln)
 
     def __parse_while_expr(self) -> ast.WhileExprAST:
         ln = self.__now_ln
@@ -1043,19 +1032,31 @@ class Parser:
  
     def __parse_block(self, start='then', end='end', 
             start_msg :str=None, end_msg :str=None,
-            start_enter=True) -> ast.BlockExprAST:
+            start_enter=True, for_if_else: bool=False) -> ast.BlockExprAST:
 
-        if self.__now_tok != start:
-            self.__syntax_error(start_msg)
+        if for_if_else:
+            if self.__now_tok.ttype != LAP_ENTER:
+                self.__syntax_error()
 
-        if start_enter and self.__next_tok().ttype != LAP_ENTER:
-            self.__syntax_error()
+            self.__next_tok()  # eat enter
 
-        self.__next_tok()  # eat enter
+            if self.__now_tok in ('else', 'elif', 'endif'):
+                # not eat, leave to if_else parse
 
-        if self.__now_tok == end:   # empty block
-            self.__next_tok()
-            return ast.BlockExprAST([], self.__now_ln)
+                return ast.BlockExprAST([], self.__now_ln)
+
+        else:
+            if self.__now_tok != start:
+                self.__syntax_error(start_msg)
+
+            if start_enter and self.__next_tok().ttype != LAP_ENTER:
+                self.__syntax_error()
+
+            self.__next_tok()  # eat enter
+
+            if self.__now_tok == end:   # empty block
+                self.__next_tok()
+                return ast.BlockExprAST([], self.__now_ln)
 
         first = self.__parse_stmt((start, end))
 
@@ -1071,6 +1072,9 @@ class Parser:
             stmtl.append(first)
 
         while self.__now_tok != end:
+            if for_if_else and self.__now_tok.value in ('elif', 'else', 'endif'):
+                return ast.BlockExprAST(stmtl, self.__now_ln)
+
             s = self.__parse_stmt((start, end))
 
             if s is None:
@@ -1083,13 +1087,6 @@ class Parser:
                 self.__syntax_error(end_msg)
 
         self.__next_tok()  # eat end
-        
-        '''
-        if self.__now_tok.ttype != LAP_ENTER:
-            self.__syntax_error()
-        '''
-
-        # self.__next_tok()
 
         return ast.BlockExprAST(stmtl, self.__now_ln)
 
