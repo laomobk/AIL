@@ -285,45 +285,158 @@ builtins.ord(x: string) -> integer
 builtins.hex(x: integer) -> string
 ##################################
 
+返回以'0x'开头的 x 的十六进制形式。
 
-builtins.new(type: struct_type, default_list={}) -> object
+::
+
+    >> hex(726)
+    '0x2d6'
+
+
+builtins.new(type: struct_type, default_list: array={}) -> object
 #################################################################
+
+实例化 struct 类型，返回 struct 对象。
+
+:code:`default_list` 是 *可选* 的。若不提供 :code:`default_list` ，则返回的对象的所有属性都为 **null** 若提供 :code:`default_list` ，则会 **按照struct_type属性的顺序**  依次初始化。
+
+** default_list 的长度必须等于 struct_type 成员的数量！ **
+
+::
+
+    >> struct Person is
+    ..      name
+    ..      age
+    .. end
+    >> new(Person)
+    <struct 'Person' object at 0x339e520> -> {
+            name : null
+            age : null
+    }
+    >> new(Person, {'Nezha', 3})
+    <struct 'Person' object at 0x339e0a0> -> {
+            name : 'Nezha'
+            age : < 3 >
+    }
+    >>
+    >> new(Person, {'Nezha'})
+    in '<shell>' + 8 :
+            TypeError : struct 'Person' initialize missing 2 required argument(s) : (name, age)
+    >>
+    >> new(Person, {'Nezha', 3, 80})
+    in '<shell>' + 12 :
+            TypeError : struct 'Person' initialize takes 2 argument(s) but 3 were given
+    >>
 
 
 builtins.len(x: longish) -> integer
 ###################################
 
+返回 longish对象 x 的长度。
+
 
 builtins.equal(a: any, b: any) -> boolean
 #########################################
+
+比较x, y是否相等。**比较的对象是两者的地址**。
+
+但是对于 string, integer 可以直接比较其内容 *(float 不可以)*。
+
+::
+
+    >> equal('Nezha', 'NEZHA')
+    false
+    >> equal('Nezha', 'Nezha')
+    true
 
 
 builtins.equal_type(a: any, b: any) -> boolean
 ##############################################
 
+比较x, y的类型。
+
+::
+
+    >> equal_type(726, 3)
+    true
+    >> equal_type({1}, {2, 3})
+    true
+
 
 builtins.array(size: integer) -> array
 ######################################
+
+返回一个长度为 **size** 的数组。其内容被初始化为 **null** 。
+
+::
+
+    >> array(3)
+    {null, null, null}
 
 
 builtins.isinstance(obj: any, type: struct_type) -> boolean
 ##############################################################
 
+返回 :code:`obj` 是否是 :code:`type` 类型的对象， **一般用于 struct 类型和对象的比较**。
+
+::
+
+    >> isinstance(new(Person), Person)
+    true
+    >> isinstance(0, Person)
+    false
+
 
 builtins.str(x: any) -> string
 ##############################
+
+返回 :code:`x` 的 **字符串形式** 。
+
+::
+
+    >> str(726)
+    '726'
+    >> str({726, 3})
+    '{< 726 >, < 3 >}'
+    >> str(new(Person))
+    '<struct 'Person' object at 0x33aba00> -> {
+            name : null
+            age : null
+    }'
+    >> str(Person)
+    '<struct 'Person' at 0x3393b20>'
+    >>
 
 
 builtins.int(x: number) -> integer
 ##################################
 
+将 x 转换成整数。
+
+::
+
+    >> int(3.0)
+    < 3 >
+    >> int(-10)
+    < -10 >
+
 
 builtins.repr(x: any) -> string
 ###############################
 
+返回 :code:`x` 的 **描述(repr)** 形式。repr形式一般被在REPL环境中输出， **请留意与 str(...) 的区别** 。
+
+::
+
+    >> repr(726)
+    '< 726 >'
+    >> str(726)
+    '726'
 
 builtins.open(fp: string, mode: string) -> iobuffer_t
 #####################################################
+
+打开一个文件，根据 :code:`mode` 返回一个相对应模式的IO对象。
 
 
 builtins.addr(obj: any) -> integer
