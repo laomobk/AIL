@@ -24,14 +24,15 @@ from .astate import MAIN_INTERPRETER_STATE
 from . import shared
 
 from ..objects import (
-    string   as astr,
-    integer  as aint,
-    bool     as abool,
-    wrapper  as awrapper,
-    float    as afloat,
-    array    as array,
-    function as afunc,
-    null as null,
+    string    as astr,
+    integer   as aint,
+    bool      as abool,
+    wrapper   as awrapper,
+    float     as afloat,
+    array     as array,
+    function  as afunc,
+    null      as null,
+    namespace,
     struct,
     fastnum,
 )
@@ -136,6 +137,10 @@ class Interpreter:
 
         self.__can_update_opc = True
 
+        self.__namespace_global = None  # namespace object
+        self.__namespace_local = None  # namespace object
+        self.__namespace_parent = None  # namespace object
+
     def __del__(self):
         MAIN_INTERPRETER_STATE.global_interpreters.pop()
 
@@ -158,6 +163,88 @@ class Interpreter:
     @property
     def __temp_env_stack(self) -> list:
         return self.__tof.temp_env_stack
+
+    def __get_field(self, name: str, frame_index: int) -> objs.AILObject:
+        frame_stack_length = len(self.__frame_stack)
+
+        if frame_stack_length == 0:
+            return error.AILRuntimeError(
+                    'no frame to get field', 'NoFrameError')
+
+        if frame_index < 0:
+            frame_index = frame_stack_length + frame_index
+
+            if frame_index < 0:
+                frame_index = 0
+
+        if frame_stack_length > frame_index:
+            f = self.__frame_stack[frame_index]
+            return f.variable.get(name, error.AILRuntimeError(
+                'no field named \'%s\'' % name, 'NameError'))
+
+    def __set_field(self, name: str, value: objs.AILObject, frame_index: int):
+        frame_stack_length = len(self.__frame_stack)
+
+        if frame_stack_length == 0:
+            return error.AILRuntimeError(
+                    'no frame to set field', 'NoFrameError')
+
+        if frame_index < 0:
+            frame_index = frame_stack_length + frame_index
+
+            if frame_index < 0:
+                frame_index = 0
+
+        if frame_stack_length > frame_index:
+            f = self.__frame_stack[frame_index]
+            f.variable[name] = value
+            return
+
+    def __get_global_namespace(self):
+        if self.__namespace_global is None:
+            ns_global = namespace.new_namespace(
+                'global', 
+                lambda name: self.__get_field(name, 0), 
+                lambda name, value: self.__set_field(name, value, 0)
+            )
+
+            self.__namespace_global = ns_global
+            return ns_global
+
+        return self.__namespace_global
+
+    def __get_local_namespace(self):
+        if self.__namespace_local is None:
+            ns_local = namespace.new_namespace(
+                'local',
+                lambda name: self.__get_field(name, -1),
+                lambda name, value: self.__set_field(name, value, -1)
+            )
+            self.__namespace_local = ns_local
+            return ns_local
+
+        return self.__namespace_local
+
+    def __get_parent_namespace(self):
+        if self.__namespace_local is None:
+            ns_parent = namespace.new_namespace(
+                'parent',
+                lambda name: self.__get_field(name, -2),
+                lambda name, value: self.__set_field(name, value, -2)
+            )
+            self.__namespace_parent = ns_parent
+            return ns_parent
+
+        return self.__namespace_parent
+
+    def __check_and_get_namespace(self, name: str):
+        if name == 'global':
+            return self.__get_global_namespace()
+        elif name == 'local':
+            return self.__get_local_namespace()
+        elif name == 'parent':
+            return self.__get_parent_namespace()
+        return None
 
     def __push_back(self, obj :objs.AILObject):
         self.__stack.append(obj)
@@ -402,6 +489,10 @@ class Interpreter:
     def __load_name(self, index :int) -> objs.AILObject:
         n = self.__tof.varnames[index]
 
+        ns = self.__check_and_get_namespace(n)
+        if ns is not None:
+            return ns
+
         for f in self.__frame_stack[::-1]:
             if n in f.variable:
                 return f.variable[n]
@@ -621,7 +712,12 @@ class Interpreter:
                 elif op == load_global:
                     n = self.__tof.varnames[argv]
 
-                    if len(self.__now_state.frame_stack) == 1:
+                    ns = self.__check_and_get_namespace(n)
+
+                    if ns is not None:
+                        self.__tof.stack.append(ns)
+
+                    elif len(self.__now_state.frame_stack) == 1:
                         tof = self.__now_state.frame_stack[-1]
                         if n in tof.variable:
                             o = tof.variable[n]

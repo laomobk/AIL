@@ -10,3 +10,4 @@ I_NULL_TYPE         = 0x8
 I_ARRAY_TYPE        = 0x9 
 I_STRUCT_TYPE       = 0xa
 I_STRUCT_OBJ_TYPE   = 0xb
+I_NAMESPACE_TYPE    = 0xc

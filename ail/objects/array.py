@@ -69,7 +69,8 @@ ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
                                 __setitem__=array_setitem,
                                 __str__=array_str,
                                 __repr__=array_str,
-                                __len__=array_len)
+                                __len__=array_len,
+                                )
 
 
 def convert_to_array(iterable: Iterable):
