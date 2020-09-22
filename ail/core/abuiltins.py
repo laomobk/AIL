@@ -145,11 +145,13 @@ def new_struct(struct_type, default_list=None):
     else:
         md = {k:null.null for k in m}
 
-    n = struct_type['__name__']
+    md.update(struct_type['__bind_functions__'])
+
+    name = struct_type['__name__']
     pl = struct_type.protected
 
     return objs.ObjectCreater.new_object(
-        struct.STRUCT_OBJ_TYPE, n, md, struct_type, pl)
+        struct.STRUCT_OBJ_TYPE, name, md, struct_type, pl)
 
 
 def func_len(o :objs.AILObject):

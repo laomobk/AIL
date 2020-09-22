@@ -973,6 +973,21 @@ class Interpreter:
                     for n in tn:
                         del self.__tof.variable[n]
 
+                elif op == bind_function:
+                    target_struct = self.__load_name(argv)
+                    func_name = objs.unpack_ailobj(self.__pop_top())
+
+                    if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
+                        self.__raise_error('function must be bound to a struct type')
+
+                    code_object = self.__pop_top()
+
+                    bound_function = objs.ObjectCreater.new_object(
+                        afunc.FUNCTION_TYPE, code_object, self.__tof.variable, code_object.name
+                    )
+
+                    target_struct['__bind_functions__'][func_name] = bound_function
+
                 if self.__interrupted:
                     self.__interrupted = False
                     if self.__interrupt_signal == MII_DO_JUMP:

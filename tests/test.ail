@@ -13,4 +13,7 @@ fun sayhi() is
     print 'Hello Nezha'
 end
 
+nezha = new(Person, {'Nezha', 3})
+nezha.sayhi()
+
 end

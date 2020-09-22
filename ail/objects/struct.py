@@ -45,6 +45,8 @@ def structobj_init(self, name :str, members :dict, type :obj.AILObject,
     if bind_funcs is None:
         bind_funcs = {}
 
+    members.update(bind_funcs)
+
     self.members = {k : _check_bound(self, v)
                         for k, v in members.items()}
     self.protected = protected_members
