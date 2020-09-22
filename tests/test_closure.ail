@@ -15,7 +15,22 @@ fun f() is
 end
 
 
-f()()
+fun hello() is
+    print 'Nezha'
+end
 
+
+fun say_hi(func) is
+    fun wrapper() is
+        print 'Hello'
+        return outer.func()
+    end
+    return wrapper
+end
+
+hello = say_hi(hello)
+
+f()()
+hello()
 
 end
