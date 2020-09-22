@@ -35,11 +35,16 @@ def struct_init(self, name :str, name_list :list,
     
     self.protected = protected_members
     self.members = d
+
     self['__name__'] = name
+    self['__bind_functions__'] = {}
 
 
 def structobj_init(self, name :str, members :dict, type :obj.AILObject,
-                   protected_members :list):
+                   protected_members :list, bind_funcs: dict=None):
+    if bind_funcs is None:
+        bind_funcs = {}
+
     self.members = {k : _check_bound(self, v)
                         for k, v in members.items()}
     self.protected = protected_members

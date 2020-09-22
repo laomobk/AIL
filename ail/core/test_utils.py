@@ -90,7 +90,8 @@ def make_ast_tree(a) -> dict:
                 {
                     'name' : a.name,
                     'arg_list' : make_ast_tree(a.arg_list),
-                    'block' : make_ast_tree(a.block)}}
+                    'block' : make_ast_tree(a.block), 
+                    'bindto': make_ast_tree(a.bindto)}}
 
     elif isinstance(a, ast.ReturnAST):
         return {'ReturnAST' : {'expr' : make_ast_tree(a.expr)}}
@@ -177,7 +178,8 @@ class ByteCodeDisassembler:
                 opcs.load_module,
                 opcs.load_attr,
                 opcs.store_attr,
-                opcs.setup_catch
+                opcs.setup_catch,
+                opcs.bind_function,
             )
 
     __SHOW_CONST = (

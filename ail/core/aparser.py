@@ -796,6 +796,17 @@ class Parser:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
 
+        bindto = None
+
+        if self.__now_tok == '(':
+            if self.__next_tok().ttype != LAP_IDENTIFIER:
+                self.__syntax_error()
+            bindto = self.__now_tok.value
+            
+            if self.__next_tok() != ')':
+                self.__syntax_error()
+            self.__next_tok()
+
         if self.__now_tok.ttype != LAP_IDENTIFIER:
             self.__syntax_error()
 
@@ -825,7 +836,7 @@ class Parser:
 
         self.__level -= 1
 
-        return ast.FunctionDefineAST(name, arg_list, block, ln)
+        return ast.FunctionDefineAST(name, arg_list, block, bindto, ln)
 
     def __parse_continue_stmt(self) -> ast.ContinueAST:
         if self.__now_tok != 'continue':

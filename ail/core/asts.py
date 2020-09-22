@@ -252,15 +252,17 @@ class DoLoopExprAST:
 
 class FunctionDefineAST:
     '''
-    func_def := 'fun' NAME '(' arg_list ')' NEWLINE
+    func_def := 'fun' ['(' NAME ')'] NAME '(' arg_list ')' NEWLINE
                 BLOCK
             'end'
     '''
 
-    def __init__(self, name :str, arg_list :ArgListAST, block :BlockExprAST, ln :int):
+    def __init__(self, name :str, arg_list :ArgListAST, 
+                 block :BlockExprAST, bindto: str, ln :int):
         self.name = name
         self.arg_list = arg_list
         self.block = block
+        self.bindto = bindto
         self.ln = ln
 
 

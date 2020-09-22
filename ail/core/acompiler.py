@@ -739,6 +739,8 @@ class Compiler:
     def __compile_function(self, tree :ast.FunctionDefineAST) -> ByteCode:
         bc = ByteCode()
 
+        has_bindto = tree.bindto != None
+
         ext = [c.value for c in tree.arg_list.exp_list]
 
         cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=tree.name,
@@ -748,9 +750,16 @@ class Compiler:
         ci = self.__buffer.add_const(cobj)
 
         namei = self.__buffer.get_or_add_varname_index(tree.name)
+        
+        bindtoi = self.__buffer.get_or_add_varname_index(tree.bindto)  \
+                    if has_bindto else 0
     
         bc.add_bytecode(load_const, ci)
-        bc.add_bytecode(store_function, namei)
+        if has_bindto:
+            bc.add_bytecode(load_varname, namei)
+            bc.add_bytecode(bind_function, bindtoi)
+        else:
+            bc.add_bytecode(store_function, namei)
 
         return bc
 

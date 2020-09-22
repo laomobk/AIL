@@ -1,18 +1,16 @@
 begin
 
-
-fun f() is
-    a = 726
-    
-    fun inner() is
-        print a
-    end
-
-    return inner
+struct Person is
+    name
+    age
 end
 
+fun (Person) sayhi() is
+    print 'hello, my name is' ; this.name
+end
 
-f()()
-
+fun sayhi() is
+    print 'Hello Nezha'
+end
 
 end
