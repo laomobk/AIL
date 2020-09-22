@@ -1,15 +1,18 @@
 begin
 
 
-if 0 then
-    print 'Nezha'
-elif 0
-    print 'Zhaer'
-elif 1
-    print 'Xiaozha'
-else 
-    print 'Aobing'
-endif
+fun f() is
+    a = 726
+    
+    fun inner() is
+        print a
+    end
+
+    return inner
+end
+
+
+f()()
 
 
 end
