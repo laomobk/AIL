@@ -298,10 +298,15 @@ class ByteCodeDisassembler:
             bc = self.__bytecodes[bi]
             argv = self.__bytecodes[bi + 1]
 
+            try:
+                comment = self.__get_opcode_comment(bc, argv)
+            except Exception as e:
+                comment = '!(bad argv: %s  exception: %s)' % (argv, e)
+
             self.__check_jump_point(bc, argv)
 
             print('\t', bi, self.__get_opname(bc), argv, 
-                    self.__get_opcode_comment(bc, argv), self.__get_jump_point_commit(),
+                    comment, self.__get_jump_point_commit(),
                     sep='\t')
 
             self.__offset_counter += 2

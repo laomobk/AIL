@@ -72,6 +72,15 @@ _obj_type_dict = {
     list: array.ARRAY_TYPE,
 }
 
+_binary_op_dict = {
+    binary_add : ('+', '__add__', '__add__'),
+    binary_div : ('/', '__truediv__', '__div__'),
+    binary_mod : ('mod', '__mod__', '__mod__'),
+    binary_muit : ('*', '__mul__', '__muit__'),
+    binary_pow : ('pow', '__pow__', '__pow__'),
+    binary_sub : ('-', '__sub__', '__sub__')
+}
+
 
 class TempEnvironment:
     __slots__ = ['temp_var']
@@ -93,12 +102,14 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 
 
 class Frame:
-    __slots__ = ['code', 'stack', 'varnames', 'consts',
+    __slots__ = ('code', 'stack', 'varnames', 'consts',
                  'variable', 'break_stack', 'temp_env_stack',
-                 'try_stack', '_marked_opcounter', '_latest_call_opcounter']
+                 'try_stack', '_marked_opcounter', '_latest_call_opcounter',
+                 'closure_outer_variable')
 
     def __init__(self, code :objs.AILCodeObject=None, varnames :list=None,
-                 consts :list=None, globals :dict=None):
+            consts :list=None, globals :dict=None, 
+            closure_outer_variable: dict=None):
         self.code :objs.AILCodeObject = code
         self.stack = []
         self.varnames = varnames if varnames else list()
@@ -108,6 +119,10 @@ class Frame:
         self.temp_env_stack = []
         self.try_stack = []
 
+        # for closure
+        self.closure_outer_variable = closure_outer_variable  \
+                                      if closure_outer_variable is not None  \
+                                      else dict()
         self._marked_opcounter = 0
         self._latest_call_opcounter = 0
 
@@ -139,7 +154,7 @@ class Interpreter:
 
         self.__namespace_global = None  # namespace object
         self.__namespace_local = None  # namespace object
-        self.__namespace_parent = None  # namespace object
+        self.__namespace_outer = None  # namespace object
 
     def __del__(self):
         MAIN_INTERPRETER_STATE.global_interpreters.pop()
@@ -164,7 +179,9 @@ class Interpreter:
     def __temp_env_stack(self) -> list:
         return self.__tof.temp_env_stack
 
-    def __get_field(self, name: str, frame_index: int) -> objs.AILObject:
+    def __get_field(self, name: str, frame_index: int, 
+                    from_outer: bool=False) -> objs.AILObject:
+
         frame_stack_length = len(self.__frame_stack)
 
         if frame_stack_length == 0:
@@ -179,10 +196,17 @@ class Interpreter:
 
         if frame_stack_length > frame_index:
             f = self.__frame_stack[frame_index]
+
+            if from_outer:
+                return f.closure_outer_variable.get(name, error.AILRuntimeError(
+                    'no field named \'%s\' outer namespace' % name, 'NameError'))
+            
             return f.variable.get(name, error.AILRuntimeError(
                 'no field named \'%s\'' % name, 'NameError'))
 
-    def __set_field(self, name: str, value: objs.AILObject, frame_index: int):
+    def __set_field(self, name: str, value: objs.AILObject, frame_index: int, 
+                    for_outer: bool=False):
+
         frame_stack_length = len(self.__frame_stack)
 
         if frame_stack_length == 0:
@@ -197,6 +221,11 @@ class Interpreter:
 
         if frame_stack_length > frame_index:
             f = self.__frame_stack[frame_index]
+
+            if for_outer:
+                f.closure_outer_variable[name] = value
+                return
+
             f.variable[name] = value
             return
 
@@ -225,25 +254,26 @@ class Interpreter:
 
         return self.__namespace_local
 
-    def __get_parent_namespace(self):
-        if self.__namespace_local is None:
-            ns_parent = namespace.new_namespace(
-                'parent',
-                lambda name: self.__get_field(name, -2),
-                lambda name, value: self.__set_field(name, value, -2)
+    def __get_outer_namespace(self):
+        if self.__namespace_outer is None:
+            ns_outer = namespace.new_namespace(
+                'outer',
+                lambda name: self.__get_field(name, -1, True),
+                lambda name, value: self.__set_field(name, value, -1, True)
             )
-            self.__namespace_parent = ns_parent
-            return ns_parent
+            self.__namespace_outer = ns_outer
+            return ns_outer
 
-        return self.__namespace_parent
+        return self.__namespace_outer
 
     def __check_and_get_namespace(self, name: str):
         if name == 'global':
             return self.__get_global_namespace()
         elif name == 'local':
             return self.__get_local_namespace()
-        elif name == 'parent':
-            return self.__get_parent_namespace()
+        elif name == 'outer' and self.__tof.code.closure:
+            # only closure has 'outer'
+            return self.__get_outer_namespace()
         return None
 
     def __push_back(self, obj :objs.AILObject):
@@ -515,11 +545,15 @@ class Interpreter:
                 argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
                 # init new frame
                 f = Frame()
+
                 f.varnames = c.varnames
                 f.variable = argd
                 f.code = c
                 f.consts = c.consts
 
+                if c.closure:
+                    f.closure_outer_variable = c._closure_outer_variable
+    
                 try:
                     if func['__this__'] is not None :
                         this = copy.copy(func['__this__'])
@@ -724,7 +758,8 @@ class Interpreter:
                             o.reference += 1
                             tof.stack.append(o)
                         else:
-                            self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
+                            self.__raise_error(
+                                    'name \'%s\' is not defined' % n, 'NameError')
 
                     else:
                         for f in self.__frame_stack[::-1]:
@@ -735,7 +770,8 @@ class Interpreter:
 
                                 break
                         else:
-                            self.__raise_error('name \'%s\' is not defined' % n, 'NameError')
+                            self.__raise_error(
+                                    'name \'%s\' is not defined' % n, 'NameError')
 
                 elif op == return_value:
                     self.__return()
@@ -795,14 +831,7 @@ class Interpreter:
                 elif op in (binary_add, binary_div, 
                             binary_mod, binary_muit, 
                             binary_pow, binary_sub):
-                    op, pym, ailm = {
-                        binary_add : ('+', '__add__', '__add__'),
-                        binary_div : ('/', '__truediv__', '__div__'),
-                        binary_mod : ('mod', '__mod__', '__mod__'),
-                        binary_muit : ('*', '__mul__', '__muit__'),
-                        binary_pow : ('pow', '__pow__', '__pow__'),
-                        binary_sub : ('-', '__sub__', '__sub__')
-                    }.get(op)
+                    op, pym, ailm = _binary_op_dict.get(op)
 
                     b = self.__pop_top()
                     a = self.__pop_top()
@@ -842,7 +871,10 @@ class Interpreter:
                     self.__call_function(func, argv, argl)
 
                 elif op == store_function:
-                    tos = self.__pop_top()
+                    tos = self.__pop_top()  # type: objs.AILCodeObject
+
+                    if tos.closure:
+                        tos._closure_outer_variable = self.__tof.variable
 
                     tosf = objs.ObjectCreater.new_object(
                         afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name

@@ -747,16 +747,19 @@ class Compiler:
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
 
+        if self.__mode == COMPILER_MODE_FUNC:
+            cobj.closure = True
+
         ci = self.__buffer.add_const(cobj)
 
-        namei = self.__buffer.add_const(tree.name)
+        namei = self.__buffer.get_or_add_varname_index(tree.name)
         
         bindtoi = self.__buffer.get_or_add_varname_index(tree.bindto)  \
                     if has_bindto else 0
     
         bc.add_bytecode(load_const, ci)
         if has_bindto:
-            bc.add_bytecode(load_const, namei)
+            bc.add_bytecode(load_varname, namei)
             bc.add_bytecode(bind_function, bindtoi)
         else:
             bc.add_bytecode(store_function, namei)

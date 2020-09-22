@@ -38,12 +38,12 @@ class NullType:
 # null = NullType()
 
 class AILCodeObject:
-    __slots__ = ['consts', 'varnames', 'bytecodes', 'firstlineno', 
-                 'argcount', 'name', 'lnotab']
+    __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno', 
+                 'argcount', 'name', 'lnotab', 'closure', '_closure_outer_variable')
 
     def __init__(self, consts :list, varnames :list, 
                  bytecodes :list, firstlineno :int,
-                 argcount :int, name :str, lnotab :list):
+                 argcount :int, name :str, lnotab :list, closure: bool=False):
         self.consts = consts
         self.varnames = varnames
         self.bytecodes = bytecodes
@@ -51,6 +51,9 @@ class AILCodeObject:
         self.argcount = argcount  # if function or -1
         self.name = name
         self.lnotab = lnotab
+
+        self.closure = closure
+        self._closure_outer_variable: dict = None  # None if not closure
 
     def __str__(self):
         return '<AIL CodeObject \'%s\'>' % self.name

@@ -2,11 +2,14 @@ begin
 
 
 fun f() is
-    a = 726
+    name = 'Nezha'
     
     fun inner() is
-        print a
+        print outer
+        print outer.name
     end
+
+    name = 'Zhaer'
 
     return inner
 end
