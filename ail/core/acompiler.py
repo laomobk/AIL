@@ -749,6 +749,7 @@ class Compiler:
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True
+            cobj.name = '%s.%s' % (self.__filename, cobj.name)
 
         ci = self.__buffer.add_const(cobj)
 
