@@ -9,7 +9,8 @@ AIL 文档
 .. toctree::
     :maxdepth: 1
     :caption: 目录
-
+    
+    版本介绍    <whatsnew/index.rst>
     入门教程    <tutorial/index.rst>
     标准库参考  <library/index.rst>
 
