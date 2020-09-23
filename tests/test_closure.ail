@@ -28,7 +28,7 @@ fun f2() is
 end
 
 
-print f()()()
+f2()()()
 
 
 fun hello() is

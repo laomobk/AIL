@@ -200,7 +200,8 @@ class Interpreter:
 
             if from_outer:
                 for scope in f.closure_outer:
-                    return scope.get(name)
+                    if name in scope:
+                        return scope.get(name)
                 error.AILRuntimeError(
                         'no field named \'%s\' outer namespace' % name, 'NameError')
             
