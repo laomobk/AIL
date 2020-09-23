@@ -743,13 +743,17 @@ class Compiler:
 
         ext = [c.value for c in tree.arg_list.exp_list]
 
-        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=tree.name,
-                        ext_varname=ext).compile(tree.block).code_object
-        cobj.argcount = len(tree.arg_list.exp_list)
+        filename = tree.name
 
         if self.__mode == COMPILER_MODE_FUNC:
+            filename = '%s.%s' % (self.__filename, tree.name)
+
+        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=filename,
+                        ext_varname=ext).compile(tree.block).code_object
+        cobj.argcount = len(tree.arg_list.exp_list)
+        
+        if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True
-            cobj.name = '%s.%s' % (self.__filename, cobj.name)
 
         ci = self.__buffer.add_const(cobj)
 
