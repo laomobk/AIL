@@ -30,7 +30,11 @@ end
 
 hello = say_hi(hello)
 
-f()()
+inf = f()
+
+inf()
+print inf
+
 hello()
 
 end
