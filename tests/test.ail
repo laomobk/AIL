@@ -37,6 +37,7 @@ end
 
 inf2 = f2()()
 print inf2
+inf2()
 
 
 // wrapper test
