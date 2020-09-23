@@ -105,11 +105,11 @@ class Frame:
     __slots__ = ('code', 'stack', 'varnames', 'consts',
                  'variable', 'break_stack', 'temp_env_stack',
                  'try_stack', '_marked_opcounter', '_latest_call_opcounter',
-                 'closure_outer_variable')
+                 'closure_outer')
 
     def __init__(self, code :objs.AILCodeObject=None, varnames :list=None,
             consts :list=None, globals :dict=None, 
-            closure_outer_variable: dict=None):
+            closure_outer_variable: list=None):
         self.code :objs.AILCodeObject = code
         self.stack = []
         self.varnames = varnames if varnames else list()
@@ -120,9 +120,10 @@ class Frame:
         self.try_stack = []
 
         # for closure
-        self.closure_outer_variable = closure_outer_variable  \
-                                      if closure_outer_variable is not None  \
-                                      else dict()
+        self.closure_outer = closure_outer_variable  \
+                                if closure_outer_variable is not None  \
+                                else list()
+
         self._marked_opcounter = 0
         self._latest_call_opcounter = 0
 
@@ -198,8 +199,10 @@ class Interpreter:
             f = self.__frame_stack[frame_index]
 
             if from_outer:
-                return f.closure_outer_variable.get(name, error.AILRuntimeError(
-                    'no field named \'%s\' outer namespace' % name, 'NameError'))
+                for scope in f.closure_outer:
+                    return scope.get(name)
+                error.AILRuntimeError(
+                        'no field named \'%s\' outer namespace' % name, 'NameError')
             
             return f.variable.get(name, error.AILRuntimeError(
                 'no field named \'%s\'' % name, 'NameError'))
@@ -223,7 +226,12 @@ class Interpreter:
             f = self.__frame_stack[frame_index]
 
             if for_outer:
-                f.closure_outer_variable[name] = value
+                for scope in f.closure_outer:
+                    if name in scope:
+                        scope[name] = value
+                        return
+                else:
+                    f.closure_outer_variable[-1][name] = value
                 return
 
             f.variable[name] = value
@@ -552,7 +560,7 @@ class Interpreter:
                 f.consts = c.consts
 
                 if c.closure:
-                    f.closure_outer_variable = c._closure_outer_variable
+                    f.closure_outer = c._closure_outer
     
                 try:
                     if func['__this__'] is not None :
@@ -874,7 +882,9 @@ class Interpreter:
                     tos = self.__pop_top()  # type: objs.AILCodeObject
 
                     if tos.closure:
-                        tos._closure_outer_variable = self.__tof.variable
+                        if self.__tof.code.closure:
+                            tos._closure_outer.extend(self.__tof.closure_outer)
+                        tos._closure_outer.insert(0, self.__tof.variable)
 
                     tosf = objs.ObjectCreater.new_object(
                         afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name

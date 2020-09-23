@@ -15,6 +15,22 @@ fun f() is
 end
 
 
+fun f2() is
+    date = 726
+
+    fun inf2() is
+        fun ininf2() is
+            print outer.date
+        end
+        return ininf2
+    end
+    return inf2
+end
+
+
+print f()()()
+
+
 fun hello() is
     print 'Nezha'
 end
