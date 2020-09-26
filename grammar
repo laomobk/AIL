@@ -49,7 +49,7 @@ assi_expr := cell '=' expr NEWLINE
 assi_expr_list := assi_expr [ ',' assi_expr]*
 
 stmt := while_expr | if_expr | if_else_expr | do_loop_expr | def_expr |
-	print_expr | input_expr
+	print_expr | input_expr | load_stmt | import_stmt
 
 block := stmt*
 
@@ -63,6 +63,7 @@ array := '{' item_list '}'
 item_list := cell [',' cell]*
 
 load_stmt := 'load' STRING
+import_stmt := 'import' STRING
 
 member_expr := cell '.' NAME
 

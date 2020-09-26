@@ -7,6 +7,7 @@ from traceback import format_exc
 from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
+from .astate import MAIN_INTERPRETER_STATE
 
 from . import aobjects as objs, error
 from . import shared
@@ -83,7 +84,7 @@ class ModuleLoader:
             self.__loaded[name] = namespace
         return namespace
 
-    def load_namespace(self, module_name :str) -> dict:
+    def load_namespace(self, module_name :str, import_mode: bool=False) -> dict:
         '''return -1 if module not found'''
         from .avm import Interpreter, Frame
 
@@ -105,8 +106,13 @@ class ModuleLoader:
             cobj = Compiler(filename=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
+            
+            temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
+            MAIN_INTERPRETER_STATE.frame_stack = list()
 
-            Interpreter().exec(cobj, frame)
+            Interpreter().exec(cobj, frame, import_mode)
+
+            MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
 
             v = frame.variable
 

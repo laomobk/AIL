@@ -33,6 +33,7 @@ from ..objects import (
     function  as afunc,
     null      as null,
     namespace,
+    module,
     struct,
     fastnum,
 )
@@ -105,7 +106,7 @@ class Frame:
     __slots__ = ('code', 'stack', 'varnames', 'consts',
                  'variable', 'break_stack', 'temp_env_stack',
                  'try_stack', '_marked_opcounter', '_latest_call_opcounter',
-                 'closure_outer')
+                 'closure_outer', 'globals')
 
     def __init__(self, code :objs.AILCodeObject=None, varnames :list=None,
             consts :list=None, globals :dict=None, 
@@ -157,6 +158,8 @@ class Interpreter:
         self.__namespace_local = None  # namespace object
         self.__namespace_outer = None  # namespace object
 
+        self.__exec_for_module = False
+
     def __del__(self):
         MAIN_INTERPRETER_STATE.global_interpreters.pop()
 
@@ -179,6 +182,9 @@ class Interpreter:
     @property
     def __temp_env_stack(self) -> list:
         return self.__tof.temp_env_stack
+
+    def __set_globals(self, globals: dict):
+        self.__frame_stack[0].variable = globals
 
     def __get_field(self, name: str, frame_index: int, 
                     from_outer: bool=False) -> objs.AILObject:
@@ -578,7 +584,14 @@ class Interpreter:
                 try:
                     self.__tof._latest_call_opcounter = self.__opcounter
 
+                    now_globals = self.__frame_stack[0].variable
+
+                    if func['__globals__'] is not None:
+                        self.__set_globals(func['__globals__'])
+
                     why = self.__run_bytecode(c, f)
+
+                    self.__set_globals(now_globals)
 
                     if why == WHY_ERROR:
                         self.__goto_catch()
@@ -761,7 +774,7 @@ class Interpreter:
                         self.__tof.stack.append(ns)
 
                     elif len(self.__now_state.frame_stack) == 1:
-                        tof = self.__now_state.frame_stack[-1]
+                        tof = self.__now_state.frame_stack[0]
                         if n in tof.variable:
                             o = tof.variable[n]
                             o.reference += 1
@@ -771,7 +784,7 @@ class Interpreter:
                                     'name \'%s\' is not defined' % n, 'NameError')
 
                     else:
-                        for f in self.__frame_stack[::-1]:
+                        for f in self.__frame_stack:
                             if n in f.variable:
                                 o = f.variable[n]
                                 o.reference += 1
@@ -890,6 +903,9 @@ class Interpreter:
                     tosf = objs.ObjectCreater.new_object(
                         afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
                     )
+                    
+                    if self.__exec_for_module:
+                        tosf['__globals__'] = self.__frame_stack[0].variable
 
                     n = self.__tof.varnames[argv]
                     self.__store_var(n, tosf)
@@ -931,15 +947,28 @@ class Interpreter:
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 
-                    v = self.__check_object(
-                            aloader.MAIN_LOADER.load_namespace(name), not_convert=True)
+                    namespace = aloader.MAIN_LOADER.load_namespace(name)
 
-                    if v is None:
+                    if namespace is None:
                         pass
-                    elif v == -1:
+                    elif namespace == -1:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
                     else:
-                        self.__tof.variable.update(v)
+                        self.__tof.variable.update(namespace)
+
+                elif op == import_name:
+                    name = self.__tof.consts[argv]['__value__']
+
+                    namespace = aloader.MAIN_LOADER.load_namespace(name, True)
+
+                    if namespace is None:
+                        pass
+                    elif namespace == -1:
+                        self.__raise_error(
+                                'No module named \'%s\'' % name, 'ImportError')
+                    else:
+                        module_object = module.new_module_object(name, namespace)
+                        self.__push_back(module_object)
 
                 elif op == store_subscr:
                     i = self.__pop_top()
@@ -1029,6 +1058,9 @@ class Interpreter:
                         afunc.FUNCTION_TYPE, code_object, self.__tof.variable, code_object.name
                     )
 
+                    if self.__exec_for_module:
+                        bound_function['__globals__'] = self.__frame_stack[0].variable
+
                     target_struct['__bind_functions__'][func_name] = bound_function
 
                 if self.__interrupted:
@@ -1071,7 +1103,7 @@ class Interpreter:
         
         return why
 
-    def exec(self, cobj, frame=None):
+    def exec(self, cobj, frame=None, exec_for_module=False):
         if not frame:
             f = Frame()
             f.code = cobj
@@ -1082,6 +1114,8 @@ class Interpreter:
             f.variable = _BUILTINS
         else:
             f = frame
+
+        self.__exec_for_module = exec_for_module
 
         self.__run_bytecode(cobj, f)
 

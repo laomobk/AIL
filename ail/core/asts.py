@@ -330,6 +330,12 @@ class LoadAST:
         self.ln = ln
 
 
+class ImportAST:
+    def __init__(self, name: str, ln: int):
+        self.name = name
+        self.ln = ln
+
+
 class StructDefineAST:
     def __init__(self, name :str, name_list :list, protected_list :list, ln :int):
         self.name = name

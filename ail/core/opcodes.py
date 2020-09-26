@@ -74,6 +74,8 @@ pop_jump_if_true_or_pop = 0x31
 unary_negative = 0x32
 bind_function = 0x33
 
+import_name = 0x34
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

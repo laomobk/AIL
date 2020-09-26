@@ -736,6 +736,17 @@ class Compiler:
 
         return bc
 
+    def __compile_import_stmt(self, tree: ast.ImportAST) -> ByteCode:
+        bc = ByteCode()
+
+        nsi = self.__buffer.add_const(tree.name)
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+
+        bc.add_bytecode(import_name, nsi)
+        bc.add_bytecode(store_var, ni)
+
+        return bc
+
     def __compile_function(self, tree :ast.FunctionDefineAST) -> ByteCode:
         bc = ByteCode()
 
@@ -870,6 +881,9 @@ class Compiler:
 
             elif isinstance(et, ast.TryCatchExprAST):
                 tbc = self.__compile_try_catch_expr(et, total_offset)
+
+            elif isinstance(et, ast.ImportAST):
+                tbc = self.__compile_import_stmt(et)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et, is_single=True)

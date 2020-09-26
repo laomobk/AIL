@@ -1,9 +1,11 @@
 begin
 
 
+// single closure test
+
 fun f() is
     name = 'Nezha'
-    
+
     fun inner() is
         print outer
         print outer.name
@@ -15,6 +17,8 @@ fun f() is
 end
 
 
+// muit closure test
+
 fun f2() is
     date = 726
 
@@ -24,12 +28,19 @@ fun f2() is
         end
         return ininf2
     end
+
+    date = 1026
+
     return inf2
 end
 
 
-f2()()()
+inf2 = f2()()
+print inf2
+inf2()
 
+
+// wrapper test
 
 fun hello() is
     print 'Nezha'
@@ -52,5 +63,21 @@ inf()
 print inf
 
 hello()
+
+
+// test outer setter
+
+fun f3() is
+    date = 726
+    fun inf3() is
+        outer.date = 1026
+    end
+
+    print 'before inf3(), date =' ; date
+    inf3()
+    print 'after inf3(), date =' ; date
+end
+
+f3()
 
 end

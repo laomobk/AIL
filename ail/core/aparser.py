@@ -10,9 +10,9 @@ _keywords_uc = (
         'IF', 'THEN', 'BEGIN',
         'END', 'WHILE', 'DO',
         'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS', 'ELSE',  'ENDIF', 'ELIF', 'LOAD',
+        'FUN', 'IS', 'ELSE',  'ENDIF', 'ELIF', 'LOAD', 'IMPORT'
         'STRUCT', 'MOD', 'FOR', 'PROTECTED',
-        'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY'
+        'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY', 
         )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -895,6 +895,23 @@ class Parser:
         
         return ast.AssertExprAST(expr, self.__now_ln)
 
+    def __parse_import_stmt(self) -> ast.ImportAST:
+        if self.__now_tok != 'import':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'import'
+
+        if self.__now_tok.ttype != LAP_STRING:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        self.__next_tok()  # eat name
+
+        return ast.ImportAST(name, ln)
+
     def __parse_load_stmt(self) -> ast.LoadAST:
         if self.__now_tok != 'load':
             self.__syntax_error()
@@ -1018,6 +1035,9 @@ class Parser:
 
         elif nt == 'try':
             a = self.__parse_try_catch_expr()
+
+        elif nt == 'import':
+            a = self.__parse_import_stmt()
 
         elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
                 nt.value not in (_keywords + limit):
