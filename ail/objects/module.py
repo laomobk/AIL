@@ -27,7 +27,7 @@ def module_getattr(self, name: str) -> AILObject:
     if name not in namespace:
         return AILRuntimeError(
                 'module \'%s\' has no attribute \'%s\'' % (
-                    self['__name__'], name))
+                    self['__name__'], name), 'AttributeError')
 
     return namespace[name]
 
