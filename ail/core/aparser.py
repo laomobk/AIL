@@ -832,7 +832,13 @@ class Parser:
         
         self.__level += 1
 
-        block = self.__parse_block('is', 'end')
+        # for new function syntax (':' instead of 'is')
+        if self.__now_tok.ttype == LAP_COLON:
+            self.__now_tok.ttype = LAP_IDENTIFIER
+            self.__now_tok.value = 'is'
+
+        block = self.__parse_block('is', 'end',
+                start_msg='function body should starts with \'is\' or \':\'')
 
         self.__level -= 1
 

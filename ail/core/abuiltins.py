@@ -224,6 +224,15 @@ def func_int(obj):
         return AILRuntimeError(str(e), 'PythonError')
 
 
+def func_float(obj):
+    v = objs.unpack_ailobj(obj)
+
+    try:
+        return float(v)
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonError')
+
+
 def func_addr(obj):
     return id(obj)
 
@@ -264,6 +273,7 @@ BUILTINS = {
     '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
     'open' : objs.convert_to_ail_object(_open),
     'int' : objs.convert_to_ail_object(func_int),
+    'float': objs.convert_to_ail_object(func_float),
     'addr': objs.convert_to_ail_object(func_addr),
     'fnum': objs.convert_to_ail_object(func_fnum),
 }

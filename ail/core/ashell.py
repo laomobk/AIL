@@ -97,6 +97,8 @@ class Shell:
                     return 1
                 if tok.value in _END_KEYWORD:
                     return -1
+            elif tok.ttype == tokent.LAP_COLON:
+                return 1
 
         return 0
 

@@ -76,6 +76,8 @@ bind_function = 0x33
 
 import_name = 0x34
 
+load_variable = 0x35
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

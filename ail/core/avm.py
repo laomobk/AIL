@@ -703,7 +703,7 @@ class Interpreter:
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
                 # 速度可能会慢些
 
-                # print(get_opname(op), self.__tof, self.__stack)
+                # print(self.__opcounter, get_opname(op), self.__tof, self.__stack)
 
                 # print(self.__opcounter)
 
@@ -765,6 +765,10 @@ class Interpreter:
                     self.__tof.stack.append(
                         self.__tof.varnames[argv]
                     )
+
+                elif op == load_variable:
+                    var = self.__load_name(argv)
+                    self.__push_back(var)
 
                 elif op == load_global:
                     n = self.__tof.varnames[argv]
@@ -1098,8 +1102,12 @@ class Interpreter:
                     self.__opcounter += _BYTE_CODE_SIZE
                     jump_to = self.__opcounter
 
-        except (EOFError, KeyboardInterrupt) as e:
+        except EOFError as e:
             self.__raise_error(str(type(e).__name__), 'RuntimeError')
+        except KeyboardInterrupt:
+            print('\nAIL Runtime: KeyboardInterrupt')
+            sys.exit(0)
+
         # tmr.print_analytical_table()
         
         return why

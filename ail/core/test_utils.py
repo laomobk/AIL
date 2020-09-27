@@ -175,6 +175,7 @@ class ByteCodeDisassembler:
                 opcs.store_var,
                 opcs.load_global,
                 opcs.load_local,
+                opcs.load_variable,
                 opcs.store_function,
                 opcs.load_varname,
                 opcs.load_module,

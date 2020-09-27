@@ -132,7 +132,7 @@ class Compiler:
             s, i = self.__do_cell_ast(tree)
 
             bc.add_bytecode(
-                    load_const if s == 0 else (load_attr if is_attr else load_global), i)
+                    load_const if s == 0 else (load_attr if is_attr else load_variable), i)
 
             return bc
 
@@ -391,7 +391,7 @@ class Compiler:
         if isinstance(tree, ast.CellAST):
             s, i = self.__do_cell_ast(tree)
 
-            bc.add_bytecode(load_const if s == 0 else load_global, i)
+            bc.add_bytecode(load_const if s == 0 else load_variable, i)
 
             return bc
 
