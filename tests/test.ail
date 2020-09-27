@@ -1,7 +1,13 @@
 begin
 
-import '_test'
+fun fib(n) is
+    if n == 1 or n == 2 then
+        return 1
+    else
+        return fib(n - 2) + fib(n - 1)
+    endif
+end
 
-_test.say_hi()
+print fib(3)
 
 end
