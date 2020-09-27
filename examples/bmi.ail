@@ -41,7 +41,7 @@ fun main():
         try
             sex = int_input('girl(0) or boy(1)?: ')
 
-            if sex == 1 or sex == 2 then
+            if sex == 1 or sex == 0 then
                 break
             else
                 print 'please enter 1 or 0 !'
