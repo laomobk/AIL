@@ -1,21 +1,23 @@
 " Vim syntax file
 " Language:	AIL
-" Maintainer:	Allan Kelly <allan@fruitloaf.co.uk>
-" Last Change:  2020 Sep 28 by Laomo
+" Maintainer:	Chen hongbo
+" Last Change:  2020 Sep 28
 
 if exists("b:current_syntax")
   finish
 endif
 
-" A bunch of useful BASIC keywords
+
 syn keyword ailStmt	if else elif
-syn keyword ailStmt	then end endif is
+syn keyword ailStmt	then end endif is begin wend
 syn keyword ailStmt	while for do loop
-syn keyword ailStmt	func struct
+syn keyword ailStmt	fun struct
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
+syn keyword ailStmt try catch
+syn keyword ailStmt break continue
 
-syn keyword ailConst	false true
+syn keyword ailConst false true
 
 syn keyword ailFunc abs
 syn keyword ailFunc ng
@@ -47,19 +49,18 @@ syn match  ailNumber		"\<\d\+\>"
 syn match  ailNumber		"\<\d\+\.\d*\>"
 syn match  ailNumber		"\.\d\+\>"
 
+syn match ailComment "\v(\/\/).*$"
+
 syn region ailString start=/\v"/ skip=/\v\\./ end=/\v"/
 syn region ailString start=/\v'/ skip=/\v\\./ end=/\v'/
 
-" syn region  ailString		  start=+"+  skip=+\\\\\|\\"+  end=+"+  contains=basicSpecial
-
-" syn region  ailComment	start="REM" end="$" contains=basicTodo
-" syn region  ailComment	start="^[ \t]*'" end="$" contains=basicTodo
+syn region ailComment start=/\v(\/\*)/ skip=/\v\\./ end=/\v(\*\/)/
 
 hi def link ailNumber		Number
-hi def link ailStmt		Statement
+hi def link ailStmt		    Statement
 hi def link ailString		String
 hi def link ailComment		Comment
-hi def link ailFunc		Identifier
+hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
 
 let b:current_syntax = "ail"

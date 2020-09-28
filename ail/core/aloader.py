@@ -4,6 +4,7 @@ import os.path
 
 from traceback import format_exc
 
+from .abuiltins import BUILTINS
 from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
@@ -106,6 +107,7 @@ class ModuleLoader:
             cobj = Compiler(filename=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
+            frame.variable.update(BUILTINS)
             
             temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
             MAIN_INTERPRETER_STATE.frame_stack = list()

@@ -708,7 +708,7 @@ class Interpreter:
                 # print(self.__opcounter)
 
                 if op == pop_top:
-                    tos = self.__tof.stack.pop()
+                    tos = self.__pop_top()
                     self.__decref(tos)
 
                 elif op == print_value:
@@ -1123,6 +1123,8 @@ class Interpreter:
             f.variable = _BUILTINS
         else:
             f = frame
+
+        f.variable['__is_main__'] = objs.convert_to_ail_object(cobj.is_main)
 
         self.__exec_for_module = exec_for_module
 

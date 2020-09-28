@@ -6,7 +6,7 @@ from importlib import import_module
 from .core import shared
 
 from ._config import (
-    AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH
+    AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
 )
 
 
@@ -89,14 +89,14 @@ class ArgParser:
 
 
 # load AIL_PATH in environ
-shared.GLOBAL_SHARED_DATA.cwd = os.getcwd()
+shared.GLOBAL_SHARED_DATA.cwd = CURRENT_WORK_PATH
 shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIR_PATH
 
 
 def init_paths():
     # init_lib_path
     shared.GLOBAL_SHARED_DATA.find_path = [
-        BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH
+        BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH
     ]
 
 
@@ -133,8 +133,10 @@ def launch_main(argv :list):
         from .core.avm import Interpreter
 
         ast = Parser(fpath).parse(Lex(fpath).lex())
-        Interpreter(option.rest_args).exec(
-                Compiler(ast, filename=fpath).compile(ast).code_object)
+        code_object = Compiler(ast, filename=fpath).compile(ast).code_object
+        code_object.is_main = True
+
+        Interpreter(option.rest_args).exec(code_object)
 
     except FileNotFoundError as e:
         print('AIL : can\'t open file \'%s\' : %s' % (fpath, str(e)))
