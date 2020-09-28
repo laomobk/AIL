@@ -16,6 +16,7 @@ syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch
 syn keyword ailStmt break continue
+syn keyword ailStmt import load
 
 syn keyword ailConst false true
 

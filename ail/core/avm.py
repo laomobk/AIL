@@ -958,6 +958,10 @@ class Interpreter:
                         pass
                     elif namespace == -1:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
+                    elif namespace == -2:
+                        self.__raise_error(
+                                'Cannot load module \'%s\' ' % name + 
+                                '(may caused circular load)', 'LoadError')
                     else:
                         self.__tof.variable.update(namespace)
 
@@ -970,7 +974,11 @@ class Interpreter:
                         pass
                     elif namespace == -1:
                         self.__raise_error(
-                                'No module named \'%s\'' % name, 'ImportError')
+                                'No module named \'%s\'' % name, 'ImportError') 
+                    elif namespace == -2:
+                        self.__raise_error(
+                                'Cannot import module \'%s\' ' % name + 
+                                '(may caused circular import)', 'ImportError')
                     else:
                         module_object = module.new_module_object(name, namespace)
                         self.__push_back(module_object)

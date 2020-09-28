@@ -28,6 +28,7 @@ class ModuleLoader:
     def __init__(self, paths :list):
         self.__load_path = paths
         self.__loaded = {}
+        self.__loading_paths = []
 
     def __search_module(self, name :str) -> str:
         '''
@@ -86,7 +87,11 @@ class ModuleLoader:
         return namespace
 
     def load_namespace(self, module_name :str, import_mode: bool=False) -> dict:
-        '''return -1 if module not found'''
+        """
+        :return: -1 if module not found
+                 -2 if circular import(or load)
+        """
+
         from .avm import Interpreter, Frame
 
         module_name = module_name.replace('.', '/')
@@ -99,7 +104,14 @@ class ModuleLoader:
         if p is None:
             return -1
 
+        if p in self.__loading_paths:
+            return -2
+
+        self.__loading_paths.append(p)
+        remove_path = self.__loading_paths.remove
+
         if self.__get_type(p) == 'py':
+            remove_path(p)
             return self.__add_to_loaded(module_name, self.__load_py_namespace(p))
 
         elif self.__get_type(p) == 'ail':
@@ -117,9 +129,11 @@ class ModuleLoader:
             MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
 
             v = frame.variable
-
+            
+            remove_path(p)
             return self.__add_to_loaded(module_name, v)
-
+        
+        remove_path(p)
         return -1
 
 
