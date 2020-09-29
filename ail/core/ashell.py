@@ -130,7 +130,7 @@ class Shell:
 
         if self.__main_frame.stack:
             tof = self.__main_frame.stack.pop()
-            if tof is not null.null or tof is not None:
+            if tof is not null.null and tof is not None:
                 print(repr(tof))
     
     def __run_block(self):

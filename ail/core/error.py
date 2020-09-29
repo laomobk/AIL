@@ -41,11 +41,11 @@ def error_msg(line :int, msg :str, filename :str, errcode=1):
     filename : 文件名
     errcode : 错误码 / 程序返回值
     '''
-    emsg = '\tLine {2}: {3}\nFile: {0} :{2}, error: {1}\n'.format(
+    emsg = 'File: \'{0}\', line {2}:\n   {3}\nError: {1}'.format(
         filename, msg, line, get_line_from_line_no(line, filename))
 
     if THROW_ERROR_TO_PYTHON:
-        raise _AILRuntimeError('\n' + emsg)
+        raise _AILRuntimeError(emsg)
     else:
         sys.stderr.write(emsg)
         sys.stderr.flush()

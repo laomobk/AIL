@@ -9,6 +9,7 @@ from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
 from .astate import MAIN_INTERPRETER_STATE
+from ._vmsig import WHY_ERROR
 
 from . import aobjects as objs, error
 from . import shared
@@ -124,13 +125,17 @@ class ModuleLoader:
             temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
             MAIN_INTERPRETER_STATE.frame_stack = list()
 
-            Interpreter().exec(cobj, frame, import_mode)
+            why = Interpreter().exec(cobj, frame, import_mode)
 
             MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
 
             v = frame.variable
             
             remove_path(p)
+
+            if why == WHY_ERROR:
+                return -1
+
             return self.__add_to_loaded(module_name, v)
         
         remove_path(p)

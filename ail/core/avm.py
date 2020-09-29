@@ -1136,7 +1136,7 @@ class Interpreter:
 
         self.__exec_for_module = exec_for_module
 
-        self.__run_bytecode(cobj, f)
+        return self.__run_bytecode(cobj, f)
 
 
 def test_vm():

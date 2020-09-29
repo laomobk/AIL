@@ -1,5 +1,5 @@
 begin
 
-import 'test_import2'
+import 'test_import'
 
 end
