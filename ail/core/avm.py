@@ -371,17 +371,19 @@ class Interpreter:
                 sys.stderr.write('\n%s\n\n' %
                       'During handling of the above exception, another exception occurred:')
             sys.stderr.write(_err_to_string(errs) + '\n')
-            
+
             # if not ERR_NOT_EXIT (usually), the following code will not execute.
 
             # Used to be to get used to shell, it's useless now.
             if not error.ERR_NOT_EXIT:
                 sys.exit(1)
-            
+
             # for interactive mode.
             self.__now_state.handling_err_stack.clear()
             self.__stack.clear()
             self.__can = 0
+            self.__interrupted = True
+            self.__interrupt_signal = MII_ERR_BREAK
 
             return
 
@@ -956,12 +958,14 @@ class Interpreter:
 
                     if namespace is None:
                         pass
-                    elif namespace == -1:
+                    elif namespace == 1:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
-                    elif namespace == -2:
+                    elif namespace == 2:
                         self.__raise_error(
                                 'Cannot load module \'%s\' ' % name + 
                                 '(may caused circular load)', 'LoadError')
+                    elif namespace == 3:
+                        pass  # error while loading this module
                     else:
                         self.__tof.variable.update(namespace)
 
@@ -972,13 +976,16 @@ class Interpreter:
 
                     if namespace is None:
                         pass
-                    elif namespace == -1:
+                    elif namespace == 1:
                         self.__raise_error(
                                 'No module named \'%s\'' % name, 'ImportError') 
-                    elif namespace == -2:
+                    elif namespace == 2:
                         self.__raise_error(
                                 'Cannot import module \'%s\' ' % name + 
                                 '(may caused circular import)', 'ImportError')
+                    elif namespace == 3:
+                        # error while importing this module
+                        self.__push_back(null.null)
                     else:
                         module_object = module.new_module_object(name, namespace)
                         self.__push_back(module_object)

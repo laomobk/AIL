@@ -91,6 +91,7 @@ class ModuleLoader:
         """
         :return: -1 if module not found
                  -2 if circular import(or load)
+                 -3 if error while importing (or loading) a module
         """
 
         from .avm import Interpreter, Frame
@@ -103,10 +104,10 @@ class ModuleLoader:
         p = self.__search_module(module_name)
 
         if p is None:
-            return -1
+            return 1
 
         if p in self.__loading_paths:
-            return -2
+            return 2
 
         self.__loading_paths.append(p)
         remove_path = self.__loading_paths.remove
@@ -134,12 +135,12 @@ class ModuleLoader:
             remove_path(p)
 
             if why == WHY_ERROR:
-                return -1
+                return 3
 
             return self.__add_to_loaded(module_name, v)
         
         remove_path(p)
-        return -1
+        return 1
 
 
 MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)
