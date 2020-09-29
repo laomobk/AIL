@@ -965,7 +965,9 @@ class Interpreter:
                                 'Cannot load module \'%s\' ' % name + 
                                 '(may caused circular load)', 'LoadError')
                     elif namespace == 3:
-                        pass  # error while loading this module
+                        # error while loading this module
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_BREAK
                     else:
                         self.__tof.variable.update(namespace)
 
@@ -984,8 +986,8 @@ class Interpreter:
                                 'Cannot import module \'%s\' ' % name + 
                                 '(may caused circular import)', 'ImportError')
                     elif namespace == 3:
-                        # error while importing this module
-                        self.__push_back(null.null)
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_BREAK
                     else:
                         module_object = module.new_module_object(name, namespace)
                         self.__push_back(module_object)
