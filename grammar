@@ -30,7 +30,6 @@ not_test := 'not' cmp_test
 cmp_test := expr [cmp_op expr]* 
 cmp_op := '>' | '<' | '=' | '!=' | '>=' | '<='
 
-# expr := real_expr | '(' expr ')'
 real_expr_list := real_expr [ ',' real_expr]*
 real_expr := md_expr [('+' | '-') md_expr]*
 md_expr := mod_expr [('*' | '/') mod_expr]*
@@ -63,7 +62,7 @@ array := '{' item_list '}'
 item_list := cell [',' cell]*
 
 load_stmt := 'load' STRING
-import_stmt := 'import' STRING
+import_stmt := 'import' [NAME] STRING
 
 member_expr := cell '.' NAME
 

@@ -1,4 +1,3 @@
-
 from .types import I_NAMESPACE_TYPE
 
 from ..core.aobjects import (
@@ -18,7 +17,7 @@ def namespace_setattr(self, name: str, value: AILObject) -> AILObject:
     try:
         return self['__nssetter__'](name, value)
     except TypeError as e:
-        return AILRuntimeError('cannot set a field: %s' % str(e), 
+        return AILRuntimeError('cannot set a field: %s' % str(e),
                                'BadNamespaceError')
 
 
@@ -38,10 +37,10 @@ def new_namespace(namespace_name: str, getter, setter) -> AILObject:
     return ObjectCreater.new_object(NAMESPACE_TYPE, namespace_name, getter, setter)
 
 
-NAMESPACE_TYPE = AILObjectType('<namespace type>', I_NAMESPACE_TYPE, 
-                            __init__=namespace_init,
-                            __setattr__=namespace_setattr,
-                            __getattr__=namespace_getattr,
-                            __str__=namespace_str,
-                            __repr__=namespace_str,
-                            )
+NAMESPACE_TYPE = AILObjectType('<namespace type>', I_NAMESPACE_TYPE,
+                               __init__=namespace_init,
+                               __setattr__=namespace_setattr,
+                               __getattr__=namespace_getattr,
+                               __str__=namespace_str,
+                               __repr__=namespace_str,
+                               )

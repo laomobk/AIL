@@ -7,12 +7,12 @@ import inspect
 from . import types
 
 
-def pyfunc_func_init(self :obj.AILObject, func :t.FunctionType):
+def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
     self['__pyfunction__'] = func
     self['__value__'] = func
 
 
-def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
+def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
     fobj = self['__pyfunction__']
 
     try:
@@ -24,22 +24,22 @@ def pyfunc_func_call(self :obj.AILObject, *args) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonError')
 
 
-def pyfunc_func_str(self :obj.AILObject):
+def pyfunc_func_str(self: obj.AILObject):
     return '<AIL Python function wrapper \'%s\' at %s>' % (
-            self['__pyfunction__'].__name__,  hex(id(self)))
+        self['__pyfunction__'].__name__, hex(id(self)))
 
 
-def func_func_init(self, cobj :t.CodeType, globals :dict, name :str):
+def func_func_init(self, cobj: t.CodeType, globals: dict, name: str):
     self['__code__'] = cobj
     self['__globals__'] = globals
     self['__name__'] = name
 
 
-def func_func_str(self :obj.AILObject):
+def func_func_str(self: obj.AILObject):
     return '<AIL function \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
-def call(pyfw :obj.AILObject, *args):
+def call(pyfw: obj.AILObject, *args):
     if inspect.isfunction(pyfw):
         try:
             return pyfw(*args)
@@ -78,10 +78,10 @@ def convert_to_func_wrapper(pyf):
 
     if obj.compare_type(pyf, PY_FUNCTION_TYPE) or \
             obj.compare_type(pyf, FUNCTION_TYPE):
-                return pyf
+        return pyf
 
     if inspect.isfunction(pyf) or inspect.isbuiltin(pyf):
         return obj.ObjectCreater.new_object(
-                PY_FUNCTION_TYPE, pyf)
+            PY_FUNCTION_TYPE, pyf)
 
     return obj.convert_to_ail_object(pyf)

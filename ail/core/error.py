@@ -1,23 +1,21 @@
-
 import sys
 import os.path
 
 from . import debugger
 
-
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
 
 
-def get_line_from_line_no(lno :int, fp :str):
-    '''
+def get_line_from_line_no(lno: int, fp: str):
+    """
     ln : 行号
     fp : 文件路径
     根据行号得到在源码的行
-    '''
+    """
     if lno <= 0:
         return '<Illegal line number>'
-    
+
     tlno = 1
 
     if not os.path.exists(fp):
@@ -29,18 +27,18 @@ def get_line_from_line_no(lno :int, fp :str):
         if tlno == lno:
             return ln
         tlno += 1
-    
+
     return '<NULL>'
 
 
 # @debugger.debug_python_runtime
-def error_msg(line :int, msg :str, filename :str, errcode=1):
-    '''
+def error_msg(line: int, msg: str, filename: str, errcode=1):
+    """
     line : 行号
     msg : 信息
     filename : 文件名
     errcode : 错误码 / 程序返回值
-    '''
+    """
     emsg = 'File: \'{0}\', line {2}:\n   {3}\nError: {1}'.format(
         filename, msg, line, get_line_from_line_no(line, filename))
 
@@ -65,16 +63,16 @@ def print_stack_trace():
 
 
 class AILRuntimeError:
-    def __init__(self, msg :str=None, err_type :str=None, frame=None, stack_trace=None):
-        self.msg :str = msg
-        self.err_type :str = err_type
+    def __init__(self, msg: str = None, err_type: str = None, frame=None, stack_trace=None):
+        self.msg: str = msg
+        self.err_type: str = err_type
         self.frame = frame
 
     def __str__(self):
         return '<AIL_RT_ERROR %s : %s>' % (self.err_type, self.msg)
 
 
-def print_global_error(err :AILRuntimeError, where :str=''):
+def print_global_error(err: AILRuntimeError, where: str = ''):
     if THROW_ERROR_TO_PYTHON:
         raise_error_as_python(err, where)
 
@@ -98,7 +96,7 @@ def print_global_error(err :AILRuntimeError, where :str=''):
         sys.exit(1)
 
 
-def format_error(error :AILRuntimeError):
+def format_error(error: AILRuntimeError):
     msg = error.err_type
     f = error.frame
     t = error.err_type
@@ -108,7 +106,7 @@ def format_error(error :AILRuntimeError):
            (f.code.name, p, t, msg)
 
 
-def raise_error_as_python(err :AILRuntimeError, where :str=''):
+def raise_error_as_python(err: AILRuntimeError, where: str = ''):
     msg = err.msg
     t = err.err_type
 

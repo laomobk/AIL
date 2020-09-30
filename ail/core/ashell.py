@@ -1,4 +1,3 @@
-
 import sys
 
 from .acompiler import Compiler
@@ -37,9 +36,9 @@ def _sh_copyright():
 
 
 _SHELL_NAMESPACE = {
-        'exit': objs.convert_to_ail_object(_sh_exit),
-        'copyright': objs.convert_to_ail_object(_sh_copyright),
-        }
+    'exit': objs.convert_to_ail_object(_sh_exit),
+    'copyright': objs.convert_to_ail_object(_sh_copyright),
+}
 
 _SHELL_NAMESPACE.update(_BUILTINS)
 
@@ -54,7 +53,7 @@ class Shell:
         self.__more_level = 0
 
         self.__temp_name = '.temp.tmp'
-        self.__fbuffer = open(self.__temp_name,'w')
+        self.__fbuffer = open(self.__temp_name, 'w')
 
         self.__program = 'begin\n%s\nend\n'
 
@@ -65,7 +64,7 @@ class Shell:
         self.__parser = Parser(self.__temp_name)
         self.__compiler = Compiler(filename='<shell>')
 
-    def __write(self, line :str):
+    def __write(self, line: str):
         if self.__fbuffer.closed:
             self.__fbuffer = open(self.__temp_name, 'w')
 
@@ -83,10 +82,10 @@ class Shell:
 
         return s
 
-    def __get_more_line_state(self, line :str) -> int:
-        '''
+    def __get_more_line_state(self, line: str) -> int:
+        """
         :return : -1 end more | 0 normal | 1 start more
-        '''
+        """
         self.__write(line)
 
         ts = Lex(self.__temp_name).lex()
@@ -109,11 +108,11 @@ class Shell:
             v = AIL_VERSION
         except KeyError:
             pass
-        
+
         print('AIL shell %s' % ('(AIL version = %s)' % v) if v else '')
         print('Type \'exit()\' to exit.\n')
 
-    def __run_single_line(self, line :str, block=False):
+    def __run_single_line(self, line: str, block=False):
         single_line = not block
 
         self.__write(self.__program % line)
@@ -132,7 +131,7 @@ class Shell:
             tof = self.__main_frame.stack.pop()
             if tof is not null.null and tof is not None:
                 print(repr(tof))
-    
+
     def __run_block(self):
         self.__run_single_line('\n'.join(self.__buffer), True)
 
@@ -148,9 +147,9 @@ class Shell:
         self.__print_welcome_text()
 
         ps = self.ps1
-        
+
         in_more = False
-        
+
         while True:
             try:
                 line = input(ps)
@@ -194,7 +193,7 @@ class Shell:
                 self.__buffer = []
 
             self.__main_frame.variable['__temp__'] = \
-                    string.convert_to_string(self.__read_temp_file())
+                string.convert_to_string(self.__read_temp_file())
 
         os.remove(self.__temp_name)
 

@@ -4,13 +4,12 @@ from ..core.error import AILRuntimeError
 from . import float as afloat, types
 from . import bool as abool
 
-
 POOL_RANGE_MIN = -1
 POOL_RANGE_MAX = 100
 POOL_RANGE = (POOL_RANGE_MIN, POOL_RANGE_MAX)
 
 
-def int_str(self :obj.AILObject):
+def int_str(self: obj.AILObject):
     return '%d' % self['__value__']
 
 
@@ -18,7 +17,7 @@ def int_repr(self):
     return '< %d >' % self['__value__']
 
 
-def int_init(self :obj.AILObject, value :obj.AILObject):
+def int_init(self: obj.AILObject, value: obj.AILObject):
     if isinstance(value, int):
         self['__value__'] = value
     elif isinstance(value, float):
@@ -31,8 +30,8 @@ def int_init(self :obj.AILObject, value :obj.AILObject):
         return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
 
-def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__class__'] not in (INTEGER_TYPE, afloat.FLOAT_TYPE):   # do not have __value__ property
+def int_add(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__class__'] not in (INTEGER_TYPE, afloat.FLOAT_TYPE):  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
 
     sv = self['__value__']
@@ -46,8 +45,8 @@ def int_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def int_sub(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -61,8 +60,8 @@ def int_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def int_div(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'/\' with type %s' % str(other), 'TypeError')
 
     if other['__value__'] == 0:
@@ -79,8 +78,8 @@ def int_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def int_muit(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -94,8 +93,8 @@ def int_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def int_mod(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -109,8 +108,8 @@ def int_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def int_pow(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -124,29 +123,29 @@ def int_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
-def int_eq(self :obj.AILObject, o :obj.AILObject):
+def int_eq(self: obj.AILObject, o: obj.AILObject):
     if isinstance(o, obj.AILObject):
         return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o['__value__'])
     return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o)
 
 
 def int_to_string(self):
-   return str(self)
+    return str(self)
 
 
 INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
-                             methods={'to_string' : int_to_string},
-                             __init__=int_init,
-                             __add__=int_add,
-                             __str__=int_str,
-                             __div__=int_div,
-                             __muit__=int_muit,
-                             __sub__=int_sub,
-                             __eq__=int_eq,
-                             __repr__=int_repr,
-                             __mod__=int_mod,
-                             __pow__=int_pow
-                             )
+                                 methods={'to_string': int_to_string},
+                                 __init__=int_init,
+                                 __add__=int_add,
+                                 __str__=int_str,
+                                 __div__=int_div,
+                                 __muit__=int_muit,
+                                 __sub__=int_sub,
+                                 __eq__=int_eq,
+                                 __repr__=int_repr,
+                                 __mod__=int_mod,
+                                 __pow__=int_pow
+                                 )
 
 
 def get_integer(pyint: int) -> obj.AILObject:
@@ -188,17 +187,17 @@ class _IntegerPool:
 INTEGER_POOL = _IntegerPool().pool
 
 
-def convert_to_integer(pyint :int):
+def convert_to_integer(pyint: int):
     from . import string
 
     try:
         if pyint['__class__'] in (
                 INTEGER_TYPE, afloat.FLOAT_TYPE, string.STRING_TYPE):
-                pyint['__value__'] = int(pyint['__value__'])
-                return pyint
+            pyint['__value__'] = int(pyint['__value__'])
+            return pyint
 
         elif type(pyint) in (int, float, str):
-                return obj.ObjectCreater.new_object(INTEGER_TYPE, int(pyint))
+            return obj.ObjectCreater.new_object(INTEGER_TYPE, int(pyint))
 
     except ValueError as e:
         return AILRuntimeError(str(e), 'ValueError')

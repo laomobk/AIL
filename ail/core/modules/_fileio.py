@@ -11,12 +11,12 @@ from ...objects.null import null
 
 def _convert_to_iobuffer(iobuffer):
     struct_d = {
-        'close' : convert_to_func_wrapper(_close),
-        '__buffer' : iobuffer,
-        'closed' : iobuffer.closed,
-        'read' : convert_to_func_wrapper(_read),
-        'peek' : convert_to_func_wrapper(_peek),
-        'write' : convert_to_func_wrapper(_write)
+        'close': convert_to_func_wrapper(_close),
+        '__buffer': iobuffer,
+        'closed': iobuffer.closed,
+        'read': convert_to_func_wrapper(_read),
+        'peek': convert_to_func_wrapper(_peek),
+        'write': convert_to_func_wrapper(_write)
     }
 
     return new_struct_object('iobuffer_t', null, struct_d, struct_d.keys())

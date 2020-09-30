@@ -4,7 +4,7 @@ from os.path import (
 
 
 class CheckResult(bool):
-    def __init__(self, ok: bool, message: str=''):
+    def __init__(self, ok: bool, message: str = ''):
         self.ok = ok
         self.message = message
 

@@ -36,9 +36,9 @@ def _get_err_stack_object():
         return null
 
     stack_d = {
-        '__stack' : es,
-        'empty' : convert_to_func_wrapper(_empty),
-        'pop' : convert_to_func_wrapper(_pop),
+        '__stack': es,
+        'empty': convert_to_func_wrapper(_empty),
+        'pop': convert_to_func_wrapper(_pop),
     }
 
     return new_struct_object('ERROR_STACK_T', null, stack_d, stack_d.keys())
@@ -59,14 +59,14 @@ def _sys_exit(_, code):
 
 def _get_cc_object(_):
     _ccom_t_memb = {
-                'paths' : GLOBAL_SHARED_DATA.find_path,
-                'max_recursion_depth' : GLOBAL_SHARED_DATA.max_recursion_depth,
-                'cwd' : GLOBAL_SHARED_DATA.cwd,
-                '_refresh' : convert_to_func_wrapper(_get_cc_object),
-                # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
-                'exit' : convert_to_func_wrapper(_sys_exit),
-                'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv)
-            }
+        'paths': GLOBAL_SHARED_DATA.find_path,
+        'max_recursion_depth': GLOBAL_SHARED_DATA.max_recursion_depth,
+        'cwd': GLOBAL_SHARED_DATA.cwd,
+        '_refresh': convert_to_func_wrapper(_get_cc_object),
+        # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
+        'exit': convert_to_func_wrapper(_sys_exit),
+        'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv)
+    }
 
     _ccom_t = ObjectCreater.new_object(
         STRUCT_OBJ_TYPE, 'CCOM_T', _ccom_t_memb, null, _ccom_t_memb.keys())

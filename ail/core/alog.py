@@ -1,12 +1,11 @@
-
 import time
 import os.path
 
 
 class Logger:
     WARRING = 'WARRING'
-    ERROR   = 'ERROR'
-    NORMAL  = 'NORMAL'
+    ERROR = 'ERROR'
+    NORMAL = 'NORMAL'
 
     def __init__(self, fpath='vmlog/'):
         self.__buffer = []
@@ -24,10 +23,10 @@ class Logger:
     def __now_time_str(self):
         return time.strftime('%Y - %M - %d  %H : %m : %S')
 
-    def __add_log(self, log_level :str, msg :str):
+    def __add_log(self, log_level: str, msg: str):
         self.__buffer.append(
-                '[%s] [%s] [%s]' % (self.__now_time_str, log_level, msg)
-            )
+            '[%s] [%s] [%s]' % (self.__now_time_str, log_level, msg)
+        )
 
         self.flush()
 
@@ -43,5 +42,3 @@ class Logger:
     def flush(self):
         self.__file.write('\n'.join(self.__buffer))
         self.__buffer
-
-

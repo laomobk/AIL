@@ -2,7 +2,7 @@ from ..core import aobjects as obj
 from . import types
 
 
-def type_init(self, name :str):
+def type_init(self, name: str):
     self['__name__'] = name
 
 

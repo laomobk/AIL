@@ -16,7 +16,6 @@ from . import shared
 
 _ALLOW_FILE_TYPE = ('ail', 'py')
 
-
 '''
 如果你想要创建一个 AIL 的 Python 模块
 请务必在模块中定义一个 '_AIL_NAMESPACE_' 字典
@@ -26,15 +25,15 @@ AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 
 
 class ModuleLoader:
-    def __init__(self, paths :list):
+    def __init__(self, paths: list):
         self.__load_path = paths
         self.__loaded = {}
         self.__loading_paths = []
 
-    def __search_module(self, name :str) -> str:
-        '''
+    def __search_module(self, name: str) -> str:
+        """
         :return: module path if found else None
-        '''
+        """
         maybe_file = ['%s.%s' % (name, x) for x in _ALLOW_FILE_TYPE]
 
         for mfp in maybe_file:
@@ -75,19 +74,19 @@ class ModuleLoader:
 
         return {}
 
-    def __get_type(self, fp :str):
+    def __get_type(self, fp: str):
         fn = os.path.split(fp)[-1]
         fns = fn.split('.')
 
         if len(fns) > 1 and fns[-1] in _ALLOW_FILE_TYPE:
             return fns[-1]
 
-    def __add_to_loaded(self, name :str, namespace :dict):
+    def __add_to_loaded(self, name: str, namespace: dict):
         if namespace is not None:
             self.__loaded[name] = namespace
         return namespace
 
-    def load_namespace(self, module_name :str, import_mode: bool=False) -> dict:
+    def load_namespace(self, module_name: str, import_mode: bool = False) -> dict:
         """
         :return: -1 if module not found
                  -2 if circular import(or load)
@@ -122,7 +121,7 @@ class ModuleLoader:
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
             frame.variable.update(BUILTINS)
-            
+
             temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
             MAIN_INTERPRETER_STATE.frame_stack = list()
 
@@ -131,17 +130,16 @@ class ModuleLoader:
             MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
 
             v = frame.variable
-            
+
             remove_path(p)
 
             if why == WHY_ERROR:
                 return 3
 
             return self.__add_to_loaded(module_name, v)
-        
+
         remove_path(p)
         return 1
 
 
 MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)
-

@@ -10,8 +10,8 @@ def null_str(self):
     return 'null'
 
 
-_NULL_TYPE = obj.AILObjectType('<null type>', types.I_NULL_TYPE, 
-                                __str__=null_str,
-                                __init__=null_init)
+_NULL_TYPE = obj.AILObjectType('<null type>', types.I_NULL_TYPE,
+                               __str__=null_str,
+                               __init__=null_init)
 
 null = obj.ObjectCreater.new_object(_NULL_TYPE)

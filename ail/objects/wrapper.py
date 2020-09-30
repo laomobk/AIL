@@ -5,7 +5,7 @@ from . import types
 from ..core.error import AILRuntimeError
 
 
-def wrapper_func_init(self, pyobj :object):
+def wrapper_func_init(self, pyobj: object):
     self['__pyobject__'] = pyobj
     self['__value__'] = pyobj
 
@@ -20,8 +20,8 @@ def wrapper_func_repr(self):
 
 def wrapper_func_getattr(self, name):
     if not hasattr(self['__pyobject__'], name):
-        return AILRuntimeError('python object \'%s\' has no attribute \'%s\'' % 
-                               (type(self['__pyobject__'], name)),
+        return AILRuntimeError('python object \'%s\' has no attribute \'%s\'' %
+                               (type(self['__pyobject__']), name),
                                'AttributeError')
     return getattr(self['__pyobject__'], name)
 

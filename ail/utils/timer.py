@@ -2,7 +2,7 @@ import time
 
 
 class Timer:
-    def __init__(self, where:str):
+    def __init__(self, where: str):
         self.__lt = 0
         self.__time_table = []
         self.__where = where
@@ -37,19 +37,19 @@ class Timer:
             else:
                 table[n] = t
 
-        info_table = {n : (sum(x) / len(x), len(x)) 
-                        for n, x in table.items()}
+        info_table = {n: (sum(x) / len(x), len(x))
+                      for n, x in table.items()}
 
         sum_ct = sum([sum(x) for _, x in table.items()])
 
-        sorted_t = sorted({k : v[0] for k, v in info_table.items()}.items(),
-                key=lambda x : x[1], reverse=True)
+        sorted_t = sorted({k: v[0] for k, v in info_table.items()}.items(),
+                          key=lambda x: x[1], reverse=True)
 
-        sorted_ts = sorted({k : v[1] for k, v in info_table.items()}.items(),
-                key=lambda x : x[1], reverse=True)
+        sorted_ts = sorted({k: v[1] for k, v in info_table.items()}.items(),
+                           key=lambda x: x[1], reverse=True)
 
-        sorted_tt = sorted({k : sum(v) for k, v in table.items()}.items(),
-                key=lambda x : x[1], reverse=True)
+        sorted_tt = sorted({k: sum(v) for k, v in table.items()}.items(),
+                           key=lambda x: x[1], reverse=True)
 
         sorted_ct = sorted({k: round((sum(v) / sum_ct) * 100, 5) for k, v in table.items()}.items(),
                            key=lambda x: x[1], reverse=True)
@@ -58,7 +58,7 @@ class Timer:
         avg_t = sum(avg_t) / len(avg_t)
 
         import pprint
-        
+
         # pprint.pprint(info_table)
         print('每个字节码调用所用的平均时间 (ms):')
         pprint.pprint(sorted_t)
@@ -73,4 +73,3 @@ class Timer:
         pprint.pprint(sorted_tt)
 
         print('\n平均字节码周期：%s (ms)' % avg_t)
-

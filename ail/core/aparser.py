@@ -1,3 +1,5 @@
+from os.path import split
+
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
 from .error import error_msg
@@ -6,14 +8,14 @@ from .tokentype import *
 __author__ = 'LaomoBK'
 
 _keywords_uc = (
-        'PRINT', 'INPUT',
-        'IF', 'THEN', 'BEGIN',
-        'END', 'WHILE', 'DO',
-        'UNTIL', 'LOOP', 'WEND',
-        'FUN', 'IS', 'ELSE',  'ENDIF', 'ELIF', 'LOAD', 'IMPORT'
-        'STRUCT', 'MOD', 'FOR', 'PROTECTED',
-        'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY', 
-        )
+    'PRINT', 'INPUT',
+    'IF', 'THEN', 'BEGIN',
+    'END', 'WHILE', 'DO',
+    'UNTIL', 'LOOP', 'WEND',
+    'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT'
+                                                  'STRUCT', 'MOD', 'FOR', 'PROTECTED',
+    'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
+)
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
 
@@ -21,17 +23,17 @@ _keywords = tuple([x.lower() for x in _keywords_uc])
 _end_signs = tuple([x.lower() for x in _end_signs_uc])
 
 _cmp_op = (
-        LAP_EQ, LAP_LARGER, LAP_SMALER,
-        LAP_LARGER_EQ, LAP_SMALER_EQ,
-        LAP_UEQ
-        )
+    LAP_EQ, LAP_LARGER, LAP_SMALER,
+    LAP_LARGER_EQ, LAP_SMALER_EQ,
+    LAP_UEQ
+)
 
 _FROM_MAIN = 0
 _FROM_FUNC = 1
 
 
 class Parser:
-    def __init__(self, filename :str):
+    def __init__(self, filename: str):
         self.__filename = filename
         self.__tok_stream = None
         self.__tok_list = None
@@ -54,7 +56,7 @@ class Parser:
         pass
 
     @property
-    def  __now_tok(self) -> Token:
+    def __now_tok(self) -> Token:
         return self.__tok_stream[self.__tc]
 
     @property
@@ -64,28 +66,27 @@ class Parser:
         except AttributeError:
             return -1
 
-    def __tok_is(self, tok :Token, value :str) -> bool:
+    def __tok_is(self, tok: Token, value: str) -> bool:
         return tok.ttype != LAP_STRING and tok.value == value
 
     def __syntax_error(self, msg=None):
         error_msg(
-                self.__now_ln,
-                'SyntaxError%s' % ((' : ' if msg else '') + (msg if msg else '')),
-                self.__filename)
+            self.__now_ln,
+            'SyntaxError%s' % ((' : ' if msg else '') + (msg if msg else '')),
+            self.__filename)
 
     def __parse_arg_list(self) -> ast.ArgListAST:
         if self.__now_tok == ')':
-            #空参数列表
+            # 空参数列表
             self.__next_tok()  # eat ')'
             return ast.ArgListAST([], self.__now_ln)
-            
+
         a1 = self.__parse_binary_expr()
 
         if a1 is None:
             self.__syntax_error('Argument must be an expression!')
 
-        alist = []
-        alist.append(a1)
+        alist = [a1]
 
         while self.__now_tok == ',':
             self.__next_tok()
@@ -133,7 +134,7 @@ class Parser:
 
         while self.__now_tok.ttype != LAP_LRBASKET:
             eitem = self.__parse_binary_expr()
-            
+
             if eitem is None:
                 self.__syntax_error()
 
@@ -143,7 +144,7 @@ class Parser:
                     self.__now_tok.value == '\n':  # ignore ENTER
                 self.__next_tok()  # eat ENTER
 
-            if self.__now_tok.ttype == LAP_COMMA:        
+            if self.__now_tok.ttype == LAP_COMMA:
                 self.__next_tok()
 
             while self.__now_tok.ttype == LAP_ENTER or \
@@ -161,7 +162,7 @@ class Parser:
         if self.__now_tok.ttype == LAP_LRBASKET:
             self.__next_tok()  # eat '{'
             return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), self.__now_ln)
-        
+
         items = self.__parse_item_list()
 
         if self.__now_tok.ttype != LAP_LRBASKET:
@@ -251,10 +252,10 @@ class Parser:
         if self.__now_tok == '(':
             self.__next_tok()
             e = self.__parse_binary_expr()
-            
+
             if e is None:
                 self.__syntax_error()
-            
+
             if self.__now_tok != ')':
                 self.__syntax_error()
 
@@ -266,7 +267,7 @@ class Parser:
         if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER, LAP_SUB) or \
                 nt in _keywords:
             self.__syntax_error()
-        
+
         # if self.__now_tok.ttype == LAP_SUB:
         #     v = self.__now_tok.value
         #     self.__next_tok()  # eat '-'
@@ -291,7 +292,7 @@ class Parser:
             self.__next_tok()  # eat '-'
 
             right = self.__parse_member_access_expr()
-            
+
             if right is None:
                 self.__syntax_error()
 
@@ -301,7 +302,7 @@ class Parser:
 
     def __parse_power_expr(self) -> ast.PowerExprAST:
         left = self.__parse_unary_expr()
-        
+
         if left is None:
             self.__syntax_error()
 
@@ -309,7 +310,7 @@ class Parser:
             return left
 
         rl = []
-        
+
         while self.__now_tok == '^':
             self.__next_tok()
             r = self.__parse_member_access_expr()
@@ -320,7 +321,7 @@ class Parser:
 
     def __parse_mod_expr(self) -> ast.ModExprAST:
         left = self.__parse_power_expr()
-        
+
         if left is None:
             self.__syntax_error()
 
@@ -328,7 +329,7 @@ class Parser:
             return left
 
         rl = []
-        
+
         while self.__now_tok == 'mod':
             self.__next_tok()
             r = self.__parse_power_expr()
@@ -339,10 +340,10 @@ class Parser:
 
     def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:
         left = self.__parse_mod_expr()
-        
+
         if left is None:
             self.__syntax_error()
-        
+
         if self.__now_tok.ttype not in (LAP_MUIT, LAP_DIV):
             return left
 
@@ -374,12 +375,12 @@ class Parser:
 
         if self.__now_tok.ttype == LAP_ENTER:
             self.__syntax_error()
-            
+
         left = self.__parse_muit_div_expr()
-        
+
         if left is None:
             self.__syntax_error()
-        
+
         if self.__now_tok.ttype not in (LAP_PLUS, LAP_SUB):
             return left
 
@@ -412,7 +413,7 @@ class Parser:
         while self.__now_tok == ';':
             self.__next_tok()
             e = self.__parse_binary_expr()
-            
+
             if e is None:
                 self.__syntax_error()
 
@@ -454,14 +455,14 @@ class Parser:
 
         return ast.AssignExprAST(left, expr, self.__now_ln)
 
-    def __parse_assign_expr0(self) ->ast.DefineExprAST:
-            n = self.__now_tok.value
-            self.__next_tok()
-            self.__next_tok()
+    def __parse_assign_expr0(self) -> ast.DefineExprAST:
+        n = self.__now_tok.value
+        self.__next_tok()
+        self.__next_tok()
 
-            v = self.__parse_binary_expr()
+        v = self.__parse_binary_expr()
 
-            return ast.DefineExprAST(n, v, self.__now_ln)
+        return ast.DefineExprAST(n, v, self.__now_ln)
 
     def __parse_comp_test_expr(self) -> ast.CmpTestAST:
         if self.__now_tok == '(':
@@ -519,7 +520,7 @@ class Parser:
         rl = []
 
         while self.__now_tok == 'and':
-            self.__next_tok()   # eat 'and'
+            self.__next_tok()  # eat 'and'
             r = self.__parse_not_test_expr()
 
             if r is None:
@@ -541,7 +542,7 @@ class Parser:
         rl = []
 
         while self.__now_tok == 'or':
-            self.__next_tok()   # eat 'or'
+            self.__next_tok()  # eat 'or'
             r = self.__parse_and_test_expr()
 
             if r is None:
@@ -553,7 +554,7 @@ class Parser:
 
     def __parse_test_expr(self) -> ast.TestExprAST:
         t = self.__parse_or_test_expr()
-        
+
         if t is None:
             self.__syntax_error()
 
@@ -581,43 +582,43 @@ class Parser:
             if self.__now_tok == 'else':
                 self.__next_tok()  # eat 'else'
                 else_block = self.__parse_block(for_if_else=True)
-                
+
                 if else_block is None:
                     self.__syntax_error()
 
                 if self.__now_tok == 'endif':
                     self.__next_tok()  # eat 'endif'
                     return ast.IfExprAST(
-                            if_test, if_block, elif_list, else_block, self.__now_ln)
+                        if_test, if_block, elif_list, else_block, self.__now_ln)
                 else:
                     self.__syntax_error()
-                
+
             elif self.__now_tok == 'elif':
                 self.__next_tok()  # eat 'elif'
                 elif_test = self.__parse_test_expr()
-                
+
                 if elif_list is None:
                     self.__syntax_error()
 
                 elif_block = self.__parse_block(for_if_else=True)
-                
+
                 if elif_block is None:
                     self.__syntax_error()
 
                 elif_list.append(
-                        ast.IfExprAST(elif_test, elif_block, [], None, self.__now_ln))
+                    ast.IfExprAST(elif_test, elif_block, [], None, self.__now_ln))
 
             elif self.__now_tok == 'endif':
                 self.__next_tok()  # eat 'endif'
                 return ast.IfExprAST(
-                        if_test, if_block, elif_list, else_block, self.__now_ln)
+                    if_test, if_block, elif_list, else_block, self.__now_ln)
 
             else:
                 self.__syntax_error()
 
     def __parse_if_else_expr(self) -> ast.IfExprAST:
         base_tree = self.__parse_if_else_expr0()
-        
+
         if len(base_tree.elif_list) == 0:
             return base_tree
 
@@ -636,7 +637,6 @@ class Parser:
 
         return base_tree
 
-
     def __parse_while_expr(self) -> ast.WhileExprAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'while'
@@ -646,9 +646,9 @@ class Parser:
         if test is None:
             self.__syntax_error()
 
-        block = self.__parse_block('then', 'wend', 
-                'while block should starts with \'then\'',
-                "while block should ends with 'wend'")
+        block = self.__parse_block('then', 'wend',
+                                   'while block should starts with \'then\'',
+                                   "while block should ends with 'wend'")
 
         if block is None:
             self.__syntax_error()
@@ -656,7 +656,7 @@ class Parser:
         if self.__now_tok.ttype != LAP_ENTER:
             self.__syntax_error()
 
-        return ast.WhileExprAST(test, block,ln)
+        return ast.WhileExprAST(test, block, ln)
 
     def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
         f = self.__parse_assign_expr()
@@ -724,9 +724,9 @@ class Parser:
 
     def __parse_do_loop_expr(self) -> ast.DoLoopExprAST:
         ln = self.__now_ln
-        block = self.__parse_block('do', 'loop', 
-                'do loop statement should starts with \'do\'',
-                "do loop statement should ends with 'until'")
+        block = self.__parse_block('do', 'loop',
+                                   'do loop statement should starts with \'do\'',
+                                   "do loop statement should ends with 'until'")
 
         if block is None:
             self.__syntax_error()
@@ -768,7 +768,7 @@ class Parser:
         while self.__now_tok != 'end':
             if self.__now_tok.ttype != LAP_IDENTIFIER:
                 self.__syntax_error()
-            
+
             if self.__now_tok == 'protected':
                 nt = self.__next_tok()
                 if nt.ttype != LAP_IDENTIFIER:
@@ -781,7 +781,7 @@ class Parser:
                 self.__syntax_error()
 
             self.__next_tok()  # eat ENTER
-        
+
             while self.__now_tok.ttype == LAP_ENTER:
                 self.__next_tok()
 
@@ -802,7 +802,7 @@ class Parser:
             if self.__next_tok().ttype != LAP_IDENTIFIER:
                 self.__syntax_error()
             bindto = self.__now_tok.value
-            
+
             if self.__next_tok() != ')':
                 self.__syntax_error()
             self.__next_tok()
@@ -829,7 +829,7 @@ class Parser:
                     self.__syntax_error()
                 elif a.type != LAP_IDENTIFIER:
                     self.__syntax_error()
-        
+
         self.__level += 1
 
         # for new function syntax (':' instead of 'is')
@@ -838,7 +838,7 @@ class Parser:
             self.__now_tok.value = 'is'
 
         block = self.__parse_block('is', 'end',
-                start_msg='function body should starts with \'is\' or \':\'')
+                                   start_msg='function body should starts with \'is\' or \':\'')
 
         self.__level -= 1
 
@@ -884,7 +884,7 @@ class Parser:
         if expr is None or \
                 self.__now_tok.ttype != LAP_ENTER:
             self.__syntax_error()
-        
+
         return ast.ThrowExprAST(expr, self.__now_ln)
 
     def __parse_assert_expr(self) -> ast.AssertExprAST:
@@ -898,7 +898,7 @@ class Parser:
         if expr is None or \
                 self.__now_tok.ttype != LAP_ENTER:
             self.__syntax_error()
-        
+
         return ast.AssertExprAST(expr, self.__now_ln)
 
     def __parse_import_stmt(self) -> ast.ImportAST:
@@ -906,17 +906,31 @@ class Parser:
             self.__syntax_error()
 
         ln = self.__now_ln
+        alias = None
 
         self.__next_tok()  # eat 'import'
+
+        if self.__now_tok.ttype == LAP_IDENTIFIER:
+            alias = self.__now_tok.value
+            self.__next_tok()  # eat name
 
         if self.__now_tok.ttype != LAP_STRING:
             self.__syntax_error()
 
-        name = self.__now_tok.value
+        path = self.__now_tok.value
+        _, target = split(path)
 
-        self.__next_tok()  # eat name
+        if target == '':
+            self.__syntax_error('Cannot import a directory')
 
-        return ast.ImportAST(name, ln)
+        if alias is None:
+            name = target
+        else:
+            name = alias
+
+        self.__next_tok()  # eat path
+
+        return ast.ImportAST(path, name, ln)
 
     def __parse_load_stmt(self) -> ast.LoadAST:
         if self.__now_tok != 'load':
@@ -931,7 +945,7 @@ class Parser:
 
         name = self.__now_tok.value
 
-        self.__next_tok()  # eat name
+        self.__next_tok()  # eat path
 
         return ast.LoadAST(name, ln)
 
@@ -992,7 +1006,7 @@ class Parser:
 
         return ast.TryCatchExprAST(try_b, cab, fnb, cname, self.__now_ln)
 
-    def __parse_stmt(self, limit :tuple=()) -> ast.ExprAST:
+    def __parse_stmt(self, limit: tuple = ()) -> ast.ExprAST:
         nt = self.__now_tok
 
         if nt == 'print':
@@ -1066,10 +1080,10 @@ class Parser:
         self.__next_tok()  # eat enter
 
         return a
- 
-    def __parse_block(self, start='then', end='end', 
-            start_msg :str=None, end_msg :str=None,
-            start_enter=True, for_if_else: bool=False) -> ast.BlockExprAST:
+
+    def __parse_block(self, start='then', end='end',
+                      start_msg: str = None, end_msg: str = None,
+                      start_enter=True, for_if_else: bool = False) -> ast.BlockExprAST:
 
         if for_if_else:
             if self.__now_tok.ttype != LAP_ENTER:
@@ -1091,7 +1105,7 @@ class Parser:
 
             self.__next_tok()  # eat enter
 
-            if self.__now_tok == end:   # empty block
+            if self.__now_tok == end:  # empty block
                 self.__next_tok()
                 return ast.BlockExprAST([], self.__now_ln)
 
@@ -1102,7 +1116,7 @@ class Parser:
 
         elif isinstance(first, ast.EOFAST):
             self.__syntax_error(end_msg)
-        
+
         stmtl = []
 
         if not isinstance(first, ast.NullLineAST):
@@ -1116,7 +1130,7 @@ class Parser:
 
             if s is None:
                 self.__syntax_error()
-            
+
             if not isinstance(s, ast.NullLineAST):
                 stmtl.append(s)
 
@@ -1127,7 +1141,7 @@ class Parser:
 
         return ast.BlockExprAST(stmtl, self.__now_ln)
 
-    def parse(self, ts :TokenStream) -> ast.BlockExprAST:
+    def parse(self, ts: TokenStream) -> ast.BlockExprAST:
         self.__tok_stream = ts
         self.__tok_list = ts.token_list
 
@@ -1137,9 +1151,9 @@ class Parser:
         while self.__now_tok.ttype == LAP_ENTER:  # skip enter at beginning
             self.__next_tok()
 
-        return self.__parse_block('begin', 'end', 
-                'A program should starts with \'begin\'',
-                "A program should ends with 'end'")
+        return self.__parse_block('begin', 'end',
+                                  'A program should starts with \'begin\'',
+                                  "A program should ends with 'end'")
 
     def test(self, ts):
         return self.parse(ts)

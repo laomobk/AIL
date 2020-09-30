@@ -3,28 +3,27 @@ from ..objects import types
 
 import inspect
 
-
 INVISIBLE_ATTRS = (
-        '__value__',
-        '__class__',
-        '__init__',
-        '__add__',
-        '__div__',
-        '__muit__',
-        '__sub__',
-        '__div__',
-        '__getattr__',
-        '__setattr__',
-        '__getitem__',
-        '__setitem__',
-        '__name__'
-    )
+    '__value__',
+    '__class__',
+    '__init__',
+    '__add__',
+    '__div__',
+    '__muit__',
+    '__sub__',
+    '__div__',
+    '__getattr__',
+    '__setattr__',
+    '__getitem__',
+    '__setitem__',
+    '__name__'
+)
 
 
 class AILConstant:
     __slots__ = ['const', 'type_']
 
-    def __init__(self, const, type_ :int):
+    def __init__(self, const, type_: int):
         self.const = const
         self.type_ = type_
 
@@ -32,20 +31,21 @@ class AILConstant:
 class NullType:
     def __str__(self):
         return 'null'
+
     __repr__ = __str__
 
 
 # null = NullType()
 
 class AILCodeObject:
-    __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno', 
+    __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno',
                  'argcount', 'name', 'lnotab', 'closure', 'is_main',
                  '_closure_outer')
 
-    def __init__(self, consts :list, varnames :list, 
-                 bytecodes :list, firstlineno :int,
-                 argcount :int, name :str, lnotab :list, 
-                 closure: bool=False, is_main: bool=False):
+    def __init__(self, consts: list, varnames: list,
+                 bytecodes: list, firstlineno: int,
+                 argcount: int, name: str, lnotab: list,
+                 closure: bool = False, is_main: bool = False):
         self.consts = consts
         self.varnames = varnames
         self.bytecodes = bytecodes
@@ -65,12 +65,13 @@ class AILCodeObject:
 
 
 class AILObject:
-    '''Base object, do noting...'''
+    """Base object, do noting..."""
+
     def __init__(self, **ps):
         self.properties = ps
         self.reference = 0
 
-    def __getitem__(self, key :str):
+    def __getitem__(self, key: str):
         if key in self.properties:
             k = self.properties[key]
             if isinstance(k, AILObject):
@@ -78,17 +79,17 @@ class AILObject:
             return k
         return None
 
-    def __setitem__(self, key :str, value):
+    def __setitem__(self, key: str, value):
         if isinstance(value, AILObject):
             value.reference += 1
         self.properties[key] = value
 
-    def __getattr__(self, item :str):
+    def __getattr__(self, item: str):
         if item[:5] == 'aprop':
             return self.__getitem__(item[6:])
         return super().__getattribute__(item)
 
-    def __setattr__(self, key :str, value):
+    def __setattr__(self, key: str, value):
         if key[:5] == 'aprop':
             self.__setitem__(key[6:])
         super().__setattr__(key, value)
@@ -122,8 +123,9 @@ class AILObject:
 
 
 class AILObjectType:
-    '''Object Type'''
-    def __init__(self, tname :str, otype=None, methods :dict=None,**required):
+    """Object Type"""
+
+    def __init__(self, tname: str, otype=None, methods: dict = None, **required):
         self.name = tname
         self.required = required
         self.otype = types.I_TYPE_TYPE if otype is None else otype
@@ -141,20 +143,20 @@ class ObjectCreater:
         convert_to_func_wrapper as __to_wrapper
 
     __required_normal = {
-        '__str__' : __aobj.obj_func_str,
-        '__init__' : __aobj.obj_func_init,
-        '__eq__' : __aobj.obj_func_eq,
-        '__getattr__' : __aobj.obj_getattr,
-        '__setattr__' : __aobj.obj_setattr,
-        '__equals__' : __aobj.obj_equals
+        '__str__': __aobj.obj_func_str,
+        '__init__': __aobj.obj_func_init,
+        '__eq__': __aobj.obj_func_eq,
+        '__getattr__': __aobj.obj_getattr,
+        '__setattr__': __aobj.obj_setattr,
+        '__equals__': __aobj.obj_equals
     }
 
     @staticmethod
-    def new_object(obj_type :AILObjectType, *args) -> AILObject:
-        '''
+    def new_object(obj_type: AILObjectType, *args) -> AILObject:
+        """
         ATTENTION : 返回的对象的引用为0
         :return : obj_type 创建的对象，并将 *args 作为初始化参数
-        '''
+        """
 
         obj = AILObject()  # create an object
         obj.properties['__class__'] = obj_type
@@ -195,7 +197,7 @@ def check_object(obj):
         error.print_global_error(obj)
 
 
-def convert_to_ail_object(pyobj :object) -> AILObject:
+def convert_to_ail_object(pyobj: object) -> AILObject:
     if isinstance(pyobj, AILObject):
         return pyobj
 
@@ -210,13 +212,13 @@ def convert_to_ail_object(pyobj :object) -> AILObject:
     from types import FunctionType
 
     target_t = {
-                str : string.STRING_TYPE,
-                int : integer.INTEGER_TYPE,
-                float : float.FLOAT_TYPE,
-                bool : bool.BOOL_TYPE,
-                list : array.ARRAY_TYPE,
-                FunctionType : function.PY_FUNCTION_TYPE,
-            }.get(type(pyobj), wrapper.WRAPPER_TYPE)
+        str: string.STRING_TYPE,
+        int: integer.INTEGER_TYPE,
+        float: float.FLOAT_TYPE,
+        bool: bool.BOOL_TYPE,
+        list: array.ARRAY_TYPE,
+        FunctionType: function.PY_FUNCTION_TYPE,
+    }.get(type(pyobj), wrapper.WRAPPER_TYPE)
 
     return ObjectCreater.new_object(target_t, pyobj)
 
@@ -228,14 +230,13 @@ def compare_type(o, *t):
     return False
 
 
-def has_attr(aobj :AILObject, name :str):
+def has_attr(aobj: AILObject, name: str):
     if isinstance(aobj, AILObject):
         return name in aobj.properties
     return False
 
 
-def unpack_ailobj(ailobj :AILObject):
+def unpack_ailobj(ailobj: AILObject):
     if has_attr(ailobj, '__value__'):
         return ailobj['__value__']
     return ailobj
-

@@ -6,7 +6,7 @@ from ..core import aobjects as objs
 from ..core.error import AILRuntimeError
 
 
-def array_init(self :objs.AILObject, pylist :list):
+def array_init(self: objs.AILObject, pylist: list):
     # check object
     pl = pylist.copy()
 
@@ -16,7 +16,7 @@ def array_init(self :objs.AILObject, pylist :list):
     self['__value__'] = pl
 
 
-def array_str(self :objs.AILObject):
+def array_str(self: objs.AILObject):
     return '{%s}' % (', '.join([repr(x) for x in self['__value__']]))
 
 
@@ -39,7 +39,7 @@ def _check_index(self, index):
     return i
 
 
-def array_getitem(self, index :int):
+def array_getitem(self, index: int):
     i = _check_index(self, index)
     if isinstance(i, AILRuntimeError):
         return i

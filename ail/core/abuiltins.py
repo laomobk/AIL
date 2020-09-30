@@ -1,10 +1,9 @@
-
 from .error import AILRuntimeError
 from . import aobjects as objs
 from . import corecom as ccom
 
 from .version import (
-    AIL_MAIN_VERSION as _AIL_MAIN_VERSION, 
+    AIL_MAIN_VERSION as _AIL_MAIN_VERSION,
     AIL_VERSION as _AIL_VERSION
 )
 
@@ -23,7 +22,7 @@ from ..objects import (
 )
 
 
-def func_abs(x :objs.AILObject):
+def func_abs(x: objs.AILObject):
     if x['__value__'] is not None and x['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
         v = x['__value__']
         return v if v >= 0 else -v
@@ -31,7 +30,7 @@ def func_abs(x :objs.AILObject):
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
 
 
-def func_neg(x :objs.AILObject):
+def func_neg(x: objs.AILObject):
     if x['__value__'] is not None and x['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
         v = x['__value__']
         return -v if v > 0 else v
@@ -94,7 +93,7 @@ def func_hex(x):
     return hex(v)
 
 
-def func_int_input(msg :objs.AILObject):
+def func_int_input(msg: objs.AILObject):
     try:
         i = int(input(str(msg)))
 
@@ -103,7 +102,7 @@ def func_int_input(msg :objs.AILObject):
         return AILRuntimeError(str(e), 'ValueError')
 
 
-def func_make_type(name, default_attrs :objs.AILObject=None):
+def func_make_type(name, default_attrs: objs.AILObject = None):
     if default_attrs is not None and \
             not objs.compare_type(default_attrs, array.ARRAY_TYPE):
         return AILRuntimeError('type() needs an array to set default attribute.')
@@ -120,7 +119,7 @@ def new_struct(struct_type, default_list=None):
         default_list = default_list['__value__']
 
     if objs.compare_type(struct_type, struct.STRUCT_OBJ_TYPE):
-        return AILRuntimeError('new() needs a struct type, not a struct object', 
+        return AILRuntimeError('new() needs a struct type, not a struct object',
                                'TypeError')
 
     if not objs.compare_type(struct_type, struct.STRUCT_TYPE):
@@ -141,9 +140,9 @@ def new_struct(struct_type, default_list=None):
                 'TypeError')
 
     if default_list is not None:
-        md = {k:v for k, v in zip(m, default_list)}
+        md = {k: v for k, v in zip(m, default_list)}
     else:
-        md = {k:null.null for k in m}
+        md = {k: null.null for k in m}
 
     md.update(struct_type['__bind_functions__'])
 
@@ -154,15 +153,15 @@ def new_struct(struct_type, default_list=None):
         struct.STRUCT_OBJ_TYPE, name, md, struct_type, pl)
 
 
-def func_len(o :objs.AILObject):
+def func_len(o: objs.AILObject):
     if isinstance(o, objs.AILObject):
         if o['__len__'] is not None:
             return o['__len__'](o)
         return AILRuntimeError('\'%s\' object has no len()' %
-                o['__class__'].name, 'TypeError')
+                               o['__class__'].name, 'TypeError')
 
 
-def func_type(o :objs.AILObject):
+def func_type(o: objs.AILObject):
     if o['__class__'] == struct.STRUCT_OBJ_TYPE:
         return o['__type__']
     return o['__class__'].otype
@@ -203,13 +202,13 @@ def func_repr(a):
 
 def func_show_struct(sobj):
     if not (objs.compare_type(sobj, struct.STRUCT_OBJ_TYPE) or
-                objs.compare_type(sobj, struct.STRUCT_TYPE)):
+            objs.compare_type(sobj, struct.STRUCT_TYPE)):
         return AILRuntimeError('show_struct needs a struct type or object', 'TypeError')
-    
+
     ln1 = str(sobj) + '\n'
     memb = sobj.members.items()
-    meml = '\n'.join(['\t%s : %s' % (k, v) for k, v in memb 
-                        if k[:2] != '__'])
+    meml = '\n'.join(['\t%s : %s' % (k, v) for k, v in memb
+                      if k[:2] != '__'])
     block = '{\n%s\n}' % meml
 
     return ln1 + block
@@ -247,32 +246,31 @@ def func_fnum(obj):
 true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
 false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 
-
 BUILTINS = {
-    'abs' : objs.convert_to_ail_object(func_abs),
-    'ng' : objs.convert_to_ail_object(func_neg),
-    'int_input' : objs.convert_to_ail_object(func_int_input),
-    '__version__' : objs.convert_to_ail_object(_AIL_VERSION),
-    '__main_version__' : objs.convert_to_ail_object(_AIL_MAIN_VERSION),
-    'chr' : objs.convert_to_ail_object(func_chr),
-    'ord' : objs.convert_to_ail_object(func_ord),
-    'hex' : objs.convert_to_ail_object(func_hex),
-    'make_type' : objs.convert_to_ail_object(func_make_type),
-    'new' : objs.convert_to_ail_object(new_struct),
-    'null' : null.null,
-    'true' : true,
-    'false' : false,
-    'len' : objs.convert_to_ail_object(func_len),
-    'equal' : objs.convert_to_ail_object(func_equal),
-    'type' : objs.convert_to_ail_object(func_type),
-    'array' : objs.convert_to_ail_object(func_array),
-    'equal_type' : objs.convert_to_ail_object(func_equal_type),
-    'isinstance' : objs.convert_to_ail_object(func_isinstance),
-    'str' : objs.convert_to_ail_object(func_str),
-    'repr' : objs.convert_to_ail_object(func_repr),
-    '_get_ccom' : objs.convert_to_ail_object(ccom.get_cc_object),
-    'open' : objs.convert_to_ail_object(_open),
-    'int' : objs.convert_to_ail_object(func_int),
+    'abs': objs.convert_to_ail_object(func_abs),
+    'ng': objs.convert_to_ail_object(func_neg),
+    'int_input': objs.convert_to_ail_object(func_int_input),
+    '__version__': objs.convert_to_ail_object(_AIL_VERSION),
+    '__main_version__': objs.convert_to_ail_object(_AIL_MAIN_VERSION),
+    'chr': objs.convert_to_ail_object(func_chr),
+    'ord': objs.convert_to_ail_object(func_ord),
+    'hex': objs.convert_to_ail_object(func_hex),
+    'make_type': objs.convert_to_ail_object(func_make_type),
+    'new': objs.convert_to_ail_object(new_struct),
+    'null': null.null,
+    'true': true,
+    'false': false,
+    'len': objs.convert_to_ail_object(func_len),
+    'equal': objs.convert_to_ail_object(func_equal),
+    'type': objs.convert_to_ail_object(func_type),
+    'array': objs.convert_to_ail_object(func_array),
+    'equal_type': objs.convert_to_ail_object(func_equal_type),
+    'isinstance': objs.convert_to_ail_object(func_isinstance),
+    'str': objs.convert_to_ail_object(func_str),
+    'repr': objs.convert_to_ail_object(func_repr),
+    '_get_ccom': objs.convert_to_ail_object(ccom.get_cc_object),
+    'open': objs.convert_to_ail_object(_open),
+    'int': objs.convert_to_ail_object(func_int),
     'float': objs.convert_to_ail_object(func_float),
     'addr': objs.convert_to_ail_object(func_addr),
     'fnum': objs.convert_to_ail_object(func_fnum),

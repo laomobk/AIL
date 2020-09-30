@@ -9,7 +9,6 @@ from ._config import (
     AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
 )
 
-
 _HELP = r''' ail [filename] [--help | -h]'''
 
 
@@ -53,7 +52,7 @@ class ArgParser:
             return True
         self.__ok = False
         return False
-        
+
     def parse(self, arg_list: list) -> _Option:
         option = _Option()
         self.__now_arg_list = arg_list
@@ -67,11 +66,11 @@ class ArgParser:
         while self.__has_next_arg:
             if arg[:2] == '--':
                 handler = getattr(
-                        self, '_do_%s' % arg[2:], self._do_h)
+                    self, '_do_%s' % arg[2:], self._do_h)
                 handler(option)
             elif arg[:1] == '-':
                 handler = getattr(
-                        self, '_do_%s' % arg[2:], self._do_h)
+                    self, '_do_%s' % arg[2:], self._do_h)
                 handler(option)
             else:
                 if self._do_literal(option):
@@ -111,7 +110,7 @@ def launch_py_test(test_name):
         print('No test named \'%s\'' % test_name)
 
 
-def launch_main(argv :list):
+def launch_main(argv: list):
     init_paths()
 
     option = ArgParser().parse(argv)

@@ -4,11 +4,10 @@ from ..core import aobjects as obj
 from ..core.error import AILRuntimeError
 from . import types
 
-
 _new_object = obj.ObjectCreater.new_object
 
 
-def float_str(self :obj.AILObject):
+def float_str(self: obj.AILObject):
     return '%s' % self['__value__']
 
 
@@ -16,7 +15,7 @@ def float_repr(self):
     return '< %s >' % self['__value__']
 
 
-def float_init(self :obj.AILObject, value :obj.AILObject):
+def float_init(self: obj.AILObject, value: obj.AILObject):
     _vtype = type(value)
 
     if _vtype is float or _vtype is int:
@@ -27,8 +26,8 @@ def float_init(self :obj.AILObject, value :obj.AILObject):
         return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
 
-def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if type(other['__value__']) not in (int , float):   # do not have __value__ property
+def float_add(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if type(other['__value__']) not in (int, float):  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
 
     sv = self['__value__']
@@ -39,8 +38,8 @@ def float_add(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-def float_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def float_sub(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'-\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -51,8 +50,8 @@ def float_sub(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-def float_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def float_div(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     if other['__value__'] == 0:
@@ -66,8 +65,8 @@ def float_div(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-def float_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def float_muit(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -78,8 +77,8 @@ def float_muit(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-def float_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def float_mod(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
@@ -90,42 +89,42 @@ def float_mod(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-def float_pow(self :obj.AILObject, other :obj.AILObject) -> obj.AILObject:
-    if other['__value__'] is None:   # do not have __value__ property
+def float_pow(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    if other['__value__'] is None:  # do not have __value__ property
         return AILRuntimeError('Not support \'+\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
 
     res = sv ** so
-    
+
     return _new_object(FLOAT_TYPE, res)
 
 
 FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
-                             __init__=float_init,
-                             __add__=float_add,
-                             __str__=float_str,
-                             __div__=float_div,
-                             __sub__=float_sub,
-                             __muit__=float_muit,
-                             __repr__=float_repr,
-                             __mod__=float_mod,
-                             __pow__=float_pow
-                             )
+                               __init__=float_init,
+                               __add__=float_add,
+                               __str__=float_str,
+                               __div__=float_div,
+                               __sub__=float_sub,
+                               __muit__=float_muit,
+                               __repr__=float_repr,
+                               __mod__=float_mod,
+                               __pow__=float_pow
+                               )
 
 
-def convert_to_integer(pyint :int):
+def convert_to_integer(pyint: int):
     from . import integer, string
 
     try:
         if pyint['__class__'] in (
                 integer.INTEGER_TYPE, FLOAT_TYPE, string.STRING_TYPE):
-                pyint['__value__'] = float(pyint['__value__'])
-                return pyint
+            pyint['__value__'] = float(pyint['__value__'])
+            return pyint
 
         elif type(pyint) in (int, float, str):
-                return obj.ObjectCreater.new_object(integer.INTEGER_TYPE, float(pyint))
+            return obj.ObjectCreater.new_object(integer.INTEGER_TYPE, float(pyint))
 
     except ValueError as e:
         return AILRuntimeError(str(e), 'ValueError')
