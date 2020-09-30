@@ -2,7 +2,6 @@
 
 __author__ = 'LaomoBK'
 
-
 import re
 import copy
 import sys
@@ -12,10 +11,10 @@ import inspect
 from typing import List
 
 from . import (
-    aobjects as objs, 
-    abuiltins, 
-    error, 
-    opcodes as opcs, 
+    aobjects as objs,
+    abuiltins,
+    error,
+    opcodes as opcs,
     aloader
 )
 
@@ -39,17 +38,15 @@ from ..objects import (
 )
 
 from .modules._error import (
-        make_err_struct_object, throw_error, catch_error,
-        print_all_error, _err_to_string)
+    make_err_struct_object, throw_error, catch_error,
+    print_all_error, _err_to_string)
 from .test_utils import get_opname
 from .version import AIL_VERSION
 
 from .opcodes import *
 from ._vmsig import *
 
-
 _BUILTINS = abuiltins.BUILTINS
-
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
@@ -64,8 +61,6 @@ shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 true = objs.convert_to_ail_object(True)
 false = objs.convert_to_ail_object(False)
 
-
-
 _obj_type_dict = {
     str: astr.STRING_TYPE,
     int: aint.INTEGER_TYPE,
@@ -75,12 +70,12 @@ _obj_type_dict = {
 }
 
 _binary_op_dict = {
-    binary_add : ('+', '__add__', '__add__'),
-    binary_div : ('/', '__truediv__', '__div__'),
-    binary_mod : ('mod', '__mod__', '__mod__'),
-    binary_muit : ('*', '__mul__', '__muit__'),
-    binary_pow : ('pow', '__pow__', '__pow__'),
-    binary_sub : ('-', '__sub__', '__sub__')
+    binary_add: ('+', '__add__', '__add__'),
+    binary_div: ('/', '__truediv__', '__div__'),
+    binary_mod: ('mod', '__mod__', '__mod__'),
+    binary_muit: ('*', '__mul__', '__muit__'),
+    binary_pow: ('pow', '__pow__', '__pow__'),
+    binary_sub: ('-', '__sub__', '__sub__')
 }
 
 
@@ -109,10 +104,10 @@ class Frame:
                  'try_stack', '_marked_opcounter', '_latest_call_opcounter',
                  'closure_outer', 'globals')
 
-    def __init__(self, code :objs.AILCodeObject=None, varnames :list=None,
-            consts :list=None, globals :dict=None, 
-            closure_outer_variable: list=None):
-        self.code :objs.AILCodeObject = code
+    def __init__(self, code: objs.AILCodeObject = None, varnames: list = None,
+                 consts: list = None, globals: dict = None,
+                 closure_outer_variable: list = None):
+        self.code: objs.AILCodeObject = code
         self.stack = []
         self.varnames = varnames if varnames else list()
         self.consts = consts if consts else list()
@@ -122,9 +117,9 @@ class Frame:
         self.try_stack = []
 
         # for closure
-        self.closure_outer = closure_outer_variable  \
-                                if closure_outer_variable is not None  \
-                                else list()
+        self.closure_outer = closure_outer_variable \
+            if closure_outer_variable is not None \
+            else list()
 
         self._marked_opcounter = 0
         self._latest_call_opcounter = 0
@@ -136,7 +131,7 @@ class Frame:
 
 
 class Interpreter:
-    def __init__(self, argv: List[str]=None):
+    def __init__(self, argv: List[str] = None):
         MAIN_INTERPRETER_STATE.global_interpreters.append(self)
 
         if argv is not None:
@@ -187,14 +182,14 @@ class Interpreter:
     def __set_globals(self, globals: dict):
         self.__frame_stack[0].variable = globals
 
-    def __get_field(self, name: str, frame_index: int, 
-                    from_outer: bool=False) -> objs.AILObject:
+    def __get_field(self, name: str, frame_index: int,
+                    from_outer: bool = False) -> objs.AILObject:
 
         frame_stack_length = len(self.__frame_stack)
 
         if frame_stack_length == 0:
             return error.AILRuntimeError(
-                    'no frame to get field', 'NoFrameError')
+                'no frame to get field', 'NoFrameError')
 
         if frame_index < 0:
             frame_index = frame_stack_length + frame_index
@@ -210,19 +205,19 @@ class Interpreter:
                     if name in scope:
                         return scope.get(name)
                 error.AILRuntimeError(
-                        'no field named \'%s\' outer namespace' % name, 'NameError')
-            
+                    'no field named \'%s\' outer namespace' % name, 'NameError')
+
             return f.variable.get(name, error.AILRuntimeError(
                 'no field named \'%s\'' % name, 'NameError'))
 
-    def __set_field(self, name: str, value: objs.AILObject, frame_index: int, 
-                    for_outer: bool=False):
+    def __set_field(self, name: str, value: objs.AILObject, frame_index: int,
+                    for_outer: bool = False):
 
         frame_stack_length = len(self.__frame_stack)
 
         if frame_stack_length == 0:
             return error.AILRuntimeError(
-                    'no frame to set field', 'NoFrameError')
+                'no frame to set field', 'NoFrameError')
 
         if frame_index < 0:
             frame_index = frame_stack_length + frame_index
@@ -248,8 +243,8 @@ class Interpreter:
     def __get_global_namespace(self):
         if self.__namespace_global is None:
             ns_global = namespace.new_namespace(
-                'global', 
-                lambda name: self.__get_field(name, 0), 
+                'global',
+                lambda name: self.__get_field(name, 0),
                 lambda name, value: self.__set_field(name, value, 0)
             )
 
@@ -292,15 +287,15 @@ class Interpreter:
             return self.__get_outer_namespace()
         return None
 
-    def __push_back(self, obj :objs.AILObject):
+    def __push_back(self, obj: objs.AILObject):
         self.__stack.append(obj)
 
     def __pop_top(self) -> objs.AILObject:
         return self.__stack.pop() \
-                if self.__stack \
-                else self.__raise_error('Pop from empty stack', 'VMError')
+            if self.__stack \
+            else self.__raise_error('Pop from empty stack', 'VMError')
 
-    def __push_new_frame(self, cobj :objs.AILCodeObject, frame :Frame=None):
+    def __push_new_frame(self, cobj: objs.AILCodeObject, frame: Frame = None):
         if len(self.__frame_stack) + 1 > _MAX_RECURSION_DEPTH:
             self.__raise_error('Maximum recursion depth exceeded', 'RecursionError')
 
@@ -315,10 +310,10 @@ class Interpreter:
 
         self.__frame_stack.append(f)
 
-    def __print_err(self, err : error.AILRuntimeError):
+    def __print_err(self, err: error.AILRuntimeError):
         error.print_global_error(err)
 
-    def __check_object(self, aobj :objs.AILObject, not_convert=False) -> objs.AILObject:
+    def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
             self.__raise_error(aobj.msg, aobj.err_type)
             aobj = None
@@ -337,18 +332,18 @@ class Interpreter:
             self.__temp_env_stack[-1].temp_var.append(name)
         self.__tof.variable[name] = value
 
-    def __raise_error(self, msg :str, err_type :str):
+    def __raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
                 msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
 
-        if err_type not in ('VMError'):
+        if err_type not in 'VMError':
             self.__now_state.err_stack.append(errs)
         else:
             error.print_global_error(
-                error.AILRuntimeError(msg, err_type, self.__tof), 
-                    '%s +%s' % 
-                    (self.__tof.code.name, self.__opcounter))
+                error.AILRuntimeError(msg, err_type, self.__tof),
+                '%s +%s' %
+                (self.__tof.code.name, self.__opcounter))
 
         self.__now_state.handling_err_stack.append(errs)
 
@@ -369,7 +364,7 @@ class Interpreter:
             for err in self.__now_state.handling_err_stack[:-1]:
                 sys.stderr.write(_err_to_string(err) + '\n')
                 sys.stderr.write('\n%s\n\n' %
-                      'During handling of the above exception, another exception occurred:')
+                                 'During handling of the above exception, another exception occurred:')
             sys.stderr.write(_err_to_string(errs) + '\n')
 
             # if not ERR_NOT_EXIT (usually), the following code will not execute.
@@ -404,10 +399,10 @@ class Interpreter:
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
-    def __chref(self, ailobj :objs.AILObject, mode :int):
-        '''
+    def __chref(self, ailobj: objs.AILObject, mode: int):
+        """
         :param mode: 0 -> increase  |  1 -> decrease
-        '''
+        """
 
     def __decref(self, ailobj):
         ailobj.reference -= 1
@@ -418,10 +413,10 @@ class Interpreter:
     def __incref(self, ailobj):
         ailobj.reference += 1
 
-    def __get_jump(self, jump_to :int, pop :bool, why :int) -> int:
-        '''
+    def __get_jump(self, jump_to: int, pop: bool, why: int) -> int:
+        """
         :param why: why jump if not will pop. 0 -> False  |  1 -> True
-        '''
+        """
 
         tos = self.__tos
 
@@ -438,7 +433,7 @@ class Interpreter:
 
         return 0
 
-    def __binary_op(self, op :str, pymth :str, ailmth :str, a, b):
+    def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
         if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
             op_method = getattr(a._value, pymth, None)
 
@@ -450,7 +445,6 @@ class Interpreter:
                         op, str(a), str(b)),
                     'TypeError')
 
-
         if isinstance(a, objs.AILObject):
             m = a[ailmth]
             mb = b[ailmth]
@@ -460,19 +454,19 @@ class Interpreter:
                     'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
                     'TypeError')
                 return
-            
+
             r = self.__check_object(m(a, b))
         else:
             if hasattr(a, pymth):
                 r = getattr(a, pymth)(b)
             else:
                 self.__raise_error(
-                        'Not support \'%s\' with %s and %s' % (op, str(a), str(b)), 
-                        'TypeError')
+                    'Not support \'%s\' with %s and %s' % (op, str(a), str(b)),
+                    'TypeError')
                 return
         return r
 
-    def __compare(self, a, b, cop :str) -> objs.AILObject:
+    def __compare(self, a, b, cop: str) -> objs.AILObject:
         if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
             av = a._value
             bv = b._value
@@ -481,7 +475,7 @@ class Interpreter:
 
         if not (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
                 (a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) or \
-                b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
+                 b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
 
             av = a['__value__']
             bv = b['__value__']
@@ -534,7 +528,7 @@ class Interpreter:
             jump_to = self.__break_stack.pop() - _BYTE_CODE_SIZE
         return jump_to
 
-    def __load_name(self, index :int) -> objs.AILObject:
+    def __load_name(self, index: int) -> objs.AILObject:
         n = self.__tof.varnames[index]
 
         ns = self.__check_and_get_namespace(n)
@@ -571,9 +565,9 @@ class Interpreter:
 
                 if c.closure:
                     f.closure_outer = c._closure_outer
-    
+
                 try:
-                    if func['__this__'] is not None :
+                    if func['__this__'] is not None:
                         this = copy.copy(func['__this__'])
                         this._pthis_ = True  # add _pthis_ attr
 
@@ -604,7 +598,7 @@ class Interpreter:
                     else:
                         self.__opcounter = self.__tof._latest_call_opcounter
                         # 如无异常，则还原字节码计数器
- 
+
                 except RecursionError as e:
                     self.__raise_error(str(e), 'PythonError')
             elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
@@ -639,8 +633,8 @@ class Interpreter:
                         return
 
                 else:
-                    argl = [o['__value__'] if objs.has_attr(o, '__value__')  \
-                                           else o for o in argl]
+                    argl = [o['__value__'] if objs.has_attr(o, '__value__') \
+                                else o for o in argl]
                     # unpack argl for builtin function
                 try:
                     rtn = self.__check_object(pyf(*argl))
@@ -667,8 +661,8 @@ class Interpreter:
                 self.__tof.stack.append(rtn)
             else:
                 self.__raise_error(
-                    '\'%s\' object is not callable.' % 
-                        func['__class__'].name, 'TypeError')
+                    '\'%s\' object is not callable.' %
+                    func['__class__'].name, 'TypeError')
 
     def __return(self):
         tos = self.__pop_top()
@@ -685,7 +679,7 @@ class Interpreter:
 
         self.__can = 0
 
-    def __run_bytecode(self, cobj :objs.AILCodeObject, frame :Frame=None):
+    def __run_bytecode(self, cobj: objs.AILCodeObject, frame: Frame = None):
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
 
@@ -715,7 +709,7 @@ class Interpreter:
 
                 elif op == print_value:
                     tosl = [self.__pop_top() for _ in range(argv)][::-1]
-                    
+
                     for tos in tosl:
                         tosm = self.__check_object(tos['__str__'](tos), not_convert=True)
 
@@ -736,7 +730,7 @@ class Interpreter:
                     inp = input(msg)
 
                     sip = [astr.convert_to_string(x)
-                            for x in re.split(r'\s+', inp) if x]  
+                           for x in re.split(r'\s+', inp) if x]
                     # Remove empty string
 
                     if vl and len(vl) != len(sip):
@@ -753,7 +747,7 @@ class Interpreter:
 
                     if n in self.__tof.variable.keys():
                         self.__decref(self.__tof.variable[n])
-                    
+
                     v.reference += 1
                     self.__store_var(n, v)
                     self.__tof.stack.append(v)
@@ -761,7 +755,7 @@ class Interpreter:
 
                 elif op == load_const:
                     self.__tof.stack.append(
-                            self.__tof.consts[argv])
+                        self.__tof.consts[argv])
 
                 elif op == load_varname:
                     self.__tof.stack.append(
@@ -788,7 +782,7 @@ class Interpreter:
                             tof.stack.append(o)
                         else:
                             self.__raise_error(
-                                    'name \'%s\' is not defined' % n, 'NameError')
+                                'name \'%s\' is not defined' % n, 'NameError')
 
                     else:
                         for f in self.__frame_stack:
@@ -800,7 +794,7 @@ class Interpreter:
                                 break
                         else:
                             self.__raise_error(
-                                    'name \'%s\' is not defined' % n, 'NameError')
+                                'name \'%s\' is not defined' % n, 'NameError')
 
                 elif op == return_value:
                     self.__return()
@@ -857,8 +851,8 @@ class Interpreter:
                     if self.__bool_test(tos):
                         jump_to = argv
 
-                elif op in (binary_add, binary_div, 
-                            binary_mod, binary_muit, 
+                elif op in (binary_add, binary_div,
+                            binary_mod, binary_muit,
                             binary_pow, binary_sub):
                     op, pym, ailm = _binary_op_dict.get(op)
 
@@ -895,7 +889,7 @@ class Interpreter:
 
                 elif op == call_func:
                     argl = [self.__pop_top() for _ in range(argv)][::-1]
-                    func :objs.AILObject = self.__pop_top()
+                    func: objs.AILObject = self.__pop_top()
 
                     self.__call_function(func, argv, argl)
 
@@ -910,7 +904,7 @@ class Interpreter:
                     tosf = objs.ObjectCreater.new_object(
                         afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
                     )
-                    
+
                     if self.__exec_for_module:
                         tosf['__globals__'] = self.__frame_stack[0].variable
 
@@ -921,7 +915,7 @@ class Interpreter:
                     l = [self.__stack.pop() for _ in range(argv)][::-1]
 
                     o = objs.ObjectCreater.new_object(
-                            array.ARRAY_TYPE, l)
+                        array.ARRAY_TYPE, l)
 
                     self.__incref(o)
                     self.__tof.stack.append(o)
@@ -929,14 +923,14 @@ class Interpreter:
                 elif op == binary_subscr:
                     v = self.__pop_top()
                     l = self.__pop_top()
-                    
+
                     if isinstance(l, objs.AILObject):
                         if l['__getitem__'] is None:
-                            self.__raise_error('%s object is not subscriptable' % 
-                                    l['__class__'].name, 'TypeError')
-                        
+                            self.__raise_error('%s object is not subscriptable' %
+                                               l['__class__'].name, 'TypeError')
+
                         rtn = self.__check_object(l['__getitem__'](l, v))
-                        
+
                         self.__tof.stack.append(rtn)
 
                 elif op == unary_negative:
@@ -949,7 +943,7 @@ class Interpreter:
                         self.__decref(v)
                     else:
                         self.__raise_error(
-                                'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
+                            'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
 
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
@@ -962,8 +956,8 @@ class Interpreter:
                         self.__raise_error('No module named \'%s\'' % name, 'LoadError')
                     elif namespace == 2:
                         self.__raise_error(
-                                'Cannot load module \'%s\' ' % name + 
-                                '(may caused circular load)', 'LoadError')
+                            'Cannot load module \'%s\' ' % name +
+                            '(may caused circular load)', 'LoadError')
                     elif namespace == 3:
                         # error while loading this module
                         self.__interrupted = True
@@ -980,11 +974,11 @@ class Interpreter:
                         pass
                     elif namespace == 1:
                         self.__raise_error(
-                                'No module named \'%s\'' % name, 'ImportError') 
+                            'No module named \'%s\'' % name, 'ImportError')
                     elif namespace == 2:
                         self.__raise_error(
-                                'Cannot import module \'%s\' ' % name + 
-                                '(may caused circular import)', 'ImportError')
+                            'Cannot import module \'%s\' ' % name +
+                            '(may caused circular import)', 'ImportError')
                     elif namespace == 3:
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_BREAK
@@ -1050,7 +1044,7 @@ class Interpreter:
                     self.__temp_env_stack.append(TempEnvironment())
 
                     err = self.__now_state.err_stack.pop()
-                    self.__store_var(name, err) # store this error with 'name'
+                    self.__store_var(name, err)  # store this error with 'name'
 
                 elif op == clean_try:
                     self.__tof.try_stack.pop()
@@ -1096,7 +1090,7 @@ class Interpreter:
                         self.__can_update_opc = False
 
                         break
-                    
+
                     elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_POP_TO_TRY
@@ -1108,14 +1102,14 @@ class Interpreter:
 
                         why = WHY_HANDLING_ERR
                         break
-                
+
                 if not self.__can:
                     self.__can = 1
                     break
 
                 if jump_to != self.__opcounter:
                     self.__opcounter = jump_to
-                else: 
+                else:
                     self.__opcounter += _BYTE_CODE_SIZE
                     jump_to = self.__opcounter
 
@@ -1126,7 +1120,7 @@ class Interpreter:
             sys.exit(0)
 
         # tmr.print_analytical_table()
-        
+
         return why
 
     def exec(self, cobj, frame=None, exec_for_module=False):
