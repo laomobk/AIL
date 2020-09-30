@@ -1,0 +1,40 @@
+begin
+
+fun __check_t(a) is
+    if type(a) == type('') then
+        return true
+    endif
+
+    return false
+
+/*
+ * strlib -> (0, -1, 1)
+ *   a > b -> 1
+ *   a < b -> -1
+ *   a == b -> 0
+ */
+fun strcmp(a, b) is
+	if type(a) != type('') or type(b) != type('') then
+		return -1
+	endif
+
+	if len(a) > len(b) then
+		return 1
+	endif
+
+	if len(a) < len(b) then
+		return -1
+	endif
+
+	i = 0
+	while i < len(a) then
+		if ord(a[i]) != ord(b[i]) then
+			return -1
+		endif
+
+		i = i + 1
+	wend
+
+	return 0
+end
+

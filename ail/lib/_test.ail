@@ -1,0 +1,12 @@
+begin
+
+name = 'Nezha'
+
+
+fun say_hi() is
+    print name
+
+    global.name = 'Zhaer'
+end
+
+end

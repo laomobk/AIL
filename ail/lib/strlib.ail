@@ -1,0 +1,12 @@
+begin
+
+struct string_t is
+    _astr
+    size
+
+    append
+    equals
+    to_array
+end
+
+end

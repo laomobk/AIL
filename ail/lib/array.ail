@@ -1,0 +1,102 @@
+begin
+
+load 'types'
+
+
+struct list_t is
+    __ele
+    protected size
+end
+
+
+fun (list_t) __copy_new(elen, eleo) is
+    // copy old element list to new element list
+
+    i = 0
+    while i < len(eleo) then
+        elen[i] = eleo[i]
+        i = i + 1
+    wend
+end
+
+
+/*
+ * lapped(list_t a, any o)
+ * append o to the end of a
+ */
+fun (list_t) append(o) is
+    eleo = this.__ele
+    this.__ele = array(this.size + 1)
+
+    this.__copy_new(this.__ele, eleo)
+    this.__ele[-1] = o
+
+    this.size = this.size + 1
+
+    return true
+end
+
+
+/*
+ * lremove(list_t a, int index)
+ * remove the object at 'index'
+ */
+fun (list_t) remove(index) is
+    if type(index) != type(0) then
+        return null
+    endif
+
+    if index >= len(this.__ele) then
+        return null
+    endif
+
+    // 从 index 处切割，然后再覆盖
+    i = 0
+    left = array(index)
+
+    while i < index then  // 填充 left
+        left[i] = this.__ele[i]
+        i = i + 1
+    wend
+
+    new_a = array(len(this.__ele) - 1)
+    
+    i = 0
+    while i < len(left) then
+        new_a[i] = left[i]
+        i = i + 1
+    wend
+    
+    i = index + 1
+    ni = 0
+    while ni < len(new_a) and i < len(this.__ele) then
+        new_a[ni] = this.__ele[i]
+        i = i + 1
+        ni = ni + 1
+    wend
+
+    this.__ele = new_a
+    this.size = this.size - 1
+
+    return true
+end
+
+
+fun (list_t) to_string() is
+    return repr(this.__ele)
+end
+
+
+fun List() is
+    lo = new(
+        list_t, 
+        {
+            {}, 
+            0,
+        }
+        )
+
+    return lo
+end
+
+end

@@ -1,0 +1,57 @@
+begin
+
+load 'escape'
+load 'printf'
+
+CT_BLACK = 30
+CT_RED = 31
+CT_GREEN = 32
+CT_YELLOW = 33
+CT_BLUE = 34
+CT_PURPLE = 35
+CT_CYAN = 36
+CT_WHITE = 37
+
+CB_BLACK = 40
+CB_RED = 41
+CB_GREEN = 41
+CB_YELLOW = 43
+CB_BLUE = 44
+CB_PURPLE = 45
+CB_CYAN = 46
+CB_WHITE = 47
+
+fun put_pixel(x, y, txcolor, bgcolor) is
+    printf(escape('\033[' + y + ';' + x + 'H' + 
+                  '\033[' + txcolor + ';' + bgcolor + 'm \033[0m'), {})
+end
+
+
+for (y = 0; y < 25; y =  y + 1) then
+    for (x = 0; x < 50; x = x + 1) then
+        put_pixel(x, y, CB_CYAN, CB_WHITE)
+    end
+end
+
+for (x = 0; x < 50; x = x + 1) then
+    put_pixel(x, 0, CB_CYAN, CB_BLUE)
+end
+
+for (y = 0; y < 25; y = y + 1) then
+    put_pixel(50, y, CB_CYAN, CB_BLUE)
+end
+
+for (x = 50; x >= 50; x = x - 1) then
+    put_pixel(x, 25, CB_CYAN, CB_BLUE)
+end
+
+for (y = 25; y >= 0; y = y - 1) then
+    put_pixel(0, y, CB_CYAN, CB_BLUE)
+end
+
+put_pixel(10, 10, 30, 30)
+printf('TEST', {})
+
+input ''
+
+end
