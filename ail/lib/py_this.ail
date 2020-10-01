@@ -42,11 +42,10 @@ while i < len(s) then
 
     if equal(s[i], '\n') or equal(s[i], ' ') or equal(s[i], '.') or equal(s[i], ',') or equal(s[i], "'") then
         c = s[i]
-    else if equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*') then
+    elif equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*')
         c = s[i]
     else
 	    c = chr((ord(s[i]) - p + 13) mod 26 + p)
-	endif
 	endif
 
 	res = res + c

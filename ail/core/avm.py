@@ -18,6 +18,7 @@ from . import (
     aloader
 )
 
+from .aframe import Frame
 from .agc import GC
 from .astate import MAIN_INTERPRETER_STATE
 from . import shared
@@ -45,6 +46,7 @@ from .version import AIL_VERSION
 
 from .opcodes import *
 from ._vmsig import *
+
 
 _BUILTINS = abuiltins.BUILTINS
 
@@ -96,38 +98,6 @@ class _ProtectedSignal:
 
 
 PROTECTED_SIGNAL = _ProtectedSignal()
-
-
-class Frame:
-    __slots__ = ('code', 'stack', 'varnames', 'consts',
-                 'variable', 'break_stack', 'temp_env_stack',
-                 'try_stack', '_marked_opcounter', '_latest_call_opcounter',
-                 'closure_outer', 'globals')
-
-    def __init__(self, code: objs.AILCodeObject = None, varnames: list = None,
-                 consts: list = None, globals: dict = None,
-                 closure_outer_variable: list = None):
-        self.code: objs.AILCodeObject = code
-        self.stack = []
-        self.varnames = varnames if varnames else list()
-        self.consts = consts if consts else list()
-        self.variable = globals if globals else dict()
-        self.break_stack = []
-        self.temp_env_stack = []
-        self.try_stack = []
-
-        # for closure
-        self.closure_outer = closure_outer_variable \
-            if closure_outer_variable is not None \
-            else list()
-
-        self._marked_opcounter = 0
-        self._latest_call_opcounter = 0
-
-    def __str__(self):
-        return '<Frame object for code object \'%s\'>' % self.code.name
-
-    __repr__ = __str__
 
 
 class Interpreter:
@@ -300,7 +270,7 @@ class Interpreter:
             self.__raise_error('Maximum recursion depth exceeded', 'RecursionError')
 
         if frame:
-            self.__frame_stack.append(frame)
+            self.__now_state.frame_stack.append(frame)
             return
 
         f = Frame()
@@ -364,7 +334,8 @@ class Interpreter:
             for err in self.__now_state.handling_err_stack[:-1]:
                 sys.stderr.write(_err_to_string(err) + '\n')
                 sys.stderr.write('\n%s\n\n' %
-                                 'During handling of the above exception, another exception occurred:')
+                                 'During handling of the above exception, ' + 
+                                 'another exception occurred:')
             sys.stderr.write(_err_to_string(errs) + '\n')
 
             # if not ERR_NOT_EXIT (usually), the following code will not execute.
@@ -1078,7 +1049,8 @@ class Interpreter:
                         bound_function['__globals__'] = self.__frame_stack[0].variable
 
                     target_struct['__bind_functions__'][func_name] = bound_function
-
+                
+                # handle interruption
                 if self.__interrupted:
                     self.__interrupted = False
                     if self.__interrupt_signal == MII_DO_JUMP:
@@ -1119,7 +1091,13 @@ class Interpreter:
             print('\nAIL Runtime: KeyboardInterrupt')
             sys.exit(0)
 
-        # tmr.print_analytical_table()
+        return why
+
+    def exec_for_import(self, cobj, frame: Frame):
+        last_opcounter = self.__opcounter
+
+        why = self.exec(cobj, frame, True)
+        self.__opcounter = last_opcounter
 
         return why
 

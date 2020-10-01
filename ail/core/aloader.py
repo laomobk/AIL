@@ -125,7 +125,7 @@ class ModuleLoader:
             temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
             MAIN_INTERPRETER_STATE.frame_stack = list()
 
-            why = Interpreter().exec(cobj, frame, import_mode)
+            why = Interpreter().exec(cobj, frame, True)
 
             MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
 
