@@ -14,12 +14,12 @@ def get_line_from_line_no(lno: int, fp: str):
     根据行号得到在源码的行
     """
     if lno <= 0:
-        return '<Illegal line number>'
+        return ''
 
     tlno = 1
 
     if not os.path.exists(fp):
-        return '<NULL>'
+        return ''
 
     f = open(fp, encoding='UTF-8')
 
@@ -28,7 +28,7 @@ def get_line_from_line_no(lno: int, fp: str):
             return ln
         tlno += 1
 
-    return '<NULL>'
+    return ''
 
 
 # @debugger.debug_python_runtime
@@ -39,13 +39,19 @@ def error_msg(line: int, msg: str, filename: str, errcode=1):
     filename : 文件名
     errcode : 错误码 / 程序返回值
     """
-    emsg = 'File: \'{0}\', line {2}:\n   {3}\nError: {1}'.format(
-        filename, msg, line, get_line_from_line_no(line, filename))
+    source_line = get_line_from_line_no(line, filename).replace('\n', '')
+
+    if source_line != '':
+        err_msg = 'File: \'{0}\', line {2}:\n   {3}\nError: {1}'.format(
+            filename, msg, line, source_line)
+    else:
+        err_msg = 'File: \'{0}\', line {2}\nError: {1}'.format(
+            filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:
-        raise _AILRuntimeError(emsg)
+        raise _AILRuntimeError(err_msg)
     else:
-        sys.stderr.write(emsg)
+        sys.stderr.write(err_msg)
         sys.stderr.flush()
 
     if not ERR_NOT_EXIT:

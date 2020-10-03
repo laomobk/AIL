@@ -3,7 +3,7 @@ import pickle
 from typing import List, Union, Tuple
 
 from .opcodes import *
-from .tokentype import LAP_STRING, LAP_IDENTIFIER, LAP_NUMBER
+from .tokentype import AIL_STRING, AIL_IDENTIFIER, AIL_NUMBER
 
 from .abytecode import (
     ByteCode,
@@ -45,8 +45,8 @@ _opcode_map = {
 }
 
 _cell_action_map = {
-    LAP_NUMBER: lambda n: convert_numeric_str_to_number(n),
-    LAP_STRING: lambda s: s
+    AIL_NUMBER: lambda n: convert_numeric_str_to_number(n),
+    AIL_STRING: lambda s: s
 }
 
 
@@ -105,13 +105,13 @@ class Compiler:
         return : (sign, index)
         """
 
-        if cell.type in (LAP_NUMBER, LAP_STRING):
+        if cell.type in (AIL_NUMBER, AIL_STRING):
             c = _cell_action_map[cell.type](cell.value)
 
             ci = self.__buffer.add_const(c)
             sign = 0
 
-        elif cell.type == LAP_IDENTIFIER:
+        elif cell.type == AIL_IDENTIFIER:
             ci = self.__buffer.get_or_add_varname_index(cell.value)
             sign = 1
 
@@ -361,7 +361,7 @@ class Compiler:
         jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
         # for clean_catch
         to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
-        # for jump_absoulte
+        # for jump_absolute
 
         if has_finally:
             fn_ext = jump_over

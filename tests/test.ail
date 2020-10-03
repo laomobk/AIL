@@ -1,5 +1,9 @@
 begin
 
-import test 'test_import'
+l = [1, 2, 3]
+
+while true {
+    print 'Hello Nezha'
+}
 
 end

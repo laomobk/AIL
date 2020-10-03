@@ -33,24 +33,24 @@ res = ''
 
 i = 0
 p = 0
-while i < len(s) then
-    if ord(s[i]) + 13 - 97 > 0 then
+while i < len(s) {
+    if ord(s[i]) + 13 - 97 > 0 {
         p = 97
-    else
+    } else {
         p = 65
-    endif
+    }
 
-    if equal(s[i], '\n') or equal(s[i], ' ') or equal(s[i], '.') or equal(s[i], ',') or equal(s[i], "'") then
+    if equal(s[i], '\n') or equal(s[i], ' ') or equal(s[i], '.') or equal(s[i], ',') or equal(s[i], "'") {
         c = s[i]
-    elif equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*')
+    } elif equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*') {
         c = s[i]
-    else
+    } else {
 	    c = chr((ord(s[i]) - p + 13) mod 26 + p)
-	endif
+	}
 
 	res = res + c
 	i = i + 1
-wend
+}
 
 print res
 

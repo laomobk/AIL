@@ -23,9 +23,9 @@ _keywords = tuple([x.lower() for x in _keywords_uc])
 _end_signs = tuple([x.lower() for x in _end_signs_uc])
 
 _cmp_op = (
-    LAP_EQ, LAP_LARGER, LAP_SMALER,
-    LAP_LARGER_EQ, LAP_SMALER_EQ,
-    LAP_UEQ
+    AIL_EQ, AIL_LARGER, AIL_SMALER,
+    AIL_LARGER_EQ, AIL_SMALER_EQ,
+    AIL_UEQ
 )
 
 _FROM_MAIN = 0
@@ -67,11 +67,11 @@ class Parser:
             return -1
 
     def __tok_is(self, tok: Token, value: str) -> bool:
-        return tok.ttype != LAP_STRING and tok.value == value
+        return tok.ttype != AIL_STRING and tok.value == value
 
-    def __syntax_error(self, msg=None):
+    def __syntax_error(self, msg=None, ln: int = 0):
         error_msg(
-            self.__now_ln,
+            self.__now_ln if ln <= 0 else ln,
             'SyntaxError%s' % ((' : ' if msg else '') + (msg if msg else '')),
             self.__filename)
 
@@ -102,7 +102,7 @@ class Parser:
         return ast.ArgListAST(alist, self.__now_ln)
 
     def __parse_value_list(self) -> ast.ValueListAST:
-        if self.__now_tok.ttype != LAP_IDENTIFIER:
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
             return self.__syntax_error()
 
         ida = self.__now_tok.value
@@ -110,10 +110,10 @@ class Parser:
 
         self.__next_tok()
 
-        while self.__now_tok == ',' and self.__now_tok.ttype != LAP_ENTER:
+        while self.__now_tok == ',' and self.__now_tok.ttype != AIL_ENTER:
             self.__next_tok()
 
-            if self.__now_tok.ttype != LAP_IDENTIFIER:
+            if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
 
             idl.append(self.__now_tok.value)
@@ -123,16 +123,16 @@ class Parser:
         return ast.ValueListAST(idl, self.__now_ln)
 
     def __parse_item_list(self) -> ast.ItemListAST:
-        if self.__now_tok.ttype == LAP_LRBASKET:
+        if self.__now_tok.ttype == AIL_MRBASKET:
             return ast.ItemListAST([], self.__now_ln)
 
-        while self.__now_tok.ttype == LAP_ENTER or \
+        while self.__now_tok.ttype == AIL_ENTER or \
                 self.__now_tok.value == '\n':  # ignore ENTER
             self.__next_tok()  # eat ENTER
 
         il = []
 
-        while self.__now_tok.ttype != LAP_LRBASKET:
+        while self.__now_tok.ttype != AIL_MRBASKET:
             eitem = self.__parse_binary_expr()
 
             if eitem is None:
@@ -140,32 +140,32 @@ class Parser:
 
             il.append(eitem)
 
-            while self.__now_tok.ttype == LAP_ENTER or \
+            while self.__now_tok.ttype == AIL_ENTER or \
                     self.__now_tok.value == '\n':  # ignore ENTER
                 self.__next_tok()  # eat ENTER
 
-            if self.__now_tok.ttype == LAP_COMMA:
+            if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()
 
-            while self.__now_tok.ttype == LAP_ENTER or \
+            while self.__now_tok.ttype == AIL_ENTER or \
                     self.__now_tok.value == '\n':  # ignore ENTER
                 self.__next_tok()  # eat ENTER
 
         return ast.ItemListAST(il, self.__now_ln)
 
     def __parse_array_expr(self) -> ast.ArrayAST:
-        if self.__now_tok.ttype != LAP_LLBASKET:
+        if self.__now_tok.ttype != AIL_MLBASKET:
             self.__syntax_error()
 
-        self.__next_tok()  # eat '{'
+        self.__next_tok()  # eat '['
 
-        if self.__now_tok.ttype == LAP_LRBASKET:
-            self.__next_tok()  # eat '{'
+        if self.__now_tok.ttype == AIL_MRBASKET:
+            self.__next_tok()  # eat ']'
             return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), self.__now_ln)
 
         items = self.__parse_item_list()
 
-        if self.__now_tok.ttype != LAP_LRBASKET:
+        if self.__now_tok.ttype != AIL_MRBASKET:
             self.__syntax_error()
 
         self.__next_tok()
@@ -181,7 +181,7 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != LAP_DOT:
+        if self.__now_tok.ttype != AIL_DOT:
             return left
 
         rl = []
@@ -194,7 +194,7 @@ class Parser:
                     ast.SubscriptExprAST, ast.CallExprAST, ast.CellAST):
                 self.__syntax_error()
 
-            if isinstance(ert, ast.CellAST) and ert.type != LAP_IDENTIFIER:
+            if isinstance(ert, ast.CellAST) and ert.type != AIL_IDENTIFIER:
                 self.__syntax_error()
 
             rl.append(ert)
@@ -213,10 +213,10 @@ class Parser:
 
         left = ca
 
-        while self.__now_tok.ttype in (LAP_MLBASKET, LAP_SLBASKET):
+        while self.__now_tok.ttype in (AIL_MLBASKET, AIL_SLBASKET):
             nt = self.__now_tok.ttype
 
-            if nt == LAP_MLBASKET:
+            if nt == AIL_MLBASKET:
                 self.__next_tok()  # eat '['
                 if self.__now_tok == ']':
                     self.__syntax_error()
@@ -229,7 +229,7 @@ class Parser:
 
                 left = ast.SubscriptExprAST(left, expr, self.__now_ln)
 
-            elif nt == LAP_SLBASKET:
+            elif nt == AIL_SLBASKET:
                 self.__next_tok()  # eat '('
                 if self.__now_tok == ')':
                     argl = ast.ArgListAST([], self.__now_ln)
@@ -241,7 +241,7 @@ class Parser:
         return left
 
     def __parse_low_cell_expr(self) -> ast.ExprAST:
-        if self.__now_tok.ttype == LAP_LLBASKET:
+        if self.__now_tok.ttype == AIL_MLBASKET:
             a = self.__parse_array_expr()
 
             if a is None:
@@ -264,22 +264,12 @@ class Parser:
 
         nt = self.__now_tok
 
-        if self.__now_tok.ttype not in (LAP_NUMBER, LAP_STRING, LAP_IDENTIFIER, LAP_SUB) or \
+        if self.__now_tok.ttype == AIL_ENTER:
+            self.__syntax_error(ln=self.__now_ln - 1)
+
+        elif self.__now_tok.ttype not in (AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
                 nt in _keywords:
             self.__syntax_error()
-
-        # if self.__now_tok.ttype == LAP_SUB:
-        #     v = self.__now_tok.value
-        #     self.__next_tok()  # eat '-'
-
-        #     if self.__now_tok.ttype != LAP_NUMBER:
-        #         self.__syntax_error()
-
-        #     v += self.__now_tok.value
-
-        #     self.__next_tok()  # eat NUMBER
-
-        #     return ast.CellAST(v, LAP_NUMBER, self.__now_ln)
 
         name = nt.value  # it can be sub, string, number or identifier
 
@@ -288,7 +278,7 @@ class Parser:
         return ast.CellAST(name, nt.ttype, self.__now_ln)
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
-        if self.__now_tok.ttype == LAP_SUB:
+        if self.__now_tok.ttype == AIL_SUB:
             self.__next_tok()  # eat '-'
 
             right = self.__parse_member_access_expr()
@@ -344,14 +334,14 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype not in (LAP_MUIT, LAP_DIV):
+        if self.__now_tok.ttype not in (AIL_MUIT, AIL_DIV):
             return left
 
         left_op = self.__now_tok.value
 
         rl = []
 
-        while self.__now_tok.ttype in (LAP_MUIT, LAP_DIV):
+        while self.__now_tok.ttype in (AIL_MUIT, AIL_DIV):
             r_op = self.__now_tok.value
             self.__next_tok()
 
@@ -367,28 +357,29 @@ class Parser:
         # try assign expr
         ntc = self.__tc
         at = self.__parse_assign_expr()
+        ln = self.__now_ln
 
         if at:
             return at
 
         self.__tc = ntc
 
-        if self.__now_tok.ttype == LAP_ENTER:
-            self.__syntax_error()
+        if self.__now_tok.ttype == AIL_ENTER:
+            self.__syntax_error(ln=ln)
 
         left = self.__parse_muit_div_expr()
 
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype not in (LAP_PLUS, LAP_SUB):
+        if self.__now_tok.ttype not in (AIL_PLUS, AIL_SUB):
             return left
 
         left_op = self.__now_tok.value
 
         rl = []
 
-        while self.__now_tok.ttype in (LAP_PLUS, LAP_SUB):
+        while self.__now_tok.ttype in (AIL_PLUS, AIL_SUB):
             r_op = self.__now_tok.value
             self.__next_tok()
 
@@ -432,10 +423,10 @@ class Parser:
         if self.__now_tok != ';':
             return ast.InputExprAST(msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
-        if self.__next_tok().ttype == LAP_IDENTIFIER:
+        if self.__next_tok().ttype == AIL_IDENTIFIER:
             vl = self.__parse_value_list()
         else:
-            vl = ast.ValueListAST([])
+            vl = ast.ValueListAST([], self.__now_ln)
 
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
@@ -560,6 +551,37 @@ class Parser:
 
         return ast.TestExprAST(t, self.__now_ln)
 
+    def __parse_new_else_elif_block(self, test: ast.TestExprAST,
+                                    if_block: ast.BlockExprAST,
+                                    else_block: ast.BlockExprAST, ln: int) -> ast.IfExprAST:
+        elif_list = []
+
+        if self.__now_tok.value not in ('else', 'elif') :
+            return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
+
+        while self.__now_tok.ttype != AIL_EOF:
+            if self.__now_tok == 'else':
+                self.__next_tok()  # eat 'else'
+                else_block = self.__parse_block()
+                if else_block is None:
+                    self.__syntax_error()
+
+                return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
+            elif self.__now_tok == 'elif':
+                self.__next_tok()  # eat 'elif'
+                elif_test = self.__parse_test_expr()
+
+                if elif_test is None:
+                    self.__syntax_error()
+
+                elif_block = self.__parse_block()
+
+                if elif_block is None:
+                    self.__syntax_error()
+
+                elif_list.append(
+                    ast.IfExprAST(elif_test, elif_block, [], None, ln))
+
     def __parse_if_else_expr0(self) -> ast.IfExprAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'if'
@@ -569,16 +591,22 @@ class Parser:
         if if_test is None:
             self.__syntax_error()
 
-        if self.__now_tok != 'then':
+        is_new_block = self.__now_tok.ttype == AIL_LLBASKET
+
+        if self.__now_tok != 'then' and not is_new_block:
             self.__syntax_error()
 
-        self.__next_tok()  # eat 'then'
+        if not is_new_block:
+            self.__next_tok()  # eat 'then'
 
         if_block = self.__parse_block(for_if_else=True)
         else_block = ast.BlockExprAST([], self.__now_ln)
         elif_list = []
 
-        while self.__now_tok.ttype != LAP_EOF:
+        if is_new_block:
+            return self.__parse_new_else_elif_block(if_test, if_block, else_block, ln)
+
+        while self.__now_tok.ttype != AIL_EOF:
             if self.__now_tok == 'else':
                 self.__next_tok()  # eat 'else'
                 else_block = self.__parse_block(for_if_else=True)
@@ -589,7 +617,7 @@ class Parser:
                 if self.__now_tok == 'endif':
                     self.__next_tok()  # eat 'endif'
                     return ast.IfExprAST(
-                        if_test, if_block, elif_list, else_block, self.__now_ln)
+                        if_test, if_block, elif_list, else_block, ln)
                 else:
                     self.__syntax_error()
 
@@ -597,7 +625,7 @@ class Parser:
                 self.__next_tok()  # eat 'elif'
                 elif_test = self.__parse_test_expr()
 
-                if elif_list is None:
+                if elif_test is None:
                     self.__syntax_error()
 
                 elif_block = self.__parse_block(for_if_else=True)
@@ -606,12 +634,12 @@ class Parser:
                     self.__syntax_error()
 
                 elif_list.append(
-                    ast.IfExprAST(elif_test, elif_block, [], None, self.__now_ln))
+                    ast.IfExprAST(elif_test, elif_block, [], None, ln))
 
             elif self.__now_tok == 'endif':
                 self.__next_tok()  # eat 'endif'
                 return ast.IfExprAST(
-                    if_test, if_block, elif_list, else_block, self.__now_ln)
+                    if_test, if_block, elif_list, else_block, ln)
 
             else:
                 self.__syntax_error()
@@ -653,7 +681,7 @@ class Parser:
         if block is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != LAP_ENTER:
+        if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         return ast.WhileExprAST(test, block, ln)
@@ -748,13 +776,13 @@ class Parser:
 
         self.__next_tok()  # eat 'struct'
 
-        if self.__now_tok.ttype != LAP_IDENTIFIER:
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
 
         name = self.__now_tok.value
 
         if self.__next_tok() != 'is' or \
-                self.__next_tok().ttype != LAP_ENTER:
+                self.__next_tok().ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat ENTER
@@ -762,27 +790,27 @@ class Parser:
         vl = []
         pl = []
 
-        while self.__now_tok.ttype == LAP_ENTER:
+        while self.__now_tok.ttype == AIL_ENTER:
             self.__next_tok()
 
         while self.__now_tok != 'end':
-            if self.__now_tok.ttype != LAP_IDENTIFIER:
+            if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
 
             if self.__now_tok == 'protected':
                 nt = self.__next_tok()
-                if nt.ttype != LAP_IDENTIFIER:
+                if nt.ttype != AIL_IDENTIFIER:
                     self.__syntax_error()
                 pl.append(nt.value)
 
             vl.append(self.__now_tok.value)
 
-            if self.__next_tok().ttype != LAP_ENTER:
+            if self.__next_tok().ttype != AIL_ENTER:
                 self.__syntax_error()
 
             self.__next_tok()  # eat ENTER
 
-            while self.__now_tok.ttype == LAP_ENTER:
+            while self.__now_tok.ttype == AIL_ENTER:
                 self.__next_tok()
 
         if self.__now_tok != 'end':
@@ -799,7 +827,7 @@ class Parser:
         bindto = None
 
         if self.__now_tok == '(':
-            if self.__next_tok().ttype != LAP_IDENTIFIER:
+            if self.__next_tok().ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
             bindto = self.__now_tok.value
 
@@ -807,7 +835,7 @@ class Parser:
                 self.__syntax_error()
             self.__next_tok()
 
-        if self.__now_tok.ttype != LAP_IDENTIFIER:
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -827,14 +855,14 @@ class Parser:
             for a in arg_list.exp_list:
                 if not isinstance(a, ast.CellAST):
                     self.__syntax_error()
-                elif a.type != LAP_IDENTIFIER:
+                elif a.type != AIL_IDENTIFIER:
                     self.__syntax_error()
 
         self.__level += 1
 
         # for new function syntax (':' instead of 'is')
-        if self.__now_tok.ttype == LAP_COLON:
-            self.__now_tok.ttype = LAP_IDENTIFIER
+        if self.__now_tok.ttype == AIL_COLON:
+            self.__now_tok.ttype = AIL_IDENTIFIER
             self.__now_tok.value = 'is'
 
         block = self.__parse_block('is', 'end',
@@ -882,7 +910,7 @@ class Parser:
         expr = self.__parse_binary_expr()
 
         if expr is None or \
-                self.__now_tok.ttype != LAP_ENTER:
+                self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         return ast.ThrowExprAST(expr, self.__now_ln)
@@ -896,7 +924,7 @@ class Parser:
         expr = self.__parse_test_expr()
 
         if expr is None or \
-                self.__now_tok.ttype != LAP_ENTER:
+                self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         return ast.AssertExprAST(expr, self.__now_ln)
@@ -910,11 +938,11 @@ class Parser:
 
         self.__next_tok()  # eat 'import'
 
-        if self.__now_tok.ttype == LAP_IDENTIFIER:
+        if self.__now_tok.ttype == AIL_IDENTIFIER:
             alias = self.__now_tok.value
             self.__next_tok()  # eat name
 
-        if self.__now_tok.ttype != LAP_STRING:
+        if self.__now_tok.ttype != AIL_STRING:
             self.__syntax_error()
 
         path = self.__now_tok.value
@@ -940,7 +968,7 @@ class Parser:
 
         self.__next_tok()  # eat 'load'
 
-        if self.__now_tok.ttype != LAP_STRING:
+        if self.__now_tok.ttype != AIL_STRING:
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -955,14 +983,14 @@ class Parser:
 
         try_b = self.__parse_block(start='try', end='catch')
 
-        if try_b is None or self.__now_tok.ttype != LAP_IDENTIFIER:
+        if try_b is None or self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
 
         cname = self.__now_tok.value
 
         self.__next_tok()  # eat NAME
 
-        if self.__now_tok != 'then' or self.__next_tok().ttype != LAP_ENTER:
+        if self.__now_tok != 'then' or self.__next_tok().ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat ENTER
@@ -980,7 +1008,7 @@ class Parser:
 
                 in_finally = True
 
-                if self.__next_tok().ttype != LAP_ENTER:
+                if self.__next_tok().ttype != AIL_ENTER:
                     self.__syntax_error()
 
                 self.__next_tok()  # eat ENTER
@@ -1059,34 +1087,65 @@ class Parser:
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
-        elif nt.ttype not in (LAP_ENTER, LAP_EOF) and \
+        elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr()
 
-        elif nt.ttype == LAP_ENTER:
+        elif nt.ttype == AIL_ENTER:
             self.__next_tok()
             return ast.NullLineAST(self.__now_ln)
 
-        elif nt.ttype == LAP_EOF or (
-                nt.value in _end_signs and nt.ttype != LAP_STRING):
+        elif nt.ttype == AIL_EOF or (
+                nt.value in _end_signs and nt.ttype != AIL_STRING):
             return ast.EOFAST(self.__now_ln)
 
         else:
             self.__syntax_error('Unknown statement starts with %s' % nt.value)
 
-        if self.__now_tok.ttype != LAP_ENTER:  # a stmt should be end of ENTER
+        if self.__now_tok.ttype != AIL_ENTER:  # a stmt should be end of ENTER
             self.__syntax_error('A statement should end with ENTER')
 
         self.__next_tok()  # eat enter
 
         return a
 
+    def __parse_new_block(self) -> ast.BlockExprAST:
+        if self.__now_tok.ttype != AIL_LLBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()
+
+        if self.__now_tok.ttype != AIL_ENTER:
+            self.__syntax_error()
+
+        stmt_list = []
+        ln = self.__now_ln
+
+        while self.__now_tok.ttype != AIL_LRBASKET:
+
+            s = self.__parse_stmt()
+
+            if s is None:
+                self.__syntax_error()
+
+            if not isinstance(s, ast.NullLineAST):
+                stmt_list.append(s)
+
+            if isinstance(s, ast.EOFAST):
+                self.__syntax_error('block should ends with \'}\'')
+
+        self.__next_tok()  # eat '}'
+
+        return ast.BlockExprAST(stmt_list, ln)
+
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,
                       start_enter=True, for_if_else: bool = False) -> ast.BlockExprAST:
+        if self.__now_tok.ttype == AIL_LLBASKET:
+            return self.__parse_new_block()
 
         if for_if_else:
-            if self.__now_tok.ttype != LAP_ENTER:
+            if self.__now_tok.ttype != AIL_ENTER:
                 self.__syntax_error()
 
             self.__next_tok()  # eat enter
@@ -1100,7 +1159,7 @@ class Parser:
             if self.__now_tok != start:
                 self.__syntax_error(start_msg)
 
-            if start_enter and self.__next_tok().ttype != LAP_ENTER:
+            if start_enter and self.__next_tok().ttype != AIL_ENTER:
                 self.__syntax_error()
 
             self.__next_tok()  # eat enter
@@ -1148,7 +1207,7 @@ class Parser:
         self.__tc = 0
         self.__level = 0  # level 0
 
-        while self.__now_tok.ttype == LAP_ENTER:  # skip enter at beginning
+        while self.__now_tok.ttype == AIL_ENTER:  # skip enter at beginning
             self.__next_tok()
 
         return self.__parse_block('begin', 'end',

@@ -236,7 +236,7 @@ class Token:
 
     def __eq__(self, obj: object):
         if isinstance(obj, str):
-            return self.value == obj and self.ttype != LAP_STRING
+            return self.value == obj and self.ttype != AIL_STRING
         elif isinstance(obj, Token):
             return self.value == obj.value
         else:
@@ -244,7 +244,7 @@ class Token:
 
     def __ne__(self, obj: object):
         if isinstance(obj, str):
-            return self.value != obj and self.ttype != LAP_STRING
+            return self.value != obj and self.ttype != AIL_STRING
         elif isinstance(obj, Token):
             return self.value != obj.value
         else:
@@ -366,8 +366,6 @@ class Lex:
 
             self.__blevel = 0
 
-        buffer = ''
-
         while self.__chp < len(self.__source):
             c = self.__chnow
 
@@ -378,7 +376,7 @@ class Lex:
                 if self.__blevel == 0:
                     self.__stream.append(Token(
                         '\n',
-                        LAP_ENTER,
+                        AIL_ENTER,
                         self.__ln
                     ))
 
@@ -386,25 +384,25 @@ class Lex:
                 if self.__nextch() == '=':  # 原地运算
                     self.__stream.append(Token(c + '=',
                                                {
-                                                   '+': LAP_INP_PLUS,
-                                                   '*': LAP_INP_MUIT,
-                                                   '%': LAP_INP_MOD,
-                                                   '^': LAP_INP_XOR,
-                                                   '-': LAP_INP_SUB
+                                                   '+': AIL_INP_PLUS,
+                                                   '*': AIL_INP_MUIT,
+                                                   '%': AIL_INP_MOD,
+                                                   '^': AIL_INP_XOR,
+                                                   '-': AIL_INP_SUB
                                                }[c],  # 根据c得到单词类型
                                                self.__ln))
                     self.__movchr(2)
 
                 elif self.__nextch() in ('+', '-'):  # 自增自减
                     self.__stream.append(Token(c + c,
-                                               LAP_PLUS_PLUS if self.__nextch() == '+' else LAP_SUB_SUB,
+                                               AIL_PLUS_PLUS if self.__nextch() == '+' else AIL_SUB_SUB,
                                                self.__ln))
                     self.__movchr(2)
 
                 elif c == '|' and self.__nextch() == '|':  # ||
                     self.__stream.append(Token(
                         '||',
-                        LAP_OR,
+                        AIL_OR,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -412,7 +410,7 @@ class Lex:
                 elif c == '&' and self.__nextch() == '&':  # &&
                     self.__stream.append(Token(
                         '&&',
-                        LAP_AND,
+                        AIL_AND,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -420,13 +418,13 @@ class Lex:
                 else:
                     self.__stream.append(Token(c,
                                                {
-                                                   '+': LAP_PLUS,
-                                                   '*': LAP_MUIT,
-                                                   '%': LAP_MOD,
-                                                   '^': LAP_XOR,
-                                                   '|': LAP_BIN_OR,
-                                                   '&': LAP_BIN_AND,
-                                                   '-': LAP_SUB
+                                                   '+': AIL_PLUS,
+                                                   '*': AIL_MUIT,
+                                                   '%': AIL_MOD,
+                                                   '^': AIL_XOR,
+                                                   '|': AIL_BIN_OR,
+                                                   '&': AIL_BIN_AND,
+                                                   '-': AIL_SUB
                                                }[c],
                                                self.__ln))
                     self.__movchr(1)
@@ -442,8 +440,8 @@ class Lex:
 
                         self.__stream.append(Token(c + c + '=',
                                                    {
-                                                       '>>': LAP_INP_RSHIFT,
-                                                       '<<': LAP_INP_LSHIFT
+                                                       '>>': AIL_INP_RSHIFT,
+                                                       '<<': AIL_INP_LSHIFT
                                                    }.get(c + self.__nextch()),
                                                    self.__ln
                                                    ))
@@ -455,13 +453,13 @@ class Lex:
                             if c + self.__nextch() == '<>':  # 空参数列表
                                 self.__stream.append(Token(
                                     '<',
-                                    LAP_SMALER,
+                                    AIL_SMALER,
                                     self.__ln
                                 ))
 
                                 self.__stream.append(Token(
                                     '>',
-                                    LAP_LARGER,
+                                    AIL_LARGER,
                                     self.__ln
                                 ))
 
@@ -475,8 +473,8 @@ class Lex:
                         self.__stream.append(Token(
                             c + self.__nextch(),
                             {
-                                '>>': LAP_INP_RSHIFT,
-                                '<<': LAP_INP_LSHIFT
+                                '>>': AIL_INP_RSHIFT,
+                                '<<': AIL_INP_LSHIFT
                             }[c + self.__nextch()],
                             self.__ln
                         ))
@@ -485,7 +483,7 @@ class Lex:
                 elif self.__nextch() == '=':  # >=, <=
                     self.__stream.append(Token(
                         c + '=',
-                        LAP_LARGER_EQ if c == '>' else LAP_SMALER_EQ,
+                        AIL_LARGER_EQ if c == '>' else AIL_SMALER_EQ,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -493,7 +491,7 @@ class Lex:
                 else:  # >, <
                     self.__stream.append(Token(
                         c,
-                        LAP_LARGER if c == '>' else LAP_SMALER,
+                        AIL_LARGER if c == '>' else AIL_SMALER,
                         self.__ln
                     ))
                     self.__movchr()
@@ -504,7 +502,7 @@ class Lex:
                     self.__movchr(skip_comment_line(self.__source, self.__chp))
                     self.__stream.append(Token(
                         '\n',
-                        LAP_ENTER,
+                        AIL_ENTER,
                         self.__ln
                     ))
                     self.__ln += 1
@@ -523,7 +521,7 @@ class Lex:
                 elif self.__nextch == '=':
                     self.__stream.append(Token(
                         '/=',
-                        LAP_INP_DIV,
+                        AIL_INP_DIV,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -531,16 +529,16 @@ class Lex:
                 else:  # 单纯除法
                     self.__stream.append(Token(
                         '/',
-                        LAP_DIV,
+                        AIL_DIV,
                         self.__ln
                     ))
                     self.__movchr()
 
             elif c in ('(', ')', '[', ']', '{', '}',
                        ',', '.', ';', '$', '@', '#', '\\', ':'):
-                if c in ('(', '[', '{'):
+                if c in ('(', '['):
                     self.__blevel += 1
-                elif c in (')', ']', '}'):
+                elif c in (')', ']'):
                     self.__blevel -= 1 if self.__blevel > 0 else 0
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
@@ -548,20 +546,20 @@ class Lex:
                     self.__stream.append(Token(
                         c,
                         {
-                            '(': LAP_SLBASKET,
-                            ')': LAP_SRBASKET,
-                            '[': LAP_MLBASKET,
-                            ']': LAP_MRBASKET,
-                            '{': LAP_LLBASKET,
-                            '}': LAP_LRBASKET,
-                            ',': LAP_COMMA,
-                            '.': LAP_DOT,
-                            ';': LAP_SEMI,
-                            '$': LAP_MONEY,
-                            '@': LAP_AT,
-                            '#': LAP_WELL,
-                            '\\': LAP_ESCAPE,
-                            ':': LAP_COLON
+                            '(': AIL_SLBASKET,
+                            ')': AIL_SRBASKET,
+                            '[': AIL_MLBASKET,
+                            ']': AIL_MRBASKET,
+                            '{': AIL_LLBASKET,
+                            '}': AIL_LRBASKET,
+                            ',': AIL_COMMA,
+                            '.': AIL_DOT,
+                            ';': AIL_SEMI,
+                            '$': AIL_MONEY,
+                            '@': AIL_AT,
+                            '#': AIL_WELL,
+                            '\\': AIL_ESCAPE,
+                            ':': AIL_COLON
                         }[c],
                         self.__ln
                     ))
@@ -571,7 +569,7 @@ class Lex:
                 if self.__nextch() == '=':  # !=
                     self.__stream.append(Token(
                         '!=',
-                        LAP_UEQ,
+                        AIL_UEQ,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -579,12 +577,14 @@ class Lex:
                 else:  # NOT
                     self.__stream.append(Token(
                         '!',
-                        LAP_NOT,
+                        AIL_NOT,
                         self.__ln
                     ))
                     self.__movchr()
 
-            elif c.isspace() or ord(c) in [x for x in range(32) if x not in (10, 13)] or ord(c) == 127:
+            elif c.isspace() or ord(c) in [
+                    x for x in range(32) if x not in (10, 13)] or ord(c) == 127:
+
                 # 忽略空白符
                 self.__movchr()
 
@@ -593,7 +593,7 @@ class Lex:
                 mov, buf = get_identifier(self.__source, self.__chp)
                 self.__stream.append(Token(
                     buf,
-                    LAP_IDENTIFIER,
+                    AIL_IDENTIFIER,
                     self.__ln
                 ))
                 self.__movchr(mov)
@@ -606,7 +606,7 @@ class Lex:
 
                 self.__stream.append(Token(
                     buf,
-                    LAP_NUMBER,
+                    AIL_NUMBER,
                     self.__ln
                 ))
                 self.__movchr(mov)
@@ -615,7 +615,7 @@ class Lex:
                 if self.__nextch() == '=':  # 等于
                     self.__stream.append(Token(
                         '==',
-                        LAP_EQ,
+                        AIL_EQ,
                         self.__ln
                     ))
                     self.__movchr(2)
@@ -623,7 +623,7 @@ class Lex:
                 else:  # 赋值
                     self.__stream.append(Token(
                         '=',
-                        LAP_ASSI,
+                        AIL_ASSI,
                         self.__ln
                     ))
                     self.__movchr()
@@ -637,13 +637,12 @@ class Lex:
 
                 self.__stream.append(Token(
                     buf,
-                    LAP_STRING,
+                    AIL_STRING,
                     self.__ln
                 ))
 
                 self.__ln += lni
                 self.__movchr(mov)
-
 
             else:
                 error_msg(self.__ln, 'Unknown character', self.__filename)
@@ -651,13 +650,13 @@ class Lex:
         if self.__nextch(-1) != '\\n':
             self.__stream.append(Token(
                 '\n',
-                LAP_ENTER,
+                AIL_ENTER,
                 self.__ln
             ))  # 加回车是有利于语法分析行的检测
 
         self.__stream.append(Token(
             '<EOF>',
-            LAP_EOF,
+            AIL_EOF,
             self.__ln
         ))  # 加回车是有利于语法分析行的检测
 

@@ -90,18 +90,28 @@ class Shell:
 
         ts = Lex(self.__temp_name).lex()
 
-        for tok in ts.token_list[::-1]:
-            if tok.ttype == tokent.LAP_IDENTIFIER:
+        ignore_more = False
+        hold_on_more = 0
+
+        for tok in ts.token_list:
+            if tok.ttype == tokent.AIL_IDENTIFIER:
                 if tok.value in _MORE_KEYWORD:
                     return 1
                 if tok.value in _END_KEYWORD:
                     return -1
-            elif tok.ttype == tokent.LAP_COLON:
+            elif tok.ttype == tokent.AIL_COLON:
                 return 1
+            elif tok.ttype == tokent.AIL_LLBASKET:
+                if hold_on_more == 0:
+                    return 1
+                return 0
+            elif tok.ttype == tokent.AIL_LRBASKET:
+                hold_on_more = -1
 
-        return 0
+        return hold_on_more
 
-    def __print_welcome_text(self):
+    @staticmethod
+    def __print_welcome_text():
         v = ''
 
         try:
@@ -156,7 +166,17 @@ class Shell:
 
                 more = self.__get_more_line_state(line)
 
-                if more == 1:
+                if line == '!exit!':
+                    break
+
+                if line == '!break!':
+                    self.__buffer.clear()
+                    self.__more_level = 0
+                    in_more = False
+                    ps = self.ps1
+                    continue
+
+                elif more == 1:
                     self.__more_level += 1
                     in_more = True
                     ps = self.ps2
