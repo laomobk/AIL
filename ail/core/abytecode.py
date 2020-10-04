@@ -3,6 +3,8 @@ from typing import List
 
 from . import aobjects as obj
 
+from .aconfig import _BYTE_CODE_SIZE
+
 from ..objects import (
     string  as astr,
     integer as aint,
@@ -12,31 +14,6 @@ from ..objects import (
 )
 
 from ..objects.null import null
-
-
-class ByteCode:
-    """表示字节码序列"""
-
-    def __init__(self, blist=None):
-        self.blist = blist if blist is not None else list()
-
-    def to_bytes(self) -> bytes:
-        return bytes(self.blist)
-
-    def add_bytecode(self, opcode: int, argv: int):
-        self.blist += [opcode, argv]
-
-    def __add__(self, b):
-        return ByteCode(self.blist + b.blist)
-
-    def __iadd__(self, b):
-        self.blist += b.blist
-        return self
-
-    # @debugger.debug_python_runtime
-    def __setattr__(self, n, v):
-        # print('attr set %s = %s' % (n, v))
-        super().__setattr__(n, v)
 
 
 class LineNumberTableGenerator:
@@ -80,6 +57,31 @@ class LineNumberTableGenerator:
         self.__sum_ofs = offset - self.__last_ofs
 
         self.__update_lnotab()
+
+
+class ByteCode:
+    """表示字节码序列"""
+
+    def __init__(self, blist=None):
+        self.blist = blist if blist is not None else list()
+
+    def to_bytes(self) -> bytes:
+        return bytes(self.blist)
+
+    def add_bytecode(self, opcode: int, argv: int):
+        self.blist += [opcode, argv]
+
+    def __add__(self, b):
+        return ByteCode(self.blist + b.blist)
+
+    def __iadd__(self, b):
+        self.blist += b.blist
+        return self
+
+    # @debugger.debug_python_runtime
+    def __setattr__(self, n, v):
+        # print('attr set %s = %s' % (n, v))
+        super().__setattr__(n, v)
 
 
 class ByteCodeFileBuffer:

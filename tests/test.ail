@@ -1,9 +1,10 @@
 begin
 
-l = [1, 2, 3]
 
 while true {
-    print 'Hello Nezha'
+    if test {
+        print 'Hello world'
+    }
 }
 
 end

@@ -11,6 +11,8 @@ from .abytecode import (
     LineNumberTableGenerator,
 )
 
+from .aconfig import _BYTE_CODE_SIZE
+
 from . import (
     aobjects as obj,
     aobjects as objs,
@@ -29,8 +31,6 @@ from ..objects import (
 from ..objects.null import null
 
 __author__ = 'LaomoBK'
-
-_BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
 
 COMPILER_MODE_FUNC = 0x1
 COMPILER_MODE_MAIN = 0x2
@@ -87,11 +87,11 @@ class Compiler:
         self.__flag |= f
 
     def __flag_cmp(self, f: int) -> bool:
-        return self.__flag & f
+        return bool(self.__flag & f)
 
-    def __bytecode_update(self, bytecode: ByteCode):
+    def __bytecode_update(self, bytecode: ByteCode, lno: int):
         self.__general_bytecode.blist += bytecode.blist
-        self.__lnotab.check()
+        self.__lnotab.check(lno)
 
     @property
     def __now_offset(self) -> int:

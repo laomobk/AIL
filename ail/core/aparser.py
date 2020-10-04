@@ -154,6 +154,8 @@ class Parser:
         return ast.ItemListAST(il, self.__now_ln)
 
     def __parse_array_expr(self) -> ast.ArrayAST:
+        ln = self.__now_ln
+
         if self.__now_tok.ttype != AIL_MLBASKET:
             self.__syntax_error()
 
@@ -161,7 +163,7 @@ class Parser:
 
         if self.__now_tok.ttype == AIL_MRBASKET:
             self.__next_tok()  # eat ']'
-            return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), self.__now_ln)
+            return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), ln)
 
         items = self.__parse_item_list()
 
@@ -173,7 +175,7 @@ class Parser:
         if items is None:
             self.__syntax_error()
 
-        return ast.ArrayAST(items, self.__now_ln)
+        return ast.ArrayAST(items, ln)
 
     def __parse_member_access_expr(self, set_attr=False, try_=False) -> ast.MemberAccessAST:
         left = self.__parse_cell_or_call_expr()
@@ -981,7 +983,16 @@ class Parser:
         if self.__now_tok != 'try':
             self.__syntax_error()
 
+        new_block_style = False
+
+        if self.__peek(1).ttype == AIL_LLBASKET:
+            new_block_style = True
+            self.__next_tok()  # eat '{'
+
         try_b = self.__parse_block(start='try', end='catch')
+
+        if new_block_style:
+            self.__next_tok()  # eat 'catch'
 
         if try_b is None or self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
@@ -990,7 +1001,8 @@ class Parser:
 
         self.__next_tok()  # eat NAME
 
-        if self.__now_tok != 'then' or self.__next_tok().ttype != AIL_ENTER:
+        if (self.__now_tok != 'then' and not new_block_style) or \
+                self.__next_tok().ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat ENTER
