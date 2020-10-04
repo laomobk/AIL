@@ -105,7 +105,7 @@ class ByteCodeFileBuffer:
         """
         若const not in self.consts:
             将const加入到self.consts中
-        return : const 在 self.consts 中的index
+        :return: const 在 self.consts 中的index
         """
         # convert const to ail object
         target = {
@@ -138,7 +138,7 @@ class ByteCodeFileBuffer:
     def get_or_add_varname_index(self, name: str):
         """
         若 name 不存在 varname，则先加入到varname再返回
-        return : index of name in self.varnames
+        :return: index of name in self.varnames
         """
 
         if name not in self.varnames:
