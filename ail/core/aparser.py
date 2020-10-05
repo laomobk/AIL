@@ -754,12 +754,25 @@ class Parser:
 
     def __parse_do_loop_expr(self) -> ast.DoLoopExprAST:
         ln = self.__now_ln
-        block = self.__parse_block('do', 'loop',
-                                   'do loop statement should starts with \'do\'',
-                                   "do loop statement should ends with 'until'")
+
+        new_block_style = False
+
+        if self.__peek(1).ttype != AIL_LLBASKET:
+            block = self.__parse_block('do', 'loop',
+                                       'do loop statement should starts with \'do\'',
+                                       "do loop statement should ends with 'until'")
+        else:
+            new_block_style = True
+            self.__next_tok()  # eat 'do'
+            block = self.__parse_block()
 
         if block is None:
             self.__syntax_error()
+
+        if new_block_style:
+            if self.__now_tok != 'loop':
+                self.__syntax_error()
+            self.__next_tok()  # eat 'loop'
 
         if self.__now_tok != 'until':
             self.__syntax_error()
@@ -979,6 +992,38 @@ class Parser:
 
         return ast.LoadAST(name, ln)
 
+    def __parse_new_catch_finally_body(self,
+            try_block: ast.BlockExprAST) -> ast.TryCatchExprAST:
+        if self.__now_tok != 'catch':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'catch'
+
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error('require NAME')
+
+        cname = self.__now_tok.value
+
+        self.__next_tok()  # eat NAME
+
+        catch_block = self.__parse_block()
+        if catch_block is None:
+            self.__syntax_error()
+
+        if self.__now_tok != 'finally':
+            return ast.TryCatchExprAST(
+                    try_block, catch_block, 
+                    ast.BlockExprAST([], self.__now_ln), cname, ln)
+
+        self.__next_tok()  # eat 'finally'
+
+        finally_block = self.__parse_block()
+
+        return ast.TryCatchExprAST(
+                try_block, catch_block, finally_block, cname, ln)
+
     def __parse_try_catch_expr(self) -> ast.TryCatchExprAST:
         if self.__now_tok != 'try':
             self.__syntax_error()
@@ -992,6 +1037,9 @@ class Parser:
         try_b = self.__parse_block(start='try', end='catch')
 
         if new_block_style:
+            return self.__parse_new_catch_finally_body(try_b)
+
+        if new_block_style:
             self.__next_tok()  # eat 'catch'
 
         if try_b is None or self.__now_tok.ttype != AIL_IDENTIFIER:
@@ -1001,8 +1049,7 @@ class Parser:
 
         self.__next_tok()  # eat NAME
 
-        if (self.__now_tok != 'then' and not new_block_style) or \
-                self.__next_tok().ttype != AIL_ENTER:
+        if self.__now_tok != 'then' or self.__next_tok().ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat ENTER
