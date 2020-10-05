@@ -38,13 +38,13 @@ class NullType:
 # null = NullType()
 
 class AILCodeObject:
-    __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno',
+    __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno', 'lineno_list',
                  'argcount', 'name', 'lnotab', 'closure', 'is_main',
                  '_closure_outer')
 
     def __init__(self, consts: list, varnames: list,
                  bytecodes: list, firstlineno: int,
-                 argcount: int, name: str, lnotab: list,
+                 argcount: int, name: str, lnotab: list, lineno_list: tuple,
                  closure: bool = False, is_main: bool = False):
         self.consts = consts
         self.varnames = varnames
@@ -55,6 +55,7 @@ class AILCodeObject:
         self.lnotab = lnotab
         self.closure = closure
         self.is_main = is_main
+        self.lineno_list = lineno_list
 
         self._closure_outer: list = list()  # empty if not closure
 

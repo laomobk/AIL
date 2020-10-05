@@ -310,7 +310,14 @@ class ByteCodeDisassembler:
 
             self.__check_jump_point(bc, argv)
 
-            print('\t', bi, self.__get_opname(bc), argv,
+            lni = int(bi / 2)
+
+            if 0 <= lni < len(self.__now_buffer.lineno_list):
+                ln = self.__now_buffer.lineno_list[lni]
+            else:
+                ln = -1
+
+            print('\t', ln if ln >= 0 else '', bi, self.__get_opname(bc), argv,
                   comment, self.__get_jump_point_commit(),
                   sep='\t')
 

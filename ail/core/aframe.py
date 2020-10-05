@@ -5,7 +5,7 @@ class Frame:
     __slots__ = ('code', 'stack', 'varnames', 'consts',
                  'variable', 'break_stack', 'temp_env_stack',
                  'try_stack', '_marked_opcounter', '_latest_call_opcounter',
-                 'closure_outer', 'globals')
+                 'closure_outer', 'globals', 'lineno')
 
     def __init__(self, code: objs.AILCodeObject = None, varnames: list = None,
                  consts: list = None, globals: dict = None,
@@ -18,6 +18,7 @@ class Frame:
         self.break_stack = []
         self.temp_env_stack = []
         self.try_stack = []
+        self.lineno = 0
 
         # for closure
         self.closure_outer = closure_outer_variable \

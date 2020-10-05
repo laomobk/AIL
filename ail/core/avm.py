@@ -305,7 +305,7 @@ class Interpreter:
     def __raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
-                msg, err_type, self.__tof), self.__tof.code.name, self.__opcounter)
+                msg, err_type, self.__tof), self.__tof.code.name, self.__tof.lineno)
 
         if err_type not in 'VMError':
             self.__now_state.err_stack.append(errs)
@@ -313,7 +313,7 @@ class Interpreter:
             error.print_global_error(
                 error.AILRuntimeError(msg, err_type, self.__tof),
                 '%s +%s' %
-                (self.__tof.code.name, self.__opcounter))
+                (self.__tof.code.name, self.__tof.lineno))
 
         self.__now_state.handling_err_stack.append(errs)
 
@@ -403,6 +403,18 @@ class Interpreter:
                 return jump_to
 
         return 0
+
+    def __update_lineno(self):
+        ln_index = int(self.__opcounter / 2)
+        lno_list = self.__tof.code.lineno_list
+
+        if ln_index < 0 or ln_index >= len(lno_list):
+            return
+
+        lno = lno_list[ln_index]
+
+        if lno >= 0:
+            self.__tof.lineno = lno
 
     def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
         if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
@@ -665,12 +677,15 @@ class Interpreter:
                 op = code[self.__opcounter]
                 argv = code[self.__opcounter + 1]
 
+                self.__update_lineno()
+
                 # 解释字节码选用类似 ceval.c 的巨型switch做法
                 # 虽然可能不太美观，但是能提高运行速度
                 # 如果有时间，我会写一个新的（动态获取attr）解释方法
                 # 速度可能会慢些
 
-                # print(self.__opcounter, get_opname(op), self.__tof, self.__stack)
+                # print(self.__opcounter, get_opname(op),
+                #       self.__tof, self.__stack, self.__tof.lineno)
 
                 # print(self.__opcounter)
 
@@ -1049,7 +1064,7 @@ class Interpreter:
                         bound_function['__globals__'] = self.__frame_stack[0].variable
 
                     target_struct['__bind_functions__'][func_name] = bound_function
-                
+
                 # handle interruption
                 if self.__interrupted:
                     self.__interrupted = False
@@ -1113,6 +1128,7 @@ class Interpreter:
         else:
             f = frame
 
+        f.lineno = cobj.firstlineno
         f.variable['__is_main__'] = objs.convert_to_ail_object(cobj.is_main)
 
         self.__exec_for_module = exec_for_module

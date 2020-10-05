@@ -64,18 +64,22 @@ class ByteCode:
 
     def __init__(self, blist=None):
         self.blist = blist if blist is not None else list()
+        self.lineno_list = list()
 
     def to_bytes(self) -> bytes:
         return bytes(self.blist)
 
-    def add_bytecode(self, opcode: int, argv: int):
+    def add_bytecode(self, opcode: int, argv: int, lineno: int):
         self.blist += [opcode, argv]
+        self.lineno_list.append(lineno)
 
-    def __add__(self, b):
-        return ByteCode(self.blist + b.blist)
+    def __add__(self, b: 'ByteCode'):
+        bc = ByteCode(self.blist + b.blist)
+        bc.lineno_list = self.lineno_list + b.lineno_list
 
-    def __iadd__(self, b):
+    def __iadd__(self, b: 'ByteCode'):
         self.blist += b.blist
+        self.lineno_list.extend(b.lineno_list)
         return self
 
     # @debugger.debug_python_runtime
@@ -96,6 +100,8 @@ class ByteCodeFileBuffer:
         self.lnotab: LineNumberTableGenerator = None
         self.argcount = 0
         self.name = '<DEFAULT>'
+        self.first_lineno = 0
+        self.lineno_list: List[int] = []
 
     def serialize(self) -> bytes:
         """
@@ -151,7 +157,7 @@ class ByteCodeFileBuffer:
     def code_object(self) -> obj.AILCodeObject:
         return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes.blist,
                                  self.lnotab.firstlineno, self.argcount,
-                                 self.name, self.lnotab)
+                                 self.name, self.lnotab.table, tuple(self.lineno_list))
 
     def dump_obj(self):
         """

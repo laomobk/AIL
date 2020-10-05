@@ -130,7 +130,8 @@ class Compiler:
             s, i = self.__do_cell_ast(tree)
 
             bc.add_bytecode(
-                load_const if s == 0 else (load_attr if is_attr else load_variable), i)
+                load_const if s == 0 else (load_attr if is_attr else load_variable),
+                i, tree.ln)
 
             return bc
 
@@ -168,7 +169,7 @@ class Compiler:
             rbc = self.__compile_binary_expr(rtree)
             bc += rbc
 
-            bc.add_bytecode(opc, 0)
+            bc.add_bytecode(opc, 0, rtree.ln)
 
         return bc
 
@@ -180,7 +181,7 @@ class Compiler:
         bc += rbc
 
         if tree.op == '-':
-            bc.add_bytecode(unary_negative, 0)
+            bc.add_bytecode(unary_negative, 0, tree.ln)
 
         return bc
 
@@ -205,7 +206,7 @@ class Compiler:
         for et in tree.members[:-1]:
             if isinstance(et, ast.CellAST):
                 s, i = self.__do_cell_ast(et)
-                bc.add_bytecode(load_attr, i)
+                bc.add_bytecode(load_attr, i, et.ln)
 
             else:
                 etc = {
@@ -218,7 +219,7 @@ class Compiler:
         lt = tree.members[-1]
         if isinstance(lt, ast.CellAST):
             ni = self.__buffer.get_or_add_varname_index(lt.value)
-            bc.add_bytecode(store_attr if set_attr else load_attr, ni)
+            bc.add_bytecode(store_attr if set_attr else load_attr, ni, lt.ln)
 
         elif isinstance(lt, ast.SubscriptExprAST):
             bc += self.__compile_subscript_expr(lt, True, set_attr)
@@ -245,7 +246,7 @@ class Compiler:
 
         if store_target == store_var:
             ni = self.__buffer.get_or_add_varname_index(left.value)
-            bc.add_bytecode(store_target, ni)
+            bc.add_bytecode(store_target, ni, tree.ln)
 
         elif store_target == store_attr:
             ebc = self.__compile_member_access_expr(tree.left, True)
@@ -255,7 +256,7 @@ class Compiler:
             bc += self.__compile_subscript_expr(tree.left, False, True)
 
         if single:
-            bc.add_bytecode(pop_top, 0)
+            bc.add_bytecode(pop_top, 0, tree.ln)
 
         return bc
 
@@ -266,10 +267,10 @@ class Compiler:
         expc = self.__compile_binary_expr(tree.value)
 
         bc += expc
-        bc.add_bytecode(store_var, ni)
+        bc.add_bytecode(store_var, ni, tree.ln)
 
         if single:
-            bc.add_bytecode(pop_top, 0)
+            bc.add_bytecode(pop_top, 0, tree.ln)
 
         return bc
 
@@ -286,7 +287,7 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
             bc += etc
 
-        bc.add_bytecode(call_func, len(expl))
+        bc.add_bytecode(call_func, len(expl), tree.ln)
 
         return bc
 
@@ -300,7 +301,7 @@ class Compiler:
         bc += lc
         bc += ec
 
-        bc.add_bytecode(binary_subscr if not store else store_subscr, 0)
+        bc.add_bytecode(binary_subscr if not store else store_subscr, 0, tree.ln)
 
         return bc
 
@@ -313,7 +314,7 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
             bc += etc
 
-        bc.add_bytecode(build_array, len(items.item_list))
+        bc.add_bytecode(build_array, len(items.item_list), tree.ln)
 
         return bc
 
@@ -326,7 +327,7 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
             bc += etc
 
-        bc.add_bytecode(print_value, len(expl))
+        bc.add_bytecode(print_value, len(expl), tree.ln)
 
         return bc
 
@@ -340,9 +341,9 @@ class Compiler:
 
         for name in vl:
             ni = self.__buffer.get_or_add_varname_index(name)
-            bc.add_bytecode(load_varname, ni)
+            bc.add_bytecode(load_varname, ni, tree.value_list.ln)
 
-        bc.add_bytecode(input_value, len(vl))
+        bc.add_bytecode(input_value, len(vl), tree.ln)
 
         return bc
 
@@ -371,13 +372,13 @@ class Compiler:
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
-        bc.add_bytecode(setup_try, to_catch)
+        bc.add_bytecode(setup_try, to_catch, tree.ln)
         bc += tbc
-        bc.add_bytecode(clean_try, 0)
-        bc.add_bytecode(jump_absolute, jump_over)
-        bc.add_bytecode(setup_catch, ni)
+        bc.add_bytecode(clean_try, 0, -1)
+        bc.add_bytecode(jump_absolute, jump_over, -1)
+        bc.add_bytecode(setup_catch, ni, -1)
         bc += cabc
-        bc.add_bytecode(clean_catch, 0)
+        bc.add_bytecode(clean_catch, 0, -1)
         bc += fnbc
 
         return bc
@@ -389,7 +390,7 @@ class Compiler:
         if isinstance(tree, ast.CellAST):
             s, i = self.__do_cell_ast(tree)
 
-            bc.add_bytecode(load_const if s == 0 else load_variable, i)
+            bc.add_bytecode(load_const if s == 0 else load_variable, i, tree.ln)
 
             return bc
 
@@ -416,7 +417,7 @@ class Compiler:
             etc = self.__compile_binary_expr(et)
 
             bc += etc
-            bc.add_bytecode(compare_op, opi)
+            bc.add_bytecode(compare_op, opi, et.ln)
 
         return bc
 
@@ -426,7 +427,7 @@ class Compiler:
         if isinstance(tree, ast.NotTestAST):
             bce = self.__compile_comp_expr(tree.expr, extofs)
             bc += bce
-            bc.add_bytecode(binary_not, 0)
+            bc.add_bytecode(binary_not, 0, tree.ln)
 
             return bc
         return self.__compile_comp_expr(tree, extofs)
@@ -465,7 +466,7 @@ class Compiler:
         bc += lbc
 
         for tbc in rbcl:
-            bc.add_bytecode(jump_if_true_or_pop, jofs)
+            bc.add_bytecode(jump_if_true_or_pop, jofs, -1)
             bc += tbc
             jopc += 1
 
@@ -514,7 +515,7 @@ class Compiler:
         bc += lbc
 
         for tbc in rbcl:
-            bc.add_bytecode(jump_if_false_or_pop, jofs)
+            bc.add_bytecode(jump_if_false_or_pop, jofs, -1)
             bc += tbc
             jopc += 1
 
@@ -554,13 +555,13 @@ class Compiler:
         to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2
         # including setup_while and jump over block
 
-        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE)  # jump over clean_loop
+        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
         bc += tc
-        bc.add_bytecode(jump_if_false_or_pop, to)
+        bc.add_bytecode(jump_if_false_or_pop, to, -1)
 
         bc += bcc
-        bc.add_bytecode(jump_absolute, back)
-        bc.add_bytecode(clean_loop, 0)
+        bc.add_bytecode(jump_absolute, back, -1)
+        bc.add_bytecode(clean_loop, 0, -1)
 
         return bc
 
@@ -575,7 +576,7 @@ class Compiler:
 
         jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 2
 
-        bc.add_bytecode(setup_doloop, jump_over + _BYTE_CODE_SIZE)  # jump over clean_loop
+        bc.add_bytecode(setup_doloop, jump_over + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
 
         test_jump = extofs + len(bcc.blist)
 
@@ -585,8 +586,8 @@ class Compiler:
         bc += tc
 
         jump_back = extofs + _BYTE_CODE_SIZE  # over setup_doloop
-        bc.add_bytecode(jump_if_false_or_pop, jump_back)
-        bc.add_bytecode(clean_loop, 0)
+        bc.add_bytecode(jump_if_false_or_pop, jump_back, -1)
+        bc.add_bytecode(clean_loop, 0, -1)
 
         return bc
 
@@ -608,7 +609,7 @@ class Compiler:
             tbc = self.__compile_test_expr(tree.test, test_ext)
         else:
             tbc = ByteCode()
-            tbc.add_bytecode(load_const, self.__buffer.add_const(True))
+            tbc.add_bytecode(load_const, self.__buffer.add_const(True), tree.ln)
 
         block_ext = extofs + len(tbc.blist) + len(initbc.blist) + _BYTE_CODE_SIZE
         # _byte_code_size is for jump_if_false_or_pop
@@ -623,14 +624,14 @@ class Compiler:
         jump_over = block_ext + len(blc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
         # _byte_code_size for jump_absolute
 
-        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE)  # jump over clean_loop
+        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
         bc += initbc
         bc += tbc
-        bc.add_bytecode(jump_if_false_or_pop, jump_over)
+        bc.add_bytecode(jump_if_false_or_pop, jump_over, -1)
         bc += blc
         bc += updbc
-        bc.add_bytecode(jump_absolute, jump_back)
-        bc.add_bytecode(clean_for, 0)
+        bc.add_bytecode(jump_absolute, jump_back, -1)
+        bc.add_bytecode(clean_for, 0, -1)
 
         return bc
 
@@ -663,13 +664,13 @@ class Compiler:
         # last _byte_code_size is for 'jump_if_false_or_pop'
 
         if has_else:
-            ifbc.add_bytecode(jump_absolute, jump_over)
+            ifbc.add_bytecode(jump_absolute, jump_over, -1)
 
         test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE
         # 不需要加elbc的长度
 
         # tc = self.__compile_test_expr(tree.test, test_jump)
-        tc.add_bytecode(pop_jump_if_false_or_pop, test_jump)
+        tc.add_bytecode(pop_jump_if_false_or_pop, test_jump, -1)
 
         bc += tc
         bc += ifbc
@@ -682,19 +683,19 @@ class Compiler:
         bce = self.__compile_binary_expr(tree.expr)
 
         bc += bce
-        bc.add_bytecode(return_value, 0)
+        bc.add_bytecode(return_value, 0, -1)
 
         return bc
 
     def __compile_break_expr(self, tree: ast.BreakAST) -> ByteCode:
         bc = ByteCode()
-        bc.add_bytecode(break_loop, 0)
+        bc.add_bytecode(break_loop, 0, tree.ln)
 
         return bc
 
     def __compile_continue_expr(self, tree: ast.ContinueAST) -> ByteCode:
         bc = ByteCode()
-        bc.add_bytecode(continue_loop, 0)
+        bc.add_bytecode(continue_loop, 0, tree.ln)
 
         return bc
 
@@ -708,9 +709,9 @@ class Compiler:
 
         bc += ec
 
-        bc.add_bytecode(jump_if_true_or_pop, jump)
-        bc.add_bytecode(load_const, ci)
-        bc.add_bytecode(throw_error, 0)
+        bc.add_bytecode(jump_if_true_or_pop, jump, -1)
+        bc.add_bytecode(load_const, ci, -1)
+        bc.add_bytecode(throw_error, 0, tree.ln)
 
         return bc
 
@@ -720,7 +721,7 @@ class Compiler:
         ec = self.__compile_binary_expr(tree.expr)
 
         bc += ec
-        bc.add_bytecode(throw_error, 0)
+        bc.add_bytecode(throw_error, 0, tree.ln)
 
         return bc
 
@@ -729,7 +730,7 @@ class Compiler:
 
         ni = self.__buffer.add_const(tree.path)
 
-        bc.add_bytecode(load_module, ni)
+        bc.add_bytecode(load_module, ni, tree.ln)
 
         return bc
 
@@ -739,8 +740,8 @@ class Compiler:
         nsi = self.__buffer.add_const(tree.path)
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
-        bc.add_bytecode(import_name, nsi)
-        bc.add_bytecode(store_var, ni)
+        bc.add_bytecode(import_name, nsi, tree.ln)
+        bc.add_bytecode(store_var, ni, tree.ln)
 
         return bc
 
@@ -770,12 +771,12 @@ class Compiler:
         bindtoi = self.__buffer.get_or_add_varname_index(tree.bindto) \
             if has_bindto else 0
 
-        bc.add_bytecode(load_const, ci)
+        bc.add_bytecode(load_const, ci, tree.ln)
         if has_bindto:
-            bc.add_bytecode(load_varname, namei)
-            bc.add_bytecode(bind_function, bindtoi)
+            bc.add_bytecode(load_varname, namei, tree.ln)
+            bc.add_bytecode(bind_function, bindtoi, tree.ln)
         else:
-            bc.add_bytecode(store_function, namei)
+            bc.add_bytecode(store_function, namei, tree.ln)
 
         return bc
 
@@ -789,10 +790,10 @@ class Compiler:
         for et in tree.arg_list.exp_list:
             bc += self.__compile_binary_expr(et)
 
-        bc.add_bytecode(call_func, len(tree.arg_list.exp_list))
+        bc.add_bytecode(call_func, len(tree.arg_list.exp_list), tree.ln)
 
         if not self.__is_single_line:
-            bc.add_bytecode(pop_top, 0)
+            bc.add_bytecode(pop_top, 0, -1)
 
         return bc
 
@@ -803,14 +804,14 @@ class Compiler:
 
         for n in tree.name_list:
             ni = self.__buffer.get_or_add_varname_index(n)
-            bc.add_bytecode(load_varname, ni)
+            bc.add_bytecode(load_varname, ni, tree.ln)
             if n in plist:
-                bc.add_bytecode(set_protected, 0)
+                bc.add_bytecode(set_protected, 0, tree.ln)
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
-        bc.add_bytecode(load_varname, ni)
-        bc.add_bytecode(store_struct, len(tree.name_list) + len(plist))
+        bc.add_bytecode(load_varname, ni, tree.ln)
+        bc.add_bytecode(store_struct, len(tree.name_list) + len(plist), tree.ln)
 
         return bc
 
@@ -886,7 +887,7 @@ class Compiler:
                 tbc = self.__compile_binary_expr(et, is_single=True)
 
                 if not self.__is_single_line:
-                    tbc.add_bytecode(pop_top, 0)
+                    tbc.add_bytecode(pop_top, 0, -1)
 
             else:
                 print('W: Unknown AST type: %s' % type(et))
@@ -913,8 +914,8 @@ class Compiler:
 
         ni = self.__buffer.add_const(null)
 
-        bc.add_bytecode(load_const, ni)
-        bc.add_bytecode(return_value, 0)
+        bc.add_bytecode(load_const, ni, -1)
+        bc.add_bytecode(return_value, 0, -1)
 
         return bc
 
@@ -932,6 +933,8 @@ class Compiler:
         tbc += self.__make_final_return()
 
         self.__buffer.bytecodes = tbc
+        self.__buffer.first_lineno = astree.ln
+        self.__buffer.lineno_list = tbc.lineno_list
 
         return self.__buffer
 
@@ -966,8 +969,8 @@ def test_compiler():
     from .aparser import Parser
     from .alex import Lex
 
-    l = Lex('./tests/test.ail')
-    ts = l.lex()
+    lex = Lex('./tests/test.ail')
+    ts = lex.lex()
 
     p = Parser('./tests/test.ail')
     t = p.parse(ts)

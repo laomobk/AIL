@@ -243,6 +243,8 @@ class Parser:
         return left
 
     def __parse_low_cell_expr(self) -> ast.ExprAST:
+        ln = self.__now_ln
+
         if self.__now_tok.ttype == AIL_MLBASKET:
             a = self.__parse_array_expr()
 
@@ -277,7 +279,7 @@ class Parser:
 
         self.__next_tok()  # eat NAME
 
-        return ast.CellAST(name, nt.ttype, self.__now_ln)
+        return ast.CellAST(name, nt.ttype, ln)
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
         if self.__now_tok.ttype == AIL_SUB:
@@ -394,6 +396,7 @@ class Parser:
         return ast.BinaryExprAST(left_op, left, rl, self.__now_ln)
 
     def __parse_print_expr(self) -> ast.PrintExprAST:
+        ln = self.__now_ln
         self.__next_tok()  # eat 'PRINT'
 
         exp = self.__parse_binary_expr()
@@ -412,7 +415,7 @@ class Parser:
 
             el.append(e)
 
-        return ast.PrintExprAST(el, self.__now_ln)
+        return ast.PrintExprAST(el, ln)
 
     def __parse_input_expr(self) -> ast.InputExprAST:
         self.__next_tok()  # eat 'INPUT'
@@ -1182,13 +1185,14 @@ class Parser:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
+        ln = self.__now_ln
+
         self.__next_tok()
 
         if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         stmt_list = []
-        ln = self.__now_ln
 
         while self.__now_tok.ttype != AIL_LRBASKET:
 
@@ -1213,6 +1217,8 @@ class Parser:
         if self.__now_tok.ttype == AIL_LLBASKET:
             return self.__parse_new_block()
 
+        ln = self.__now_ln
+
         if for_if_else:
             if self.__now_tok.ttype != AIL_ENTER:
                 self.__syntax_error()
@@ -1222,7 +1228,7 @@ class Parser:
             if self.__now_tok in ('else', 'elif', 'endif'):
                 # not eat, leave to if_else parse
 
-                return ast.BlockExprAST([], self.__now_ln)
+                return ast.BlockExprAST([], ln)
 
         else:
             if self.__now_tok != start:
@@ -1235,7 +1241,7 @@ class Parser:
 
             if self.__now_tok == end:  # empty block
                 self.__next_tok()
-                return ast.BlockExprAST([], self.__now_ln)
+                return ast.BlockExprAST([], ln)
 
         first = self.__parse_stmt((start, end))
 
@@ -1252,7 +1258,7 @@ class Parser:
 
         while self.__now_tok != end:
             if for_if_else and self.__now_tok.value in ('elif', 'else', 'endif'):
-                return ast.BlockExprAST(stmtl, self.__now_ln)
+                return ast.BlockExprAST(stmtl, ln)
 
             s = self.__parse_stmt((start, end))
 
@@ -1267,7 +1273,7 @@ class Parser:
 
         self.__next_tok()  # eat end
 
-        return ast.BlockExprAST(stmtl, self.__now_ln)
+        return ast.BlockExprAST(stmtl, ln)
 
     def parse(self, ts: TokenStream) -> ast.BlockExprAST:
         self.__tok_stream = ts

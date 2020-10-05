@@ -2,7 +2,7 @@ begin
 
 do { 
     a = 0
-    print a
+    print b
 } loop until a == 0
 
 end

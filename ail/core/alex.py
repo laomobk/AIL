@@ -314,7 +314,7 @@ class Lex:
     def __get_source(self, filename: str) -> str:
         try:
             return open(filename, encoding='utf-8').read()
-        except UnicodeDecodeError as e:
+        except (UnicodeDecodeError, OSError) as e:
             return error_msg(-1, str(e), filename)
 
     @property
