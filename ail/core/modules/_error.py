@@ -1,6 +1,6 @@
 import sys
 
-from ..error import AILRuntimeError
+from ..error import AILRuntimeError, get_line_from_line_no
 from ...objects.struct import new_struct_object, convert_to_pyobj
 from ...objects.null import null
 from ..astate import MAIN_INTERPRETER_STATE
@@ -10,17 +10,25 @@ from ..aobjects import unpack_ailobj, convert_to_ail_object
 def _err_to_string(this):
     this = convert_to_pyobj(this)
 
-    ofs = this.__this___offset
+    lno = this.__this___lineno
+    frame = this.__this___frame
     msg = this.__this_err_msg
     type = this.__this_err_type
-    where = this.__this_err_where
+    where = frame.code.name
+    filename = frame.code.filename
 
-    return '%s%s : %s' % ('in \'%s\' + %s :\n\t' %
-                          (where, ofs) if where else '',
-                          type, msg)
+    source_line = get_line_from_line_no(lno, filename)
+    line_detail = ''
+
+    if source_line != '':
+        line_detail = '    %s\n' % source_line
+
+    return '%s%s%s: %s' % ('  File \'%s\', line %s, in %s\n' %
+                            (filename, lno, where) if where else '',
+                            line_detail, type, msg)
 
 
-def make_err_struct_object(err_obj: AILRuntimeError, where: str, offset=-1):
+def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -1):
     msg = err_obj.msg
     type = err_obj.err_type
     frame = err_obj.frame
@@ -30,7 +38,7 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, offset=-1):
         'err_type': convert_to_ail_object(type),
         'err_where': convert_to_ail_object(where),
         'to_string': convert_to_ail_object(_err_to_string),
-        '__offset': offset,
+        '__lineno': lineno,
         '__frame': frame,
     }
 

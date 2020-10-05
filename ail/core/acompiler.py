@@ -35,6 +35,8 @@ __author__ = 'LaomoBK'
 COMPILER_MODE_FUNC = 0x1
 COMPILER_MODE_MAIN = 0x2
 
+COMPILE_MAIN_NAME = '<main>'
+
 _opcode_map = {
     '+': binary_add,
     '-': binary_sub,
@@ -52,7 +54,7 @@ _cell_action_map = {
 
 class Compiler:
     def __init__(self, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
-                 ext_varname: tuple = ()):
+                 ext_varname: tuple = (), name: str = COMPILE_MAIN_NAME):
         self.__general_bytecode = ByteCode()
         self.__buffer = ByteCodeFileBuffer()
 
@@ -60,7 +62,8 @@ class Compiler:
         self.__lnotab = LineNumberTableGenerator()
 
         self.__buffer.lnotab = self.__lnotab
-        self.__buffer.name = filename
+        self.__buffer.filename = filename
+        self.__buffer.name = name
 
         self.__lnotab.init_table()
 
@@ -752,14 +755,15 @@ class Compiler:
 
         ext = [c.value for c in tree.arg_list.exp_list]
 
-        filename = tree.name
+        name = tree.name
 
         if self.__mode == COMPILER_MODE_FUNC:
             filename = '%s.%s' % (self.__filename, tree.name)
 
-        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=filename,
+        cobj = Compiler(mode=COMPILER_MODE_FUNC, name=name,
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
+        cobj.filename = self.__filename
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True

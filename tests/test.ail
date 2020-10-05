@@ -1,8 +1,5 @@
 begin
 
-do { 
-    a = 0
-    print b
-} loop until a == 0
+throw 'nezha is a boy!'
 
 end

@@ -102,6 +102,7 @@ class ByteCodeFileBuffer:
         self.name = '<DEFAULT>'
         self.first_lineno = 0
         self.lineno_list: List[int] = []
+        self.filename = '<FILE>'
 
     def serialize(self) -> bytes:
         """
@@ -156,7 +157,7 @@ class ByteCodeFileBuffer:
     @property
     def code_object(self) -> obj.AILCodeObject:
         return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes.blist,
-                                 self.lnotab.firstlineno, self.argcount,
+                                 self.lnotab.firstlineno, self.filename, self.argcount,
                                  self.name, self.lnotab.table, tuple(self.lineno_list))
 
     def dump_obj(self):

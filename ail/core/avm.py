@@ -312,8 +312,7 @@ class Interpreter:
         else:
             error.print_global_error(
                 error.AILRuntimeError(msg, err_type, self.__tof),
-                '%s +%s' %
-                (self.__tof.code.name, self.__tof.lineno))
+                self.__tof.code.name, self.__tof.lineno)
 
         self.__now_state.handling_err_stack.append(errs)
 
@@ -331,6 +330,7 @@ class Interpreter:
             if f.try_stack:
                 break
         else:
+            sys.stderr.write('Traceback (most recent call last):\n')
             for err in self.__now_state.handling_err_stack[:-1]:
                 sys.stderr.write(_err_to_string(err) + '\n')
                 sys.stderr.write('\n%s\n\n' %

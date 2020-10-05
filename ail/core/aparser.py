@@ -933,6 +933,8 @@ class Parser:
         if self.__now_tok != 'throw':
             self.__syntax_error()
 
+        ln = self.__now_ln
+
         self.__next_tok()  # eat 'throw'
 
         expr = self.__parse_binary_expr()
@@ -941,7 +943,7 @@ class Parser:
                 self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
-        return ast.ThrowExprAST(expr, self.__now_ln)
+        return ast.ThrowExprAST(expr, ln)
 
     def __parse_assert_expr(self) -> ast.AssertExprAST:
         if self.__now_tok != 'assert':
