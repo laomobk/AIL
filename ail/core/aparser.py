@@ -795,8 +795,18 @@ class Parser:
             self.__syntax_error()
 
         name = self.__now_tok.value
+        self.__next_tok()  # eat name
 
-        if self.__next_tok() != 'is' or \
+        new_block_style = False
+
+        start_tok = 'is'
+        end_tok = 'end'
+
+        if self.__now_tok.ttype == AIL_LLBASKET:
+            start_tok = '{'
+            end_tok = '}'
+        
+        if self.__now_tok != start_tok or \
                 self.__next_tok().ttype != AIL_ENTER:
             self.__syntax_error()
 
@@ -808,7 +818,7 @@ class Parser:
         while self.__now_tok.ttype == AIL_ENTER:
             self.__next_tok()
 
-        while self.__now_tok != 'end':
+        while self.__now_tok != end_tok:
             if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
 
@@ -828,10 +838,10 @@ class Parser:
             while self.__now_tok.ttype == AIL_ENTER:
                 self.__next_tok()
 
-        if self.__now_tok != 'end':
+        if self.__now_tok != end_tok:
             self.__syntax_error()
 
-        self.__next_tok()  # eat 'end'
+        self.__next_tok()  # eat end_tok
 
         return ast.StructDefineAST(name, vl, pl, ln)
 

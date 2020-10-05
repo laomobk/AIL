@@ -1,0 +1,35 @@
+begin
+
+
+struct bird {
+    __fly_method
+}
+
+
+fun (bird) fly() {
+    this.__fly_method() 
+}
+
+fun (bird) set_fly(f) {
+    this.__fly_method = f
+}
+
+
+fun rocket_fly() {
+    print 'Fly as a rocket!'
+}
+
+fun new_bird(name) {
+    fun normal_fly() {
+        print 'Fly as a' ; name; '!'
+    }
+    return new(bird, [normal_fly])
+}
+
+
+rocket_bird = new_bird('Swallow')
+rocket_bird.set_fly(rocket_fly)
+rocket_bird.fly()
+
+
+end

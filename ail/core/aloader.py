@@ -40,7 +40,6 @@ class ModuleLoader:
             for sp in self.__load_path:
                 absfp = os.path.abspath(sp)
                 jfp = os.path.join(absfp, mfp)
-
                 if os.path.exists(jfp) and os.path.isfile(jfp):
                     return jfp
 

@@ -3,13 +3,13 @@ begin
 load 'types'
 
 
-struct list_t is
+struct list_t {
     __ele
     protected size
 }
 
 
-fun (list_t) __copy_new(elen, eleo) is
+fun (list_t) __copy_new(elen, eleo) {
     // copy old element list to new element list
 
     i = 0
@@ -24,7 +24,7 @@ fun (list_t) __copy_new(elen, eleo) is
  * lapped(list_t a, any o)
  * app} o to the } of a
  */
-fun (list_t) app}(o) is
+fun (list_t) app(o) {
     eleo = this.__ele
     this.__ele = array(this.size + 1)
 
@@ -41,14 +41,14 @@ fun (list_t) app}(o) is
  * lremove(list_t a, int index)
  * remove the object at 'index'
  */
-fun (list_t) remove(index) is
+fun (list_t) remove(index) {
     if type(index) != type(0) {
         return null
-    }if
+    }
 
     if index >= len(this.__ele) {
         return null
-    }if
+    }
 
     // 从 index 处切割，然后再覆盖
     i = 0
@@ -82,18 +82,18 @@ fun (list_t) remove(index) is
 }
 
 
-fun (list_t) to_string() is
+fun (list_t) to_string() {
     return repr(this.__ele)
 }
 
 
-fun List() is
+fun List() {
     lo = new(
         list_t, 
-        {
-            {}, 
+        [
+            [], 
             0,
-        }
+        ]
         )
 
     return lo
