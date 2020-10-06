@@ -21,6 +21,7 @@ from . import (
 from .aframe import Frame
 from .agc import GC
 from .astate import MAIN_INTERPRETER_STATE
+from .astacktrace import StackTrace
 from . import shared
 
 from ..objects import (
@@ -297,6 +298,11 @@ class Interpreter:
 
         return aobj
 
+    def __get_stack_trace(self) -> StackTrace:
+        tof = self.__tof
+        return StackTrace([copy.copy(f) for f in self.__frame_stack], 
+                          tof.lineno, tof.code.filename, tof.code.name)
+
     def __store_var(self, name, value):
         if self.__temp_env_stack and name not in self.__tof.variable:
             self.__temp_env_stack[-1].temp_var.append(name)
@@ -305,7 +311,8 @@ class Interpreter:
     def __raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
-                msg, err_type, self.__tof), self.__tof.code.name, self.__tof.lineno)
+                msg, err_type, self.__tof, self.__get_stack_trace()),
+                self.__tof.code.name, self.__tof.lineno)
 
         if err_type not in 'VMError':
             self.__now_state.err_stack.append(errs)
@@ -330,12 +337,16 @@ class Interpreter:
             if f.try_stack:
                 break
         else:
-            sys.stderr.write('Traceback (most recent call last):\n')
             for err in self.__now_state.handling_err_stack[:-1]:
+                sys.stderr.write('Traceback (most recent call last):\n')
+                error.print_stack_trace(err.error_object.stack_trace)
                 sys.stderr.write(_err_to_string(err) + '\n')
-                sys.stderr.write('\n%s\n\n' %
-                                 'During handling of the above exception, ' + 
-                                 'another exception occurred:')
+                sys.stderr.write('\n%s\n' %
+                                 ('During handling of the above exception, ' + 
+                                 'another exception occurred:\n'))
+
+            sys.stderr.write('Traceback (most recent call last):\n')
+            error.print_stack_trace(errs.error_object.stack_trace)
             sys.stderr.write(_err_to_string(errs) + '\n')
 
             # if not ERR_NOT_EXIT (usually), the following code will not execute.

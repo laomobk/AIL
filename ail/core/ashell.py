@@ -4,6 +4,7 @@ from .acompiler import Compiler
 from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser
+from .astate import MAIN_INTERPRETER_STATE
 from .avm import Interpreter, Frame
 from .version import AIL_VERSION, AIL_COPYRIGHT
 
@@ -134,8 +135,9 @@ class Shell:
         self.__main_frame.code = cobj
         self.__main_frame.varnames = cobj.varnames
         self.__main_frame.consts = cobj.consts
-
+        
         Interpreter().exec(cobj, self.__main_frame)
+        MAIN_INTERPRETER_STATE.frame_stack.clear()
 
         if self.__main_frame.stack:
             tof = self.__main_frame.stack.pop()

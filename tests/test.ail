@@ -1,5 +1,19 @@
 begin
 
-throw 'nezha is a boy!'
+
+fun f() {
+    try{
+        return 1 / 0
+    } catch err {
+        throw 'Err'
+    }
+}
+
+try {
+    result = f()
+} catch err {
+    throw 'Why you use 0 as a divisor?!'
+}
+
 
 end

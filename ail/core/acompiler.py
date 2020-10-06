@@ -75,6 +75,7 @@ class Compiler:
 
         self.__filename = filename
         self.__ext_varname = ext_varname
+        self.__name = name
 
         self.__init_ext_varname(ext_varname)
 
@@ -760,10 +761,9 @@ class Compiler:
         if self.__mode == COMPILER_MODE_FUNC:
             filename = '%s.%s' % (self.__filename, tree.name)
 
-        cobj = Compiler(mode=COMPILER_MODE_FUNC, name=name,
+        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=self.__filename, name=name,
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = len(tree.arg_list.exp_list)
-        cobj.filename = self.__filename
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True
@@ -924,7 +924,7 @@ class Compiler:
         return bc
 
     def compile(self, astree: ast.BlockExprAST, single_line=False) -> ByteCodeFileBuffer:
-        self.__init__(self.__mode, self.__filename, self.__ext_varname)
+        self.__init__(self.__mode, self.__filename, self.__ext_varname, self.__name)
         self.__is_single_line = single_line
 
         self.__lnotab.firstlineno = astree.stmts[0].ln \

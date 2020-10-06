@@ -42,7 +42,10 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -
         '__frame': frame,
     }
 
-    return new_struct_object('ERR_T', null, err_d, err_d.keys())
+    err_struct = new_struct_object('ERR_T', null, err_d, err_d.keys())
+    err_struct.error_object = err_obj
+
+    return err_struct
 
 
 def catch_error():

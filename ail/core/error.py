@@ -8,7 +8,7 @@ ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
 
 
-def get_line_from_line_no(lno: int, fp: str, replace_return=True):
+def get_line_from_line_no(lno: int, fp: str, strip=True):
     """
     ln : 行号
     fp : 文件路径
@@ -27,7 +27,9 @@ def get_line_from_line_no(lno: int, fp: str, replace_return=True):
 
         for ln in f:
             if tlno == lno:
-                return ln.replace('\n', '' if replace_return else '\n')
+                if strip:
+                    return ln.strip()
+                return ln
             tlno += 1
 
         return ''
@@ -62,15 +64,24 @@ def error_msg(line: int, msg: str, filename: str, errcode=1):
         sys.exit(errcode)
 
 
-def print_stack_trace():
-    from .astate import MAIN_INTERPRETER_STATE as state
+def print_stack_trace(stack_trace, print_last=False):
+    stack = stack_trace.frame_stack[:-1]
 
-    for f in state.frame_stack[1:][::-1]:
-        cp = f.lineno
+    if print_last:
+        stack = stack_trace.frame_stack
+
+    for f in stack:
+        lineno = f.lineno
         n = f.code.name
         filename = f.code.filename
 
-        print('File \'%s \', line %s, in %s' % (filename, cp, n))
+        line_info = ''
+        source_line = get_line_from_line_no(lineno, filename)
+
+        if source_line != '':
+            line_info = '    %s' % source_line
+
+        print('  File \'%s \', line %s, in %s\n%s' % (filename, lineno, n, line_info))
 
 
 class AILRuntimeError:
@@ -79,6 +90,7 @@ class AILRuntimeError:
         self.msg: str = msg
         self.err_type: str = err_type
         self.frame = frame
+        self.stack_trace = stack_trace
 
     def __str__(self):
         return '<AIL_RT_ERROR %s : %s>' % (self.err_type, self.msg)

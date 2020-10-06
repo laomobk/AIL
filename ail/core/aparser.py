@@ -210,13 +210,13 @@ class Parser:
 
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
-
         ca = self.__parse_low_cell_expr()
 
         left = ca
 
         while self.__now_tok.ttype in (AIL_MLBASKET, AIL_SLBASKET):
             nt = self.__now_tok.ttype
+            ln = self.__now_ln
 
             if nt == AIL_MLBASKET:
                 self.__next_tok()  # eat '['
@@ -229,17 +229,17 @@ class Parser:
                     self.__syntax_error()
                 self.__next_tok()  # eat ']'
 
-                left = ast.SubscriptExprAST(left, expr, self.__now_ln)
+                left = ast.SubscriptExprAST(left, expr, ln)
 
             elif nt == AIL_SLBASKET:
                 self.__next_tok()  # eat '('
                 if self.__now_tok == ')':
-                    argl = ast.ArgListAST([], self.__now_ln)
+                    argl = ast.ArgListAST([], ln)
                     self.__next_tok()  # eat ')'
                 else:
                     argl = self.__parse_arg_list()
 
-                left = ast.CallExprAST(left, argl, self.__now_ln)
+                left = ast.CallExprAST(left, argl, ln)
         return left
 
     def __parse_low_cell_expr(self) -> ast.ExprAST:
@@ -436,6 +436,7 @@ class Parser:
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
+        ln = self.__now_ln
         left = self.__parse_member_access_expr(True, True)
 
         if self.__now_tok != '=':
@@ -449,7 +450,7 @@ class Parser:
 
         expr = self.__parse_binary_expr()
 
-        return ast.AssignExprAST(left, expr, self.__now_ln)
+        return ast.AssignExprAST(left, expr, ln)
 
     def __parse_assign_expr0(self) -> ast.DefineExprAST:
         n = self.__now_tok.value
