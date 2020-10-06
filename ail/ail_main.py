@@ -4,6 +4,7 @@ import os.path
 import sys
 from importlib import import_module
 from .core import shared
+from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 
 from ._config import (
     AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
@@ -110,7 +111,7 @@ def launch_py_test(test_name):
         print('No test named \'%s\'' % test_name)
 
 
-def launch_main(argv: list):
+def launch_main(argv: list) -> int:
     init_paths()
 
     option = ArgParser().parse(argv)
@@ -118,12 +119,12 @@ def launch_main(argv: list):
     if option.shell_mode:
         from .core import ashell
         ashell.Shell().run_shell()
-        return
+        return 0
 
     if option is None:
-        sys.exit(1)
+        return 1
 
-    fpath = option.filename
+    file_path = option.filename
 
     try:
         from .core.alex import Lex
@@ -131,16 +132,18 @@ def launch_main(argv: list):
         from .core.acompiler import Compiler
         from .core.avm import Interpreter
 
-        ast = Parser(fpath).parse(Lex(fpath).lex())
-        code_object = Compiler(ast, filename=fpath).compile(ast).code_object
+        ast = Parser(file_path).parse(Lex(file_path).lex())
+        code_object = Compiler(ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True
 
-        Interpreter(option.rest_args).exec(code_object)
+        why = Interpreter(option.rest_args).exec(code_object)
+        if why in (WHY_HANDLING_ERR, WHY_ERROR):
+            return 1
 
     except FileNotFoundError as e:
-        print('AIL : can\'t open file \'%s\' : %s' % (fpath, str(e)))
-        sys.exit(1)
+        print('AIL : can\'t open file \'%s\' : %s' % (file_path, str(e)))
+        return 1
 
 
 if __name__ == '__main__':
-    launch_main(sys.argv[1:])
+    sys.exit(launch_main(sys.argv[1:]))

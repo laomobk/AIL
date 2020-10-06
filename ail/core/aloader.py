@@ -9,7 +9,7 @@ from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
 from .astate import MAIN_INTERPRETER_STATE
-from ._vmsig import WHY_ERROR
+from .avmsig import WHY_HANDLING_ERR
 
 from . import aobjects as objs, error
 from . import shared
@@ -132,7 +132,7 @@ class ModuleLoader:
 
             remove_path(p)
 
-            if why == WHY_ERROR:
+            if why == WHY_HANDLING_ERR:
                 return 3
 
             return self.__add_to_loaded(module_name, v)

@@ -1,5 +1,9 @@
 begin
 
-import 'c'
+try {
+    import 'c'
+} catch err {
+    print err
+}
 
 end

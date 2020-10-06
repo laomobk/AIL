@@ -1,5 +1,9 @@
 begin
 
-import 'b'
+fun f() {
+    import 'b'
+}
+
+f()
 
 end
