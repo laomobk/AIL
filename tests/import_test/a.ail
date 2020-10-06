@@ -1,9 +1,5 @@
 begin
 
-fun f() {
-    import 'b'
-}
-
-f()
+import 'b'
 
 end

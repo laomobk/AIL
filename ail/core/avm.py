@@ -127,6 +127,9 @@ class Interpreter:
 
         self.__exec_for_module = False
 
+        self.__global_frame = None
+        self.__global_frame_index = 0
+
     def __del__(self):
         MAIN_INTERPRETER_STATE.global_interpreters.pop()
 
@@ -215,8 +218,8 @@ class Interpreter:
         if self.__namespace_global is None:
             ns_global = namespace.new_namespace(
                 'global',
-                lambda name: self.__get_field(name, 0),
-                lambda name, value: self.__set_field(name, value, 0)
+                lambda name: self.__get_field(name, self.__global_frame_index),
+                lambda name, value: self.__set_field(name, value, self.__global_frame_index)
             )
 
             self.__namespace_global = ns_global
@@ -298,7 +301,7 @@ class Interpreter:
 
         return aobj
 
-    def __get_stack_trace(self) -> StackTrace:
+    def get_stack_trace(self) -> StackTrace:
         tof = self.__tof
         return StackTrace([copy.copy(f) for f in self.__frame_stack], 
                           tof.lineno, tof.code.filename, tof.code.name)
@@ -311,7 +314,7 @@ class Interpreter:
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
-                msg, err_type, self.__tof, self.__get_stack_trace()),
+                msg, err_type, self.__tof, self.get_stack_trace()),
                 self.__tof.code.name, self.__tof.lineno)
 
         if err_type not in 'VMError':
@@ -368,7 +371,10 @@ class Interpreter:
         self.__interrupted = True
         self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
-    def __handle_error(self):
+    def __handle_error(self) -> bool:
+        """
+        :return: True if found try block else False
+        """
         if self.__tof.try_stack:
             to = self.__tof.try_stack.pop()
 
@@ -903,7 +909,7 @@ class Interpreter:
                     )
 
                     if self.__exec_for_module:
-                        tosf['__globals__'] = self.__frame_stack[0].variable
+                        tosf['__globals__'] = self.__frame_stack[self.__global_frame_index].variable
 
                     n = self.__tof.varnames[argv]
                     self.__store_var(n, tosf)
@@ -977,16 +983,12 @@ class Interpreter:
                             'Cannot import module \'%s\' ' % name +
                             '(may caused circular import)', 'ImportError')
                     elif namespace == 3:
-                        # if is handing an exception, raise error including request initiator
-                        if self.__exec_for_module:
-                            print('\n*** Error caused while importing module '
-                                  '\'%s\' ***\n' % name)
-                        else:
-                            print('\n*** Import request starts from here ***\n')
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
-                        self.raise_error('Error caused while importing module '
-                                         '\'%s\'' % name,
-                                         'ImportError')
+                    elif namespace == 4:
+                        pass
+
                     else:
                         module_object = module.new_module_object(name, namespace)
                         self.__push_back(module_object)
@@ -1080,7 +1082,7 @@ class Interpreter:
                     )
 
                     if self.__exec_for_module:
-                        bound_function['__globals__'] = self.__frame_stack[0].variable
+                        bound_function['__globals__'] = self.__frame_stack[self.__global_frame_index].variable
 
                     target_struct['__bind_functions__'][func_name] = bound_function
 
@@ -1104,10 +1106,11 @@ class Interpreter:
                         if len(self.__frame_stack) > 1:
                             self.__frame_stack.pop()
 
-                        self.__handle_error()
+                        can = self.__handle_error()
 
-                        why = WHY_HANDLING_ERR
-                        break
+                        if not can:
+                            why = WHY_HANDLING_ERR
+                            break
 
                 if not self.__can:
                     self.__can = 1
@@ -1128,10 +1131,18 @@ class Interpreter:
         return why
 
     def exec_for_import(self, cobj, frame: Frame):
-        last_opcounter = self.__opcounter
+        old_global_frame = self.__global_frame
+        old_global_frame_index = self.__global_frame_index
+        old_global_namespace = self.__namespace_global
+
+        self.__global_frame = frame
+        self.__global_frame_index = len(self.__frame_stack)
 
         why = self.exec(cobj, frame, True)
-        self.__opcounter = last_opcounter
+
+        self.__global_frame = old_global_frame
+        self.__global_frame_index = old_global_frame_index
+        self.__namespace_global = old_global_namespace
 
         return why
 
@@ -1149,6 +1160,10 @@ class Interpreter:
 
         f.lineno = cobj.firstlineno
         f.variable['__is_main__'] = objs.convert_to_ail_object(cobj.is_main)
+
+        if not exec_for_module:
+            self.__global_frame = frame
+            self.__global_frame_index = 0
 
         self.__exec_for_module = exec_for_module
 

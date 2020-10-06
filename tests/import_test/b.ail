@@ -3,7 +3,10 @@ begin
 try {
     import 'c'
 } catch err {
-    print err
+    fun f() {
+        import 'c'
+    }
+    f()
 }
 
 end

@@ -9,7 +9,7 @@ from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
 from .astate import MAIN_INTERPRETER_STATE
-from .avmsig import WHY_HANDLING_ERR
+from .avmsig import WHY_HANDLING_ERR, WHY_ERROR
 
 from . import aobjects as objs, error
 from . import shared
@@ -87,9 +87,10 @@ class ModuleLoader:
 
     def load_namespace(self, module_name: str, import_mode: bool = False) -> dict:
         """
-        :return: -1 if module not found
-                 -2 if circular import(or load)
-                 -3 if error while importing (or loading) a module
+        :return: 1 if module not found
+                 2 if circular import(or load)
+                 3 if error while importing (or loading) a module
+                 4 if handing error
         """
 
         from .avm import Interpreter, Frame
@@ -121,19 +122,17 @@ class ModuleLoader:
             frame = Frame(cobj, cobj.varnames, cobj.consts)
             frame.variable.update(BUILTINS)
 
-            temp_frame_stack = MAIN_INTERPRETER_STATE.frame_stack
-            MAIN_INTERPRETER_STATE.frame_stack = list()
-
-            why = Interpreter().exec(cobj, frame, True)
-
-            MAIN_INTERPRETER_STATE.frame_stack = temp_frame_stack
+            interpreter = MAIN_INTERPRETER_STATE.global_interpreters[0]
+            why = interpreter.exec_for_import(cobj, frame)
 
             v = frame.variable
 
             remove_path(p)
 
-            if why == WHY_HANDLING_ERR:
+            if why == WHY_ERROR:
                 return 3
+            elif why == WHY_HANDLING_ERR:
+                return 4
 
             return self.__add_to_loaded(module_name, v)
 

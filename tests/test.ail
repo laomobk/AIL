@@ -1,19 +1,21 @@
 begin
 
 
+fun ff() {
+    return 1 / 0
+}
+
+
 fun f() {
     try{
-        return 1 / 0
+        return ff()
     } catch err {
-        throw 'Err'
+        print err
     }
 }
 
-try {
-    result = f()
-} catch err {
-    throw 'Why you use 0 as a divisor?!'
-}
+
+f()
 
 
 end
