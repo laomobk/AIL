@@ -122,7 +122,7 @@ class ModuleLoader:
             frame = Frame(cobj, cobj.varnames, cobj.consts)
             frame.variable.update(BUILTINS)
 
-            interpreter = MAIN_INTERPRETER_STATE.global_interpreters[0]
+            interpreter = MAIN_INTERPRETER_STATE.global_interpreter
             why = interpreter.exec_for_import(cobj, frame)
 
             v = frame.variable

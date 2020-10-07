@@ -28,9 +28,9 @@ def _check_bound(self, aobj: obj.AILObject):
     return aobj
 
 
-def struct_init(self, name: str, name_list: list,
+def struct_init(self, name: str, members: list,
                 protected_members: list):
-    d = {n: null.null for n in name_list}  # init members
+    d = {n: null.null for n in members}  # init members
 
     self.protected = protected_members
     self.members = d
@@ -39,7 +39,7 @@ def struct_init(self, name: str, name_list: list,
     self['__bind_functions__'] = {}
 
 
-def structobj_init(self, name: str, members: dict, type: obj.AILObject,
+def structobj_init(self, name: str, members: dict, struct_type: obj.AILObject,
                    protected_members: list, bind_funcs: dict = None):
     if bind_funcs is None:
         bind_funcs = {}
@@ -50,7 +50,7 @@ def structobj_init(self, name: str, members: dict, type: obj.AILObject,
                     for k, v in members.items()}
     self.protected = protected_members
 
-    self['__type__'] = type
+    self['__type__'] = struct_type
     self['__name__'] = name
 
 
@@ -148,7 +148,34 @@ def convert_to_pyobj(struct_obj) -> _StructObjectWrapper:
     return st
 
 
-def new_struct_object(name: str, type: obj.AILObject,
-                      members: dict, protected_members: list):
+def new_struct_object(name: str, struct_type: obj.AILObject,
+                      members: dict, protected_members: list) -> obj.AILObject:
+    if struct_type is None:
+        struct_type = null
+
     return obj.ObjectCreater.new_object(
-        STRUCT_OBJ_TYPE, name, members, type, protected_members)
+        STRUCT_OBJ_TYPE, name, members, struct_type, protected_members)
+
+
+def struct_object_getattr(struct_obj: obj.AILObject, name: str) -> obj.AILObject:
+    if not struct_obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+        return None
+
+    members = struct_obj.members
+
+    return members.get(name, None)
+
+
+def struct_object_setattr(struct_obj: obj.AILObject,
+                          name: str, value: obj.AILObject) -> obj.AILObject:
+    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+        return None
+
+    value = obj.convert_to_ail_object(value)
+
+    struct_obj.members[name] = value
+
+
+def new_struct(name: str, members: list, protected_members: list):
+    return obj.ObjectCreater.new_object(
+        STRUCT_TYPE, name, members, protected_members)

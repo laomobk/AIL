@@ -2,7 +2,7 @@ from .abytecode import (
     ByteCodeFileBuffer,
     LineNumberTableGenerator
 )
-from . import aobjects as obj, asts as ast, opcodes as opcs
+from . import aobjects as obj, asts as ast, aopcode as opcs
 
 
 def unpack_list(l: list):
@@ -31,8 +31,17 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.MuitDivExprAST):
         return {'MDAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
 
-    elif isinstance(a, ast.BinaryExprAST):
+    elif isinstance(a, ast.AddSubExprAST):
         return {'BinAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+
+    elif isinstance(a, ast.BitOpExprAST):
+        return {'BitOpAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+
+    elif isinstance(a, ast.BinXorExprAST):
+        return {'XorAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+
+    elif isinstance(a, ast.BitShiftExprAST):
+        return {'BitShiftAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.CallExprAST):
         return {'CallAST': {'left': make_ast_tree(a.left), 'arg_list': make_ast_tree(a.arg_list)}}

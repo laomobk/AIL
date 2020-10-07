@@ -1,4 +1,6 @@
 # AST
+from typing import List, Tuple
+
 
 class ExprAST:
     """
@@ -56,7 +58,7 @@ class PowerExprAST:
     pow_expr := unary_expr ['^' unary_expr]
     """
 
-    def __init__(self, left: UnaryExprAST, right: UnaryExprAST, ln: int):
+    def __init__(self, left: UnaryExprAST, right: List[UnaryExprAST], ln: int):
         self.left = left
         self.right = right
         self.ln = ln
@@ -64,10 +66,10 @@ class PowerExprAST:
 
 class ModExprAST:
     """
-    mod_expr := pow_expr ['MOD' pow_expr]
+    mod_expr := pow_expr ['mod' pow_expr]
     """
 
-    def __init__(self, left: PowerExprAST, right: PowerExprAST, ln: int):
+    def __init__(self, left: PowerExprAST, right: List[PowerExprAST], ln: int):
         self.left = left
         self.right = right
         self.ln = ln
@@ -78,19 +80,50 @@ class MuitDivExprAST:
     md_expr := mod_expr [('*' | '/') mod_expr]
     """
 
-    def __init__(self, op: str, left: ModExprAST, right: ModExprAST, ln: int):
+    def __init__(self, op: str, left: ModExprAST, right: List[ModExprAST], ln: int):
         self.op = op
         self.left = left
         self.right = right
         self.ln = ln
 
 
-class BinaryExprAST:
+class AddSubExprAST:
     """
     real_expr := md_expr [('+' | '-') md_expr]* | '(' real_expr ')'
     """
 
-    def __init__(self, op: str, left: MuitDivExprAST, right: MuitDivExprAST, ln: int):
+    def __init__(self, op: str,
+                 left: MuitDivExprAST,
+                 right: List[Tuple[str, MuitDivExprAST]], ln: int):
+        self.op = op
+        self.left = left
+        self.right = right
+        self.ln = ln
+
+
+class BitShiftExprAST:
+    def __init__(self, op: str,
+                 left: AddSubExprAST,
+                 right: List[Tuple[str, AddSubExprAST]], ln: int):
+        self.op = op
+        self.left = left
+        self.right = right
+        self.ln = ln
+
+
+class BinXorExprAST:
+    def __init__(self,
+                 left: BitShiftExprAST,
+                 right: List[Tuple[str, BitShiftExprAST]], ln: int):
+        self.left = left
+        self.right = right
+        self.ln = ln
+
+
+class BitOpExprAST:
+    def __init__(self, op: str,
+                 left: BinXorExprAST,
+                 right: List[Tuple[str, BinXorExprAST]], ln: int):
         self.op = op
         self.left = left
         self.right = right
@@ -102,7 +135,7 @@ class CallExprAST:
     call_expr := NAME '(' arg_list ')'
     """
 
-    def __init__(self, left: BinaryExprAST, arg_list: ArgListAST, ln: int):
+    def __init__(self, left: AddSubExprAST, arg_list: ArgListAST, ln: int):
         self.left = left
         self.arg_list = arg_list
         self.ln = ln
@@ -118,7 +151,7 @@ class ValueListAST:
         self.ln = ln
 
     def __str__(self):
-        return '<ValueList %s>' % str(self.v_list)
+        return '<ValueList %s>' % str(self.value_list)
 
 
 class AssignExprAST(ExprAST):
@@ -126,7 +159,7 @@ class AssignExprAST(ExprAST):
     assi_expr := cell '=' expr NEWLINE
     """
 
-    def __init__(self, left: BinaryExprAST, value: ExprAST, ln: int):
+    def __init__(self, left: AddSubExprAST, value: ExprAST, ln: int):
         self.value = value
         self.left = left
         self.ln = ln
@@ -334,7 +367,7 @@ class ArrayAST:
 
 
 class SubscriptExprAST:
-    def __init__(self, left: BinaryExprAST, expr: BinaryExprAST, ln: int):
+    def __init__(self, left: AddSubExprAST, expr: AddSubExprAST, ln: int):
         self.expr = expr
         self.left = left
         self.ln = ln
@@ -391,7 +424,7 @@ class ForExprAST:
 
 
 class ThrowExprAST:
-    def __init__(self, expr: BinaryExprAST, ln: int):
+    def __init__(self, expr: AddSubExprAST, ln: int):
         self.expr = expr
         self.ln = ln
 
@@ -419,7 +452,7 @@ BINARY_AST_TYPES = (
     PowerExprAST,
     ModExprAST,
     MuitDivExprAST,
-    BinaryExprAST,
+    AddSubExprAST,
     DefineExprAST,
     CallExprAST,
     ArrayAST,

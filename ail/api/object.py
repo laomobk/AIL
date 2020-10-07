@@ -7,6 +7,9 @@ But please use them normatively.
 
 AIL is fragile.
 """
+from typing import Dict, List
+
+from ._exceptions import NoGlobalInterpreterException
 
 from ..objects.array import (
     ARRAY_TYPE,
@@ -31,28 +34,37 @@ from ..objects.string import STRING_TYPE
 
 from ..objects.struct import (
     STRUCT_TYPE,
-    convert_to_pyobj as _convert_to_pyobj,
+    new_struct_object as _new_struct_object,
+    new_struct as _new_struct,
+    struct_object_setattr as _struct_object_setattr,
+    struct_object_getattr as _struct_object_getattr,
 )
 
-from ..objects.type import TYPE_TYPE
 from ..objects.wrapper import WRAPPER_TYPE
 
 from ..core.aobjects import (
     convert_to_ail_object as _convert_to_ail_object,
-    unpack_ailobj,
+    unpack_ailobj as object_unpack_ailobj,
     AILObject,
     AILObjectType
+)
+
+from ..core.astate import (
+    MAIN_INTERPRETER_STATE as _MAIN_INTERPRETER_STATE
 )
 
 __all__ = [
     'ARRAY_TYPE', 'BOOL_TYPE', 'FLOAT_TYPE', 'FUNCTION_TYPE',
     'INTEGER_TYPE', 'STRING_TYPE', 'STRUCT_TYPE', 'WRAPPER_TYPE',
-    'null', 'convert_to_ail_object', 'unpack_ailobj', 'get_type'
+    'null', 'object_convert_to_ail_object', 'object_unpack_ailobj', 'object_get_type',
     'AILObject', 'AILObjectType',
+    'object_call',
+    'integer_convert_to_interger',
+    'struct_new_struct_object', 'struct_object_setattr', 'struct_object_getattr'
 ]
 
 
-def convert_to_ail_object(pyobj: object) -> AILObject:
+def object_convert_to_ail_object(pyobj: object) -> AILObject:
     """
     Convert a python object to an AIL object.
 
@@ -68,16 +80,16 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         python function  (only python function, not method or built-in function, etc.)
 
 
-    >>> from ail.api.object import convert_to_ail_object
+    >>> from ail.api.object import object_convert_to_ail_object
     >>>
-    >>> aint = convert_to_ail_object(726)
+    >>> aint = object_convert_to_ail_object(726)
     >>> aint
     < 726 >
     >>>
     >>> aint['__class__']
     <AIL Type '<AIL integer type>'>
 
-    >>> aarray = convert_to_ail_object(['Nezha', 'Aobing'])
+    >>> aarray = object_convert_to_ail_object(['Nezha', 'Aobing'])
     >>>
     >>> aarray
     {'Nezha', 'Aobing'}
@@ -90,16 +102,61 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     return _convert_to_ail_object(pyobj)
 
 
-def get_type(ailobj: AILObject) -> AILObjectType:
+def object_get_type(ailobj: AILObject) -> AILObjectType:
     """
     Get the AILObjectType object from an AIL object
 
-    >>> from ail.api.object import get_type, convert_to_ail_object
+    >>> from ail.api.object import object_get_type, object_convert_to_ail_object
     >>>
-    >>> get_type(convert_to_ail_object(726))
+    >>> object_get_type(object_convert_to_ail_object(726))
     <AIL Type '<AIL integer type>'>
 
     :param ailobj: an AIL object WHICH HAS TYPE
     :return: the AILObjectType object of that  AIL object
     """
     return ailobj['__class__'] if isinstance(ailobj, AILObject) else None
+
+
+def object_call(callable_object: AILObject, *args):
+    interpreter = _MAIN_INTERPRETER_STATE.global_interpreter
+
+    if interpreter is None:
+        raise NoGlobalInterpreterException()
+
+    if not isinstance(callable_object, AILObject):
+        raise TypeError('%s in AIL is not callable.' % type(callable_object))
+
+    interpreter.call_function(callable_object, len(args), args)
+
+
+def integer_convert_to_interger(py_int: int) -> AILObject:
+    return _convert_to_integer(py_int)
+
+
+def struct_new_struct_object(name: str, struct_type: AILObject,
+                             members: Dict[str, AILObject],
+                             protected_members: List[str]) -> AILObject:
+    if struct_type is None:
+        struct_type = null
+
+    return _new_struct_object(name, struct_type, members, protected_members)
+
+
+def struct_new_struct(name: str,
+                      members: List[str], protected_members: List[str]) -> AILObject:
+    return _new_struct(name, members, protected_members)
+
+
+def struct_object_setattr(struct_object: AILObject, name: str, value: AILObject):
+    if not isinstance(name, str):
+        raise TypeError('attribute name must be a string')
+
+    _struct_object_setattr(struct_object, name, value)
+
+
+def struct_object_getattr(struct_object: AILObject, name: str) -> AILObject:
+    if not isinstance(name, str):
+        raise TypeError('attribute name must be a string')
+
+    return _struct_object_getattr(struct_object, name)
+

@@ -9,6 +9,16 @@ POOL_RANGE_MAX = 100
 POOL_RANGE = (POOL_RANGE_MIN, POOL_RANGE_MAX)
 
 
+def _get_a_b(self, other, op: str) -> tuple:
+    if other['__value__'] is None:  # do not have __value__ property
+        return AILRuntimeError('Not support \'%s\' with type %s' % (op, str(other)), 'TypeError'), 0
+
+    sv = self['__value__']
+    so = other['__value__']
+
+    return sv, so
+
+
 def int_str(self: obj.AILObject):
     return '%d' % self['__value__']
 
@@ -32,7 +42,8 @@ def int_init(self: obj.AILObject, value: obj.AILObject):
 
 def int_add(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
     if other['__class__'] not in (INTEGER_TYPE, afloat.FLOAT_TYPE):  # do not have __value__ property
-        return AILRuntimeError('Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
+        return AILRuntimeError(
+            'Not support \'+\' with type %s' % other['__class__'].name, 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
@@ -95,7 +106,7 @@ def int_muit(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
 
 def int_mod(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
     if other['__value__'] is None:  # do not have __value__ property
-        return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
+        return AILRuntimeError('Not support \'mod\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
@@ -110,13 +121,78 @@ def int_mod(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
 
 def int_pow(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
     if other['__value__'] is None:  # do not have __value__ property
-        return AILRuntimeError('Not support \'*\' with type %s' % str(other), 'TypeError')
+        return AILRuntimeError('Not support \'^\' with type %s' % str(other), 'TypeError')
 
     sv = self['__value__']
     so = other['__value__']
 
     try:
         res = sv ** so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return get_integer(res)
+
+
+def int_lshift(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    sv, so = _get_a_b(self, other, '<<')
+    if isinstance(sv, AILRuntimeError):
+        return sv
+
+    try:
+        res = sv << so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return get_integer(res)
+
+
+def int_rshift(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    sv, so = _get_a_b(self, other, '>>')
+    if isinstance(sv, AILRuntimeError):
+        return sv
+
+    try:
+        res = sv >> so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return get_integer(res)
+
+
+def int_and(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    sv, so = _get_a_b(self, other, '&')
+    if isinstance(sv, AILRuntimeError):
+        return sv
+
+    try:
+        res = sv & so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return get_integer(res)
+
+
+def int_or(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    sv, so = _get_a_b(self, other, '|')
+    if isinstance(sv, AILRuntimeError):
+        return sv
+
+    try:
+        res = sv | so
+    except Exception as e:
+        return AILRuntimeError(str(e), 'PythonRuntimeError')
+
+    return get_integer(res)
+
+
+def int_xor(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
+    sv, so = _get_a_b(self, other, 'xor')
+    if isinstance(sv, AILRuntimeError):
+        return sv
+
+    try:
+        res = sv ^ so
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonRuntimeError')
 
@@ -144,7 +220,12 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                                  __eq__=int_eq,
                                  __repr__=int_repr,
                                  __mod__=int_mod,
-                                 __pow__=int_pow
+                                 __pow__=int_pow,
+                                 __lshift__=int_lshift,
+                                 __rshift__=int_rshift,
+                                 __and__=int_and,
+                                 __or__=int_or,
+                                 __xor__=int_xor,
                                  )
 
 

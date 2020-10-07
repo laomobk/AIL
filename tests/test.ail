@@ -1,8 +1,5 @@
 begin
 
-
-while true 
-{}
-
+print 0b11 xor 0b10
 
 end

@@ -1,5 +1,7 @@
 # 用于ail的词法分析器
 
+from string import hexdigits, octdigits
+
 from .tokentype import *
 from .error import error_msg
 
@@ -10,6 +12,12 @@ ALEX_VERSION_EXTRA = 'Beta'  # 额外版本信息
 ALEX_VERSION_DATE = (10, 27, 2019)
 
 __all__ = ['Token', 'TokenStream', 'Lex']
+
+
+def get_source_char(source: str, index: int) -> str:
+    if 0 <= index < len(source):
+        return source[index]
+    return ''
 
 
 def skip_comment_line(source: str, cursor: int):
@@ -139,6 +147,35 @@ def get_number(source: str, cursor: int) -> tuple:
     return cur, buffer
 
 
+def parse_complex_escape_character(start_char: str, source: str, index: int) -> tuple:
+    """
+    :return: real_char:
+             -1: invalid escape character
+    :returns: (real_char, offset)
+    """
+    ofs = 0
+    if start_char == 'x':  # type  \x...
+        hex_buf = ''
+        for inc in range(2):
+            next_char = get_source_char(source, index + 1 + inc)
+            if next_char not in hexdigits:
+                return -1, 0
+            hex_buf += next_char
+        return chr(int(hex_buf, 16)), 4
+
+    elif start_char == '0':  # type \0...
+        if get_source_char(source, index+1) not in octdigits:
+            return '\0', 2
+
+        oct_buf = ''
+        for inc in range(3):
+            next_char = get_source_char(source, index + inc)
+            if next_char not in octdigits:
+                return -1, 0
+            oct_buf += next_char
+        return chr(int(oct_buf, 8)), 4
+
+
 def get_string(source: str, cursor: int) -> tuple:
     """
     source : 源码文件
@@ -147,7 +184,8 @@ def get_string(source: str, cursor: int) -> tuple:
     Lap支持多行字符串
  
     字符指针错误值原因：
-    -1 : 字符串没有结束就到达EOF
+    -1: 字符串没有结束就到达EOF
+    -2: 字符串中出现无法解析的转义字符
     
     返回一个元祖
     ( 字符指针增量, 行号增量 , 数字字符串)
@@ -168,28 +206,39 @@ def get_string(source: str, cursor: int) -> tuple:
 
     while ccur < len(source):
         if instr and source[ccur] == '\\' and slen > ccur + 1 \
-                and source[ccur + 1] in ('n', 'r', 't', 'a', '\'', '"', '\\'):
+                and source[ccur + 1] in (
+                'a', 'b', 'f', 'n', 'r', 't', 'v', '0', 'x', '\'', '"', '\\'):
             # escape character
             target = {
+                'a': '\a',
+                'b': '\b',
+                'f': '\f',
                 'n': '\n',
                 'r': '\r',
                 't': '\t',
-                'a': '\a',
+                'v': '\v',
+                '0': '0',
+                'x': 'x',
                 '\'': '\'',
                 '"': '"',
                 '\\': '\\'
             }.get(source[ccur + 1])
 
-            if target == '\\':
-                source = source[:ccur + 1] + 'N' + source[ccur + 2:]
-                # 随意取一个字符，防止发生"转义"
+            if target in ('0', 'x'):
+                char, offset = parse_complex_escape_character(target, source, ccur+1)
+                print(ord(char))
+                if char == -1:
+                    return -2, 0, 0
+                ccur += offset
+                cur += offset
+                buffer += char
+            else:
+                buffer += target
 
-            buffer += target
+                ccur += 2
+                cur += 2
 
-            ccur += 2
-            cur += 2
-
-        if instr and source[ccur] == schr and source[ccur - 1] != '\\':
+        if instr and source[ccur] == schr:
             hasEND = True  # 是否是因为while的条件而退出
             break
 
@@ -634,6 +683,8 @@ class Lex:
 
                 if mov == -1:
                     error_msg(self.__ln, 'EOL while scanning string literal', self.__filename)
+                elif mov == -2:
+                    error_msg(self.__ln, 'Cannot decode an escape character', self.__filename)
 
                 self.__stream.append(Token(
                     buf,

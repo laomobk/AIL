@@ -17,6 +17,11 @@ binary_muit     = 0x0b
 binary_div      = 0x0c
 binary_mod      = 0x0d
 binary_pow      = 0x0e
+binary_lshift = 0x36
+binary_rshift = 0x37
+binary_and = 0x38
+binary_or = 0x39
+binary_xor = 0x3a
 
 return_value    = 0x0f
 continue_loop   = 0x10
@@ -91,4 +96,18 @@ COMPARE_OPERATORS = (
     '>',
     '<',
     '!=',
+)
+
+BINARY_OPS = (
+    binary_add,
+    binary_div,
+    binary_mod,
+    binary_muit,
+    binary_pow,
+    binary_sub,
+    binary_lshift,
+    binary_rshift,
+    binary_and,
+    binary_or,
+    binary_xor,
 )

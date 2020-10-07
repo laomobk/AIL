@@ -11,7 +11,7 @@ class InterpreterState:
         self.handling_err_stack = []
         self.err_stack = []
 
-        self.global_interpreters = []  # global interpreter reference
+        self.global_interpreter = None
 
         self.prog_argv: List[str] = list()
 

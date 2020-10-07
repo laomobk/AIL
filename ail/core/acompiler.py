@@ -2,7 +2,7 @@ import pickle
 
 from typing import List, Union, Tuple
 
-from .opcodes import *
+from .aopcode import *
 from .tokentype import AIL_STRING, AIL_IDENTIFIER, AIL_NUMBER
 
 from .abytecode import (
@@ -44,6 +44,11 @@ _opcode_map = {
     '/': binary_div,
     'mod': binary_mod,
     '^': binary_pow,
+    '<<': binary_lshift,
+    '>>': binary_rshift,
+    '&': binary_and,
+    '|': binary_or,
+    'xor': binary_xor,
 }
 
 _cell_action_map = {
@@ -124,7 +129,7 @@ class Compiler:
     def __get_operator(self, op: str):
         return _opcode_map[op]
 
-    def __compile_binary_expr(self, tree: ast.BinaryExprAST, is_attr=False,
+    def __compile_binary_expr(self, tree: ast.AddSubExprAST, is_attr=False,
                               is_single=False) -> ByteCode:
         bc = ByteCode()
 

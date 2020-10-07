@@ -14,7 +14,7 @@ from . import (
     aobjects as objs,
     abuiltins,
     error,
-    opcodes as opcs,
+    aopcode as opcs,
     aloader
 )
 
@@ -45,7 +45,7 @@ from .modules._error import (
 from .test_utils import get_opname
 from .version import AIL_VERSION
 
-from .opcodes import *
+from .aopcode import *
 from .avmsig import *
 
 
@@ -77,8 +77,13 @@ _binary_op_dict = {
     binary_div: ('/', '__truediv__', '__div__'),
     binary_mod: ('mod', '__mod__', '__mod__'),
     binary_muit: ('*', '__mul__', '__muit__'),
-    binary_pow: ('pow', '__pow__', '__pow__'),
-    binary_sub: ('-', '__sub__', '__sub__')
+    binary_pow: ('^', '__pow__', '__pow__'),
+    binary_sub: ('-', '__sub__', '__sub__'),
+    binary_lshift: ('<<', '__lshift__', '__lshift__'),
+    binary_rshift: ('>>', '__rshift__', '__rshift__'),
+    binary_and: ('&', '__and__', '__and__'),
+    binary_or: ('|', '__or__', '__or__'),
+    binary_xor: ('xor', '__xor__', '__xor__'),
 }
 
 
@@ -103,7 +108,7 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 
 class Interpreter:
     def __init__(self, argv: List[str] = None):
-        MAIN_INTERPRETER_STATE.global_interpreters.append(self)
+        MAIN_INTERPRETER_STATE.global_interpreter = self
 
         if argv is not None:
             MAIN_INTERPRETER_STATE.prog_argv = argv
@@ -129,9 +134,6 @@ class Interpreter:
 
         self.__global_frame = None
         self.__global_frame_index = 0
-
-    def __del__(self):
-        MAIN_INTERPRETER_STATE.global_interpreters.pop()
 
     @property
     def __tof(self) -> Frame:
@@ -283,9 +285,6 @@ class Interpreter:
         f.varnames = cobj.varnames
 
         self.__frame_stack.append(f)
-
-    def __print_err(self, err: error.AILRuntimeError):
-        error.print_global_error(err)
 
     def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
@@ -541,7 +540,7 @@ class Interpreter:
         else:
             self.raise_error('name \'%s\' is not defined' % n, 'NameError')
 
-    def __call_function(self, func, argv, argl):
+    def call_function(self, func, argv, argl):
         self.__tof._marked_opcounter = self.__opcounter
 
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
@@ -638,7 +637,7 @@ class Interpreter:
                     # unpack argl for builtin function
                 try:
                     rtn = self.__check_object(pyf(*argl))
-                except Exception as e:
+                except Exception as _:
                     self.raise_error(
                         str(e), 'PythonError'
                     )
@@ -854,9 +853,7 @@ class Interpreter:
                     if self.__bool_test(tos):
                         jump_to = argv
 
-                elif op in (binary_add, binary_div,
-                            binary_mod, binary_muit,
-                            binary_pow, binary_sub):
+                elif op in BINARY_OPS:
                     op, pym, ailm = _binary_op_dict.get(op)
 
                     b = self.__pop_top()
@@ -894,7 +891,7 @@ class Interpreter:
                     argl = [self.__pop_top() for _ in range(argv)][::-1]
                     func: objs.AILObject = self.__pop_top()
 
-                    self.__call_function(func, argv, argl)
+                    self.call_function(func, argv, argl)
 
                 elif op == store_function:
                     tos = self.__pop_top()  # type: objs.AILCodeObject
@@ -1003,9 +1000,9 @@ class Interpreter:
                             self.raise_error('%s object is not subscriptable' %
                                              o['__class__'].name, 'TypeError')
 
-                        self.__check_object(afunc.call(o['__setitem__'], o, i, v))
-
-                    self.__tof.stack.append(v)
+                        else:
+                            self.__check_object(afunc.call(o['__setitem__'], o, i, v))
+                            self.__tof.stack.append(v)
 
                 elif op == load_attr:
                     o = self.__pop_top()

@@ -15,6 +15,7 @@ _keywords_uc = (
     'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT'
                                                   'STRUCT', 'MOD', 'FOR', 'PROTECTED',
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
+    'XOR', 'MOD',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -52,7 +53,7 @@ class Parser:
     def __peek(self, step=1) -> Token:
         return self.__tok_stream[self.__tc + 1]
 
-    def __parse_bin_expr(self) -> ast.BinaryExprAST:
+    def __parse_bin_expr(self) -> ast.AddSubExprAST:
         pass
 
     @property
@@ -357,7 +358,26 @@ class Parser:
 
         return ast.MuitDivExprAST(left_op, left, rl, self.__now_ln)
 
-    def __parse_binary_expr(self) -> ast.BinaryExprAST:
+    def __parse_bin_xor_expr(self) -> ast.BinXorExprAST:
+        left = self.__parse_bit_shift_expr()
+
+        if left is None:
+            self.__syntax_error()
+
+        if self.__now_tok != 'xor':
+            return left
+
+        rl = []
+
+        while self.__now_tok == 'xor':
+            self.__next_tok()
+            r = self.__parse_bit_shift_expr()
+            if r is None:
+                self.__syntax_error()
+            rl.append(('xor', r))
+        return ast.BinXorExprAST(left, rl, self.__now_ln)
+
+    def __parse_binary_expr(self) -> ast.BitOpExprAST:
         # try assign expr
         ntc = self.__tc
         at = self.__parse_assign_expr()
@@ -371,6 +391,56 @@ class Parser:
         if self.__now_tok.ttype == AIL_ENTER:
             self.__syntax_error(ln=ln)
 
+        left = self.__parse_bin_xor_expr()
+
+        if left is None:
+            self.__syntax_error()
+
+        if self.__now_tok.ttype not in (AIL_BIN_OR, AIL_BIN_AND):
+            return left
+
+        left_op = self.__now_tok.value
+
+        rl = []
+
+        while self.__now_tok.ttype in (AIL_BIN_OR, AIL_BIN_AND):
+            r_op = self.__now_tok.value
+            self.__next_tok()
+
+            r = self.__parse_bin_xor_expr()
+            if r is None:
+                self.__syntax_error()
+
+            rl.append((r_op, r))
+
+        return ast.BitOpExprAST(left_op, left, rl, self.__now_ln)
+
+    def __parse_bit_shift_expr(self) -> ast.BitShiftExprAST:
+        left = self.__parse_add_sub_expr()
+
+        if left is None:
+            self.__syntax_error()
+
+        if self.__now_tok.ttype not in (AIL_LSHIFT, AIL_RSHIFT):
+            return left
+
+        left_op = self.__now_tok.value
+
+        rl = []
+
+        while self.__now_tok.ttype in (AIL_LSHIFT, AIL_RSHIFT):
+            r_op = self.__now_tok.value
+            self.__next_tok()
+
+            r = self.__parse_add_sub_expr()
+            if r is None:
+                self.__syntax_error()
+
+            rl.append((r_op, r))
+
+        return ast.BitShiftExprAST(left_op, left, rl, self.__now_ln)
+
+    def __parse_add_sub_expr(self) -> ast.AddSubExprAST:
         left = self.__parse_muit_div_expr()
 
         if left is None:
@@ -393,7 +463,7 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.BinaryExprAST(left_op, left, rl, self.__now_ln)
+        return ast.AddSubExprAST(left_op, left, rl, self.__now_ln)
 
     def __parse_print_expr(self) -> ast.PrintExprAST:
         ln = self.__now_ln

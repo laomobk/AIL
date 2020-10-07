@@ -85,7 +85,7 @@ def print_stack_trace(stack_trace, print_last=False):
 
 
 class AILRuntimeError:
-    def __init__(self, msg: str = None, err_type: str = None, 
+    def __init__(self, msg: str, err_type: str,
                  frame=None, stack_trace=None):
         self.msg: str = msg
         self.err_type: str = err_type

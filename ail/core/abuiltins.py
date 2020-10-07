@@ -8,6 +8,7 @@ from .version import (
 )
 
 from .modules._fileio import _open
+from .modules.console import get_console_object
 
 from ..objects import (
     string  as astr,
@@ -274,4 +275,5 @@ BUILTINS = {
     'float': objs.convert_to_ail_object(func_float),
     'addr': objs.convert_to_ail_object(func_addr),
     'fnum': objs.convert_to_ail_object(func_fnum),
+    'console': objs.convert_to_ail_object(get_console_object()),
 }
