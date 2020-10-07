@@ -1,21 +1,8 @@
 begin
 
 
-fun ff() {
-    return 1 / 0
-}
-
-
-fun f() {
-    try{
-        return ff()
-    } catch err {
-        print err
-    }
-}
-
-
-f()
+while true 
+{}
 
 
 end
