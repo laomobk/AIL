@@ -205,6 +205,12 @@ var __main_version__: integer
 AIL主版本号。
 
 
+var console: console
+####################
+
+用于操作控制台的对象
+
+
 builtins.abs(x: number) -> number
 #################################
 

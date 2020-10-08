@@ -584,7 +584,7 @@ class Lex:
                     self.__movchr()
 
             elif c in ('(', ')', '[', ']', '{', '}',
-                       ',', '.', ';', '$', '@', '#', '\\', ':'):
+                       ',', '.', ';', '$', '@', '#', '\\', ':', '~'):
                 if c in ('(', '['):
                     self.__blevel += 1
                 elif c in (')', ']'):
@@ -608,7 +608,8 @@ class Lex:
                             '@': AIL_AT,
                             '#': AIL_WELL,
                             '\\': AIL_ESCAPE,
-                            ':': AIL_COLON
+                            ':': AIL_COLON,
+                            '~': AIL_WAVE,
                         }[c],
                         self.__ln
                     ))

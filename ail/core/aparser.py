@@ -283,15 +283,17 @@ class Parser:
         return ast.CellAST(name, nt.ttype, ln)
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
-        if self.__now_tok.ttype == AIL_SUB:
-            self.__next_tok()  # eat '-'
+        if self.__now_tok.ttype in (AIL_SUB, AIL_WAVE):
+            ln = self.__now_ln
+            op = self.__now_tok.value
+            self.__next_tok()  # eat op
 
             right = self.__parse_member_access_expr()
 
             if right is None:
                 self.__syntax_error()
 
-            return ast.UnaryExprAST('-', right, self.__now_ln)
+            return ast.UnaryExprAST(op, right, ln)
 
         return self.__parse_member_access_expr()
 
@@ -308,7 +310,7 @@ class Parser:
 
         while self.__now_tok == '^':
             self.__next_tok()
-            r = self.__parse_member_access_expr()
+            r = self.__parse_unary_expr()
             if r is None:
                 self.__syntax_error()
             rl.append(('^', r))
@@ -379,18 +381,15 @@ class Parser:
 
     def __parse_binary_expr(self) -> ast.BitOpExprAST:
         # try assign expr
-        ntc = self.__tc
-        at = self.__parse_assign_expr()
+        expr = self.__parse_assign_expr()
         ln = self.__now_ln
-
-        if at:
-            return at
-
-        self.__tc = ntc
-
+    
         if self.__now_tok.ttype == AIL_ENTER:
             self.__syntax_error(ln=ln)
 
+        return expr
+
+    def __parse_bin_op_expr(self) -> ast.BitOpExprAST:
         left = self.__parse_bin_xor_expr()
 
         if left is None:
@@ -505,22 +504,24 @@ class Parser:
 
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
-    def __parse_assign_expr(self) -> ast.AssignExprAST:
-        ln = self.__now_ln
-        left = self.__parse_member_access_expr(True, True)
+    def __parse_assign_expr(self) -> ast.BitOpExprAST:
+        left = self.__parse_bin_op_expr()
 
-        if self.__now_tok != '=':
-            return None
-
-        if type(left) not in (
-                ast.CellAST, ast.SubscriptExprAST, ast.MemberAccessAST):
+        if left is None:
             self.__syntax_error()
 
-        self.__next_tok()  # eat '='
+        if self.__now_tok.ttype != AIL_EQ:
+            return left
 
-        expr = self.__parse_binary_expr()
+        rl = []
 
-        return ast.AssignExprAST(left, expr, ln)
+        while self.__now_tok.ttype != AIL_EQ:
+            self.__next_tok()
+            r = self.__parse_bin_op_expr()
+            if r is None:
+                self.__syntax_error()
+            rl.append(('=', r))
+        return ast.AssignExprAST(left, rl, self.__now_ln)
 
     def __parse_assign_expr0(self) -> ast.DefineExprAST:
         n = self.__now_tok.value

@@ -1,5 +1,5 @@
 begin
 
-print 0b11 xor 0b10
+print ~1
 
 end

@@ -156,10 +156,10 @@ class ValueListAST:
 
 class AssignExprAST(ExprAST):
     """
-    assi_expr := cell '=' expr NEWLINE
+    assi_expr := cell ['=' expr]* NEWLINE
     """
 
-    def __init__(self, left: AddSubExprAST, value: ExprAST, ln: int):
+    def __init__(self, left: ExprAST, value: List[ExprAST], ln: int):
         self.value = value
         self.left = left
         self.ln = ln
@@ -460,4 +460,7 @@ BINARY_AST_TYPES = (
     MemberAccessAST,
     AssignExprAST,
     UnaryExprAST,
+    BinXorExprAST,
+    BitShiftExprAST,
+    BitOpExprAST,
 )

@@ -37,7 +37,7 @@ def get_line_from_line_no(lno: int, fp: str, strip=True):
         return ''
 
 
-# @debugger.debug_python_runtime
+@debugger.debug_python_runtime
 def error_msg(line: int, msg: str, filename: str, errcode=1):
     """
     line : 行号
