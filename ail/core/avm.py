@@ -945,6 +945,18 @@ class Interpreter:
                         self.raise_error(
                             'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
 
+                elif op == unary_invert:
+                    v = self.__pop_top()
+
+                    if v['__class__'] is aint.INTEGER_TYPE:
+                        vnum = ~objs.unpack_ailobj(v)
+                        self.__tof.stack.append(objs.convert_to_ail_object(vnum))
+
+                        self.__decref(v)
+                    else:
+                        self.raise_error(
+                            'cannot do \'~\' for type: %s' % v['__class__'].name, 'TypeError')
+
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 

@@ -17,11 +17,6 @@ binary_muit     = 0x0b
 binary_div      = 0x0c
 binary_mod      = 0x0d
 binary_pow      = 0x0e
-binary_lshift = 0x36
-binary_rshift = 0x37
-binary_and = 0x38
-binary_or = 0x39
-binary_xor = 0x3a
 
 return_value    = 0x0f
 continue_loop   = 0x10
@@ -82,6 +77,13 @@ bind_function = 0x33
 import_name = 0x34
 
 load_variable = 0x35
+binary_lshift = 0x36
+binary_rshift = 0x37
+binary_and = 0x38
+binary_or = 0x39
+binary_xor = 0x3a
+
+unary_invert = 0x3b
 
 COMP_EQ     = 0
 COMP_LEQ    = 1

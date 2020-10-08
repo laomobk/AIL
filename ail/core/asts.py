@@ -159,8 +159,8 @@ class AssignExprAST(ExprAST):
     assi_expr := cell ['=' expr]* NEWLINE
     """
 
-    def __init__(self, left: ExprAST, value: List[ExprAST], ln: int):
-        self.value = value
+    def __init__(self, left: BitOpExprAST,right: BitOpExprAST, ln: int):
+        self.right = right
         self.left = left
         self.ln = ln
 

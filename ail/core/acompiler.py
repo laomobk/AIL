@@ -144,6 +144,9 @@ class Compiler:
 
             return bc
 
+        elif isinstance(tree, ast.AssignExprAST):
+            return self.__compile_assign_expr(tree, is_single)
+
         elif isinstance(tree, ast.CallExprAST):
             bc += self.__compile_call_expr(tree)
 
@@ -191,6 +194,8 @@ class Compiler:
 
         if tree.op == '-':
             bc.add_bytecode(unary_negative, 0, tree.ln)
+        elif tree.op == '~':
+            bc.add_bytecode(unary_invert, 0, tree.ln)
 
         return bc
 
@@ -249,7 +254,7 @@ class Compiler:
             ast.MemberAccessAST: store_attr
         }[type(left)]
 
-        vc = self.__compile_binary_expr(tree.value)
+        vc = self.__compile_binary_expr(tree.right)
 
         bc += vc
 
@@ -759,7 +764,7 @@ class Compiler:
 
         has_bindto = tree.bindto is not None
 
-        ext = [c.value for c in tree.arg_list.exp_list]
+        ext = [c.right for c in tree.arg_list.exp_list]
 
         name = tree.name
 

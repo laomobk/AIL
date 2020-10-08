@@ -380,12 +380,7 @@ class Parser:
         return ast.BinXorExprAST(left, rl, self.__now_ln)
 
     def __parse_binary_expr(self) -> ast.BitOpExprAST:
-        # try assign expr
         expr = self.__parse_assign_expr()
-        ln = self.__now_ln
-    
-        if self.__now_tok.ttype == AIL_ENTER:
-            self.__syntax_error(ln=ln)
 
         return expr
 
@@ -495,7 +490,8 @@ class Parser:
             self.__syntax_error()
 
         if self.__now_tok != ';':
-            return ast.InputExprAST(msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
+            return ast.InputExprAST(
+                msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
         if self.__next_tok().ttype == AIL_IDENTIFIER:
             vl = self.__parse_value_list()
@@ -504,24 +500,26 @@ class Parser:
 
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
-    def __parse_assign_expr(self) -> ast.BitOpExprAST:
+    def __parse_assign_expr(self) -> ast.AssignExprAST:
         left = self.__parse_bin_op_expr()
 
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_EQ:
+        if self.__now_tok.ttype != AIL_ASSI:
             return left
 
-        rl = []
+        # check left is valid or not
+        if type(left) not in (ast.MemberAccessAST,
+                              ast.CellAST, ast.SubscriptExprAST):
+            self.__syntax_error(ln=left.ln)
 
-        while self.__now_tok.ttype != AIL_EQ:
-            self.__next_tok()
-            r = self.__parse_bin_op_expr()
-            if r is None:
-                self.__syntax_error()
-            rl.append(('=', r))
-        return ast.AssignExprAST(left, rl, self.__now_ln)
+        self.__next_tok()
+        r = self.__parse_bin_op_expr()
+        if r is None:
+            self.__syntax_error()
+
+        return ast.AssignExprAST(left, r, self.__now_ln)
 
     def __parse_assign_expr0(self) -> ast.DefineExprAST:
         n = self.__now_tok.value
