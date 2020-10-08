@@ -1,0 +1,12 @@
+begin
+
+import './request'
+
+print 'core/caller.ail'
+
+fun call() {
+    print 'core/caller.call()'
+    request.get()
+}
+
+end

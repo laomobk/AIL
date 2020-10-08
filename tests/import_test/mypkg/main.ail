@@ -1,0 +1,13 @@
+begin
+
+import './core/caller'
+import './misc/nezha'
+
+if __is_main__ {
+    caller.call()
+
+    nezha.say()
+    print 'nezha.slogan =' ; nezha.slogan
+}
+
+end

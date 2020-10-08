@@ -2,6 +2,7 @@ import sys
 import os.path
 
 from . import debugger
+from .shared import GLOBAL_SHARED_DATA
 
 
 ERR_NOT_EXIT = False
@@ -48,7 +49,7 @@ def error_msg(line: int, msg: str, filename: str, errcode=1):
     source_line = get_line_from_line_no(line, filename)
 
     if source_line != '':
-        err_msg = 'File: \'{0}\', line {2}:\n   {3}\nError: {1}'.format(
+        err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}'.format(
             filename, msg, line, source_line)
     else:
         err_msg = 'File: \'{0}\', line {2}\n{1}'.format(
@@ -70,18 +71,21 @@ def print_stack_trace(stack_trace, print_last=False):
     if print_last:
         stack = stack_trace.frame_stack
 
+    boot_dir = GLOBAL_SHARED_DATA.boot_dir
+
     for f in stack:
         lineno = f.lineno
         n = f.code.name
         filename = f.code.filename
 
         line_info = ''
-        source_line = get_line_from_line_no(lineno, filename)
+        source_line = get_line_from_line_no(
+                lineno, os.path.join(boot_dir, filename))
 
         if source_line != '':
             line_info = '    %s' % source_line
 
-        print('  File \'%s \', line %s, in %s\n%s' % (filename, lineno, n, line_info))
+        print('  File \'%s\', line %s, in %s\n%s' % (filename, lineno, n, line_info))
 
 
 class AILRuntimeError:

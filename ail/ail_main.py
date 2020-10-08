@@ -91,6 +91,7 @@ class ArgParser:
 # load AIL_PATH in environ
 shared.GLOBAL_SHARED_DATA.cwd = CURRENT_WORK_PATH
 shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIR_PATH
+shared.GLOBAL_SHARED_DATA.boot_dir = os.getcwd()
 
 
 def init_paths():
@@ -125,6 +126,11 @@ def launch_main(argv: list) -> int:
         return 1
 
     file_path = option.filename
+    file_dir = os.path.dirname(
+                os.path.normpath(
+                    os.path.abspath(file_path)))
+
+    shared.GLOBAL_SHARED_DATA.find_path.append(file_dir)
 
     try:
         from .core.alex import Lex
@@ -132,8 +138,12 @@ def launch_main(argv: list) -> int:
         from .core.acompiler import Compiler
         from .core.avm import Interpreter
 
+        if not os.path.exists(file_path):
+            raise FileNotFoundError('file \'%s\' not found' % file_path)
+
         ast = Parser(file_path).parse(Lex(file_path).lex())
-        code_object = Compiler(ast, filename=file_path).compile(ast).code_object
+        code_object = Compiler(
+                ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True
 
         why = Interpreter(option.rest_args).exec(code_object)
@@ -141,7 +151,7 @@ def launch_main(argv: list) -> int:
             return 1
 
     except FileNotFoundError as e:
-        print('AIL : can\'t open file \'%s\' : %s' % (file_path, str(e)))
+        print('AIL: can\'t open file \'%s\': %s' % (file_path, str(e)))
         return 1
 
 

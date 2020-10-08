@@ -1,0 +1,11 @@
+begin
+
+print 'try to import ./n.ail'
+
+import 'n'
+
+print 'success!'
+
+print 'n.name =' ; n.name
+
+end

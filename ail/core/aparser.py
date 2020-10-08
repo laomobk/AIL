@@ -29,6 +29,8 @@ _cmp_op = (
     AIL_UEQ
 )
 
+_literal_names = ('null', 'true', 'false')
+
 _FROM_MAIN = 0
 _FROM_FUNC = 1
 
@@ -73,7 +75,7 @@ class Parser:
     def __syntax_error(self, msg=None, ln: int = 0):
         error_msg(
             self.__now_ln if ln <= 0 else ln,
-            'SyntaxError%s' % ((' : ' if msg else '') + (msg if msg else '')),
+            'SyntaxError%s' % ((': ' if msg else '') + (msg if msg else '')),
             self.__filename)
 
     def __parse_arg_list(self) -> ast.ArgListAST:
@@ -513,6 +515,13 @@ class Parser:
         if type(left) not in (ast.MemberAccessAST,
                               ast.CellAST, ast.SubscriptExprAST):
             self.__syntax_error(ln=left.ln)
+
+        # check cell is valid or not
+        if isinstance(left, ast.CellAST):
+            if left.value in _literal_names:
+                self.__syntax_error('cannot assign to %s' % left.value, left.ln)
+            elif left.type in (AIL_NUMBER, AIL_STRING):
+                self.__syntax_error('cannot assign to literal', left.ln)
 
         self.__next_tok()
         r = self.__parse_bin_op_expr()

@@ -2,6 +2,7 @@
 
 import os.path
 
+from os import chdir, getcwd
 from traceback import format_exc
 
 from .abuiltins import BUILTINS
@@ -24,6 +25,13 @@ AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 '''
 
 
+def _trim_path(path: str) -> str:
+    path = path.replace('/', os.path.sep)
+    path = os.path.normpath(path)
+
+    return path
+
+
 class ModuleLoader:
     def __init__(self, paths: list):
         self.__load_path = paths
@@ -40,6 +48,7 @@ class ModuleLoader:
             for sp in self.__load_path:
                 absfp = os.path.abspath(sp)
                 jfp = os.path.join(absfp, mfp)
+                jfp = _trim_path(jfp)
                 if os.path.exists(jfp) and os.path.isfile(jfp):
                     return jfp
 
@@ -54,13 +63,13 @@ class ModuleLoader:
         except Exception as e:
             excs = format_exc()
             return error.AILRuntimeError(
-                '%s' % excs, 'ErrorWhileLoading')
+                '%s' % excs, 'LoadError')
 
         is_mod = v.get('_IS_AIL_MODULE_', None)
 
         if is_mod is not True:
             return error.AILRuntimeError(
-                '%s is not an AIL MODULE!' % pypath, 'ErrorWhileLoading')
+                '%s is not an AIL MODULE!' % pypath, 'LoadError')
 
         if '_AIL_NAMESPACE_' in v:
             nsp = v['_AIL_NAMESPACE_']
@@ -80,12 +89,13 @@ class ModuleLoader:
         if len(fns) > 1 and fns[-1] in _ALLOW_FILE_TYPE:
             return fns[-1]
 
-    def __add_to_loaded(self, name: str, namespace: dict):
+    def __add_to_loaded(self, module_path: str, namespace: dict):
         if namespace is not None:
-            self.__loaded[name] = namespace
+            self.__loaded[module_path] = namespace
         return namespace
 
-    def load_namespace(self, module_name: str, import_mode: bool = False) -> dict:
+    def load_namespace(
+            self, module_name: str, import_mode: bool = False) -> dict:
         """
         :return: 1 if module not found
                  2 if circular import(or load)
@@ -95,11 +105,6 @@ class ModuleLoader:
 
         from .avm import Interpreter, Frame
 
-        module_name = module_name.replace('.', '/')
-
-        if module_name in self.__loaded.keys():
-            return self.__loaded[module_name]
-
         p = self.__search_module(module_name)
 
         if p is None:
@@ -108,12 +113,22 @@ class ModuleLoader:
         if p in self.__loading_paths:
             return 2
 
+        if p in self.__loaded.keys():
+            return self.__loaded[p]
+
         self.__loading_paths.append(p)
         remove_path = self.__loading_paths.remove
+        
+        cwd = getcwd()
+        module_work_dir = os.path.dirname(p)
+
+        chdir(module_work_dir)
 
         if self.__get_type(p) == 'py':
             remove_path(p)
-            return self.__add_to_loaded(module_name, self.__load_py_namespace(p))
+            ns = self.__add_to_loaded(p, self.__load_py_namespace(p))
+            chdir(cwd)
+            return ns
 
         elif self.__get_type(p) == 'ail':
             ast = Parser(p).parse(Lex(p).lex())
@@ -128,15 +143,17 @@ class ModuleLoader:
             v = frame.variable
 
             remove_path(p)
+            chdir(cwd)
 
             if why == WHY_ERROR:
                 return 3
             elif why == WHY_HANDLING_ERR:
                 return 4
 
-            return self.__add_to_loaded(module_name, v)
+            return self.__add_to_loaded(p, v)
 
         remove_path(p)
+        chdir(cwd)
         return 1
 
 

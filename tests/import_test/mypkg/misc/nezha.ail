@@ -1,0 +1,10 @@
+begin
+
+slogan = '我命由我不由天!'
+
+fun say() {
+    print 'misc/nezha.say()'
+    print slogan
+}
+
+end

@@ -764,7 +764,7 @@ class Compiler:
 
         has_bindto = tree.bindto is not None
 
-        ext = [c.right for c in tree.arg_list.exp_list]
+        ext = [c.value for c in tree.arg_list.exp_list]
 
         name = tree.name
 
