@@ -1,5 +1,7 @@
 begin
 
+print 'misc/nezha.ail'
+
 slogan = '我命由我不由天!'
 
 fun say() {

@@ -1,5 +1,6 @@
 from os.path import split
 
+from .aconfig import _PACKAGE_INIT_FILENAME
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
 from .error import error_msg
@@ -1044,6 +1045,7 @@ class Parser:
 
         ln = self.__now_ln
         alias = None
+        is_dir = False
 
         self.__next_tok()  # eat 'import'
 
@@ -1055,10 +1057,22 @@ class Parser:
             self.__syntax_error()
 
         path = self.__now_tok.value
-        _, target = split(path)
+        path = path.replace('\\', '/')
+        directory, target = split(path)
 
         if target == '':
-            self.__syntax_error('Cannot import a directory')
+            directory, target = split(directory)  # directory name
+            is_dir = True
+
+        if target == '':
+            self.__syntax_error('Cannot import a package in current directory.')
+
+        if is_dir:
+            if directory == '':
+                directory = '.'
+
+            path = '/'.join((directory, target, _PACKAGE_INIT_FILENAME))
+            alias = target
 
         if alias is None:
             name = target
@@ -1294,7 +1308,8 @@ class Parser:
 
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,
-                      start_enter=True, for_if_else: bool = False) -> ast.BlockExprAST:
+                      start_enter=True, for_if_else: bool = False, 
+                      for_program: bool = False) -> ast.BlockExprAST:
         if self.__now_tok.ttype == AIL_LLBASKET:
             return self.__parse_new_block()
 
@@ -1310,7 +1325,9 @@ class Parser:
                 # not eat, leave to if_else parse
 
                 return ast.BlockExprAST([], ln)
-
+        elif for_program:
+            if self.__now_tok == start:
+                self.__next_tok()
         else:
             if self.__now_tok != start:
                 self.__syntax_error(start_msg)
@@ -1338,7 +1355,8 @@ class Parser:
             stmtl.append(first)
 
         while self.__now_tok != end:
-            if for_if_else and self.__now_tok.value in ('elif', 'else', 'endif'):
+            if for_if_else and self.__now_tok.value in (
+                    'elif', 'else', 'endif'):
                 return ast.BlockExprAST(stmtl, ln)
 
             s = self.__parse_stmt((start, end))
@@ -1346,11 +1364,13 @@ class Parser:
             if s is None:
                 self.__syntax_error()
 
+            if isinstance(s, ast.EOFAST):
+                if for_program:
+                    break
+                self.__syntax_error(end_msg)
+
             if not isinstance(s, ast.NullLineAST):
                 stmtl.append(s)
-
-            if isinstance(s, ast.EOFAST):
-                self.__syntax_error(end_msg)
 
         self.__next_tok()  # eat end
 
@@ -1368,7 +1388,8 @@ class Parser:
 
         return self.__parse_block('begin', 'end',
                                   'A program should starts with \'begin\'',
-                                  "A program should ends with 'end'")
+                                  "A program should ends with 'end'",
+                                  for_program=True)
 
     def test(self, ts):
         return self.parse(ts)

@@ -1,4 +1,3 @@
-begin
 
 import './core/caller'
 import './misc/nezha'
@@ -10,4 +9,4 @@ if __is_main__ {
     print 'nezha.slogan =' ; nezha.slogan
 }
 
-end
+
