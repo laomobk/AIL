@@ -756,6 +756,7 @@ class Compiler:
 
         bc.add_bytecode(import_name, nsi, tree.ln)
         bc.add_bytecode(store_var, ni, tree.ln)
+        bc.add_bytecode(pop_top, 0, tree.ln)  # pop top of stack after store_var
 
         return bc
 

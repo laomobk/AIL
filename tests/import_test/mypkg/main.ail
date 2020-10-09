@@ -2,11 +2,14 @@
 import './core/caller'
 import './misc/nezha'
 
-if __is_main__ {
+fun main() {
     caller.call()
 
     nezha.say()
     print 'nezha.slogan =' ; nezha.slogan
 }
 
+if __is_main__ {
+    main()
+}
 

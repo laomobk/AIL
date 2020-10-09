@@ -108,13 +108,13 @@ class ModuleLoader:
         p = self.__search_module(module_name)
 
         if p is None:
-            return 1
+            return 1, p
 
         if p in self.__loading_paths:
-            return 2
+            return 2, p
 
         if p in self.__loaded.keys():
-            return self.__loaded[p]
+            return self.__loaded[p], p
 
         self.__loading_paths.append(p)
         remove_path = self.__loading_paths.remove
@@ -128,7 +128,7 @@ class ModuleLoader:
             remove_path(p)
             ns = self.__add_to_loaded(p, self.__load_py_namespace(p))
             chdir(cwd)
-            return ns
+            return ns, p
 
         elif self.__get_type(p) == 'ail':
             ast = Parser(p).parse(Lex(p).lex())
@@ -146,15 +146,15 @@ class ModuleLoader:
             chdir(cwd)
 
             if why == WHY_ERROR:
-                return 3
+                return 3, p
             elif why == WHY_HANDLING_ERR:
-                return 4
-
-            return self.__add_to_loaded(p, v)
+                return 4, p
+            
+            return self.__add_to_loaded(p, v), p
 
         remove_path(p)
         chdir(cwd)
-        return 1
+        return 1, p
 
 
 MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)

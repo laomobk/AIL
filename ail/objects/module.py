@@ -6,9 +6,10 @@ from ..core.aobjects import AILObject, AILObjectType, ObjectCreater
 from ..core.error import AILRuntimeError
 
 
-def module_init(self, module_name: str, namespace: dict):
+def module_init(self, module_name: str, module_path: str, namespace: dict):
     self['__namespace__'] = namespace
     self['__name__'] = module_name
+    self['__path__'] = module_path
 
 
 def module_setattr(self, name: str, value: AILObject):
@@ -33,7 +34,7 @@ def module_getattr(self, name: str) -> AILObject:
 
 
 def module_str(self) -> str:
-    return '<module \'%s\'>' % self['__name__']
+    return '<module \'%s\'>' % self['__path__']
 
 
 MODULE_TYPE = AILObjectType('<module type>', I_MODULE_TYPE, 
@@ -45,6 +46,7 @@ MODULE_TYPE = AILObjectType('<module type>', I_MODULE_TYPE,
                             )
 
 
-def new_module_object(module_name: str, namespace: dict) -> AILObject:
-    return ObjectCreater.new_object(MODULE_TYPE, module_name, namespace)
+def new_module_object(
+        module_name: str, module_path: str, namespace: dict) -> AILObject:
+    return ObjectCreater.new_object(MODULE_TYPE, module_name, module_path, namespace)
 

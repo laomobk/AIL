@@ -1,5 +1,5 @@
 begin
 
-print ~a
+import './import_test/mypkg/'
 
 end

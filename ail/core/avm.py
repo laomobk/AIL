@@ -960,7 +960,7 @@ class Interpreter:
                 elif op == load_module:
                     name = self.__tof.consts[argv]['__value__']
 
-                    namespace = aloader.MAIN_LOADER.load_namespace(name)
+                    namespace, _ = aloader.MAIN_LOADER.load_namespace(name)
 
                     if namespace is None:
                         pass
@@ -980,7 +980,8 @@ class Interpreter:
                 elif op == import_name:
                     name = self.__tof.consts[argv]['__value__']
 
-                    namespace = aloader.MAIN_LOADER.load_namespace(name, True)
+                    namespace, module_path = aloader.MAIN_LOADER.load_namespace(
+                            name, True)
 
                     if namespace is None:
                         pass
@@ -999,7 +1000,8 @@ class Interpreter:
                         pass
 
                     else:
-                        module_object = module.new_module_object(name, namespace)
+                        module_object = module.new_module_object(
+                                name, module_path, namespace)
                         self.__push_back(module_object)
 
                 elif op == store_subscr:
@@ -1143,6 +1145,8 @@ class Interpreter:
         old_global_frame = self.__global_frame
         old_global_frame_index = self.__global_frame_index
         old_global_namespace = self.__namespace_global
+        
+        old_opcounter = self.__opcounter
 
         self.__global_frame = frame
         self.__global_frame_index = len(self.__frame_stack)
@@ -1152,6 +1156,8 @@ class Interpreter:
         self.__global_frame = old_global_frame
         self.__global_frame_index = old_global_frame_index
         self.__namespace_global = old_global_namespace
+
+        self.__opcounter = old_opcounter
 
         return why
 

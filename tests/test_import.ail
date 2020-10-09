@@ -1,5 +1,5 @@
 begin
 
-import 'test_import'
+name = '哪吒'
 
 end
