@@ -888,12 +888,15 @@ class Parser:
         if self.__now_tok.ttype == AIL_LLBASKET:
             start_tok = '{'
             end_tok = '}'
+            new_block_style = True
         
         if self.__now_tok != start_tok or \
                 self.__next_tok().ttype != AIL_ENTER:
-            self.__syntax_error()
-
-        self.__next_tok()  # eat ENTER
+            if not new_block_style:
+                self.__syntax_error()
+        
+        if self.__now_tok.ttype == AIL_ENTER:
+            self.__next_tok()  # eat ENTER
 
         vl = []
         pl = []
@@ -1283,9 +1286,6 @@ class Parser:
         ln = self.__now_ln
 
         self.__next_tok()
-
-        if self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error()
 
         stmt_list = []
 
