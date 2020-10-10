@@ -1,5 +1,7 @@
 begin
 
-import 'test_import'
+import t 'test_import'
+
+t.say()
 
 end

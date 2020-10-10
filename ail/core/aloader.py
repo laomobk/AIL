@@ -135,12 +135,11 @@ class ModuleLoader:
             cobj = Compiler(filename=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
-            frame.variable.update(BUILTINS)
+
+            namespace = dict()
 
             interpreter = MAIN_INTERPRETER_STATE.global_interpreter
-            why = interpreter.exec_for_import(cobj, frame)
-
-            v = frame.variable
+            why = interpreter.exec_for_import(cobj, frame, globals=namespace)
 
             remove_path(p)
             chdir(cwd)
@@ -150,7 +149,7 @@ class ModuleLoader:
             elif why == WHY_HANDLING_ERR:
                 return 4, p
             
-            return self.__add_to_loaded(p, v), p
+            return self.__add_to_loaded(p, namespace), p
 
         remove_path(p)
         chdir(cwd)

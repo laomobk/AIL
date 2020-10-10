@@ -41,8 +41,6 @@ _SHELL_NAMESPACE = {
     'copyright': objs.convert_to_ail_object(_sh_copyright),
 }
 
-_SHELL_NAMESPACE.update(_BUILTINS)
-
 
 class Shell:
     def __init__(self):
@@ -59,11 +57,12 @@ class Shell:
         self.__program = 'begin\n%s\nend\n'
 
         self.__main_frame = Frame()
-        self.__main_frame.variable = _SHELL_NAMESPACE
 
         self.__lexer = Lex(self.__temp_name)
         self.__parser = Parser(self.__temp_name)
         self.__compiler = Compiler(filename='<shell>')
+        
+        self.__globals = _SHELL_NAMESPACE
 
     def __write(self, line: str):
         if self.__fbuffer.closed:
@@ -131,12 +130,13 @@ class Shell:
         t = self.__lexer.lex(self.__temp_name)
         t = self.__parser.parse(t)
         cobj = self.__compiler.compile(t, single_line=single_line).code_object
-
+        
+        cobj.is_main = True
         self.__main_frame.code = cobj
         self.__main_frame.varnames = cobj.varnames
         self.__main_frame.consts = cobj.consts
         
-        Interpreter().exec(cobj, self.__main_frame)
+        Interpreter().exec(cobj, self.__main_frame, globals=self.__globals)
         MAIN_INTERPRETER_STATE.frame_stack.clear()
 
         if self.__main_frame.stack:

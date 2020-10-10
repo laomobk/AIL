@@ -20,7 +20,8 @@ from . import (
 
 from .aframe import Frame
 from .agc import GC
-from .astate import MAIN_INTERPRETER_STATE
+from .anamespace import Namespace
+from .astate import MAIN_INTERPRETER_STATE, NamespaceState
 from .astacktrace import StackTrace
 from . import shared
 
@@ -50,6 +51,7 @@ from .avmsig import *
 
 
 _BUILTINS = abuiltins.BUILTINS
+_new_namespace = namespace.new_namespace
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
@@ -126,14 +128,9 @@ class Interpreter:
 
         self.__can_update_opc = True
 
-        self.__namespace_global = None  # namespace object
-        self.__namespace_local = None  # namespace object
-        self.__namespace_outer = None  # namespace object
-
         self.__exec_for_module = False
 
         self.__global_frame = None
-        self.__global_frame_index = 0
 
     @property
     def __tof(self) -> Frame:
@@ -155,112 +152,14 @@ class Interpreter:
     def __temp_env_stack(self) -> list:
         return self.__tof.temp_env_stack
 
+    @property
+    def __namespace_state(self) -> NamespaceState:
+        return MAIN_INTERPRETER_STATE.namespace_state
+
     def __set_globals(self, globals: dict):
-        self.__frame_stack[0].variable = globals
-
-    def __get_field(self, name: str, frame_index: int,
-                    from_outer: bool = False) -> objs.AILObject:
-
-        frame_stack_length = len(self.__frame_stack)
-
-        if frame_stack_length == 0:
-            return error.AILRuntimeError(
-                'no frame to get field', 'NoFrameError')
-
-        if frame_index < 0:
-            frame_index = frame_stack_length + frame_index
-
-            if frame_index < 0:
-                frame_index = 0
-
-        if frame_stack_length > frame_index:
-            f = self.__frame_stack[frame_index]
-
-            if from_outer:
-                for scope in f.closure_outer:
-                    if name in scope:
-                        return scope.get(name)
-                error.AILRuntimeError(
-                    'no field named \'%s\' outer namespace' % name, 'NameError')
-
-            return f.variable.get(name, error.AILRuntimeError(
-                'no field named \'%s\'' % name, 'NameError'))
-
-    def __set_field(self, name: str, value: objs.AILObject, frame_index: int,
-                    for_outer: bool = False):
-
-        frame_stack_length = len(self.__frame_stack)
-
-        if frame_stack_length == 0:
-            return error.AILRuntimeError(
-                'no frame to set field', 'NoFrameError')
-
-        if frame_index < 0:
-            frame_index = frame_stack_length + frame_index
-
-            if frame_index < 0:
-                frame_index = 0
-
-        if frame_stack_length > frame_index:
-            f = self.__frame_stack[frame_index]
-
-            if for_outer:
-                for scope in f.closure_outer:
-                    if name in scope:
-                        scope[name] = value
-                        return
-                else:
-                    f.closure_outer_variable[-1][name] = value
-                return
-
-            f.variable[name] = value
-            return
-
-    def __get_global_namespace(self):
-        if self.__namespace_global is None:
-            ns_global = namespace.new_namespace(
-                'global',
-                lambda name: self.__get_field(name, self.__global_frame_index),
-                lambda name, value: self.__set_field(name, value, self.__global_frame_index)
-            )
-
-            self.__namespace_global = ns_global
-            return ns_global
-
-        return self.__namespace_global
-
-    def __get_local_namespace(self):
-        if self.__namespace_local is None:
-            ns_local = namespace.new_namespace(
-                'local',
-                lambda name: self.__get_field(name, -1),
-                lambda name, value: self.__set_field(name, value, -1)
-            )
-            self.__namespace_local = ns_local
-            return ns_local
-
-        return self.__namespace_local
-
-    def __get_outer_namespace(self):
-        if self.__namespace_outer is None:
-            ns_outer = namespace.new_namespace(
-                'outer',
-                lambda name: self.__get_field(name, -1, True),
-                lambda name, value: self.__set_field(name, value, -1, True)
-            )
-            self.__namespace_outer = ns_outer
-            return ns_outer
-
-        return self.__namespace_outer
+        self.__namespace_state.ns_global.ns_dict = globals
 
     def __check_and_get_namespace(self, name: str):
-        if name == 'global':
-            return self.__get_global_namespace()
-        elif name == 'local':
-            return self.__get_local_namespace()
-        elif name == 'outer' and self.__tof.code.closure:
-            # only closure has 'outer'
-            return self.__get_outer_namespace()
         return None
 
     def __push_back(self, obj: objs.AILObject):
@@ -306,9 +205,10 @@ class Interpreter:
                           tof.lineno, tof.code.filename, tof.code.name)
 
     def __store_var(self, name, value):
-        if self.__temp_env_stack and name not in self.__tof.variable:
-            self.__temp_env_stack[-1].temp_var.append(name)
-        self.__tof.variable[name] = value
+        if self.__tof is self.__global_frame:
+            self.__namespace_state.ns_global.set(name, value)
+        else:
+            self.__tof.variable[name] = value
 
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
@@ -534,11 +434,17 @@ class Interpreter:
         if ns is not None:
             return ns
 
-        for f in self.__frame_stack[::-1]:
-            if n in f.variable:
-                return f.variable[n]
-        else:
-            self.raise_error('name \'%s\' is not defined' % n, 'NameError')
+        v = self.__tof.variable.get(n)
+        if v is not None:
+            return v
+
+        ns_state = self.__namespace_state
+        for ns in (ns_state.ns_global, ns_state.ns_builtins):
+            v = ns.get(n)
+            if v is not None:
+                return v
+        
+        return None
 
     def call_function(self, func, argv, argl):
         self.__tof._marked_opcounter = self.__opcounter
@@ -580,7 +486,7 @@ class Interpreter:
                 try:
                     self.__tof._latest_call_opcounter = self.__opcounter
 
-                    now_globals = self.__frame_stack[0].variable
+                    now_globals = self.__namespace_state.ns_global.ns_dict
 
                     if func['__globals__'] is not None:
                         self.__set_globals(func['__globals__'])
@@ -637,7 +543,7 @@ class Interpreter:
                     # unpack argl for builtin function
                 try:
                     rtn = self.__check_object(pyf(*argl))
-                except Exception as _:
+                except Exception as e:
                     self.raise_error(
                         str(e), 'PythonError'
                     )
@@ -747,13 +653,8 @@ class Interpreter:
                     v = self.__tof.stack.pop()
                     n = self.__tof.varnames[argv]
 
-                    if n in self.__tof.variable.keys():
-                        self.__decref(self.__tof.variable[n])
-
-                    v.reference += 1
                     self.__store_var(n, v)
                     self.__tof.stack.append(v)
-                    v.reference += 1
 
                 elif op == load_const:
                     self.__tof.stack.append(
@@ -766,7 +667,12 @@ class Interpreter:
 
                 elif op == load_variable:
                     var = self.__load_name(argv)
-                    self.__push_back(var)
+                    if var is None:
+                        name = self.__tof.varnames[argv]
+                        self.raise_error(
+                                'name \'%s\' is not defined' % name, 'NameError')
+                    else:
+                        self.__push_back(var)
 
                 elif op == load_global:
                     n = self.__tof.varnames[argv]
@@ -906,7 +812,7 @@ class Interpreter:
                     )
 
                     if self.__exec_for_module:
-                        tosf['__globals__'] = self.__frame_stack[self.__global_frame_index].variable
+                        tosf['__globals__'] = self.__namespace_state.ns_global.ns_dict
 
                     n = self.__tof.varnames[argv]
                     self.__store_var(n, tosf)
@@ -1081,6 +987,8 @@ class Interpreter:
 
                 elif op == bind_function:
                     target_struct = self.__load_name(argv)
+                    if target_struct is None:
+                        self.raise_error('can not find bound target', 'NameError')
                     func_name = objs.unpack_ailobj(self.__pop_top())
 
                     if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
@@ -1141,44 +1049,42 @@ class Interpreter:
 
         return why
 
-    def exec_for_import(self, cobj, frame: Frame):
+    def exec_for_import(self, cobj, frame: Frame, globals: dict = None):
         old_global_frame = self.__global_frame
-        old_global_frame_index = self.__global_frame_index
-        old_global_namespace = self.__namespace_global
-        
         old_opcounter = self.__opcounter
 
-        self.__global_frame = frame
-        self.__global_frame_index = len(self.__frame_stack)
+        old_global = self.__namespace_state.ns_global.ns_dict
 
-        why = self.exec(cobj, frame, True)
+        why = self.exec(cobj, frame, True, globals=globals)
 
         self.__global_frame = old_global_frame
-        self.__global_frame_index = old_global_frame_index
-        self.__namespace_global = old_global_namespace
-
+        self.__namespace_state.ns_global.ns_dict = old_global
         self.__opcounter = old_opcounter
 
         return why
 
-    def exec(self, cobj, frame=None, exec_for_module=False):
+    def exec(self, cobj, frame=None, 
+             exec_for_module=False, globals: dict = None):
         if not frame:
             f = Frame()
             f.code = cobj
             f.consts = cobj.consts
             f.varnames = cobj.varnames
-
-            # init namespace
-            f.variable = _BUILTINS
         else:
             f = frame
+        
+        # init namespace
+        self.__namespace_state.ns_global.ns_dict = dict()  \
+                                                   if globals is None  \
+                                                   else globals
+        self.__namespace_state.ns_builtins = abuiltins.BUILTINS_NAMESPACE
 
         f.lineno = cobj.firstlineno
-        f.variable['__is_main__'] = objs.convert_to_ail_object(cobj.is_main)
+        
+        self.__namespace_state.ns_global.ns_dict['__is_main__'] = \
+                objs.convert_to_ail_object(cobj.is_main)
 
-        if not exec_for_module:
-            self.__global_frame = frame
-            self.__global_frame_index = 0
+        self.__global_frame = f
 
         self.__exec_for_module = exec_for_module
 

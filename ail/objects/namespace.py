@@ -7,34 +7,40 @@ from ..core.aobjects import (
 from ..core.error import AILRuntimeError
 
 
-def namespace_init(self: AILObject, namespace_name: str, getter, setter):
-    self['__nsname__'] = namespace_name
-    self['__nsgetter__'] = getter
-    self['__nssetter__'] = setter
+def namespace_init(self: AILObject, 
+                   ns_name: str, ns_dict: dict, ns_last: AILObject):
+    self['__nsname__'] = ns_name
+    self['__nsdict__'] = ns_dict
+    self['__nslast__'] = ns_last
 
 
 def namespace_setattr(self, name: str, value: AILObject) -> AILObject:
-    try:
-        return self['__nssetter__'](name, value)
-    except TypeError as e:
-        return AILRuntimeError('cannot set a field: %s' % str(e),
-                               'BadNamespaceError')
+    self['__nsdict__'][name] = value
 
 
 def namespace_getattr(self, name: str) -> AILObject:
-    try:
-        return self['__nsgetter__'](name)
-    except TypeError as e:
-        return AILRuntimeError('cannot get a field: %s' % str(e),
-                               'BadNamespaceError')
+    v = self['__nsdict__'].get(name)
+    if v is None:
+        last = self['__nslast__']
+        if last is None:
+            return AILRuntimeError(
+                    'name \'%s\' is not defined' % name, 'NameError')
+        return namespace_getattr(last, name)
+    return v
 
 
 def namespace_str(self) -> str:
     return '<namespace %s>' % self['__nsname__']
 
 
-def new_namespace(namespace_name: str, getter, setter) -> AILObject:
-    return ObjectCreater.new_object(NAMESPACE_TYPE, namespace_name, getter, setter)
+def new_namespace(ns_name: str, 
+                  ns_dict: dict = None, 
+                  ns_last: AILObject = None) -> AILObject:
+    if default is None:
+        default = dict()
+
+    return ObjectCreater.new_object(
+            NAMESPACE_TYPE, ns_name, ns_dict, ns_last)
 
 
 NAMESPACE_TYPE = AILObjectType('<namespace type>', I_NAMESPACE_TYPE,

@@ -1,3 +1,4 @@
+from collections import Iterable as IterableType
 from typing import Iterable
 
 from . import types
@@ -74,6 +75,6 @@ ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
 
 
 def convert_to_array(iterable: Iterable):
-    if type(iterable) in (list, set, tuple):
+    if isinstance(iterable, IterableType):
         return objs.ObjectCreater.new_object(ARRAY_TYPE, list(iterable))
     return None

@@ -49,10 +49,10 @@ def error_msg(line: int, msg: str, filename: str, errcode=1):
     source_line = get_line_from_line_no(line, filename)
 
     if source_line != '':
-        err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}'.format(
+        err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}\n'.format(
             filename, msg, line, source_line)
     else:
-        err_msg = 'File: \'{0}\', line {2}\n{1}'.format(
+        err_msg = 'File: \'{0}\', line {2}\n{1}\n'.format(
             filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:
@@ -83,9 +83,9 @@ def print_stack_trace(stack_trace, print_last=False):
                 lineno, os.path.join(boot_dir, filename))
 
         if source_line != '':
-            line_info = '    %s' % source_line
+            line_info = '\n    %s' % source_line
 
-        print('  File \'%s\', line %s, in %s\n%s' % (filename, lineno, n, line_info))
+        print('  File \'%s\', line %s, in %s%s' % (filename, lineno, n, line_info))
 
 
 class AILRuntimeError:
@@ -116,7 +116,7 @@ def print_global_error(err: AILRuntimeError, filename: str,
     sys.stderr.write(info)
 
     if source_line != '':
-        sys.stderr.write('    %s\n' % source_line)
+        sys.stderr.write('    %s' % source_line)
 
     sys.stderr.write('%s: %s' % (t, msg))
     sys.stderr.flush()
@@ -135,7 +135,7 @@ def format_error(error: AILRuntimeError):
     line_detail = ''
 
     if source_line != '':
-        line_detail = '    %s\n' % source_line
+        line_detail = '    %s' % source_line
 
     return 'File: \'%s\', line %s :\n%s%s : %s' % \
            (f.code.name, p, line_detail, t, msg)

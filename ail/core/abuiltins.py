@@ -10,6 +10,9 @@ from .version import (
 from .modules._fileio import _open
 from .modules.console import get_console_object
 
+from .anamespace import Namespace
+from .astate import MAIN_INTERPRETER_STATE
+
 from ..objects import (
     string  as astr,
     integer as aint,
@@ -18,6 +21,7 @@ from ..objects import (
     float   as afloat,
     array   as array,
     struct  as struct,
+    module  as amodule,
     fastnum,
     null,
 )
@@ -37,6 +41,29 @@ def func_neg(x: objs.AILObject):
         return -v if v > 0 else v
 
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
+
+
+def func_globals():
+    keys = MAIN_INTERPRETER_STATE.namespace_state.ns_global.ns_dict.keys()
+    return array.convert_to_array(keys)
+
+
+def func_builtins():
+    keys = MAIN_INTERPRETER_STATE.namespace_state.ns_builtins.ns_dict.keys()
+    return array.convert_to_array(keys)
+
+
+def func_locals():
+    frame_stack = MAIN_INTERPRETER_STATE.frame_stack
+    if len(frame_stack) > 0:
+        return array.convert_to_array(frame_stack[-1].variable.keys())
+    return AILRuntimeError('No frame found', 'VMError')
+
+
+def func_dir(module):
+    if objs.compare_type(module, amodule.MODULE_TYPE):
+        return array.convert_to_array(module['__namespace__'].keys())
+    return AILRuntimeError('dir() requires a module object', 'TypeError')
 
 
 '''
@@ -275,5 +302,12 @@ BUILTINS = {
     'float': objs.convert_to_ail_object(func_float),
     'addr': objs.convert_to_ail_object(func_addr),
     'fnum': objs.convert_to_ail_object(func_fnum),
+    'globals': objs.convert_to_ail_object(func_globals),
+    'builtins': objs.convert_to_ail_object(func_builtins),
+    'locals': objs.convert_to_ail_object(func_locals),
+    'dir': objs.convert_to_ail_object(func_dir),
     'console': objs.convert_to_ail_object(get_console_object()),
 }
+
+BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
+

@@ -205,8 +205,8 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
 
     from ..objects import string
     from ..objects import integer
-    from ..objects import float
-    from ..objects import bool
+    from ..objects import float as afloat
+    from ..objects import bool as abool
     from ..objects import array
     from ..objects import wrapper
     from ..objects import function
@@ -216,8 +216,8 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     target_t = {
         str: string.STRING_TYPE,
         int: integer.INTEGER_TYPE,
-        float: float.FLOAT_TYPE,
-        bool: bool.BOOL_TYPE,
+        float: afloat.FLOAT_TYPE,
+        bool: abool.BOOL_TYPE,
         list: array.ARRAY_TYPE,
         FunctionType: function.PY_FUNCTION_TYPE,
     }.get(type(pyobj), wrapper.WRAPPER_TYPE)

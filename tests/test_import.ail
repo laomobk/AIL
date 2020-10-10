@@ -2,4 +2,8 @@ begin
 
 name = '哪吒'
 
+fun say() {
+    print name
+}
+
 end

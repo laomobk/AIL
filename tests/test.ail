@@ -1,5 +1,15 @@
-begin
 
-import './import_test/mypkg/'
+import './core/caller'
+import './misc/nezha'
 
-end
+fun main() {
+    caller.call()
+
+    nezha.say()
+    print 'nezha.slogan =' ; nezha.slogan
+}
+
+if __is_main__ {
+    main()
+}
+

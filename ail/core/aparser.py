@@ -1323,8 +1323,8 @@ class Parser:
 
             if self.__now_tok in ('else', 'elif', 'endif'):
                 # not eat, leave to if_else parse
-
                 return ast.BlockExprAST([], ln)
+
         elif for_program:
             if self.__now_tok == start:
                 self.__next_tok()
