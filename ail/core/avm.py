@@ -206,8 +206,14 @@ class Interpreter:
 
     def __store_var(self, name, value):
         if self.__tof is self.__global_frame:
-            self.__namespace_state.ns_global.set(name, value)
+            self.__namespace_state.ns_global.ns_dict[name] = value
         else:
+            if name in self.__tof.code.global_names:
+                self.__namespace_state.ns_global.ns_dict[name] = value
+            elif name in self.__tof.code.nonlocal_names:
+                for outer in self.__tof.closure_outer:
+                    if name in outer:
+                        outer[name] = value
             self.__tof.variable[name] = value
 
     def raise_error(self, msg: str, err_type: str):
@@ -437,6 +443,10 @@ class Interpreter:
         v = self.__tof.variable.get(n)
         if v is not None:
             return v
+
+        for outer in self.__tof.closure_outer:
+            if n in outer:
+                return outer[n]
 
         ns_state = self.__namespace_state
         for ns in (ns_state.ns_global, ns_state.ns_builtins):
@@ -989,21 +999,25 @@ class Interpreter:
                     target_struct = self.__load_name(argv)
                     if target_struct is None:
                         self.raise_error('can not find bound target', 'NameError')
-                    func_name = objs.unpack_ailobj(self.__pop_top())
+                    else:
+                        func_name = objs.unpack_ailobj(self.__pop_top())
 
-                    if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
-                        self.raise_error('function must be bound to a struct type')
+                        if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
+                            self.raise_error('function must be bound to a struct type')
 
-                    code_object = self.__pop_top()
+                        code_object = self.__pop_top()
 
-                    bound_function = objs.ObjectCreater.new_object(
-                        afunc.FUNCTION_TYPE, code_object, self.__tof.variable, code_object.name
-                    )
+                        bound_function = objs.ObjectCreater.new_object(
+                            afunc.FUNCTION_TYPE, code_object, 
+                            self.__tof.variable, code_object.name
+                        )
 
-                    if self.__exec_for_module:
-                        bound_function['__globals__'] = self.__frame_stack[self.__global_frame_index].variable
+                        if self.__exec_for_module:
+                            bound_function['__globals__'] = \
+                                    self.__frame_stack[
+                                            self.__global_frame_index].variable
 
-                    target_struct['__bind_functions__'][func_name] = bound_function
+                        target_struct['__bind_functions__'][func_name] = bound_function
 
                 # handle interruption
                 if self.__interrupted:

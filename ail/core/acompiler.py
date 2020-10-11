@@ -713,6 +713,14 @@ class Compiler:
 
         return bc
 
+    def __compile_global_stmt(self, tree: ast.GlobalStmtAST) -> ByteCode:
+        self.__buffer.global_names.append(tree.name)
+        return ByteCode()  # empty
+
+    def __compile_nonlocal_stmt(self, tree: ast.NonlocalStmtAST) -> ByteCode:
+        self.__buffer.nonlocal_names.append(tree.name)
+        return ByteCode()  # empty
+
     def __compile_assert_expr(self, tree: ast.AssertExprAST, extofs: int) -> ByteCode:
         bc = ByteCode()
 
@@ -897,6 +905,12 @@ class Compiler:
 
             elif isinstance(et, ast.ImportAST):
                 tbc = self.__compile_import_stmt(et)
+
+            elif isinstance(et, ast.GlobalStmtAST):
+                tbc = self.__compile_global_stmt(et)
+
+            elif isinstance(et, ast.NonlocalStmtAST):
+                tbc = self.__compile_nonlocal_stmt(et)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et, is_single=True)

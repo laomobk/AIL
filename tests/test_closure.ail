@@ -7,8 +7,7 @@ fun f() is
     name = 'Nezha'
 
     fun inner() is
-        print outer
-        print outer.name
+        print name
     end
 
     name = 'Zhaer'
@@ -24,7 +23,7 @@ fun f2() is
 
     fun inf2() is
         fun ininf2() is
-            print outer.date
+            print date
         end
         return ininf2
     end
@@ -50,7 +49,7 @@ end
 fun say_hi(func) is
     fun wrapper() is
         print 'Hello'
-        return outer.func()
+        return func()
     end
     return wrapper
 end
@@ -70,7 +69,8 @@ hello()
 fun f3() is
     date = 726
     fun inf3() is
-        outer.date = 1026
+        nonlocal date
+        date = 1026
     end
 
     print 'before inf3(), date =' ; date

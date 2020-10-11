@@ -103,6 +103,8 @@ class ByteCodeFileBuffer:
         self.first_lineno = 0
         self.lineno_list: List[int] = []
         self.filename = '<FILE>'
+        self.global_names: List[str] = []
+        self.nonlocal_names: List[str] = []
 
     def serialize(self) -> bytes:
         """
@@ -158,7 +160,9 @@ class ByteCodeFileBuffer:
     def code_object(self) -> obj.AILCodeObject:
         return obj.AILCodeObject(self.consts, self.varnames, self.bytecodes.blist,
                                  self.lnotab.firstlineno, self.filename, self.argcount,
-                                 self.name, self.lnotab.table, tuple(self.lineno_list))
+                                 self.name, self.lnotab.table, tuple(self.lineno_list),
+                                 global_names=tuple(self.global_names),
+                                 nonlocal_names=tuple(self.nonlocal_names))
 
     def dump_obj(self):
         """

@@ -111,6 +111,12 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ContinueAST):
         return 'ContinueAST'
 
+    elif isinstance(a, ast.GlobalStmtAST):
+        return {'GlobalAST': {'name': a.name}}
+
+    elif isinstance(a, ast.NonlocalStmtAST):
+        return {'NonlocalAST': {'name': a.name}}
+
     elif isinstance(a, ast.ArrayAST):
         return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 

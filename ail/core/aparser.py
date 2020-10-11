@@ -13,10 +13,11 @@ _keywords_uc = (
     'IF', 'THEN', 'BEGIN',
     'END', 'WHILE', 'DO',
     'UNTIL', 'LOOP', 'WEND',
-    'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT'
-                                                  'STRUCT', 'MOD', 'FOR', 'PROTECTED',
+    'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT',
+    'STRUCT', 'MOD', 'FOR', 'PROTECTED',
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
     'XOR', 'MOD',
+    'GLOBAL', 'NONLOCAL',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -977,7 +978,8 @@ class Parser:
             self.__now_tok.value = 'is'
 
         block = self.__parse_block('is', 'end',
-                                   start_msg='function body should starts with \'is\' or \':\'')
+                                   start_msg=
+                                   'function body should starts with \'is\' or \':\'')
 
         self.__level -= 1
 
@@ -998,6 +1000,40 @@ class Parser:
         self.__next_tok()  # eat 'break'
 
         return ast.BreakAST(self.__now_ln)
+
+    def __parse_global_stmt(self) -> ast.GlobalStmtAST:
+        if self.__now_tok != 'global':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'global'
+
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        self.__next_tok()  # eat name
+
+        return ast.GlobalStmtAST(name, ln)
+
+    def __parse_nonlocal_stmt(self) -> ast.NonlocalStmtAST:
+        if self.__now_tok != 'nonlocal':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'nonlocal'
+
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value 
+
+        self.__next_tok()  # eat name
+
+        return ast.NonlocalStmtAST(name, ln)
 
     def __parse_return_stmt(self) -> ast.ReturnAST:
         if self.__now_tok != 'return':
@@ -1227,6 +1263,16 @@ class Parser:
 
         elif nt == 'continue':
             a = self.__parse_continue_stmt()
+
+        elif nt == 'nonlocal':
+            if self.__level == 0:
+                self.__syntax_error('nonlocal declaration outside function')
+            a = self.__parse_nonlocal_stmt()
+
+        elif nt == 'global':
+            if self.__level == 0:
+                self.__syntax_error('global declaration outside function')
+            a = self.__parse_global_stmt()
 
         elif nt == 'break':
             a = self.__parse_break_stmt()

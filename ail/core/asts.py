@@ -322,6 +322,18 @@ class ReturnAST:
         self.ln = ln
 
 
+class GlobalStmtAST:
+    def __init__(self, name: str, ln: int):
+        self.name = name
+        self.ln = ln
+
+
+class NonlocalStmtAST:
+    def __init__(self, name: str, ln: int):
+        self.name = name
+        self.ln = ln
+
+
 class ContinueAST:
     """
     continue_stmt := 'continue'
