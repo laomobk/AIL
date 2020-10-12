@@ -1336,10 +1336,11 @@ class Parser:
             return ast.EOFAST(self.__now_ln)
 
         else:
-            self.__syntax_error('Unknown statement starts with %s' % nt.value)
+            self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_ENTER:  # a stmt should be end of ENTER
-            self.__syntax_error('A statement should end with ENTER')
+        if self.__now_tok.ttype != AIL_ENTER:  
+            # a stmt should be end of ENTER
+            self.__syntax_error()
 
         self.__next_tok()  # eat enter
 

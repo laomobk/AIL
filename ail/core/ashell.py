@@ -201,7 +201,7 @@ class Shell:
 
             except error._AILRuntimeError as e:
                 in_more = False
-                print(str(e))
+                print(str(e), end='')
                 self.__main_frame.stack = []
                 self.__buffer = []
 

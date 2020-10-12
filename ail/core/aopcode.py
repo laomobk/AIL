@@ -85,6 +85,8 @@ binary_xor = 0x3a
 
 unary_invert = 0x3b
 
+make_function = 0x3c
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

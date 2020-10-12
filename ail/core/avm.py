@@ -463,9 +463,24 @@ class Interpreter:
             if func['__class__'] == afunc.FUNCTION_TYPE:
                 c: objs.AILCodeObject = func['__code__']
 
+                try:
+                    if func['__this__'] is not None:
+                        this = copy.copy(func['__this__'])
+                        this._pthis_ = True  # add _pthis_ attr
+                        
+                        # now variable 'this' is replace by param 'this'
+                        # 2020-10-13
+                        # f.variable['this'] = this  # add this pointer
+
+                        argv += 1
+                        argl.insert(0, this)
+                except TypeError:
+                    pass
+
                 if c.argcount != argv:
                     self.raise_error(
-                        '\'%s\' takes %d argument(s), but got %d.' % (c.name, c.argcount, argv),
+                        '\'%s\' takes %d argument(s), but got %d.' % (
+                            c.name, c.argcount, argv),
                         'TypeError'
                     )
 
@@ -480,18 +495,6 @@ class Interpreter:
 
                 if c.closure:
                     f.closure_outer = c._closure_outer
-
-                try:
-                    if func['__this__'] is not None:
-                        this = copy.copy(func['__this__'])
-                        this._pthis_ = True  # add _pthis_ attr
-
-                        f.variable['this'] = this  # add this pointer
-
-                        self.__incref(this)
-                        self.__incref(this)
-                except TypeError:
-                    pass
 
                 try:
                     self.__tof._latest_call_opcounter = self.__opcounter
@@ -655,9 +658,9 @@ class Interpreter:
                         self.raise_error(
                             'required input value is not enough',
                             'ValueError')
-
-                    for k, v in zip(vl, sip):
-                        self.__store_var(k, v)
+                    else:
+                        for k, v in zip(vl, sip):
+                            self.__store_var(k, v)
 
                 elif op == store_var:
                     v = self.__tof.stack.pop()
@@ -809,13 +812,14 @@ class Interpreter:
 
                     self.call_function(func, argv, argl)
 
-                elif op == store_function:
-                    tos = self.__pop_top()  # type: objs.AILCodeObject
+                elif op == make_function:
+                    tos = copy.copy(self.__pop_top())  # type: objs.AILCodeObject
 
                     if tos.closure:
+                        tos._closure_outer = []
                         if self.__tof.code.closure:
-                            tos._closure_outer.extend(self.__tof.closure_outer)
-                        tos._closure_outer.insert(0, self.__tof.variable)
+                            tos._closure_outer.extend(self.__tof.closure_outer.copy())
+                        tos._closure_outer.insert(0, self.__tof.variable.copy())
 
                     tosf = objs.ObjectCreater.new_object(
                         afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
@@ -824,8 +828,7 @@ class Interpreter:
                     if self.__exec_for_module:
                         tosf['__globals__'] = self.__namespace_state.ns_global.ns_dict
 
-                    n = self.__tof.varnames[argv]
-                    self.__store_var(n, tosf)
+                    self.__push_back(tosf)
 
                 elif op == build_array:
                     l = [self.__stack.pop() for _ in range(argv)][::-1]
@@ -1001,23 +1004,20 @@ class Interpreter:
                         self.raise_error('can not find bound target', 'NameError')
                     else:
                         func_name = objs.unpack_ailobj(self.__pop_top())
+                        bound_function = self.__pop_top()
 
-                        if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
-                            self.raise_error('function must be bound to a struct type')
-
-                        code_object = self.__pop_top()
-
-                        bound_function = objs.ObjectCreater.new_object(
-                            afunc.FUNCTION_TYPE, code_object, 
-                            self.__tof.variable, code_object.name
-                        )
-
-                        if self.__exec_for_module:
-                            bound_function['__globals__'] = \
-                                    self.__frame_stack[
-                                            self.__global_frame_index].variable
-
-                        target_struct['__bind_functions__'][func_name] = bound_function
+                        if not objs.compare_type(
+                                bound_function, 
+                                afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
+                            self.raise_error('require function', 'TypeError')
+                        
+                        else:
+                            if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
+                                self.raise_error(
+                                        'function must be bound to a struct type')
+                        
+                            target_struct['__bind_functions__'][func_name] = \
+                                    bound_function
 
                 # handle interruption
                 if self.__interrupted:

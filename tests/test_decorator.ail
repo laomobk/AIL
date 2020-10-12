@@ -20,7 +20,7 @@ struct Person {
 
 @log
 fun (Person) say_hi(this) {
-    print 'Hello, my name is'; this
+    print 'Hello, my name is'; this.name
 }
 
 if __is_main__ {

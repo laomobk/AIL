@@ -1,0 +1,10 @@
+
+struct S {}
+
+fun (S) method(self) {
+    print self
+}
+
+m = new(S).method
+m()
+

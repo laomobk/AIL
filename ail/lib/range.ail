@@ -10,7 +10,7 @@ struct __RangeIter {
     __to
 }
 
-fun (__RangeIter) next() {
+fun (__RangeIter) next(this) {
     if (this.__now >= this.__to or 
         this.__now < this.__from) {
         return StopIteration
