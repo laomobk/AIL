@@ -1,5 +1,5 @@
 import pickle
-from typing import List
+from typing import List, Set
 
 from . import aobjects as obj
 
@@ -103,8 +103,8 @@ class ByteCodeFileBuffer:
         self.first_lineno = 0
         self.lineno_list: List[int] = []
         self.filename = '<FILE>'
-        self.global_names: List[str] = []
-        self.nonlocal_names: List[str] = []
+        self.global_names: Set[str] = set()
+        self.nonlocal_names: Set[str] = set()
 
     def serialize(self) -> bytes:
         """

@@ -714,11 +714,11 @@ class Compiler:
         return bc
 
     def __compile_global_stmt(self, tree: ast.GlobalStmtAST) -> ByteCode:
-        self.__buffer.global_names.append(tree.name)
+        self.__buffer.global_names.add(tree.name)
         return ByteCode()  # empty
 
     def __compile_nonlocal_stmt(self, tree: ast.NonlocalStmtAST) -> ByteCode:
-        self.__buffer.nonlocal_names.append(tree.name)
+        self.__buffer.nonlocal_names.add(tree.name)
         return ByteCode()  # empty
 
     def __compile_assert_expr(self, tree: ast.AssertExprAST, extofs: int) -> ByteCode:

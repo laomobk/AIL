@@ -17,7 +17,6 @@ name = 'Nezha'
 
 fun test_global() {
     global name
-
     name = 'Zhaer'
 }
 
