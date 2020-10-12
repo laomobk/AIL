@@ -276,8 +276,9 @@ class Parser:
         if self.__now_tok.ttype == AIL_ENTER:
             self.__syntax_error(ln=self.__now_ln - 1)
 
-        elif self.__now_tok.ttype not in (AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
-                nt in _keywords:
+        elif self.__now_tok.ttype not in (
+                AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
+                    nt in _keywords:
             self.__syntax_error()
 
         name = nt.value  # it can be sub, string, number or identifier
@@ -932,6 +933,22 @@ class Parser:
 
         return ast.StructDefineAST(name, vl, pl, ln)
 
+    def __parse_func_def_with_decorator_stmt(self) -> ast.FunctionDefineAST:
+        ln = self.__now_ln
+        self.__next_tok()  # eat '@'
+
+        decorator = self.__parse_member_access_expr()
+
+        if self.__now_tok.ttype != AIL_ENTER:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat enter
+
+        func = self.__parse_func_def_stmt()
+        func.decorator = decorator
+
+        return func
+
     def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
@@ -1284,6 +1301,9 @@ class Parser:
 
         elif nt == 'fun':
             a = self.__parse_func_def_stmt()
+
+        elif nt == '@':
+            a = self.__parse_func_def_with_decorator_stmt()
 
         elif nt == 'load':
             a = self.__parse_load_stmt()

@@ -794,13 +794,24 @@ class Compiler:
         bindtoi = self.__buffer.get_or_add_varname_index(tree.bindto) \
             if has_bindto else 0
 
+        decorator_call_bc = ByteCode()
+
+        if tree.decorator is not None:
+            decorator_call_ast = ast.CallExprAST(
+                    tree.decorator, ast.ArgListAST(
+                        [ast.CellAST(name, AIL_IDENTIFIER, tree.decorator.ln)]),
+                        tree.decorator.ln)
+            decorator_call_bc = self.__compile_call_expr(decorator_call_ast, 
+                    isinstance(tree.decorator, ast.MemberAccessAST))
+
+
         bc.add_bytecode(load_const, ci, tree.ln)
         if has_bindto:
             bc.add_bytecode(load_varname, namei, tree.ln)
             bc.add_bytecode(bind_function, bindtoi, tree.ln)
         else:
             bc.add_bytecode(store_function, namei, tree.ln)
-
+        
         return bc
 
     def __compile_plain_call(self, tree: ast.CallExprAST) -> ByteCode:

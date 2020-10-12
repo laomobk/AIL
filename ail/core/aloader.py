@@ -15,7 +15,7 @@ from .avmsig import WHY_HANDLING_ERR, WHY_ERROR
 from . import aobjects as objs, error
 from . import shared
 
-_ALLOW_FILE_TYPE = ('ail', 'py')
+_ALLOW_FILE_TYPE = ('ail', 'py', 'ailp')
 
 '''
 如果你想要创建一个 AIL 的 Python 模块
@@ -124,7 +124,7 @@ class ModuleLoader:
 
         chdir(module_work_dir)
 
-        if self.__get_type(p) == 'py':
+        if self.__get_type(p) in ('py', 'ailp'):
             remove_path(p)
             ns = self.__add_to_loaded(p, self.__load_py_namespace(p))
             chdir(cwd)

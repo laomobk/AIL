@@ -304,11 +304,13 @@ class FunctionDefineAST:
     """
 
     def __init__(self, name: str, arg_list: ArgListAST,
-                 block: BlockExprAST, bindto: str, ln: int):
+                 block: BlockExprAST, bindto: str, ln: int,
+                 decorator: MemberAccessAST = None):
         self.name = name
         self.arg_list = arg_list
         self.block = block
         self.bindto = bindto
+        self.decorator = decorator
         self.ln = ln
 
 

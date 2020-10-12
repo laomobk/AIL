@@ -1,32 +1,5 @@
 
-fun test_nonlocal() {
-    date = 726
-
-    fun inner() {
-        nonlocal date
-
-        date = 1026
-    }
-
-    print 'before inner(), date ='; date
-    inner()
-    print 'after inner(), date ='; date
+@timeit
+fun f() {
+    return 0
 }
-
-name = 'Nezha'
-
-fun test_global() {
-    global name
-
-    name = 'Zhaer'
-}
-
-print '*** nonlocal test ***'
-test_nonlocal()
-
-print '*** global test ***'
-print 'before test_global(), name ='; name
-test_global()
-print 'after test_global(), name ='; name
-
-print '*** test finish ***'

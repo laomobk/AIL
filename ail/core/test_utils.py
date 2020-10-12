@@ -44,7 +44,9 @@ def make_ast_tree(a) -> dict:
         return {'BitShiftAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.CallExprAST):
-        return {'CallAST': {'left': make_ast_tree(a.left), 'arg_list': make_ast_tree(a.arg_list)}}
+        return {'CallAST': {
+                    'left': make_ast_tree(a.left),
+                    'arg_list': make_ast_tree(a.arg_list)}}
 
     elif isinstance(a, ast.PrintExprAST):
         return {'PrintAST': {'value': unpack_list(a.value_list)}}
@@ -100,7 +102,8 @@ def make_ast_tree(a) -> dict:
                     'name': a.name,
                     'arg_list': make_ast_tree(a.arg_list),
                     'block': make_ast_tree(a.block),
-                    'bindto': make_ast_tree(a.bindto)}}
+                    'bindto': make_ast_tree(a.bindto),
+                    'decorator': make_ast_tree(a.decorator)}}
 
     elif isinstance(a, ast.ReturnAST):
         return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
