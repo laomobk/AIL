@@ -8,7 +8,18 @@ fun log(func) {
     return wrapper
 }
 
-@log
+fun log2(msg) {
+    fun log_msg(func) {
+        fun wrapper(argv) {
+            print 'msg ='; msg; ', call'; func
+            return func(argv)
+        }
+        return wrapper
+    }
+    return log_msg
+} 
+
+@log2('Hello')
 fun print_name(name) {
     print 'Hello'; name
 }
