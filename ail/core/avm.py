@@ -49,7 +49,6 @@ from .version import AIL_VERSION
 from .aopcode import *
 from .avmsig import *
 
-
 _BUILTINS = abuiltins.BUILTINS
 _new_namespace = namespace.new_namespace
 
@@ -188,7 +187,7 @@ class Interpreter:
     def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
-            aobj = None
+            raise VMInterrupt()
         if not isinstance(aobj, objs.AILObject) and not not_convert:
             target = _obj_type_dict.get(type(aobj), awrapper.WRAPPER_TYPE)
 
@@ -201,7 +200,7 @@ class Interpreter:
 
     def get_stack_trace(self) -> StackTrace:
         tof = self.__tof
-        return StackTrace([copy.copy(f) for f in self.__frame_stack], 
+        return StackTrace([copy.copy(f) for f in self.__frame_stack],
                           tof.lineno, tof.code.filename, tof.code.name)
 
     def __store_var(self, name, value):
@@ -220,7 +219,7 @@ class Interpreter:
         errs = make_err_struct_object(
             error.AILRuntimeError(
                 msg, err_type, self.__tof, self.get_stack_trace()),
-                self.__tof.code.name, self.__tof.lineno)
+            self.__tof.code.name, self.__tof.lineno)
 
         if err_type not in 'VMError':
             self.__now_state.err_stack.append(errs)
@@ -250,8 +249,8 @@ class Interpreter:
                 error.print_stack_trace(err.error_object.stack_trace)
                 sys.stderr.write(_err_to_string(err) + '\n')
                 sys.stderr.write('\n%s\n' %
-                                 ('During handling of the above exception, ' + 
-                                 'another exception occurred:\n'))
+                                 ('During handling of the above exception, ' +
+                                  'another exception occurred:\n'))
 
             sys.stderr.write('Traceback (most recent call last):\n')
             error.print_stack_trace(errs.error_object.stack_trace)
@@ -453,7 +452,7 @@ class Interpreter:
             v = ns.get(n)
             if v is not None:
                 return v
-        
+
         return None
 
     def call_function(self, func, argv, argl):
@@ -467,7 +466,7 @@ class Interpreter:
                     if func['__this__'] is not None:
                         this = copy.copy(func['__this__'])
                         this._pthis_ = True  # add _pthis_ attr
-                        
+
                         # now variable 'this' is replace by param 'this'
                         # 2020-10-13
                         # f.variable['this'] = this  # add this pointer
@@ -609,451 +608,452 @@ class Interpreter:
         try:
             # tmr.start()
             while self.__opcounter < len(code) - 1:  # included argv index
-                op = code[self.__opcounter]
-                argv = code[self.__opcounter + 1]
+                try:
+                    op = code[self.__opcounter]
+                    argv = code[self.__opcounter + 1]
 
-                self.__update_lineno()
+                    self.__update_lineno()
 
-                # 解释字节码选用类似 ceval.c 的巨型switch做法
-                # 虽然可能不太美观，但是能提高运行速度
-                # 如果有时间，我会写一个新的（动态获取attr）解释方法
-                # 速度可能会慢些
+                    # 解释字节码选用类似 ceval.c 的巨型switch做法
+                    # 虽然可能不太美观，但是能提高运行速度
+                    # 如果有时间，我会写一个新的（动态获取attr）解释方法
+                    # 速度可能会慢些
 
-                # print(self.__opcounter, get_opname(op),
-                #       self.__tof, self.__stack, self.__tof.lineno)
+                    # print(self.__opcounter, get_opname(op),
+                    #       self.__tof, self.__stack, self.__tof.lineno)
 
-                # print(self.__opcounter)
+                    # print(self.__opcounter)
 
-                if op == pop_top:
-                    tos = self.__pop_top()
-                    self.__decref(tos)
+                    if op == pop_top:
+                        tos = self.__pop_top()
+                        self.__decref(tos)
 
-                elif op == print_value:
-                    tosl = [self.__pop_top() for _ in range(argv)][::-1]
+                    elif op == print_value:
+                        tosl = [self.__pop_top() for _ in range(argv)][::-1]
 
-                    for tos in tosl:
-                        tosm = self.__check_object(tos['__str__'](tos), not_convert=True)
+                        for tos in tosl:
+                            tosm = self.__check_object(tos['__str__'](tos), not_convert=True)
 
-                        sys.stdout.write(tosm + ' ')
-                    sys.stdout.write('\n')
+                            sys.stdout.write(tosm + ' ')
+                        sys.stdout.write('\n')
 
-                elif op == input_value:
-                    vc = argv
+                    elif op == input_value:
+                        vc = argv
 
-                    vl = [self.__pop_top() for _ in range(vc)][::-1]
-                    tos = self.__pop_top()
+                        vl = [self.__pop_top() for _ in range(vc)][::-1]
+                        tos = self.__pop_top()
 
-                    if isinstance(tos, objs.AILObject):
-                        msg = self.__check_object(tos['__str__'](tos))
-                    else:
-                        msg = str(tos)
+                        if isinstance(tos, objs.AILObject):
+                            msg = self.__check_object(tos['__str__'](tos))
+                        else:
+                            msg = str(tos)
 
-                    inp = input(msg)
+                        inp = input(msg)
 
-                    sip = [astr.convert_to_string(x)
-                           for x in re.split(r'\s+', inp) if x]
-                    # Remove empty string
+                        sip = [astr.convert_to_string(x)
+                               for x in re.split(r'\s+', inp) if x]
+                        # Remove empty string
 
-                    if vl and len(vl) != len(sip):
-                        self.raise_error(
-                            'required input value is not enough',
-                            'ValueError')
-                    else:
-                        for k, v in zip(vl, sip):
-                            self.__store_var(k, v)
+                        if vl and len(vl) != len(sip):
+                            self.raise_error(
+                                'required input value is not enough',
+                                'ValueError')
+                        else:
+                            for k, v in zip(vl, sip):
+                                self.__store_var(k, v)
 
-                elif op == store_var:
-                    v = self.__tof.stack.pop()
-                    n = self.__tof.varnames[argv]
+                    elif op == store_var:
+                        v = self.__tof.stack.pop()
+                        n = self.__tof.varnames[argv]
 
-                    self.__store_var(n, v)
-                    self.__tof.stack.append(v)
+                        self.__store_var(n, v)
+                        self.__tof.stack.append(v)
 
-                elif op == load_const:
-                    self.__tof.stack.append(
-                        self.__tof.consts[argv])
+                    elif op == load_const:
+                        self.__tof.stack.append(
+                            self.__tof.consts[argv])
 
-                elif op == load_varname:
-                    self.__tof.stack.append(
-                        self.__tof.varnames[argv]
-                    )
+                    elif op == load_varname:
+                        self.__tof.stack.append(
+                            self.__tof.varnames[argv]
+                        )
 
-                elif op == load_variable:
-                    var = self.__load_name(argv)
-                    if var is None:
-                        name = self.__tof.varnames[argv]
-                        self.raise_error(
+                    elif op == load_variable:
+                        var = self.__load_name(argv)
+                        if var is None:
+                            name = self.__tof.varnames[argv]
+                            self.raise_error(
                                 'name \'%s\' is not defined' % name, 'NameError')
-                    else:
-                        self.__push_back(var)
-
-                elif op == load_global:
-                    n = self.__tof.varnames[argv]
-
-                    ns = self.__check_and_get_namespace(n)
-
-                    if ns is not None:
-                        self.__tof.stack.append(ns)
-
-                    elif len(self.__now_state.frame_stack) == 1:
-                        tof = self.__now_state.frame_stack[0]
-                        if n in tof.variable:
-                            o = tof.variable[n]
-                            o.reference += 1
-                            tof.stack.append(o)
                         else:
-                            self.raise_error(
-                                'name \'%s\' is not defined' % n, 'NameError')
+                            self.__push_back(var)
 
-                    else:
-                        for f in self.__frame_stack:
-                            if n in f.variable:
-                                o = f.variable[n]
+                    elif op == load_global:
+                        n = self.__tof.varnames[argv]
+
+                        ns = self.__check_and_get_namespace(n)
+
+                        if ns is not None:
+                            self.__tof.stack.append(ns)
+
+                        elif len(self.__now_state.frame_stack) == 1:
+                            tof = self.__now_state.frame_stack[0]
+                            if n in tof.variable:
+                                o = tof.variable[n]
                                 o.reference += 1
-                                self.__tof.stack.append(o)
+                                tof.stack.append(o)
+                            else:
+                                self.raise_error(
+                                    'name \'%s\' is not defined' % n, 'NameError')
 
-                                break
+                        else:
+                            for f in self.__frame_stack:
+                                if n in f.variable:
+                                    o = f.variable[n]
+                                    o.reference += 1
+                                    self.__tof.stack.append(o)
+
+                                    break
+                            else:
+                                self.raise_error(
+                                    'name \'%s\' is not defined' % n, 'NameError')
+
+                    elif op == return_value:
+                        self.__return()
+
+                    elif op == setup_for:
+                        self.__temp_env_stack.append(TempEnvironment())
+                        self.__break_stack.append(argv)
+
+                    elif op in (setup_doloop, setup_while):
+                        self.__add_break_point(argv)
+
+                    elif op == clean_for:
+                        ts = self.__temp_env_stack.pop()
+                        tv = ts.temp_var
+
+                        for vn in tv:
+                            del self.__tof.variable[vn]
+
+                        self.__break_stack.pop()
+
+                    elif op == clean_loop:
+                        self.__break_stack.pop()
+
+                    elif op == jump_absolute:
+                        jump_to = argv
+
+                    elif op == jump_if_false:
+                        jump_to = self.__get_jump(argv, False, 0)
+
+                    elif op == jump_if_false_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if not self.__bool_test(tos):
+                            jump_to = argv
+                            self.__tof.stack.append(tos)
+
+                    elif op == jump_if_true_or_pop:
+                        tos = self.__tof.stack[-1]
+
+                        if self.__bool_test(tos):
+                            jump_to = argv
+                        else:
+                            self.__tof.stack.pop()
+
+                    elif op == pop_jump_if_false_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if not self.__bool_test(tos):
+                            jump_to = argv
+
+                    elif op == pop_jump_if_false_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if self.__bool_test(tos):
+                            jump_to = argv
+
+                    elif op in BINARY_OPS:
+                        op, pym, ailm = _binary_op_dict.get(op)
+
+                        b = self.__pop_top()
+                        a = self.__pop_top()
+
+                        res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
+
+                        self.__tof.stack.append(res)
+
+                    elif op == binary_not:
+                        o = self.__pop_top()
+
+                        b = not self.__bool_test(o)
+
+                        self.__tof.stack.append(
+                            objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
+
+                    elif op == compare_op:
+                        cop = opcs.COMPARE_OPERATORS[argv]
+
+                        b = self.__pop_top()
+                        a = self.__pop_top()
+
+                        self.__tof.stack.append(
+                            self.__compare(a, b, cop)
+                        )
+
+                    elif op == break_loop:
+                        jump_to = self.__check_break()
+
+                    elif op == continue_loop:
+                        jump_to = self.__check_continue()
+
+                    elif op == call_func:
+                        argl = [self.__pop_top() for _ in range(argv)][::-1]
+                        func: objs.AILObject = self.__pop_top()
+
+                        self.call_function(func, argv, argl)
+
+                    elif op == make_function:
+                        tos = copy.copy(self.__pop_top())  # type: objs.AILCodeObject
+
+                        if tos.closure:
+                            tos._closure_outer = []
+                            if self.__tof.code.closure:
+                                tos._closure_outer.extend(self.__tof.closure_outer.copy())
+                            tos._closure_outer.insert(0, self.__tof.variable.copy())
+
+                        tosf = objs.ObjectCreater.new_object(
+                            afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
+                        )
+
+                        if self.__exec_for_module:
+                            tosf['__globals__'] = self.__namespace_state.ns_global.ns_dict
+
+                        self.__push_back(tosf)
+
+                    elif op == build_array:
+                        l = [self.__stack.pop() for _ in range(argv)][::-1]
+
+                        o = objs.ObjectCreater.new_object(
+                            array.ARRAY_TYPE, l)
+
+                        self.__incref(o)
+                        self.__tof.stack.append(o)
+
+                    elif op == binary_subscr:
+                        v = self.__pop_top()
+                        l = self.__pop_top()
+
+                        if isinstance(l, objs.AILObject):
+                            if l['__getitem__'] is None:
+                                self.raise_error('%s object is not subscriptable' %
+                                                 l['__class__'].name, 'TypeError')
+
+                            rtn = self.__check_object(l['__getitem__'](l, v))
+
+                            self.__tof.stack.append(rtn)
+
+                    elif op == unary_negative:
+                        v = self.__pop_top()
+
+                        if v['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
+                            vnum = -objs.unpack_ailobj(v)
+                            self.__tof.stack.append(objs.convert_to_ail_object(vnum))
+
+                            self.__decref(v)
                         else:
                             self.raise_error(
-                                'name \'%s\' is not defined' % n, 'NameError')
+                                'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
 
-                elif op == return_value:
-                    self.__return()
+                    elif op == unary_invert:
+                        v = self.__pop_top()
 
-                elif op == setup_for:
-                    self.__temp_env_stack.append(TempEnvironment())
-                    self.__break_stack.append(argv)
+                        if v['__class__'] is aint.INTEGER_TYPE:
+                            vnum = ~objs.unpack_ailobj(v)
+                            self.__tof.stack.append(objs.convert_to_ail_object(vnum))
 
-                elif op in (setup_doloop, setup_while):
-                    self.__add_break_point(argv)
+                            self.__decref(v)
+                        else:
+                            self.raise_error(
+                                'cannot do \'~\' for type: %s' % v['__class__'].name, 'TypeError')
 
-                elif op == clean_for:
-                    ts = self.__temp_env_stack.pop()
-                    tv = ts.temp_var
+                    elif op == load_module:
+                        name = self.__tof.consts[argv]['__value__']
 
-                    for vn in tv:
-                        del self.__tof.variable[vn]
+                        namespace, _ = aloader.MAIN_LOADER.load_namespace(name)
 
-                    self.__break_stack.pop()
+                        if namespace is None:
+                            pass
+                        elif namespace == 1:
+                            self.raise_error('No module named \'%s\'' % name, 'LoadError')
+                        elif namespace == 2:
+                            self.raise_error(
+                                'Cannot load module \'%s\' ' % name +
+                                '(may caused circular load)', 'LoadError')
+                        elif namespace == 3:
+                            # error while loading this module
+                            self.__interrupted = True
+                            self.__interrupt_signal = MII_ERR_BREAK
+                        else:
+                            self.__tof.variable.update(namespace)
 
-                elif op == clean_loop:
-                    self.__break_stack.pop()
+                    elif op == import_name:
+                        name = self.__tof.consts[argv]['__value__']
 
-                elif op == jump_absolute:
-                    jump_to = argv
-
-                elif op == jump_if_false:
-                    jump_to = self.__get_jump(argv, False, 0)
-
-                elif op == jump_if_false_or_pop:
-                    tos = self.__tof.stack.pop()
-
-                    if not self.__bool_test(tos):
-                        jump_to = argv
-                        self.__tof.stack.append(tos)
-
-                elif op == jump_if_true_or_pop:
-                    tos = self.__tof.stack[-1]
-
-                    if self.__bool_test(tos):
-                        jump_to = argv
-                    else:
-                        self.__tof.stack.pop()
-
-                elif op == pop_jump_if_false_or_pop:
-                    tos = self.__tof.stack.pop()
-
-                    if not self.__bool_test(tos):
-                        jump_to = argv
-
-                elif op == pop_jump_if_false_or_pop:
-                    tos = self.__tof.stack.pop()
-
-                    if self.__bool_test(tos):
-                        jump_to = argv
-
-                elif op in BINARY_OPS:
-                    op, pym, ailm = _binary_op_dict.get(op)
-
-                    b = self.__pop_top()
-                    a = self.__pop_top()
-
-                    res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
-
-                    self.__tof.stack.append(res)
-
-                elif op == binary_not:
-                    o = self.__pop_top()
-
-                    b = not self.__bool_test(o)
-
-                    self.__tof.stack.append(
-                        objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
-
-                elif op == compare_op:
-                    cop = opcs.COMPARE_OPERATORS[argv]
-
-                    b = self.__pop_top()
-                    a = self.__pop_top()
-
-                    self.__tof.stack.append(
-                        self.__compare(a, b, cop)
-                    )
-
-                elif op == break_loop:
-                    jump_to = self.__check_break()
-
-                elif op == continue_loop:
-                    jump_to = self.__check_continue()
-
-                elif op == call_func:
-                    argl = [self.__pop_top() for _ in range(argv)][::-1]
-                    func: objs.AILObject = self.__pop_top()
-
-                    self.call_function(func, argv, argl)
-
-                elif op == make_function:
-                    tos = copy.copy(self.__pop_top())  # type: objs.AILCodeObject
-
-                    if tos.closure:
-                        tos._closure_outer = []
-                        if self.__tof.code.closure:
-                            tos._closure_outer.extend(self.__tof.closure_outer.copy())
-                        tos._closure_outer.insert(0, self.__tof.variable.copy())
-
-                    tosf = objs.ObjectCreater.new_object(
-                        afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
-                    )
-
-                    if self.__exec_for_module:
-                        tosf['__globals__'] = self.__namespace_state.ns_global.ns_dict
-
-                    self.__push_back(tosf)
-
-                elif op == build_array:
-                    l = [self.__stack.pop() for _ in range(argv)][::-1]
-
-                    o = objs.ObjectCreater.new_object(
-                        array.ARRAY_TYPE, l)
-
-                    self.__incref(o)
-                    self.__tof.stack.append(o)
-
-                elif op == binary_subscr:
-                    v = self.__pop_top()
-                    l = self.__pop_top()
-
-                    if isinstance(l, objs.AILObject):
-                        if l['__getitem__'] is None:
-                            self.raise_error('%s object is not subscriptable' %
-                                             l['__class__'].name, 'TypeError')
-
-                        rtn = self.__check_object(l['__getitem__'](l, v))
-
-                        self.__tof.stack.append(rtn)
-
-                elif op == unary_negative:
-                    v = self.__pop_top()
-
-                    if v['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
-                        vnum = -objs.unpack_ailobj(v)
-                        self.__tof.stack.append(objs.convert_to_ail_object(vnum))
-
-                        self.__decref(v)
-                    else:
-                        self.raise_error(
-                            'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
-
-                elif op == unary_invert:
-                    v = self.__pop_top()
-
-                    if v['__class__'] is aint.INTEGER_TYPE:
-                        vnum = ~objs.unpack_ailobj(v)
-                        self.__tof.stack.append(objs.convert_to_ail_object(vnum))
-
-                        self.__decref(v)
-                    else:
-                        self.raise_error(
-                            'cannot do \'~\' for type: %s' % v['__class__'].name, 'TypeError')
-
-                elif op == load_module:
-                    name = self.__tof.consts[argv]['__value__']
-
-                    namespace, _ = aloader.MAIN_LOADER.load_namespace(name)
-
-                    if namespace is None:
-                        pass
-                    elif namespace == 1:
-                        self.raise_error('No module named \'%s\'' % name, 'LoadError')
-                    elif namespace == 2:
-                        self.raise_error(
-                            'Cannot load module \'%s\' ' % name +
-                            '(may caused circular load)', 'LoadError')
-                    elif namespace == 3:
-                        # error while loading this module
-                        self.__interrupted = True
-                        self.__interrupt_signal = MII_ERR_BREAK
-                    else:
-                        self.__tof.variable.update(namespace)
-
-                elif op == import_name:
-                    name = self.__tof.consts[argv]['__value__']
-
-                    namespace, module_path = aloader.MAIN_LOADER.load_namespace(
+                        namespace, module_path = aloader.MAIN_LOADER.load_namespace(
                             name, True)
 
-                    if namespace is None:
-                        pass
-                    elif namespace == 1:
-                        self.raise_error(
-                            'No module named \'%s\'' % name, 'ImportError')
-                    elif namespace == 2:
-                        self.raise_error(
-                            'Cannot import module \'%s\' ' % name +
-                            '(may caused circular import)', 'ImportError')
-                    elif namespace == 3:
-                        self.__interrupted = True
-                        self.__interrupt_signal = MII_ERR_POP_TO_TRY
+                        if namespace is None:
+                            pass
+                        elif namespace == 1:
+                            self.raise_error(
+                                'No module named \'%s\'' % name, 'ImportError')
+                        elif namespace == 2:
+                            self.raise_error(
+                                'Cannot import module \'%s\' ' % name +
+                                '(may caused circular import)', 'ImportError')
+                        elif namespace == 3:
+                            self.__interrupted = True
+                            self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
-                    elif namespace == 4:
-                        pass
+                        elif namespace == 4:
+                            pass
 
-                    else:
-                        module_object = module.new_module_object(
+                        else:
+                            module_object = module.new_module_object(
                                 name, module_path, namespace)
-                        self.__push_back(module_object)
+                            self.__push_back(module_object)
 
-                elif op == store_subscr:
-                    i = self.__pop_top()
-                    o = self.__pop_top()
-                    v = self.__pop_top()
+                    elif op == store_subscr:
+                        i = self.__pop_top()
+                        o = self.__pop_top()
+                        v = self.__pop_top()
 
-                    if isinstance(o, objs.AILObject):
-                        if o['__setitem__'] is None:
-                            self.raise_error('%s object is not subscriptable' %
-                                             o['__class__'].name, 'TypeError')
+                        if isinstance(o, objs.AILObject):
+                            if o['__setitem__'] is None:
+                                self.raise_error('%s object is not subscriptable' %
+                                                 o['__class__'].name, 'TypeError')
 
+                            else:
+                                self.__check_object(afunc.call(o['__setitem__'], o, i, v))
+                                self.__tof.stack.append(v)
+
+                    elif op == load_attr:
+                        o = self.__pop_top()
+                        vn = self.__tof.varnames[argv]
+
+                        r = self.__check_object(o['__getattr__'](o, vn))
+
+                        self.__tof.stack.append(r)
+
+                    elif op == store_attr:
+                        o = self.__pop_top()
+                        ni = self.__tof.varnames[argv]
+                        v = self.__pop_top()
+
+                        self.__check_object(o['__setattr__'](o, ni, v))
+
+                        self.__tof.stack.append(v)
+
+                    elif op == store_struct:
+                        name = self.__pop_top()
+                        nl = [self.__pop_top() for _ in range(argv)][::-1]
+                        pl = [nl[i - 1] for i in range(len(nl)) if nl[i] == PROTECTED_SIGNAL]
+                        nl = [x for x in nl if x != PROTECTED_SIGNAL]
+
+                        o = objs.ObjectCreater.new_object(
+                            struct.STRUCT_TYPE, name, nl, pl)
+
+                        self.__store_var(name, o)
+
+                    elif op == set_protected:
+                        self.__tof.stack.append(PROTECTED_SIGNAL)
+
+                    elif op == throw_error:
+                        self.__tof._marked_opcounter = self.__opcounter
+                        msg = str(self.__pop_top())
+                        self.raise_error(msg, 'Throw')
+
+                    elif op == setup_try:
+                        self.__tof.try_stack.append(argv)
+
+                    elif op == setup_catch:
+                        name = self.__tof.varnames[argv]
+                        self.__temp_env_stack.append(TempEnvironment())
+
+                        err = self.__now_state.err_stack.pop()
+                        self.__store_var(name, err)  # store this error with 'name'
+
+                    elif op == clean_try:
+                        self.__tof.try_stack.pop()
+
+                    elif op == clean_catch:
+                        ts = self.__temp_env_stack.pop()
+
+                        tn = ts.temp_var
+
+                        self.__now_state.handling_err_stack.pop(0)  # queue
+
+                        # self.__tof.try_stack.pop()
+
+                        for n in tn:
+                            del self.__tof.variable[n]
+
+                    elif op == bind_function:
+                        target_struct = self.__load_name(argv)
+                        if target_struct is None:
+                            self.raise_error('can not find bound target', 'NameError')
                         else:
-                            self.__check_object(afunc.call(o['__setitem__'], o, i, v))
-                            self.__tof.stack.append(v)
+                            func_name = objs.unpack_ailobj(self.__pop_top())
+                            bound_function = self.__pop_top()
 
-                elif op == load_attr:
-                    o = self.__pop_top()
-                    vn = self.__tof.varnames[argv]
+                            if not objs.compare_type(
+                                    bound_function,
+                                    afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
+                                self.raise_error('require function', 'TypeError')
 
-                    r = self.__check_object(o['__getattr__'](o, vn))
-
-                    self.__tof.stack.append(r)
-
-                elif op == store_attr:
-                    o = self.__pop_top()
-                    ni = self.__tof.varnames[argv]
-                    v = self.__pop_top()
-
-                    self.__check_object(o['__setattr__'](o, ni, v))
-
-                    self.__tof.stack.append(v)
-
-                elif op == store_struct:
-                    name = self.__pop_top()
-                    nl = [self.__pop_top() for _ in range(argv)][::-1]
-                    pl = [nl[i - 1] for i in range(len(nl)) if nl[i] == PROTECTED_SIGNAL]
-                    nl = [x for x in nl if x != PROTECTED_SIGNAL]
-
-                    o = objs.ObjectCreater.new_object(
-                        struct.STRUCT_TYPE, name, nl, pl)
-
-                    self.__store_var(name, o)
-
-                elif op == set_protected:
-                    self.__tof.stack.append(PROTECTED_SIGNAL)
-
-                elif op == throw_error:
-                    self.__tof._marked_opcounter = self.__opcounter
-                    msg = str(self.__pop_top())
-                    self.raise_error(msg, 'Throw')
-
-                elif op == setup_try:
-                    self.__tof.try_stack.append(argv)
-
-                elif op == setup_catch:
-                    name = self.__tof.varnames[argv]
-                    self.__temp_env_stack.append(TempEnvironment())
-
-                    err = self.__now_state.err_stack.pop()
-                    self.__store_var(name, err)  # store this error with 'name'
-
-                elif op == clean_try:
-                    self.__tof.try_stack.pop()
-
-                elif op == clean_catch:
-                    ts = self.__temp_env_stack.pop()
-
-                    tn = ts.temp_var
-
-                    self.__now_state.handling_err_stack.pop(0)  # queue
-
-                    # self.__tof.try_stack.pop()
-
-                    for n in tn:
-                        del self.__tof.variable[n]
-
-                elif op == bind_function:
-                    target_struct = self.__load_name(argv)
-                    if target_struct is None:
-                        self.raise_error('can not find bound target', 'NameError')
-                    else:
-                        func_name = objs.unpack_ailobj(self.__pop_top())
-                        bound_function = self.__pop_top()
-
-                        if not objs.compare_type(
-                                bound_function, 
-                                afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
-                            self.raise_error('require function', 'TypeError')
-                        
-                        else:
-                            if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
-                                self.raise_error(
+                            else:
+                                if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
+                                    self.raise_error(
                                         'function must be bound to a struct type')
-                        
-                            target_struct['__bind_functions__'][func_name] = \
+
+                                target_struct['__bind_functions__'][func_name] = \
                                     bound_function
+                except VMInterrupt as _:
+                    # handle interruption
+                    if self.__interrupted:
+                        self.__interrupted = False
+                        if self.__interrupt_signal == MII_DO_JUMP:
+                            jump_to = self.__opcounter
+                            continue
 
-                # handle interruption
-                if self.__interrupted:
-                    self.__interrupted = False
-                    if self.__interrupt_signal == MII_DO_JUMP:
-                        jump_to = self.__opcounter
-                        continue
+                        elif self.__interrupt_signal == MII_ERR_BREAK:
+                            why = WHY_ERROR
+                            self.__can_update_opc = False
 
-                    elif self.__interrupt_signal == MII_ERR_BREAK:
-                        why = WHY_ERROR
-                        self.__can_update_opc = False
-
-                        break
-
-                    elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
-                        self.__interrupted = True
-                        self.__interrupt_signal = MII_ERR_POP_TO_TRY
-
-                        if len(self.__frame_stack) > 1:
-                            self.__frame_stack.pop()
-
-                        can = self.__handle_error()
-
-                        if not can:
-                            why = WHY_HANDLING_ERR
                             break
 
-                if not self.__can:
-                    self.__can = 1
-                    break
+                        elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
+                            self.__interrupted = True
+                            self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
-                if jump_to != self.__opcounter:
-                    self.__opcounter = jump_to
-                else:
-                    self.__opcounter += _BYTE_CODE_SIZE
-                    jump_to = self.__opcounter
+                            if len(self.__frame_stack) > 1:
+                                self.__frame_stack.pop()
+
+                            can = self.__handle_error()
+
+                            if not can:
+                                why = WHY_HANDLING_ERR
+                                break
+                finally:
+                        if not self.__can:
+                            self.__can = 1
+                            break
+
+                        if jump_to != self.__opcounter:
+                            self.__opcounter = jump_to
+                        else:
+                            self.__opcounter += _BYTE_CODE_SIZE
+                            jump_to = self.__opcounter
 
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')
@@ -1077,7 +1077,7 @@ class Interpreter:
 
         return why
 
-    def exec(self, cobj, frame=None, 
+    def exec(self, cobj, frame=None,
              exec_for_module=False, globals: dict = None):
         if not frame:
             f = Frame()
@@ -1086,17 +1086,17 @@ class Interpreter:
             f.varnames = cobj.varnames
         else:
             f = frame
-        
+
         # init namespace
-        self.__namespace_state.ns_global.ns_dict = dict()  \
-                                                   if globals is None  \
-                                                   else globals
+        self.__namespace_state.ns_global.ns_dict = dict() \
+            if globals is None \
+            else globals
         self.__namespace_state.ns_builtins = abuiltins.BUILTINS_NAMESPACE
 
         f.lineno = cobj.firstlineno
-        
+
         self.__namespace_state.ns_global.ns_dict['__is_main__'] = \
-                objs.convert_to_ail_object(cobj.is_main)
+            objs.convert_to_ail_object(cobj.is_main)
 
         self.__global_frame = f
 

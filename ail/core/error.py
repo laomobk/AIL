@@ -9,7 +9,7 @@ ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = False
 
 
-def get_line_from_line_no(lno: int, fp: str, strip=True):
+def get_line_from_file(lno: int, fp: str, strip=True):
     """
     ln : 行号
     fp : 文件路径
@@ -38,15 +38,39 @@ def get_line_from_line_no(lno: int, fp: str, strip=True):
         return ''
 
 
+def get_line_from_source(lno: int, source: str, strip=True):
+    """
+    ln : 行号
+    fp : 文件路径
+    根据行号得到在源码的行
+    """
+    if lno <= 0:
+        return ''
+
+    tlno = 1
+
+    try:
+        for ln in source.split('\n'):
+            if tlno == lno:
+                if strip:
+                    return ln.strip()
+                return ln
+            tlno += 1
+
+        return ''
+    except (OSError, UnicodeDecodeError):
+        return ''
+
+
 # @debugger.debug_python_runtime
-def error_msg(line: int, msg: str, filename: str, errcode=1):
+def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None):
     """
     line : 行号
     msg : 信息
     filename : 文件名
     errcode : 错误码 / 程序返回值
     """
-    source_line = get_line_from_line_no(line, filename)
+    source_line = get_line_from_file(line, filename)
 
     if source_line != '':
         err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}\n'.format(
@@ -79,7 +103,7 @@ def print_stack_trace(stack_trace, print_last=False):
         filename = f.code.filename
 
         line_info = ''
-        source_line = get_line_from_line_no(
+        source_line = get_line_from_file(
                 lineno, os.path.join(boot_dir, filename))
 
         if source_line != '':
@@ -103,9 +127,9 @@ class AILRuntimeError:
 def print_global_error(err: AILRuntimeError, filename: str, 
                        lineno: int):
     if THROW_ERROR_TO_PYTHON:
-        raise_error_as_python(err, where)
+        raise_error_as_python(err)
 
-    source_line = get_line_from_line_no(lineno, filename)
+    source_line = get_line_from_file(lineno, filename)
 
     msg = err.msg
     t = err.err_type
@@ -131,7 +155,7 @@ def format_error(error: AILRuntimeError):
     t = error.err_type
     lno = f.lineno
 
-    source_line = get_line_from_line_no(lno, f.code.name)
+    source_line = get_line_from_file(lno, f.code.name)
     line_detail = ''
 
     if source_line != '':

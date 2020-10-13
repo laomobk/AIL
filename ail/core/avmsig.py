@@ -9,3 +9,7 @@ MII_ERR_POP_TO_TRY = 0x5
 WHY_ERROR = 0x2
 WHY_NORMAL = 0x3
 WHY_HANDLING_ERR = 0x6
+
+
+class VMInterrupt(Exception):
+    pass

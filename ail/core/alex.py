@@ -364,7 +364,7 @@ class Lex:
         try:
             return open(filename, encoding='utf-8').read()
         except (UnicodeDecodeError, OSError) as e:
-            return error_msg(-1, str(e), filename)
+            return self.__error_msg(str(e))
 
     @property
     def __chp(self):
@@ -393,7 +393,7 @@ class Lex:
 
         return self.__source[self.__cursor.value] \
             if self.__cursor.value < len(self.__source) \
-            else error_msg(-1, 'Syntax error', self.__filename)
+            else self.__error_msg('Syntax error')
 
     def __nextch(self, ni=1):
         """
@@ -403,6 +403,9 @@ class Lex:
         return self.__source[self.__cursor.value + ni] \
             if self.__cursor.value + ni < len(self.__source) \
             else '<EOF>'
+
+    def __error_msg(self, msg):
+        error_msg(self.__ln, msg, self.__filename)
 
     def lex(self, filename=None) -> TokenStream:
         if filename is not None:
@@ -482,10 +485,8 @@ class Lex:
                 if self.__nextch() in ('>', '<'):  # 左位移，右位移
                     if self.__nextch(2) == '=':  # <<=, >>=
                         if c + self.__nextch() not in ('<<', '>>'):
-                            error_msg(self.__ln,
-                                      'Syntax error:{0}'.format(c + self.__nextch() + self.__nextch(2)),
-
-                                      self.__filename)
+                            self.__error_msg(
+                                      'Syntax error:{0}'.format(c + self.__nextch() + self.__nextch(2)),)
 
                         self.__stream.append(Token(c + c + '=',
                                                    {
@@ -515,9 +516,8 @@ class Lex:
                                 self.__movchr(2)
                                 continue  # 跳过
 
-                            error_msg(self.__ln,
-                                      'Syntax error:{0}'.format(c + self.__nextch()),
-                                      self.__filename)
+                            self.__error_msg(
+                                      'Syntax error:{0}'.format(c + self.__nextch()))
 
                         self.__stream.append(Token(
                             c + self.__nextch(),
@@ -562,7 +562,7 @@ class Lex:
                     mov, lni = skip_comment_block(self.__source, self.__chp)
 
                     if mov == -1:
-                        error_msg(-1, 'EOL while scanning comment block', self.__filename)
+                        self.__error_msg('EOL while scanning comment block')
 
                     self.__movchr(mov)  # 移动指针至注释块尾部+1的位置
                     self.__ln += lni  # 加上行号增量
@@ -652,7 +652,7 @@ class Lex:
                 # 如果是数字，先用一个字符串存起来，以后再分析
                 mov, buf = get_number(self.__source, self.__chp)
                 if mov == -1:
-                    error_msg(self.__ln, 'SyntaxError', self.__filename)
+                    self.__error_msg('SyntaxError')
 
                 self.__stream.append(Token(
                     buf,
@@ -683,9 +683,9 @@ class Lex:
                 mov, lni, buf = get_string(self.__source, self.__chp)
 
                 if mov == -1:
-                    error_msg(self.__ln, 'EOL while scanning string literal', self.__filename)
+                    self.__error_msg('EOL while scanning string literal')
                 elif mov == -2:
-                    error_msg(self.__ln, 'Cannot decode an escape character', self.__filename)
+                    self.__error_msg('Cannot decode an escape character')
 
                 self.__stream.append(Token(
                     buf,
@@ -697,7 +697,7 @@ class Lex:
                 self.__movchr(mov)
 
             else:
-                error_msg(self.__ln, 'Unknown character', self.__filename)
+                self.__error_msg('Unknown character')
 
         if self.__nextch(-1) != '\\n':
             self.__stream.append(Token(

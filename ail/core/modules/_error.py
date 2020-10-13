@@ -1,6 +1,6 @@
 import sys
 
-from ..error import AILRuntimeError, get_line_from_line_no
+from ..error import AILRuntimeError, get_line_from_file
 from ...objects.struct import new_struct_object, convert_to_pyobj
 from ...objects.null import null
 from ..astate import MAIN_INTERPRETER_STATE
@@ -17,7 +17,7 @@ def _err_to_string(this):
     where = frame.code.name
     filename = frame.code.filename
 
-    source_line = get_line_from_line_no(lno, filename)
+    source_line = get_line_from_file(lno, filename)
     line_detail = ''
 
     if source_line != '':
