@@ -801,11 +801,10 @@ class Compiler:
             # @decorator
             # fun f() {...} -> fun f() {...} ; f = decorator(f)
             decorator_access_ast = self.__compile_binary_expr(tree.decorator)
-            is_method = isinstance(tree.decorator, ast.MemberAccessAST)
             bc += decorator_access_ast
             bc.add_bytecode(load_const, ci, tree.ln)
             bc.add_bytecode(make_function, 0, tree.ln)
-            bc.add_bytecode(call_method if is_method else call_func, 1, tree.ln)
+            bc.add_bytecode(call_func, 1, tree.ln)
         else:
             bc.add_bytecode(load_const, ci, tree.ln)
             bc.add_bytecode(make_function, 0, tree.ln)

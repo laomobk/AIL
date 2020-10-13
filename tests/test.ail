@@ -1,4 +1,16 @@
+struct Logger {
+    name
+}
 
+fun (Logger) log(self, func) {
+    fun wrapper(argv) {
+        print '[' + self.name + ']: call'; func
+        return func(argv)
+    }
+    return wrapper
+}
+
+myLogger = new(Logger, ['LoggerA'])
 
 fun log(func) {
     fun wrapper(argv) {
@@ -17,19 +29,18 @@ fun log2(msg) {
         return wrapper
     }
     return log_msg
-} 
+}
 
 @log2('Hello')
 fun print_name(name) {
     print 'Hello'; name
 }
 
-
 struct Person {
     name
 }
 
-@log
+@new(Logger, ['LoggerB']).log
 fun (Person) say_hi(this) {
     print 'Hello, my name is'; this
 }
