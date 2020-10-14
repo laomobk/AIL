@@ -38,7 +38,7 @@ pow_expr := cell ['^' cell]*
 cell := NUMBER | NAME | STRING | call_expr | '(' real_expr ')' | array
         member_expr
 call_expr := NAME '(' arg_list ')'
-arg_list := expr [',' expr]*
+arg_list := NAME [',' NAME]* [',' '*' NAME]
 
 val_list := NAME [',' NAME]*
 

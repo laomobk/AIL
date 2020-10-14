@@ -9,13 +9,20 @@ class ExprAST:
     pass
 
 
+class ArgItemAST:
+    def __init__(self, expr: 'BinaryExprListAST', star: bool, ln: int):
+        self.expr = expr
+        self.star = star
+        self.ln = ln
+
+
 class ArgListAST:
     """
     arg_list := expr [',' expr]*
     """
 
-    def __init__(self, exp_list: list, ln: int):
-        self.exp_list = exp_list
+    def __init__(self, item_list: List[ArgItemAST], ln: int):
+        self.exp_list = item_list  # TODO: refactor exp_list -> item_list
         self.ln = ln
 
 

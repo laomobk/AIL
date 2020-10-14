@@ -52,7 +52,11 @@ def make_ast_tree(a) -> dict:
         return {'PrintAST': {'value': unpack_list(a.value_list)}}
 
     elif isinstance(a, ast.InputExprAST):
-        return {'InputAST': {'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
+        return {'InputAST': {
+            'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
+    
+    elif isinstance(a, ast.ArgItemAST):
+        return {'ArgItem': {'expr': a.expr, 'star': a.star}}
 
     elif isinstance(a, ast.ArgListAST):
         return {'ArgList': unpack_list(a.exp_list)}

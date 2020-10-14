@@ -80,28 +80,52 @@ class Parser:
             'SyntaxError%s' % ((': ' if msg else '') + (msg if msg else '')),
             self.__filename)
 
-    def __parse_arg_list(self) -> ast.ArgListAST:
-        if self.__now_tok == ')':
-            # 空参数列表
-            self.__next_tok()  # eat ')'
-            return ast.ArgListAST([], self.__now_ln)
+    def __parse_arg_item(self) -> ast.ArgItemAST:
+        star = False
 
-        a1 = self.__parse_binary_expr()
+        if self.__now_tok.ttype == AIL_MUIT:
+            self.__next_tok()  # eat '*'
+            star = True
+        expr = self.__parse_binary_expr()
 
-        if a1 is None:
-            self.__syntax_error('Argument must be an expression!')
+        return ast.ArgItemAST(expr, star, self.__now_ln)
 
-        alist = [a1]
+    def __parse_func_def_arg_list(self) -> ast.ArgListAST:
+        ln = self.__now_ln
 
-        while self.__now_tok == ',':
-            self.__next_tok()
-            a = self.__parse_binary_expr()
-            if a is None:
-                self.__syntax_error()
+        alist = []
+
+        while self.__now_tok.ttype != AIL_SRBASKET:
+            a = self.__parse_arg_item()
+            if not isinstance(a.expr, ast.CellAST) or  \
+                    a.expr.type != AIL_IDENTIFIER:
+                self.__syntax_error(ln=a.ln)
             alist.append(a)
 
-        if self.__now_tok != ')':
-            self.__syntax_error()
+            if self.__now_tok.ttype == AIL_COMMA:
+                self.__next_tok()  # eat ','
+
+        self.__next_tok()  # eat ')'
+        
+        has_var_arg = False
+        for a in alist:
+            if a.star:
+                if has_var_arg:
+                    self.__syntax_error(ln=a.ln)
+                has_var_arg = True
+
+        return ast.ArgListAST(alist, ln)
+
+    def __parse_arg_list(self) -> ast.ArgListAST:
+        alist = []
+
+        while self.__now_tok.ttype != AIL_SRBASKET:
+            a = self.__parse_arg_item()
+            alist.append(a)
+
+            if self.__now_tok.ttype == AIL_COMMA:
+                self.__next_tok()  # eat ','
+
         self.__next_tok()  # eat ')'
 
         return ast.ArgListAST(alist, self.__now_ln)
@@ -182,7 +206,9 @@ class Parser:
 
         return ast.ArrayAST(items, ln)
 
-    def __parse_member_access_expr(self, set_attr=False, try_=False) -> ast.MemberAccessAST:
+    def __parse_member_access_expr(self, 
+                                   set_attr=False, 
+                                   try_=False) -> ast.MemberAccessAST:
         left = self.__parse_cell_or_call_expr()
 
         if left is None:
@@ -975,17 +1001,11 @@ class Parser:
         self.__next_tok()  # eat '('
 
         if self.__now_tok == ')':
-            arg_list = ast.ArgListAST([], self.__now_ln)  # empty arglist
+            arg_list = ast.ArgListAST([], None, self.__now_ln)  # empty arglist
 
             self.__next_tok()  # eat ')'
         else:
-            arg_list = self.__parse_arg_list()
-
-            for a in arg_list.exp_list:
-                if not isinstance(a, ast.CellAST):
-                    self.__syntax_error()
-                elif a.type != AIL_IDENTIFIER:
-                    self.__syntax_error()
+            arg_list = self.__parse_func_def_arg_list()
 
         self.__level += 1
 

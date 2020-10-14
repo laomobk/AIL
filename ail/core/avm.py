@@ -187,7 +187,6 @@ class Interpreter:
     def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if isinstance(aobj, error.AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
-            raise VMInterrupt()
         if not isinstance(aobj, objs.AILObject) and not not_convert:
             target = _obj_type_dict.get(type(aobj), awrapper.WRAPPER_TYPE)
 
@@ -268,12 +267,14 @@ class Interpreter:
             self.__can = 0
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_POP_TO_TRY
-
-            return
+            
+            raise VM_INTERRUPT_SIGNAL
 
         # set interrupt signal.
         self.__interrupted = True
         self.__interrupt_signal = MII_ERR_POP_TO_TRY
+
+        raise VM_INTERRUPT_SIGNAL
 
     def __handle_error(self) -> bool:
         """
@@ -1019,41 +1020,43 @@ class Interpreter:
                                 target_struct['__bind_functions__'][func_name] = \
                                     bound_function
                 except VMInterrupt as _:
-                    # handle interruption
-                    if self.__interrupted:
-                        self.__interrupted = False
-                        if self.__interrupt_signal == MII_DO_JUMP:
-                            jump_to = self.__opcounter
-                            continue
+                    pass
 
-                        elif self.__interrupt_signal == MII_ERR_BREAK:
-                            why = WHY_ERROR
-                            self.__can_update_opc = False
+                # handle interruption
+                if self.__interrupted:
+                    self.__interrupted = False
+                    if self.__interrupt_signal == MII_DO_JUMP:
+                        jump_to = self.__opcounter
+                        continue
 
+                    elif self.__interrupt_signal == MII_ERR_BREAK:
+                        why = WHY_ERROR
+                        self.__can_update_opc = False
+
+                        break
+
+                    elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_POP_TO_TRY
+
+                        if len(self.__frame_stack) > 1:
+                            self.__frame_stack.pop()
+
+                        can = self.__handle_error()
+
+                        if not can:
+                            why = WHY_HANDLING_ERR
                             break
 
-                        elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
-                            self.__interrupted = True
-                            self.__interrupt_signal = MII_ERR_POP_TO_TRY
+                if not self.__can:
+                    self.__can = 1
+                    break
 
-                            if len(self.__frame_stack) > 1:
-                                self.__frame_stack.pop()
-
-                            can = self.__handle_error()
-
-                            if not can:
-                                why = WHY_HANDLING_ERR
-                                break
-                finally:
-                        if not self.__can:
-                            self.__can = 1
-                            break
-
-                        if jump_to != self.__opcounter:
-                            self.__opcounter = jump_to
-                        else:
-                            self.__opcounter += _BYTE_CODE_SIZE
-                            jump_to = self.__opcounter
+                if jump_to != self.__opcounter:
+                    self.__opcounter = jump_to
+                else:
+                    self.__opcounter += _BYTE_CODE_SIZE
+                    jump_to = self.__opcounter
 
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')

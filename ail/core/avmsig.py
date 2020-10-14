@@ -11,5 +11,8 @@ WHY_NORMAL = 0x3
 WHY_HANDLING_ERR = 0x6
 
 
-class VMInterrupt(Exception):
+class VMInterrupt(BaseException):
     pass
+
+
+VM_INTERRUPT_SIGNAL = VMInterrupt()
