@@ -1,9 +1,9 @@
 
 
 fun log(func) {
-    fun wrapper(argv) {
+    fun wrapper(*argv) {
         print 'call'; func
-        return func(argv)
+        return func(*argv)
     }
     return wrapper
 }

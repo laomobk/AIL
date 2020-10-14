@@ -1,0 +1,13 @@
+
+fun f(a, b, *c) {
+    print a; b; c
+}
+
+fun f2(*arg) {
+    f(*arg)
+}
+
+names = ['Nezha', 'Aobing']
+names2 = ['Lijing', 'Yinshiniang']
+
+f(*names, *names2, 'Taiyi')

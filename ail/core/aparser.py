@@ -105,14 +105,10 @@ class Parser:
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()  # eat ','
 
-        self.__next_tok()  # eat ')'
-        
-        has_var_arg = False
-        for a in alist:
             if a.star:
-                if has_var_arg:
-                    self.__syntax_error(ln=a.ln)
-                has_var_arg = True
+                break
+
+        self.__next_tok()  # eat ')' 
 
         return ast.ArgListAST(alist, ln)
 

@@ -456,12 +456,15 @@ class Interpreter:
 
         return None
 
-    def call_function(self, func, argv, argl):
+    def call_function(self, func, argv, argl, ex: bool = False):
         self.__tof._marked_opcounter = self.__opcounter
 
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
             if func['__class__'] == afunc.FUNCTION_TYPE:
                 c: objs.AILCodeObject = func['__code__']
+                var_arg = c.var_arg
+                if var_arg is not None:
+                    ex = True
 
                 try:
                     if func['__this__'] is not None:
@@ -476,15 +479,17 @@ class Interpreter:
                         argl.insert(0, this)
                 except TypeError:
                     pass
-
-                if c.argcount != argv:
+                
+                if (c.argcount != argv and not ex) or (c.argcount > argv and ex):
                     self.raise_error(
                         '\'%s\' takes %d argument(s), but got %d.' % (
                             c.name, c.argcount, argv),
                         'TypeError'
                     )
-
-                argd = {k: v for k, v in zip(c.varnames[:argv], argl)}
+                
+                argd = {k: v for k, v in zip(c.varnames[:c.argcount], argl)}
+                if ex:
+                    argd[var_arg] = array.convert_to_array(argl[c.argcount:])
                 # init new frame
                 f = Frame()
 
@@ -501,8 +506,8 @@ class Interpreter:
 
                     now_globals = self.__namespace_state.ns_global.ns_dict
 
-                    if func['__globals__'] is not None:
-                        self.__set_globals(func['__globals__'])
+                    if func['__global_ns__'] is not None:
+                        self.__set_globals(func['__global_ns__'])
 
                     why = self.__run_bytecode(c, f)
 
@@ -813,6 +818,13 @@ class Interpreter:
 
                         self.call_function(func, argv, argl)
 
+                    elif op == call_func_ex:
+                        arg_array = self.__pop_top()
+                        func = self.__pop_top()
+                        arr_list = objs.unpack_ailobj(arg_array)
+
+                        self.call_function(func, len(arr_list), arr_list, ex=True)
+
                     elif op == make_function:
                         tos = copy.copy(self.__pop_top())  # type: objs.AILCodeObject
 
@@ -827,7 +839,7 @@ class Interpreter:
                         )
 
                         if self.__exec_for_module:
-                            tosf['__globals__'] = self.__namespace_state.ns_global.ns_dict
+                            tosf['__global_ns__'] = self.__namespace_state.ns_global.ns_dict
 
                         self.__push_back(tosf)
 
@@ -839,6 +851,24 @@ class Interpreter:
 
                         self.__incref(o)
                         self.__tof.stack.append(o)
+
+                    elif op == join_array:
+                        arr_list = [self.__stack.pop() for _ in range(argv)][::-1]
+
+                        result = []
+
+                        for arr in arr_list:
+                            if not objs.compare_type(arr, array.ARRAY_TYPE):
+                                self.raise_error(
+                                    'argument after \'*\' must an array, but got %s'
+                                        % arr['__class__'],
+                                    'TypeError'
+                                    )
+                            temp_list = arr['__value__']
+                            result.extend(temp_list)
+
+                        self.__tof.stack.append(
+                                array.convert_to_array(result))
 
                     elif op == binary_subscr:
                         v = self.__pop_top()

@@ -87,6 +87,9 @@ unary_invert = 0x3b
 
 make_function = 0x3c
 
+call_func_ex = 0x3d
+join_array = 0x3e
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

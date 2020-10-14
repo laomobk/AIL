@@ -288,20 +288,29 @@ class Compiler:
 
         return bc
 
-    def __compile_call_expr(self, tree: ast.CallExprAST, is_attr=False) -> ByteCode:
+    def __compile_call_expr(self, tree: ast.CallExprAST, is_attr=False, 
+                            plain_call=False) -> ByteCode:
         bc = ByteCode()
 
         lbc = self.__compile_binary_expr(tree.left, is_attr=is_attr)
 
         bc += lbc
+        bc += self.__compile_func_call_arg_list(tree.arg_list)
+        
+        ex_call = False
 
-        expl = tree.arg_list.exp_list
+        for item in tree.arg_list.exp_list:
+            if item.star:
+                ex_call = True
+                break
+        
+        if ex_call:
+            bc.add_bytecode(call_func_ex, 0, tree.ln)
+        else:
+            bc.add_bytecode(call_func, len(tree.arg_list.exp_list), tree.ln)
 
-        for et in expl:
-            etc = self.__compile_binary_expr(et)
-            bc += etc
-
-        bc.add_bytecode(call_func, len(expl), tree.ln)
+        if plain_call and not self.__is_single_line:
+            bc.add_bytecode(pop_top, 0, -1)
 
         return bc
 
@@ -773,7 +782,11 @@ class Compiler:
 
         has_bindto = tree.bindto is not None
 
-        ext = [c.value for c in tree.arg_list.exp_list]
+        ext = [c.expr.value for c in tree.arg_list.exp_list]
+        exp_list = tree.arg_list.exp_list
+        var_arg = exp_list[-1].expr.value \
+                    if exp_list and exp_list[-1].star else None
+        argc = len(exp_list) - (0 if var_arg is None else 1)
 
         name = tree.name
 
@@ -782,7 +795,8 @@ class Compiler:
 
         cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=self.__filename, name=name,
                         ext_varname=ext).compile(tree.block).code_object
-        cobj.argcount = len(tree.arg_list.exp_list)
+        cobj.argcount = argc
+        cobj.var_arg = var_arg
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True
@@ -817,20 +831,34 @@ class Compiler:
         
         return bc
 
-    def __compile_plain_call(self, tree: ast.CallExprAST) -> ByteCode:
+    def __compile_func_call_arg_list(self, tree: ast.ArgListAST) -> ByteCode:
         bc = ByteCode()
+        
+        norm_arg_count = 0
+        join_count = 0
+        var_arg = False
 
-        lbc = self.__compile_binary_expr(tree.left)
+        for item in tree.exp_list:
+            if item.star:
+                if norm_arg_count > 0:
+                    bc.add_bytecode(build_array, norm_arg_count, -1)
+                    norm_arg_count = 0
+                    join_count += 1
+                join_count += 1
+                var_arg = True
 
-        bc += lbc
+            ibc = self.__compile_binary_expr(item.expr)
+            bc += ibc
 
-        for et in tree.arg_list.exp_list:
-            bc += self.__compile_binary_expr(et)
+            if not item.star:
+                norm_arg_count += 1
 
-        bc.add_bytecode(call_func, len(tree.arg_list.exp_list), tree.ln)
+        if var_arg:
+            if norm_arg_count > 0:
+                bc.add_bytecode(build_array, norm_arg_count, -1)
+                join_count += 1
 
-        if not self.__is_single_line:
-            bc.add_bytecode(pop_top, 0, -1)
+            bc.add_bytecode(join_array, join_count, tree.ln)
 
         return bc
 
@@ -894,7 +922,7 @@ class Compiler:
                 tbc = self.__compile_continue_expr(et)
 
             elif isinstance(et, ast.CallExprAST):
-                tbc = self.__compile_plain_call(et)
+                tbc = self.__compile_call_expr(et, plain_call=True)
 
             elif isinstance(et, ast.LoadAST):
                 tbc = self.__compile_load_stmt(et)
