@@ -997,7 +997,7 @@ class Parser:
         self.__next_tok()  # eat '('
 
         if self.__now_tok == ')':
-            arg_list = ast.ArgListAST([], None, self.__now_ln)  # empty arglist
+            arg_list = ast.ArgListAST([], self.__now_ln)  # empty arglist
 
             self.__next_tok()  # eat ')'
         else:
