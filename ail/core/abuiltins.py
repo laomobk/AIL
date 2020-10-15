@@ -9,6 +9,7 @@ from .version import (
 
 from .modules._fileio import _open
 from .modules.console import get_console_object
+from .modules.helper import print_help
 
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE
@@ -307,6 +308,7 @@ BUILTINS = {
     'locals': objs.convert_to_ail_object(func_locals),
     'dir': objs.convert_to_ail_object(func_dir),
     'console': objs.convert_to_ail_object(get_console_object()),
+    'help': objs.convert_to_ail_object(print_help),
 }
 
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)

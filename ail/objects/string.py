@@ -23,7 +23,8 @@ def str_add(self, ostr: obj.AILObject) -> obj.AILObject:
     if type(ostr) != obj.AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
     # if ostr['__class__'] != STRING_TYPE:
-    #     return AILRuntimeError('Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
+    #     return AILRuntimeError(
+    #         'Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
 
     ss = self['__value__']
     os = ostr['__value__']
@@ -96,6 +97,9 @@ def str_len(self):
     return len(self['__value__'])
 
 
+# methods of string
+
+
 def str_join(self, array):
     array = obj.unpack_ailobj(array)
 
@@ -116,7 +120,25 @@ def str_join(self, array):
     return result
 
 
-str_isdigit = lambda self: str.isdigit(self['__value__'])
+str_is_digit = lambda self: str.isdigit(self['__value__'])
+str_is_alpha = lambda self: str.isalpha(self['__value__'])
+str_is_ascii = lambda self: str.isascii(self['__value__'])
+str_is_decimal = lambda self: str.isdecimal(self['__value__'])
+str_is_numeric = lambda self: str.isnumeric(self['__value__'])
+str_is_lower = lambda self: str.islower(self['__value__'])
+str_is_upper = lambda self: str.isupper(self['__value__'])
+
+
+STRING_METHODS = {
+    'isAlpha': str_is_alpha,
+    'isAscii': str_is_ascii,
+    'isDecimal': str_is_decimal,
+    'isDigit': str_is_digit,
+    'isLower': str_is_lower,
+    'isNumeric': str_is_numeric,
+    'isUpper': str_is_upper,
+    'join': str_join,
+}
 
 
 def convert_to_string(aobj) -> obj.AILObject:
@@ -127,9 +149,7 @@ def convert_to_string(aobj) -> obj.AILObject:
 
 
 STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
-                                methods={
-                                    'join': str_join,
-                                },
+                                STRING_METHODS,
                                 __init__=str_init,
                                 __add__=str_add,
                                 # __muit__=str_muit,

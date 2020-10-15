@@ -62,7 +62,7 @@ def get_line_from_source(lno: int, source: str, strip=True):
         return ''
 
 
-@debugger.debug_python_runtime
+# @debugger.debug_python_runtime
 def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None):
     """
     line : 行号
@@ -76,10 +76,10 @@ def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None)
         source_line = get_line_from_source(line, source)
 
     if source_line != '':
-        err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}\n'.format(
+        err_msg = 'File \'{0}\', line {2}:\n   {3}\n{1}\n'.format(
             filename, msg, line, source_line)
     else:
-        err_msg = 'File: \'{0}\', line {2}\n{1}\n'.format(
+        err_msg = 'File \'{0}\', line {2}\n{1}\n'.format(
             filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:

@@ -302,7 +302,6 @@ class Parser:
         elif self.__now_tok.ttype not in (
                 AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
                     nt in _keywords:
-            print(self.__now_tok)
             self.__syntax_error()
 
         name = nt.value  # it can be sub, string, number or identifier
