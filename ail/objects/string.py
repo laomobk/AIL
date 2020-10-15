@@ -96,6 +96,26 @@ def str_len(self):
     return len(self['__value__'])
 
 
+def str_join(self, array):
+    array = obj.unpack_ailobj(array)
+
+    if not isinstance(array, list):
+        return AILRuntimeError('only join an iterable', 'TypeError')
+
+    if len(array) == 0:
+        return ''
+
+    val = self['__value__']
+    result = ''
+
+    for x in array[:-1]:
+        result += str(x) + val
+
+    result += array[-1]
+
+    return result
+
+
 def convert_to_string(aobj) -> obj.AILObject:
     if isinstance(aobj, obj.AILObject):
         return aobj['__str__'](aobj)
@@ -111,4 +131,4 @@ STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
                                 __repr__=str_repr,
                                 __eq__=str_eq,
                                 __getitem__=str_getitem,
-                                __len__=str_len)
+                                __len__=str_len,)
