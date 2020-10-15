@@ -70,7 +70,10 @@ def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None)
     filename : 文件名
     errcode : 错误码 / 程序返回值
     """
-    source_line = get_line_from_file(line, filename)
+    if source is None:
+        source_line = get_line_from_file(line, filename)
+    else:
+        source_line = get_line_from_source(line, source)
 
     if source_line != '':
         err_msg = 'File: \'{0}\', line {2}:\n   {3}\n{1}\n'.format(

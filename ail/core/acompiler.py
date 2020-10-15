@@ -1040,8 +1040,8 @@ def test_compiler():
     from .aparser import Parser
     from .alex import Lex
 
-    lex = Lex('./tests/test.ail')
-    ts = lex.lex()
+    lex = Lex()
+    ts = lex.lex(open('./tests/test.ail').read())
 
     p = Parser('./tests/test.ail')
     t = p.parse(ts)

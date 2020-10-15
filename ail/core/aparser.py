@@ -38,8 +38,9 @@ _FROM_FUNC = 1
 
 
 class Parser:
-    def __init__(self, filename: str):
-        self.__filename = filename
+    def __init__(self):
+        self.__filename = '<NO FILE>'
+        self.__source = '\n'
         self.__tok_stream = None
         self.__tok_list = None
 
@@ -78,7 +79,7 @@ class Parser:
         error_msg(
             self.__now_ln if ln <= 0 else ln,
             'SyntaxError%s' % ((': ' if msg else '') + (msg if msg else '')),
-            self.__filename)
+            self.__filename, source=self.__source)
 
     def __parse_arg_item(self) -> ast.ArgItemAST:
         star = False
@@ -1459,8 +1460,11 @@ class Parser:
 
         return ast.BlockExprAST(stmtl, ln)
 
-    def parse(self, ts: TokenStream) -> ast.BlockExprAST:
+    def parse(self, ts: TokenStream, 
+              source: str, filename: str) -> ast.BlockExprAST:
         self.__tok_stream = ts
+        self.__filename = filename
+        self.__source = source
         self.__tok_list = ts.token_list
 
         self.__tc = 0
@@ -1481,8 +1485,8 @@ class Parser:
 def test_parse():
     import pprint
 
-    l = Lex('./tests/test.ail')
-    ts = l.lex()
+    l = Lex()
+    ts = l.lex(open('./tests/test.ail').read())
 
     p = Parser('./tests/test.ail')
     t = p.test(ts)

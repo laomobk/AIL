@@ -1,9 +1,2 @@
-
-fun f(a, *b) {
-    print a; b
-}
-
-
-f('Nezha', 'Zhaer')
-f(*['Nezha', 'Zhaer'])
+''.a
 

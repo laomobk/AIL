@@ -51,15 +51,13 @@ class Shell:
 
         self.__more_level = 0
 
-        self.__temp_name = '.temp.tmp'
-        self.__fbuffer = open(self.__temp_name, 'w')
-
-        self.__program = 'begin\n%s\nend\n'
+        # self.__temp_name = '.temp.tmp'
+        # self.__fbuffer = open(self.__temp_name, 'w')
 
         self.__main_frame = Frame()
 
-        self.__lexer = Lex(self.__temp_name)
-        self.__parser = Parser(self.__temp_name)
+        self.__lexer = Lex()
+        self.__parser = Parser()
         self.__compiler = Compiler(filename='<shell>')
         
         self.__globals = _SHELL_NAMESPACE
@@ -125,10 +123,8 @@ class Shell:
     def __run_single_line(self, line: str, block=False):
         single_line = not block
 
-        self.__write(self.__program % line)
-
-        t = self.__lexer.lex(self.__temp_name)
-        t = self.__parser.parse(t)
+        t = self.__lexer.lex('<shell>', line)
+        t = self.__parser.parse(t, line, '<shell>')
         cobj = self.__compiler.compile(t, single_line=single_line).code_object
         
         cobj.is_main = True

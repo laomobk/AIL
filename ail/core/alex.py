@@ -342,17 +342,15 @@ class TokenStream:
 
 
 class Lex:
-    def __init__(self, filename: str, testmode=False):
+    def __init__(self):
         """
         fp : 源码路径，当以'.$str:'开头且testmode=True时，则是分析.$str:以后的内容
         """
 
-        self.__filename = filename
+        self.__filename = '<NO FILE>'
         self.__ln = 1  # 行号
-
-        self.__source = self.__get_source(filename) \
-            if not filename.startswith('.$str:') \
-            else (filename[len('.$str:'):] if testmode else open(filename, 'r', encoding='UTF-8').read())
+        
+        self.__source = '\n'
         # 源码文件
 
         self.__cursor = Cursor()  # 源码的字符指针
@@ -407,10 +405,10 @@ class Lex:
     def __error_msg(self, msg):
         error_msg(self.__ln, msg, self.__filename)
 
-    def lex(self, filename=None) -> TokenStream:
+    def lex(self, source: str, filename: str = '<string>') -> TokenStream:
         if filename is not None:
             self.__filename = filename
-            self.__source = open(filename, 'r', encoding='UTF-8').read()
+            self.__source = source
 
             self.__cursor = Cursor()  # 源码的字符指针
             self.__stream = TokenStream()
@@ -718,7 +716,7 @@ class Lex:
 def test_lex():
     import pprint
 
-    ts = Lex('./tests/test.ail').lex()
+    ts = Lex().lex(open('./tests/test.ail').read())
 
     pprint.pprint(ts.token_list)
 
