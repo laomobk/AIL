@@ -56,7 +56,7 @@ class Parser:
         return self.__tok_stream[self.__tc]
 
     def __peek(self, step=1) -> Token:
-        return self.__tok_stream[self.__tc + 1]
+        return self.__tok_stream[self.__tc + step]
 
     def __parse_bin_expr(self) -> ast.AddSubExprAST:
         pass
@@ -302,6 +302,7 @@ class Parser:
         elif self.__now_tok.ttype not in (
                 AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
                     nt in _keywords:
+            print(self.__now_tok)
             self.__syntax_error()
 
         name = nt.value  # it can be sub, string, number or identifier
@@ -1478,18 +1479,19 @@ class Parser:
                                   "A program should ends with 'end'",
                                   for_program=True)
 
-    def test(self, ts):
-        return self.parse(ts)
+    def test(self, ts, source):
+        return self.parse(ts, source, '<test>')
 
 
 def test_parse():
     import pprint
 
+    source = open('./tests/test.ail').read()
     l = Lex()
-    ts = l.lex(open('./tests/test.ail').read())
+    ts = l.lex(source)
 
-    p = Parser('./tests/test.ail')
-    t = p.test(ts)
+    p = Parser()
+    t = p.test(ts, source)
     pt = test_utils.make_ast_tree(t)
     pprint.pprint(pt)
 

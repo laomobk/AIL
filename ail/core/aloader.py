@@ -131,7 +131,8 @@ class ModuleLoader:
             return ns, p
 
         elif self.__get_type(p) == 'ail':
-            ast = Parser(p).parse(Lex(p).lex())
+            source = open(p).read()
+            ast = Parser().parse(Lex().lex(source), source)
             cobj = Compiler(filename=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)

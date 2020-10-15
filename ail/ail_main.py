@@ -141,7 +141,9 @@ def launch_main(argv: list) -> int:
         if not os.path.exists(file_path):
             raise FileNotFoundError('file \'%s\' not found' % file_path)
 
-        ast = Parser(file_path).parse(Lex(file_path).lex())
+        source = open(file_path).read()
+
+        ast = Parser().parse(Lex().lex(source), source)
         code_object = Compiler(
                 ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True

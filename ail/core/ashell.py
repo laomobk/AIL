@@ -84,9 +84,8 @@ class Shell:
         """
         :return : -1 end more | 0 normal | 1 start more
         """
-        self.__write(line)
 
-        ts = Lex(self.__temp_name).lex()
+        ts = Lex().lex(line)
 
         ignore_more = False
         hold_on_more = 0
@@ -123,7 +122,7 @@ class Shell:
     def __run_single_line(self, line: str, block=False):
         single_line = not block
 
-        t = self.__lexer.lex('<shell>', line)
+        t = self.__lexer.lex(line, '<shell>')
         t = self.__parser.parse(t, line, '<shell>')
         cobj = self.__compiler.compile(t, single_line=single_line).code_object
         
@@ -210,10 +209,7 @@ class Shell:
                 print('\n%s' % str(type(e).__name__))
                 self.__buffer = []
 
-            self.__main_frame.variable['__temp__'] = \
-                string.convert_to_string(self.__read_temp_file())
-
-        os.remove(self.__temp_name)
+            self.__main_frame.variable['__temp__'] = '\n'.join(self.__buffer)
 
 
 if __name__ == '__main__':

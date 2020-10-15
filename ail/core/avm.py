@@ -1144,10 +1144,12 @@ def test_vm():
     from .aparser import Parser
     from .acompiler import Compiler
 
-    l = Lex('tests/test.ail')
-    ts = l.lex()
+    source = open('tests/test.ail').read()
 
-    t = Parser('tests/test.ail').parse(ts)
+    l = Lex()
+    ts = l.lex(source)
+
+    t = Parser().parse(ts, source)
 
     cbf = Compiler(filename='<TEST>').compile(t)
 
