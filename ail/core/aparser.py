@@ -1463,6 +1463,7 @@ class Parser:
 
     def parse(self, ts: TokenStream, 
               source: str, filename: str) -> ast.BlockExprAST:
+        self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
         self.__source = source
@@ -1470,6 +1471,9 @@ class Parser:
 
         self.__tc = 0
         self.__level = 0  # level 0
+
+        if len(ts.token_list) == 0:
+            return ast.BlockExprAST([], 0)
 
         while self.__now_tok.ttype == AIL_ENTER:  # skip enter at beginning
             self.__next_tok()

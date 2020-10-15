@@ -143,7 +143,7 @@ def launch_main(argv: list) -> int:
 
         source = open(file_path).read()
 
-        ast = Parser().parse(Lex().lex(source), source)
+        ast = Parser().parse(Lex().lex(source), source, file_path)
         code_object = Compiler(
                 ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True

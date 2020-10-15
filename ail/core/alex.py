@@ -416,6 +416,9 @@ class Lex:
 
             self.__blevel = 0
 
+        if len(self.__source) == 0:
+            return self.__stream
+
         while self.__chp < len(self.__source):
             c = self.__chnow
 

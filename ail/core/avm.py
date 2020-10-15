@@ -528,6 +528,9 @@ class Interpreter:
                 pyf = func['__pyfunction__']
                 has_this = False
 
+                # arbitrary number of positional arguments
+                has_var_arg = pyf.__code__.co_flags & 0x04 == 0x04
+
                 if func['__this__'] is not None:
                     has_this = True
                     this = copy.copy(func['__this__'])
@@ -536,26 +539,10 @@ class Interpreter:
 
                 if not hasattr(pyf, '__call__'):
                     self.raise_error(
-                        '\'%s\' object is not callable' % str(type(pyf))
-                    )
+                        '\'%s\' object is not callable' % str(type(pyf)),
+                        'TypeError')
 
-                if not inspect.isbuiltin(pyf):
-                    # check arguments
-                    fc: types.CodeType = pyf.__code__
-
-                    fd = pyf.__defaults__
-                    fcc = fc.co_argcount
-                    fac = fc.co_argcount - (len(fd) if fd is not None else 0)
-
-                    if fac > argv or (argv not in range(fac, fcc + 1)):
-                        self.raise_error(
-                            'function \'%s\' need %s positional argument(s)' %
-                            (pyf.__name__, fac - (1 if has_this else 0)),
-                            'TypeError'
-                        )
-                        return
-
-                else:
+                if inspect.isbuiltin(pyf):
                     argl = [o['__value__'] if objs.has_attr(o, '__value__') \
                                 else o for o in argl]
                     # unpack argl for builtin function
@@ -932,6 +919,8 @@ class Interpreter:
 
                         namespace, module_path = aloader.MAIN_LOADER.load_namespace(
                             name, True)
+
+                        namespace = self.__check_object(namespace, True)
 
                         if namespace is None:
                             pass

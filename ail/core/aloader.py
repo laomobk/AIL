@@ -65,9 +65,10 @@ class ModuleLoader:
             return error.AILRuntimeError(
                 '%s' % excs, 'LoadError')
 
-        is_mod = v.get('_IS_AIL_MODULE_', None)
+        is_mod = v.get('_IS_AIL_MODULE_', False)
+        has_namespace = '_AIL_NAMESPACE_' in v
 
-        if is_mod is not True:
+        if not is_mod or not has_namespace:
             return error.AILRuntimeError(
                 '%s is not an AIL MODULE!' % pypath, 'LoadError')
 
@@ -126,7 +127,12 @@ class ModuleLoader:
 
         if self.__get_type(p) in ('py', 'ailp'):
             remove_path(p)
-            ns = self.__add_to_loaded(p, self.__load_py_namespace(p))
+            ns = self.__load_py_namespace(p)
+            
+            if isinstance(ns, error.AILRuntimeError):
+                return ns, p
+
+            ns = self.__add_to_loaded(p, ns)
             chdir(cwd)
             return ns, p
 
@@ -140,7 +146,8 @@ class ModuleLoader:
             namespace = dict()
 
             interpreter = MAIN_INTERPRETER_STATE.global_interpreter
-            why = interpreter.exec_for_import(cobj, frame, globals=namespace)
+            why = interpreter.exec_for_import(
+                    cobj, frame, globals=namespace)
 
             remove_path(p)
             chdir(cwd)
