@@ -122,7 +122,6 @@ def str_join(self, array):
 
 str_is_digit = lambda self: str.isdigit(self['__value__'])
 str_is_alpha = lambda self: str.isalpha(self['__value__'])
-str_is_ascii = lambda self: str.isascii(self['__value__'])
 str_is_decimal = lambda self: str.isdecimal(self['__value__'])
 str_is_numeric = lambda self: str.isnumeric(self['__value__'])
 str_is_lower = lambda self: str.islower(self['__value__'])
@@ -131,7 +130,6 @@ str_is_upper = lambda self: str.isupper(self['__value__'])
 
 STRING_METHODS = {
     'isAlpha': str_is_alpha,
-    'isAscii': str_is_ascii,
     'isDecimal': str_is_decimal,
     'isDigit': str_is_digit,
     'isLower': str_is_lower,

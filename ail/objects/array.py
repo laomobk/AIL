@@ -18,7 +18,7 @@ def array_init(self: objs.AILObject, pylist: list):
 
 
 def array_str(self: objs.AILObject):
-    return '{%s}' % (', '.join([repr(x) for x in self['__value__']]))
+    return '[%s]' % (', '.join([repr(x) for x in self['__value__']]))
 
 
 def _check_index(self, index):
@@ -64,7 +64,16 @@ def array_len(self):
     return len(self['__value__'])
 
 
+def array_append(self, value):
+    val = self['__value__']
+
+    val.append(value)
+
+
 ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
+                                methods={
+                                    'append': array_append,
+                                },
                                 __init__=array_init,
                                 __getitem__=array_getitem,
                                 __setitem__=array_setitem,
