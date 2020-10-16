@@ -7,6 +7,9 @@ from . import types
 from . import function as afunc
 
 
+_BIND_BOUND_FUNCTION = object()
+
+
 def _is_reserved_name(name):
     return name[:2] == '__'
 
@@ -24,6 +27,8 @@ def _check_bound(self, aobj: obj.AILObject):
         aobj = _copy_function(aobj)
 
         self.reference += 1
+        if aobj['__this__'] is not None:
+            return _BIND_BOUND_FUNCTION
         aobj['__this__'] = self  # bound self to __this__
     return aobj
 
@@ -70,10 +75,13 @@ def structobj_setattr(self, name: str, value):
     pthis = hasattr(self, '_pthis_')  # check _pthis_ attr
 
     if name in self.protected and not pthis:
-        return AILRuntimeError('Cannot modify a protected attribute.', 'AttributeError')
+        return AILRuntimeError(
+                'Cannot modify a protected attribute.', 'AttributeError')
 
     if name in self.members and (pthis or not _is_reserved_name(name)):
-        self.members[name] = _check_bound(self, value)
+        val = _check_bound(self, value)
+        if val is _BIND_BOUND_FUNCTION:
+            return AILRuntimeError('bind a bound function', 'TypeError')
     else:
         return AILRuntimeError('struct \'%s\' object has no attribute \'%s\'' %
                                (self['__name__'], name),

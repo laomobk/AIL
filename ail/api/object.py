@@ -58,7 +58,7 @@ __all__ = [
     'INTEGER_TYPE', 'STRING_TYPE', 'STRUCT_TYPE', 'WRAPPER_TYPE',
     'null', 'object_convert_to_ail_object', 'object_unpack_ailobj', 'object_get_type',
     'AILObject', 'AILObjectType',
-    'object_call',
+    'object_call_object',
     'integer_convert_to_interger',
     'struct_new_struct_object', 'struct_object_setattr', 'struct_object_getattr'
 ]
@@ -117,7 +117,7 @@ def object_get_type(ailobj: AILObject) -> AILObjectType:
     return ailobj['__class__'] if isinstance(ailobj, AILObject) else None
 
 
-def object_call(callable_object: AILObject, *args):
+def object_call_object(callable_object: AILObject, *args):
     interpreter = _MAIN_INTERPRETER_STATE.global_interpreter
 
     if interpreter is None:

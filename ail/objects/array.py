@@ -65,14 +65,106 @@ def array_len(self):
 
 
 def array_append(self, value):
-    val = self['__value__']
+    arr = self['__value__']
 
-    val.append(value)
+    arr.append(value)
+
+
+def array_pop(self):
+    arr = self['__value__']
+    
+    if len(arr) == 0:
+        return AILRuntimeError('pop from empty array', 'IndexError')
+    return arr.pop()
+
+
+def array_contains(self, value):
+    arr = self['__value__']
+    val = objs.unpack_ailobj(value)
+
+    for x in arr:
+        x = objs.unpack_ailobj(x)
+        if x == val:
+            return True
+    return False
+
+
+def array_count(self, value):
+    arr = self['__value__']
+    arr = [objs.unpack_ailobj(x) for x in arr]
+
+    return arr.count(objs.unpack_ailobj(value))
+
+
+def array_insert(self, index, value):
+    arr = self['__value__']
+    index = objs.unpack_ailobj(index)
+
+    if not isinstance(index, int):
+        return AILRuntimeError(
+                'array.insert(x) required an integer', 'TypeError')
+
+    arr.insert(index, value)
+
+
+def array_remove(self, value):
+    arr = self['__value__']
+    arr = [objs.unpack_ailobj(x) for x in arr]
+    
+    try:
+        return arr.remove(objs.unpack_ailobj(value))
+    except ValueError:
+        return AILRuntimeError('array.remove(x): x not in array', 'ValueError')
+
+
+def array_sort(self):
+    self['__value__'].sort()
+
+
+def array_index(self, value):
+    arr = self['__value__']
+    arr = [objs.unpack_ailobj(x) for x in arr]
+    
+    try:
+        return arr.index(objs.unpack_ailobj(value))
+    except ValueError:
+        return -1
+
+
+def array_extend(self, x):
+    arr = self['__value__']
+    x = objs.unpack_ailobj(x)
+
+    if not isinstance(x, list):
+        return AILRuntimeError('array.extend(x): x must a array')
+
+
+def array_clear(self):
+    self['__value__'].clear()
+
+
+def array_reverse(self):
+    self['__value__'].reverse()
+
+
+def array_copy(self):
+    return self['__value__'].copy()
 
 
 ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
                                 methods={
                                     'append': array_append,
+                                    'pop': array_pop,
+                                    'contains': array_contains,
+                                    'count': array_count,
+                                    'insert': array_insert,
+                                    'remove': array_remove,
+                                    'sort': array_sort,
+                                    'index': array_index,
+                                    'extend': array_extend,
+                                    'clear': array_clear,
+                                    'reverse': array_reverse,
+                                    'copy': array_copy,
                                 },
                                 __init__=array_init,
                                 __getitem__=array_getitem,
