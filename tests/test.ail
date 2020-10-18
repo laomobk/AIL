@@ -1,5 +1,5 @@
 
-
+fun f() {
     i = 0
     while true {
         try {
@@ -11,8 +11,8 @@
                 throw 'i is too big'
         } catch err {
             print err.err_msg
-            break
         }
     }
-
+}
+f()
 print 'OK'

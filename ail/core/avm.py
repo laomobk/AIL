@@ -1064,11 +1064,20 @@ class Interpreter:
                 except KeyboardInterrupt as _:
                     try:
                         self.raise_error('KeyboardInterrupt', 'Interrupt')
-                    except VMInterrupt as _:
-                        pass
-
-                    self.__interrupted = True
-                    self.__interrupt_signal = MII_ERR_POP_TO_TRY
+                    except VMInterrupt as interrupt:
+                        if interrupt.signal != MII_ERR_BREAK:
+                            error.print_exception_for_vm(
+                                    self.__now_state.handling_err_stack,
+                                        make_err_struct_object(
+                                            error.AILRuntimeError(
+                                                'KeyboardInterrupt',
+                                                'Interrupt',
+                                                self.__tof,
+                                                self.get_stack_trace()),
+                                            self.__tof.code.name,
+                                            self.__tof.lineno))
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_BREAK
 
                 # handle interruption
                 if self.__interrupted:
