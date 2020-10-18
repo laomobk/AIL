@@ -18,7 +18,7 @@ from . import (
     aloader
 )
 
-from .aframe import Frame
+from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY
 from .agc import GC
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
@@ -168,6 +168,9 @@ class Interpreter:
         return self.__stack.pop() \
             if self.__stack \
             else self.raise_error('Pop from empty stack', 'VMError')
+
+    def __push_block(self, b_type: int, b_handler: int):
+        self.__tof.block_stack.append(Block(b_type, b_handler))
 
     def __push_new_frame(self, cobj: objs.AILCodeObject, frame: Frame = None):
         if len(self.__frame_stack) + 1 > _MAX_RECURSION_DEPTH:

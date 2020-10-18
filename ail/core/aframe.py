@@ -1,9 +1,22 @@
+from typing import List
+
 from . import aobjects as objs
+
+
+BLOCK_LOOP = 0
+BLOCK_TRY = 1
+
+
+class Block:
+    __slots__ = ('type', 'handler')
+    def __init__(self, b_type: int, b_handler: int):
+        self.type = b_type
+        self.handler = b_handler
 
 
 class Frame:
     __slots__ = ('code', 'stack', 'varnames', 'consts',
-                 'variable', 'break_stack', 'temp_env_stack',
+                 'variable', 'break_stack', 'temp_env_stack', 'block_stack',
                  'try_stack', '_marked_opcounter', '_latest_call_opcounter',
                  'closure_outer', 'globals', 'lineno')
 
@@ -18,6 +31,7 @@ class Frame:
         self.break_stack = []
         self.temp_env_stack = []
         self.try_stack = []
+        self.block_stack: List[Block] = []
         self.lineno = 0
 
         # for closure

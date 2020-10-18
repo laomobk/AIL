@@ -10,6 +10,7 @@ from . import types
 def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
     self['__pyfunction__'] = func
     self['__value__'] = func
+    self['__name__'] = func.__name__
 
 
 def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
