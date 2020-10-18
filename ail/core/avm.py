@@ -929,7 +929,8 @@ class Interpreter:
                             self.__interrupted = True
                             self.__interrupt_signal = MII_ERR_BREAK
                         else:
-                            self.__tof.variable.update(namespace)
+                            for name, value in namespace.items():
+                                self.__store_var(name, value)
 
                     elif op == import_name:
                         name = self.__tof.consts[argv]['__value__']

@@ -18,7 +18,11 @@ def array_init(self: objs.AILObject, pylist: list):
 
 
 def array_str(self: objs.AILObject):
-    return '[%s]' % (', '.join([repr(x) for x in self['__value__']]))
+    return '[%s]' % (
+            ', '.join(
+                [repr(x) 
+                    if x is not self else '[...]' 
+                    for x in self['__value__']]))
 
 
 def _check_index(self, index):
@@ -30,13 +34,19 @@ def _check_index(self, index):
         i = index
 
     else:
-        return AILRuntimeError('array subscript index must be integer.', 'TypeError')
+        return AILRuntimeError(
+                'array subscript index must be integer.', 'TypeError')
 
     l = self['__value__']
+    vlen = len(l)
+    ri = i
 
-    if i >= len(l):
+    if i < 0:
+        i = vlen + i
+
+    if i >= vlen or i < 0:
         return AILRuntimeError('index out of range (len %s, index %s)' %
-                               (len(l), str(i)), 'IndexError')
+                               (vlen, str(ri)), 'IndexError')
     return i
 
 

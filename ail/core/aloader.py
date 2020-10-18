@@ -107,7 +107,6 @@ class ModuleLoader:
         from .avm import Frame
 
         p = self.__search_module(module_name)
-        print(self.__loading_paths)
 
         if p is None:
             return 1, p
