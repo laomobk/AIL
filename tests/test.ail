@@ -2,16 +2,7 @@
 fun f() {
     i = 0
     while true {
-        try {
-            i = i + 1
-                if i <= 3 {
-                    print 'i is OK, i ='; i
-                    continue
-                }
-                throw 'i is too big'
-        } catch err {
-            print err.err_msg
-        }
+        break
     }
 }
 f()
