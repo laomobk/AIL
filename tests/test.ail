@@ -1,12 +1,18 @@
 
 
-fun testWhile():
+    i = 0
     while true {
-        print 'Nezha'
+        try {
+            i = i + 1
+                if i <= 3 {
+                    print 'i is OK, i ='; i
+                    continue
+                }
+                throw 'i is too big'
+        } catch err {
+            print err.err_msg
+            break
+        }
     }
-end
 
-fun testFor():
-    for(i = 0; i < 100; i = i + 1) {}
-end
-
+print 'OK'

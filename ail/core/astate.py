@@ -3,6 +3,7 @@ from typing import List
 from . import agc
 
 from .anamespace import Namespace
+from .aframe import Frame
 
 
 class NamespaceState:
@@ -13,7 +14,7 @@ class NamespaceState:
 
 class InterpreterState:
     def __init__(self):
-        self.frame_stack: list = []
+        self.frame_stack: List[Frame] = []
         self.gc: agc.GC = None
 
         self.handling_err_stack = []

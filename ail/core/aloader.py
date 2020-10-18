@@ -4,8 +4,8 @@ import os.path
 
 from os import chdir, getcwd
 from traceback import format_exc
+from typing import Tuple, Union
 
-from .abuiltins import BUILTINS
 from .alex import Lex
 from .aparser import Parser
 from .acompiler import Compiler
@@ -96,7 +96,7 @@ class ModuleLoader:
         return namespace
 
     def load_namespace(
-            self, module_name: str, import_mode: bool = False) -> dict:
+            self, module_name: str, import_mode: bool = False) -> Union[dict, Tuple]:
         """
         :return: 1 if module not found
                  2 if circular import(or load)
@@ -104,9 +104,10 @@ class ModuleLoader:
                  4 if handing error
         """
 
-        from .avm import Interpreter, Frame
+        from .avm import Frame
 
         p = self.__search_module(module_name)
+        print(self.__loading_paths)
 
         if p is None:
             return 1, p

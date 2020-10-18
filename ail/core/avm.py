@@ -155,6 +155,10 @@ class Interpreter:
     def __namespace_state(self) -> NamespaceState:
         return MAIN_INTERPRETER_STATE.namespace_state
 
+    @property
+    def __block_stack(self) -> List[Block]:
+        return self.__tof.block_stack
+
     def __set_globals(self, globals: dict):
         self.__namespace_state.ns_global.ns_dict = globals
 
@@ -169,8 +173,13 @@ class Interpreter:
             if self.__stack \
             else self.raise_error('Pop from empty stack', 'VMError')
 
-    def __push_block(self, b_type: int, b_handler: int):
-        self.__tof.block_stack.append(Block(b_type, b_handler))
+    def __push_block(self, b_type: int, b_handler: int, b_level: int = None):
+        if b_level is None:
+            b_level = len(self.__stack)
+        self.__tof.block_stack.append(Block(b_type, b_handler, b_level))
+
+    def __pop_block(self):
+        return self.__tof.block_stack.pop()
 
     def __push_new_frame(self, cobj: objs.AILCodeObject, frame: Frame = None):
         if len(self.__frame_stack) + 1 > _MAX_RECURSION_DEPTH:
@@ -223,40 +232,29 @@ class Interpreter:
                 msg, err_type, self.__tof, self.get_stack_trace()),
             self.__tof.code.name, self.__tof.lineno)
 
-        if err_type not in 'VMError':
+        if err_type != 'VMError':
             self.__now_state.err_stack.append(errs)
         else:
-            error.print_global_error(
-                error.AILRuntimeError(msg, err_type, self.__tof),
-                self.__tof.code.name, self.__tof.lineno)
+            error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
+            raise VMInterrupt(MII_ERR_BREAK, handle_it=False)
 
         self.__now_state.handling_err_stack.append(errs)
 
-        if self.__tof.try_stack:
-            to = self.__tof.try_stack.pop()
+        stack = self.__block_stack
+        while stack:
+            b = stack.pop()
+            if b.type != BLOCK_TRY:
+                continue
 
-            self.__opcounter = to
-
-            self.__interrupted = True
-            self.__interrupt_signal = MII_DO_JUMP
-
-            return
+            self.__opcounter = b.handler
+            raise VMInterrupt(MII_DO_JUMP)
 
         for f in self.__frame_stack:
-            if f.try_stack:
-                break
+            for b in f.block_stack:
+                if b.type == BLOCK_TRY:
+                    break
         else:
-            for err in self.__now_state.handling_err_stack[:-1]:
-                sys.stderr.write('Traceback (most recent call last):\n')
-                error.print_stack_trace(err.error_object.stack_trace)
-                sys.stderr.write(_err_to_string(err) + '\n')
-                sys.stderr.write('\n%s\n' %
-                                 ('During handling of the above exception, ' +
-                                  'another exception occurred:\n'))
-
-            sys.stderr.write('Traceback (most recent call last):\n')
-            error.print_stack_trace(errs.error_object.stack_trace)
-            sys.stderr.write(_err_to_string(errs) + '\n')
+            error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
 
             # if not ERR_NOT_EXIT (usually), the following code will not execute.
 
@@ -268,29 +266,29 @@ class Interpreter:
             self.__now_state.handling_err_stack.clear()
             self.__stack.clear()
             self.__can = 0
-            self.__interrupted = True
-            self.__interrupt_signal = MII_ERR_POP_TO_TRY
-            
-            raise VM_INTERRUPT_SIGNAL
+
+            raise VMInterrupt(MII_ERR_BREAK)
 
         # set interrupt signal.
-        self.__interrupted = True
-        self.__interrupt_signal = MII_ERR_POP_TO_TRY
-
-        raise VM_INTERRUPT_SIGNAL
+        raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
     def __handle_error(self) -> bool:
         """
         :return: True if found try block else False
         """
-        if self.__tof.try_stack:
-            to = self.__tof.try_stack.pop()
+        try_block = None
+        # find catch block
+        stack = self.__block_stack
+        if stack:
+            b = stack.pop()
+            if b.type == BLOCK_TRY:
+                try_block = b
 
+        if try_block is not None:
+            to = try_block.handler
             self.__opcounter = to
-
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
-
         else:
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_POP_TO_TRY
@@ -400,10 +398,21 @@ class Interpreter:
 
         return true if res else false
 
-    def __goto_catch(self):
-        to = self.__tof.try_stack[-1]
+    def __pop_and_get_block(self, b_type: int) -> Block:
+        stack = self.__block_stack
+        block = None
+        while stack:
+            b = stack.pop()
+            if b.type == b_type:
+                block = b
+                break
+        return block
 
-        self.__opcounter = to
+    def __goto_catch(self):
+        catch_block = self.__pop_and_get_block(BLOCK_TRY)
+        if catch_block is None:
+            self.raise_error('no block to handle catch', 'VMError')
+        self.__opcounter = catch_block.handler
 
         self.__interrupted = True
         self.__interrupt_signal = MII_DO_JUMP
@@ -419,10 +428,12 @@ class Interpreter:
             return bool(obj.properties['__value__'])
 
     def __check_break(self) -> int:
-        jump_to = 0
-        if self.__break_stack:
-            jump_to = self.__break_stack.pop()
-        return jump_to
+        stack = self.__block_stack
+        while stack:
+            b = stack.pop()
+            if b.type == BLOCK_LOOP:
+                return b.handler
+        self.raise_error('no block to handle \'break\'', 'VMError')
 
     def __add_break_point(self, cp):
         if len(self.__break_stack) + 1 > _MAX_BREAK_POINT_NUMBER:
@@ -431,17 +442,23 @@ class Interpreter:
 
     def __check_continue(self) -> int:
         jump_to = 0
+        loop_block = None
+        stack = self.__block_stack
+        while stack:
+            b = stack[-1]
+            if b.type == BLOCK_LOOP:
+                loop_block = b
+                break
+            stack.pop()
+        else:
+            self.raise_error('no block to handle continue', 'VMError')
 
-        if self.__break_stack:
-            jump_to = self.__break_stack.pop() - _BYTE_CODE_SIZE
+        if loop_block is not None:
+            jump_to = loop_block.handler - _BYTE_CODE_SIZE * 2
         return jump_to
 
     def __load_name(self, index: int) -> objs.AILObject:
         n = self.__tof.varnames[index]
-
-        ns = self.__check_and_get_namespace(n)
-        if ns is not None:
-            return ns
 
         v = self.__tof.variable.get(n)
         if v is not None:
@@ -517,7 +534,7 @@ class Interpreter:
                     self.__set_globals(now_globals)
 
                     if why == WHY_ERROR:
-                        self.__goto_catch()
+                        self.__handle_error()
                     elif why == WHY_HANDLING_ERR:
                         # do nothing
                         pass
@@ -718,22 +735,19 @@ class Interpreter:
 
                     elif op == setup_for:
                         self.__temp_env_stack.append(TempEnvironment())
-                        self.__break_stack.append(argv)
+                        self.__push_block(BLOCK_LOOP, argv)
 
                     elif op in (setup_doloop, setup_while):
-                        self.__add_break_point(argv)
+                        self.__push_block(BLOCK_LOOP, argv)
 
                     elif op == clean_for:
                         ts = self.__temp_env_stack.pop()
                         tv = ts.temp_var
 
-                        for vn in tv:
-                            del self.__tof.variable[vn]
-
-                        self.__break_stack.pop()
+                        self.__pop_block()
 
                     elif op == clean_loop:
-                        self.__break_stack.pop()
+                        self.__pop_block()
 
                     elif op == jump_absolute:
                         jump_to = argv
@@ -997,7 +1011,7 @@ class Interpreter:
                         self.raise_error(msg, 'Throw')
 
                     elif op == setup_try:
-                        self.__tof.try_stack.append(argv)
+                        self.__push_block(BLOCK_TRY, argv)
 
                     elif op == setup_catch:
                         name = self.__tof.varnames[argv]
@@ -1007,7 +1021,7 @@ class Interpreter:
                         self.__store_var(name, err)  # store this error with 'name'
 
                     elif op == clean_try:
-                        self.__tof.try_stack.pop()
+                        self.__pop_block()
 
                     elif op == clean_catch:
                         ts = self.__temp_env_stack.pop()
@@ -1041,8 +1055,20 @@ class Interpreter:
 
                                 target_struct['__bind_functions__'][func_name] = \
                                     bound_function
-                except VMInterrupt as _:
-                    pass
+                except VMInterrupt as interrupt:
+                    if interrupt.handle_it:
+                        self.__interrupted = True
+                        signal = interrupt.signal
+                        if signal != -1:
+                            self.__interrupt_signal = signal
+                except KeyboardInterrupt as _:
+                    try:
+                        self.raise_error('KeyboardInterrupt', 'Interrupt')
+                    except VMInterrupt as _:
+                        pass
+
+                    self.__interrupted = True
+                    self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
                 # handle interruption
                 if self.__interrupted:
@@ -1082,9 +1108,6 @@ class Interpreter:
 
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')
-        except KeyboardInterrupt:
-            print('\nAIL Runtime: KeyboardInterrupt')
-            sys.exit(0)
 
         return why
 

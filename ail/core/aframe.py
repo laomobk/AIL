@@ -8,10 +8,12 @@ BLOCK_TRY = 1
 
 
 class Block:
-    __slots__ = ('type', 'handler')
-    def __init__(self, b_type: int, b_handler: int):
+    __slots__ = ('type', 'handler', 'level')
+
+    def __init__(self, b_type: int, b_handler: int, level: int):
         self.type = b_type
         self.handler = b_handler
+        self.level = level
 
 
 class Frame:
