@@ -1,12 +1,13 @@
 
 fun f() {
-    i = 0
-    while true {
-        while i <= 1 {
-           break
+    for (i = 0;;) {
+        for (j = 0;;) {
+            break
         }
+        print j
         break
     }
+    print i; j
 }
 f()
 print 'OK'

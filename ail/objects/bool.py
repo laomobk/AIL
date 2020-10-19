@@ -14,7 +14,7 @@ def bool_init(self: obj.AILObject, v: obj.AILObject):
 
 
 def bool_eq(self: obj.AILObject, o: obj.AILObject) -> obj.AILObject:
-    return obj.ObjectCreater.new_object(BOOL_TYPE, o == self)
+    return obj.ObjectCreater.new_object(BOOL_TYPE, o is self)
 
 
 def bool_str(self: obj.AILObject):
