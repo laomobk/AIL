@@ -90,6 +90,8 @@ make_function = 0x3c
 call_func_ex = 0x3d
 join_array = 0x3e
 
+delete_var = 0x3f
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

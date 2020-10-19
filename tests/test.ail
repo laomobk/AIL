@@ -1,13 +1,10 @@
 
-fun f() {
-    for (i = 0;;) {
-        for (j = 0;;) {
-            break
-        }
-        print j
+do {
+    do {
         break
-    }
-    print i; j
-}
-f()
+    } loop until false
+    break
+} loop until false
+
+
 print 'OK'

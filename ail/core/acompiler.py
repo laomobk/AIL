@@ -372,13 +372,21 @@ class Compiler:
 
     def __compile_try_catch_expr(self, tree: ast.TryCatchExprAST, extofs: int = 0):
         bc = ByteCode()
+        clbc = ByteCode()  # clean err variable
 
         extofs += _BYTE_CODE_SIZE  # for setup_try
         has_finally = len(tree.finally_block.stmts) > 0
 
+        ni = self.__buffer.get_or_add_varname_index(tree.name)
+
         tbc = self.__compile_block(tree.try_block, extofs)
 
-        cat_ext = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 3
+        vi = self.__buffer.add_const(0)
+        clbc.add_bytecode(load_const, vi, -1)
+        clbc.add_bytecode(store_var, ni, -1)
+        clbc.add_bytecode(delete_var, ni, -1)
+
+        cat_ext = extofs + len(tbc.blist) + len(clbc.blist) + _BYTE_CODE_SIZE * 3
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
@@ -393,14 +401,13 @@ class Compiler:
         else:
             fnbc = ByteCode()
 
-        ni = self.__buffer.get_or_add_varname_index(tree.name)
-
         bc.add_bytecode(setup_try, to_catch, tree.ln)
         bc += tbc
         bc.add_bytecode(clean_try, 0, -1)
         bc.add_bytecode(jump_absolute, jump_over, -1)
         bc.add_bytecode(setup_catch, ni, -1)
         bc += cabc
+        bc += clbc
         bc.add_bytecode(clean_catch, 0, -1)
         bc += fnbc
 

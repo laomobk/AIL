@@ -224,7 +224,28 @@ class Interpreter:
                 for outer in self.__tof.closure_outer:
                     if name in outer:
                         outer[name] = value
-            self.__tof.variable[name] = value
+            else:
+                self.__tof.variable[name] = value
+
+    def __delete_name(self, name_index: int):
+        name = self.__tof.varnames[name_index]
+
+        if self.__tof is self.__global_frame:
+            return self.__namespace_state.ns_global.ns_dict.pop(name, None)
+        else:
+            if name in self.__tof.code.global_names:
+                return self.__namespace_state.ns_global.ns_dict.pop(name, None)
+            elif name in self.__tof.code.nonlocal_names:
+                del_target_dict = None
+                for outer in self.__tof.closure_outer:
+                    if name in outer:
+                        del_target_dict = outer
+                        break
+                if del_target_dict is None:
+                    return None
+                return del_target_dict.pop(name, None)
+            else:
+                return self.__tof.variable.pop(name, None)
 
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
@@ -699,6 +720,12 @@ class Interpreter:
                                 'name \'%s\' is not defined' % name, 'NameError')
                         else:
                             self.__push_back(var)
+
+                    elif op == delete_var:
+                        v = self.__delete_name(argv)
+                        if v is None:
+                            self.raise_error(
+                                'name \'%s\' is not defined' % name, 'NameError')
 
                     elif op == load_global:
                         n = self.__tof.varnames[argv]
