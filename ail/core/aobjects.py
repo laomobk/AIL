@@ -144,7 +144,9 @@ class AILObject:
 class AILObjectType:
     """Object Type"""
 
-    def __init__(self, tname: str, otype=None, methods: dict = None, **required):
+    def __init__(self, 
+            tname: str, otype=None, methods: dict = None, **required):
+        super().__init__()
         self.name = tname
         self.required = required
         self.otype = types.I_TYPE_TYPE if otype is None else otype

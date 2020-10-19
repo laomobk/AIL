@@ -73,7 +73,7 @@ def str_str(self):
 
 
 def str_repr(self):
-    return '\'%s\'' % self['__value__']
+    return repr(self['__value__'])
 
 
 def str_eq(self, ostr: obj.AILObject) -> obj.AILObject:

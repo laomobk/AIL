@@ -200,9 +200,13 @@ def func_equal(a, b):
     return a == b
 
 
-def func_array(size):
+def func_array(size, default=None):
     if objs.compare_type(size, aint.INTEGER_TYPE):
-        l = [null.null for _ in range(size['__value__'])]
+        if default is None:
+            l = [null.null for _ in range(size['__value__'])]
+        else:
+            l = [objs.unpack_ailobj(default)
+                    for _ in range(size['__value__'])]
         o = objs.ObjectCreater.new_object(array.ARRAY_TYPE, l)
         return o
     return AILRuntimeError('array() needs an integer.', 'TypeError')

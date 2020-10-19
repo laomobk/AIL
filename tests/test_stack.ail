@@ -1,0 +1,15 @@
+
+depth = 0
+
+fun testRecursion() {
+    global depth
+    depth = depth + 1
+    try {
+        testRecursion()
+    } catch err {
+        print err.err_msg
+        print 'depth ='; depth
+    }
+}
+
+

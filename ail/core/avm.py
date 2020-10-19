@@ -2,8 +2,8 @@
 
 __author__ = 'LaomoBK'
 
-import re
 import copy
+import re
 import sys
 import types
 import inspect
@@ -61,6 +61,8 @@ _MAX_BREAK_POINT_NUMBER = 50
 _AIL_VERSION = AIL_VERSION
 
 shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
+sys.setrecursionlimit(_MAX_RECURSION_DEPTH * 3)  
+# three times of AIL recursion depth
 
 true = objs.convert_to_ail_object(True)
 false = objs.convert_to_ail_object(False)
@@ -1145,6 +1147,8 @@ class Interpreter:
 
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')
+        except Exception as e:
+            raise
 
         return why
 

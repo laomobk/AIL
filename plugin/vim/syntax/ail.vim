@@ -10,15 +10,17 @@ endif
 
 syn keyword ailStmt	if else elif
 syn keyword ailStmt	then end endif is begin wend
-syn keyword ailStmt	while for do loop
 syn keyword ailStmt	fun struct
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch
 syn keyword ailStmt break continue
 syn keyword ailStmt import load
+syn keyword ailStmt global nonlocal
 
 syn keyword ailConst false true
+
+syn keyword ailRepeat	while for do loop until
 
 syn keyword ailFunc abs
 syn keyword ailFunc ng
@@ -63,6 +65,7 @@ hi def link ailString		String
 hi def link ailComment		Comment
 hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
+hi def link ailRepeat       Repeat
 
 let b:current_syntax = "ail"
 

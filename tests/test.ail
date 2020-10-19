@@ -1,10 +1,9 @@
 
 do {
-    do {
+    while true {
         break
-    } loop until false
+    }
     break
 } loop until false
-
 
 print 'OK'
