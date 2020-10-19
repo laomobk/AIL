@@ -7,6 +7,9 @@ from . import types
 from . import function as afunc
 
 
+_BIND_BOUND_FUNCTION = object()
+
+
 def _is_reserved_name(name):
     return name[:2] == '__'
 
@@ -18,29 +21,42 @@ def _copy_function(f: obj.AILObject) -> obj.AILObject:
     return new_f
 
 
+def _get_method_str_func(obj_name: str):
+    def _method_str(m):
+        return '<method %s of %s at %s>' % (
+                m['__name__'], obj_name, hex(id(m)))
+    return _method_str
+
+
 def _check_bound(self, aobj: obj.AILObject):
     if isinstance(aobj, obj.AILObject) and \
             aobj['__class__'] in (afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
         aobj = _copy_function(aobj)
 
         self.reference += 1
+        if aobj['__this__'] is not None:
+            return _BIND_BOUND_FUNCTION
+
+        aobj['__repr__'] = _get_method_str_func(self['__name__'])
         aobj['__this__'] = self  # bound self to __this__
     return aobj
 
 
 def struct_init(self, name: str, members: list,
                 protected_members: list):
-    d = {n: null.null for n in members}  # init members
-
-    self.protected = protected_members
-    self.members = d
-
     self['__name__'] = name
     self['__bind_functions__'] = {}
+
+    d = {n: null.null for n in members}  # init members
+    self.protected = protected_members
+    self.members = d
 
 
 def structobj_init(self, name: str, members: dict, struct_type: obj.AILObject,
                    protected_members: list, bind_funcs: dict = None):
+    self['__type__'] = struct_type
+    self['__name__'] = name
+
     if bind_funcs is None:
         bind_funcs = {}
 
@@ -49,9 +65,6 @@ def structobj_init(self, name: str, members: dict, struct_type: obj.AILObject,
     self.members = {k: _check_bound(self, v)
                     for k, v in members.items()}
     self.protected = protected_members
-
-    self['__type__'] = struct_type
-    self['__name__'] = name
 
 
 def struct_getattr(self, name: str):
@@ -70,10 +83,14 @@ def structobj_setattr(self, name: str, value):
     pthis = hasattr(self, '_pthis_')  # check _pthis_ attr
 
     if name in self.protected and not pthis:
-        return AILRuntimeError('Cannot modify a protected attribute.', 'AttributeError')
+        return AILRuntimeError(
+                'Cannot modify a protected attribute.', 'AttributeError')
 
     if name in self.members and (pthis or not _is_reserved_name(name)):
-        self.members[name] = _check_bound(self, value)
+        val = _check_bound(self, value)
+        if val is _BIND_BOUND_FUNCTION:
+            return AILRuntimeError('bind a bound function', 'TypeError')
+        self.members[name] = val
     else:
         return AILRuntimeError('struct \'%s\' object has no attribute \'%s\'' %
                                (self['__name__'], name),
@@ -90,7 +107,7 @@ def struct_str(self):
     return '<struct \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
-def structobj_str(self):
+def structobj_str_old(self):
     return '<struct \'%s\' object at %s> -> {\n%s\n}' % (
         self['__name__'], hex(id(self)),
         '\n'.join(['\t%s%s : %s' % (
@@ -98,7 +115,12 @@ def structobj_str(self):
                    for k, v in self.members.items() if k[:2] != '__']))
 
 
-STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', types.I_STRUCT_OBJ_TYPE,
+def structobj_str(self):
+    return '<struct %s object at %s>' % (self['__name__'], hex(id(self)))
+
+
+STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', 
+                                    types.I_STRUCT_OBJ_TYPE,
                                     __init__=structobj_init,
                                     __setattr__=structobj_setattr,
                                     __getattr__=struct_getattr,

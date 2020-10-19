@@ -8,7 +8,7 @@ _IS_AIL_MODULE_ = True
 def _printf(x, *format):
     xs = unpack_ailobj(x)
 
-    fs = tuple([str(unpack_ailobj(x)) for x in format])
+    fs = tuple([unpack_ailobj(x) for x in format])
 
     print(xs % fs, end='')
 

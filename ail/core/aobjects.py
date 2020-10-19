@@ -74,6 +74,7 @@ class AILObject:
     """Base object, do noting..."""
 
     def __init__(self, **ps):
+        self.__hash_target = object()  # hash
         self.properties = ps
         self.reference = 0
 
@@ -126,6 +127,18 @@ class AILObject:
             return self['__repr__'](self)
         except TypeError:
             return self.__str__()
+
+    def __hash__(self) -> int:
+        target = self
+        if target.__hash__ is not None:
+            return target.__hash__()
+
+        if '__value__' in self.properties:
+            target = self['__value__']
+            if target.__hash__ is not None:
+                return target.__hash__()
+
+        return hash(self.__hash_target)
 
 
 class AILObjectType:

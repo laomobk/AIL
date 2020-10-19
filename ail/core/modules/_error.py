@@ -39,7 +39,7 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -
         'err_type': convert_to_ail_object(type),
         'err_where': convert_to_ail_object(where),
         'err_filename': convert_to_ail_object(filename),
-        'to_string': convert_to_ail_object(_err_to_string),
+        'toString': convert_to_ail_object(_err_to_string),
         '__lineno': lineno,
         '__frame': frame,
     }

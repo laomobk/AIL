@@ -12,7 +12,10 @@ WHY_HANDLING_ERR = 0x6
 
 
 class VMInterrupt(BaseException):
-    pass
+    def __init__(self, signal: int = -1, handle_it: bool = True):
+        super(VMInterrupt, self).__init__()
+        self.signal = signal
+        self.handle_it = handle_it
 
 
 VM_INTERRUPT_SIGNAL = VMInterrupt()

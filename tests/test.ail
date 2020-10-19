@@ -1,1 +1,9 @@
-test
+
+fun f() {
+    i = 0
+    while true {
+        break
+    }
+}
+f()
+print 'OK'

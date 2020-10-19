@@ -1,0 +1,52 @@
+
+cases = []
+
+fun testNormalArrayAccess() {
+    a = ['a', 'b', 'c', 'Nezha']
+    print 'a:'; a
+
+    for (i = -10; i < 10; i = i + 1) {
+        print 'access index'; i
+        try {
+            print 'a[i] ='; a[i]
+        } catch err {
+            print err.err_msg
+        }
+    }
+}
+cases.append(testNormalArrayAccess)
+
+fun testTwoDimArrayAccess() {
+    a = [[0, 0, 1, 0, 0],
+         [0, 1, 0, 1, 0],
+         [1, 0, 2, 0, 1]]
+
+    print 'a ='; a
+    
+    print 'access line'
+    for (y = -10; y < len(a); y = y + 1) {
+        try {
+            print ' '.join(a[y])    
+        } catch err {
+            print err.err_msg
+        }
+    }
+
+    print 'access cell'
+    for (y = 0; y < len(a); y = y + 1) {
+        for (x = 0; x < len(a[y]); x = x + 1) {
+            console.write(str(a[y][x]) + ' ')
+        }
+        print ''
+    }
+}
+cases.append(testTwoDimArrayAccess)
+
+
+if __is_main__ {
+    for (i = 0; i < len(cases); i = i + 1) {
+        print '\ncall:'; cases[i]
+        cases[i]()
+    }
+}
+

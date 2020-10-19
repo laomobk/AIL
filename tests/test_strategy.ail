@@ -6,16 +6,16 @@ struct bird {
 }
 
 
-fun (bird) fly() {
+fun (bird) fly(this) {
     this.__fly_method() 
 }
 
-fun (bird) set_fly(f) {
+fun (bird) set_fly(this, f) {
     this.__fly_method = f
 }
 
 
-fun rocket_fly() {
+fun rocket_fly(_) {
     print 'Fly as a rocket!'
 }
 

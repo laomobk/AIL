@@ -168,6 +168,22 @@ def format_error(error: AILRuntimeError):
            (f.code.name, p, line_detail, t, msg)
 
 
+def print_exception_for_vm(handling_err_stack: list, err_struct):
+    from .modules._error import _err_to_string
+
+    for err in handling_err_stack[:-1]:
+        sys.stderr.write('Traceback (most recent call last):\n')
+        print_stack_trace(err.error_object.stack_trace)
+        sys.stderr.write(_err_to_string(err) + '\n')
+        sys.stderr.write('\n%s\n' %
+                         ('During handling of the above exception, ' +
+                          'another exception occurred:\n'))
+
+    sys.stderr.write('Traceback (most recent call last):\n')
+    print_stack_trace(err_struct.error_object.stack_trace)
+    sys.stderr.write(_err_to_string(err_struct) + '\n')
+
+
 def raise_error_as_python(err: AILRuntimeError, where: str = ''):
     msg = err.msg
     t = err.err_type

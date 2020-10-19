@@ -1040,11 +1040,13 @@ def test_compiler():
     from .aparser import Parser
     from .alex import Lex
 
-    lex = Lex()
-    ts = lex.lex(open('./tests/test.ail').read())
+    source = open('./tests/test.ail').read()
 
-    p = Parser('./tests/test.ail')
-    t = p.parse(ts)
+    lex = Lex()
+    ts = lex.lex(source)
+
+    p = Parser()
+    t = p.parse(ts, source, '<test>')
 
     c = Compiler(t)
     bf = c.compile(t)
