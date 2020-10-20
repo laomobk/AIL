@@ -55,9 +55,9 @@ binary_not = 0x25
 
 init_for  = 0x28
 setup_for = 0x26
-clean_for = 0x27
+pop_for = 0x27
 
-clean_loop = 0x29
+pop_loop = 0x29
 
 set_protected = 0x2a
 
@@ -65,8 +65,8 @@ throw_error = 0x2b
 
 setup_try = 0x2c
 setup_catch = 0x2d
-clean_catch = 0x2e
-clean_try = 0x2f
+pop_catch = 0x2e
+pop_try = 0x2f
 
 pop_jump_if_false_or_pop = 0x30
 pop_jump_if_true_or_pop = 0x31
