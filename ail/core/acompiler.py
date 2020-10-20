@@ -403,12 +403,12 @@ class Compiler:
 
         bc.add_bytecode(setup_try, to_catch, tree.ln)
         bc += tbc
-        bc.add_bytecode(clean_try, 0, -1)
+        bc.add_bytecode(pop_try, 0, -1)
         bc.add_bytecode(jump_absolute, jump_over, -1)
         bc.add_bytecode(setup_catch, ni, -1)
         bc += cabc
         bc += clbc
-        bc.add_bytecode(clean_catch, 0, -1)
+        bc.add_bytecode(pop_catch, 0, -1)
         bc += fnbc
 
         return bc
@@ -591,7 +591,7 @@ class Compiler:
 
         bc += bcc
         bc.add_bytecode(jump_absolute, back, -1)
-        bc.add_bytecode(clean_loop, 0, -1)
+        bc.add_bytecode(pop_loop, 0, -1)
 
         return bc
 
@@ -617,7 +617,7 @@ class Compiler:
 
         jump_back = extofs + _BYTE_CODE_SIZE  # over setup_doloop
         bc.add_bytecode(jump_if_false_or_pop, jump_back, -1)
-        bc.add_bytecode(clean_loop, 0, -1)
+        bc.add_bytecode(pop_loop, 0, -1)
 
         return bc
 
@@ -661,7 +661,7 @@ class Compiler:
         bc += blc
         bc += updbc
         bc.add_bytecode(jump_absolute, jump_back, -1)
-        bc.add_bytecode(clean_for, 0, -1)
+        bc.add_bytecode(pop_for, 0, -1)
 
         return bc
 

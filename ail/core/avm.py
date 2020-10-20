@@ -769,13 +769,13 @@ class Interpreter:
                     elif op in (setup_doloop, setup_while):
                         self.__push_block(BLOCK_LOOP, argv)
 
-                    elif op == clean_for:
+                    elif op == pop_for:
                         ts = self.__temp_env_stack.pop()
                         tv = ts.temp_var
 
                         self.__pop_block()
 
-                    elif op == clean_loop:
+                    elif op == pop_loop:
                         self.__pop_block()
 
                     elif op == jump_absolute:
@@ -1050,10 +1050,10 @@ class Interpreter:
                         err = self.__now_state.err_stack.pop()
                         self.__store_var(name, err)  # store this error with 'name'
 
-                    elif op == clean_try:
+                    elif op == pop_try:
                         self.__pop_block()
 
-                    elif op == clean_catch:
+                    elif op == pop_catch:
                         ts = self.__temp_env_stack.pop()
 
                         tn = ts.temp_var
