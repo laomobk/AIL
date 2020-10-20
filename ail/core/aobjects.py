@@ -150,7 +150,7 @@ class AILObjectType:
         self.name = tname
         self.required = required
         self.otype = types.I_TYPE_TYPE if otype is None else otype
-        self.methods = methods
+        self.methods = methods if methods is not None else dict()
 
     def __str__(self):
         return '<AIL Type \'%s\'>' % self.name
@@ -198,7 +198,8 @@ class ObjectCreater:
 
         # check normal required
 
-        missing_req = [x for x in ObjectCreater.__required_normal.keys() if x not in obj_type.required.keys()]
+        missing_req = [x for x in ObjectCreater.__required_normal.keys() 
+                       if x not in obj_type.required.keys()]
 
         for mis in missing_req:
             obj.properties[mis] = ObjectCreater.__required_normal[mis]

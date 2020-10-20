@@ -1,6 +1,7 @@
 from time import (
     ctime,
-    time_ns, time, strftime
+    time_ns, time, strftime,
+    sleep,
 )
 
 from ail.api.object import *
@@ -31,11 +32,27 @@ def time_ctime(second=None):
     return ctime(second)
 
 
+def time_sleep_micro(ms):
+    ms = object_unpack_ailobj(ms)
+    if not isinstance(ms, int):
+        return AILRuntimeError('required integer', 'TypeError')
+    sleep(ms * 1e-6)
+
+
+def time_sleep(sec):
+    sec = object_unpack_ailobj(sec)
+    if type(sec) not in (int, float):
+        return AILRuntimeError('required integer or float', 'TypeError')
+    sleep(sec)
+
+
 _IS_AIL_MODULE_ = True
 _AIL_NAMESPACE_ = {
     'nanoTime': time_nano_time,
     'time': time_time,
     'formatTime': time_format_time,
     'currentTime': time_ctime,
+    'sleep': time_sleep,
+    'sleepMicro': time_sleep_micro,
 }
 

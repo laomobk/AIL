@@ -25,6 +25,10 @@ AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 '''
 
 
+def is_meta(name):
+    return name[:2] == name[-2:] == '__'
+
+
 def _trim_path(path: str) -> str:
     path = path.replace('/', os.path.sep)
     path = os.path.normpath(path)
@@ -58,7 +62,8 @@ class ModuleLoader:
         v = {}
 
         try:
-            cobj = compile(open(pypath, encoding='UTF-8').read(), pypath, 'exec')
+            cobj = compile(
+                    open(pypath, encoding='UTF-8').read(), pypath, 'exec')
             exec(cobj, v)
         except Exception as e:
             excs = format_exc()
@@ -91,12 +96,27 @@ class ModuleLoader:
             return fns[-1]
 
     def __add_to_loaded(self, module_path: str, namespace: dict):
+        self.__check_and_delete_meta(namespace)
         if namespace is not None:
             self.__loaded[module_path] = namespace
         return namespace
 
+    def __check_and_delete_meta(self, namespace: dict):
+        del_target = []
+
+        for k in namespace.keys():
+            if is_meta(k):
+                del_target.append(k)
+
+        for k in del_target:
+            del namespace[k]
+
+        return namespace
+
     def load_namespace(
-            self, module_name: str, import_mode: bool = False) -> Union[dict, Tuple]:
+            self, 
+            module_name: str, 
+            import_mode: bool = False) -> Union[dict, Tuple]:
         """
         :return: 1 if module not found
                  2 if circular import(or load)

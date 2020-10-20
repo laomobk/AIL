@@ -15,13 +15,14 @@ class _AILHelper:
     def list_methods(self, obj: AILObject) -> dict:
         props = obj['__class__']
         if props is None:
-            return dict
+            return dict()
 
         return props.methods
 
     def list_meta(self, obj: AILObject) -> dict:
         props = obj['__class__']
-
+        if props is None:
+            return dict()
         return props.required
 
 
@@ -39,11 +40,13 @@ def print_help(x: AILObject = None):
  
         print('[protected]')
         for m in x.protected:
-            print('  %s' % m)
+            if not m.startswith('_'):
+                print('  %s' % m)
 
         print('[member]')
         for m in x.members.keys():
-            print('  %s' % m)
+            if not m.startswith('_'):
+                print('  %s' % m)
 
     elif compare_type(x, STRUCT_OBJ_TYPE):
         if x['__type__'] is not None:
@@ -55,11 +58,13 @@ def print_help(x: AILObject = None):
 
         print('[protected]')
         for m in x.protected:
-            print('  %s' % m)
+            if not m.startswith('_'):
+                print('  %s' % m)
 
         print('[member]')
         for m in x.members.keys():
-            print('  %s' % m)
+            if not m.startswith('_'):
+                print('  %s' % m)
 
     elif compare_type(x, MODULE_TYPE):
         print('[type]')
@@ -73,7 +78,8 @@ def print_help(x: AILObject = None):
         
         print('[namespace]')
         for m in x['__namespace__'].keys():
-            print('  %s' % m)
+            if not m.startswith('_'):
+                print('  %s' % m)
 
     elif isinstance(x, AILObject):
         methods = _DEFAULT_HELPER.list_methods(x)
@@ -81,14 +87,16 @@ def print_help(x: AILObject = None):
 
         print('[type]')
         print('  %s  (AIL Built-in type)' % x['__class__'].name)
-
-        print('[methods]')
-        for m in methods.keys():
-            print('  %s' % m)
-
-        print('[meta]')
-        for m in meta.keys():
-            print('  %s' % m)
+        
+        if methods:
+            print('[methods]')
+            for m in methods.keys():
+                print('  %s' % m)
+        
+        if meta:
+            print('[meta]')
+            for m in meta.keys():
+                print('  %s' % m)
     else:
         print('no help info provided.')
 

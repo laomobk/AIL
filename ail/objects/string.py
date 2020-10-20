@@ -120,6 +120,15 @@ def str_join(self, array):
     return result
 
 
+def str_format(self, *items):
+    items = tuple([obj.unpack_ailobj(o) for o in items])
+
+    try:
+        return self['__value__'] % items
+    except TypeError as e:
+        return AILRuntimeError(str(e), 'TypeError')
+
+
 str_is_digit = lambda self: str.isdigit(self['__value__'])
 str_is_alpha = lambda self: str.isalpha(self['__value__'])
 str_is_decimal = lambda self: str.isdecimal(self['__value__'])
@@ -136,6 +145,7 @@ STRING_METHODS = {
     'isNumeric': str_is_numeric,
     'isUpper': str_is_upper,
     'join': str_join,
+    'format': str_format,
 }
 
 
