@@ -798,13 +798,15 @@ class Parser:
 
     def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
         f = self.__parse_assign_expr()
+        if not isinstance(f, ast.AssignExprAST):
+            self.__syntax_error()
 
         el = [f]
 
         while self.__now_tok == ',':
             self.__next_tok()  # eat ','
             e = self.__parse_assign_expr()
-            if e is None:
+            if not isinstance(e, ast.AssignExprAST):
                 self.__syntax_error()
             el.append(e)
 

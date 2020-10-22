@@ -226,7 +226,6 @@ def get_string(source: str, cursor: int) -> tuple:
 
             if target in ('0', 'x'):
                 char, offset = parse_complex_escape_character(target, source, ccur+1)
-                print(ord(char))
                 if char == -1:
                     return -2, 0, 0
                 ccur += offset
