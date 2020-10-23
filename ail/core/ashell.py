@@ -51,9 +51,6 @@ class Shell:
 
         self.__more_level = 0
 
-        # self.__temp_name = '.temp.tmp'
-        # self.__fbuffer = open(self.__temp_name, 'w')
-
         self.__main_frame = Frame()
 
         self.__lexer = Lex()
@@ -61,24 +58,6 @@ class Shell:
         self.__compiler = Compiler(filename='<shell>')
         
         self.__globals = _SHELL_NAMESPACE
-
-    def __write(self, line: str):
-        if self.__fbuffer.closed:
-            self.__fbuffer = open(self.__temp_name, 'w')
-
-        self.__fbuffer.write(line + '\n')
-
-        self.__fbuffer.close()
-
-    def __read(self) -> str:
-        if self.__fbuffer.closed:
-            self.__fbuffer = open(self.__temp_name, 'r', encoding='UTF-8')
-
-        s = self.__fbuffer.read()
-
-        self.__fbuffer.close()
-
-        return s
 
     def __get_more_line_state(self, line: str) -> int:
         """
