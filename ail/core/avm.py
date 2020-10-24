@@ -110,12 +110,7 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 
 
 class Interpreter:
-    def __init__(self, argv: List[str] = None):
-        MAIN_INTERPRETER_STATE.global_interpreter = self
-
-        if argv is not None:
-            MAIN_INTERPRETER_STATE.prog_argv = argv
-
+    def __init__(self):
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc

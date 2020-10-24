@@ -110,7 +110,8 @@ class Shell:
         self.__main_frame.varnames = cobj.varnames
         self.__main_frame.consts = cobj.consts
         
-        Interpreter().exec(cobj, self.__main_frame, globals=self.__globals)
+        MAIN_INTERPRETER_STATE.global_interpreter.exec(
+            cobj, self.__main_frame, globals=self.__globals)
         MAIN_INTERPRETER_STATE.frame_stack.clear()
 
         if self.__main_frame.stack:

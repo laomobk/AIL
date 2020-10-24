@@ -4,6 +4,7 @@ import os.path
 import sys
 from importlib import import_module
 from .core import shared
+from .core.astate import MAIN_INTERPRETER_STATE
 from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 
 from ._config import (
@@ -94,7 +95,7 @@ shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIR_PATH
 shared.GLOBAL_SHARED_DATA.boot_dir = os.getcwd()
 
 
-def init_paths():
+def ail_init_paths():
     # init_lib_path
     shared.GLOBAL_SHARED_DATA.find_path = [
         BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH
@@ -113,7 +114,7 @@ def launch_py_test(test_name):
 
 
 def launch_main(argv: list) -> int:
-    init_paths()
+    ail_init_paths()
 
     option = ArgParser().parse(argv)
 
@@ -148,7 +149,7 @@ def launch_main(argv: list) -> int:
                 ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True
 
-        why = Interpreter(option.rest_args).exec(code_object)
+        why = MAIN_INTERPRETER_STATE.global_interpreter.exec(code_object)
         if why in (WHY_HANDLING_ERR, WHY_ERROR):
             return 1
 
