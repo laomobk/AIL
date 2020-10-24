@@ -23,7 +23,24 @@ fun (Person) say_hi(this) {
     print 'Hello, my name is'; this.name
 }
 
+fun levelLog(level) {
+    fun wrapper(func) {
+        fun inner(*argv) {
+            print 'level:'; level
+            return func(*argv)
+        }
+        return inner
+    }
+    return wrapper
+}
+
+@levelLog('info')
+@log
+fun printState() {
+    print 'State: good'
+}
+
+
 if __is_main__ {
-    print_name('Nezha')
-    new(Person, ['Nezha']).say_hi()
+    printState()
 }

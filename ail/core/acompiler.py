@@ -798,7 +798,7 @@ class Compiler:
         name = tree.name
 
         if self.__mode == COMPILER_MODE_FUNC:
-            filename = '%s.%s' % (self.__filename, tree.name)
+            name = '%s.%s' % (self.__name, tree.name)
 
         cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=self.__filename, name=name,
                         ext_varname=ext).compile(tree.block).code_object
@@ -815,17 +815,21 @@ class Compiler:
         bindtoi = self.__buffer.get_or_add_varname_index(tree.bindto) \
             if has_bindto else 0
 
-        if tree.decorator is not None:
+        if tree.decorator:
             # make decorator call
             # compile decorator ast to:
             # 
             # @decorator
             # fun f() {...} -> fun f() {...} ; f = decorator(f)
-            decorator_access_ast = self.__compile_binary_expr(tree.decorator)
-            bc += decorator_access_ast
+            for dec in tree.decorator:
+                decorator_access_ast = self.__compile_binary_expr(dec)
+                bc += decorator_access_ast
+
             bc.add_bytecode(load_const, ci, tree.ln)
             bc.add_bytecode(make_function, 0, tree.ln)
-            bc.add_bytecode(call_func, 1, tree.ln)
+
+            for _ in tree.decorator:
+                bc.add_bytecode(call_func, 1, tree.ln)
         else:
             bc.add_bytecode(load_const, ci, tree.ln)
             bc.add_bytecode(make_function, 0, tree.ln)

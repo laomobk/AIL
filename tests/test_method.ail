@@ -8,3 +8,5 @@ fun (S) method(self) {
 m = new(S).method
 m()
 
+
+

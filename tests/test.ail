@@ -1,9 +1,46 @@
 
-do {
-    while true {
-        break
-    }
-    break
-} loop until false
 
-print 'OK'
+fun log(func) {
+    fun wrapper(*argv) {
+        print 'call'; func
+        return func(*argv)
+    }
+    return wrapper
+}
+
+@log
+fun print_name(name) {
+    print 'Hello'; name
+}
+
+
+struct Person {
+    name
+}
+
+@log
+fun (Person) say_hi(this) {
+    print 'Hello, my name is'; this.name
+}
+
+fun levelLog(level) {
+    fun wrapper(func) {
+        fun inner(*argv) {
+            print 'level:'; level
+            return func(*argv)
+        }
+        return inner
+    }
+    return wrapper
+}
+
+@levelLog('info')
+@log
+fun printState() {
+    print 'State: good'
+}
+
+
+if __is_main__ {
+    printState()
+}

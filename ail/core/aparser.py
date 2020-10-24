@@ -958,21 +958,33 @@ class Parser:
 
         return ast.StructDefineAST(name, vl, pl, ln)
 
-    def __parse_func_def_with_decorator_stmt(self) -> ast.FunctionDefineAST:
+    def __parse_func_def_with_decorator_stmt(self, 
+            parsed: list = None) -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat '@'
 
+        if parsed is None:
+            parsed = list()
+
         decorator = self.__parse_member_access_expr()
+
+        parsed.append(decorator)
 
         if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__next_tok()  # eat enter
 
-        func = self.__parse_func_def_stmt()
-        func.decorator = decorator
+        if self.__now_tok == '@':
+            return self.__parse_func_def_with_decorator_stmt(parsed)
+        elif self.__now_tok == 'fun':
+            func = self.__parse_func_def_stmt()
+            func.decorator.extend(parsed)
 
-        return func
+            return func
+        else:
+            self.__syntax_error()
+
 
     def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
         ln = self.__now_ln
