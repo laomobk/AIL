@@ -449,14 +449,15 @@ class Interpreter:
 
                 if op_method is not None:
                     res = op_method(b_val)
+                    if res is not NotImplemented:
+                        return objs.convert_to_ail_number(res)
+                    # make __rxxx__
+                    pymth = pymth[:2] + 'r' + pymth[2:]
+                    op_method = getattr(b_val, pymth, None)
+                    res = op_method(a_val)
                     if res is NotImplemented:
-                        # make __rxxx__
-                        pymth = pymth[:2] + 'r' + pymth[2:]
-                        op_method = getattr(b_val, pymth, None)
-                        res = op_method(a_val)
-                        if res is NotImplemented:
-                            self.raise_error(
-                                'Not support operator \'%s\' between %s and %s'
+                        self.raise_error(
+                            'Not support operator \'%s\' between %s and %s'
                                     % (op, a, b),
                                 'TypeError')
                     return objs.convert_to_ail_number(res)
