@@ -94,12 +94,9 @@ shared.GLOBAL_SHARED_DATA.cwd = CURRENT_WORK_PATH
 shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIR_PATH
 shared.GLOBAL_SHARED_DATA.boot_dir = os.getcwd()
 
-
-def ail_init_paths():
-    # init_lib_path
-    shared.GLOBAL_SHARED_DATA.find_path = [
-        BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH
-    ]
+shared.GLOBAL_SHARED_DATA.find_path = [
+    BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH
+]
 
 
 def launch_py_test(test_name):
@@ -114,8 +111,6 @@ def launch_py_test(test_name):
 
 
 def launch_main(argv: list) -> int:
-    ail_init_paths()
-
     option = ArgParser().parse(argv)
 
     if option.shell_mode:

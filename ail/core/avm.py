@@ -106,6 +106,29 @@ class _ProtectedSignal:
     __slots__ = []
 
 
+class InterpreterContext:
+    def __init__(self, interpreter: 'Interpreter'):
+        self.now_state = None
+        self.opcounter = 0
+        self.interrupted = False
+        self.interrupt_signal = 0
+        self.can = 1
+        self.can_update_opc = True
+        self.exec_for_module = False
+        self.global_frame = None
+        self.globals = None
+
+        self.__interpreter = interpreter
+        self.__last_ctx = None
+
+    def __enter__(self, *_):
+        self.__last_ctx = self.__interpreter.get_context()
+        self.__interpreter.set_context(self)
+
+    def __exit__(self, *_):
+        self.__interpreter.set_context(self.__last_ctx)
+
+
 PROTECTED_SIGNAL = _ProtectedSignal()
 
 
@@ -114,7 +137,6 @@ class Interpreter:
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
         self.__now_state.gc = self.__gc
-        self.__frame_stack = self.__now_state.frame_stack
         self.__opcounter = 0
 
         self.__interrupted = False
@@ -137,6 +159,10 @@ class Interpreter:
         return self.__tof.stack[-1]
 
     @property
+    def __frame_stack(self):
+        return MAIN_INTERPRETER_STATE.frame_stack
+
+    @property
     def __stack(self) -> List[objs.AILObject]:
         return self.__tof.stack
 
@@ -155,6 +181,31 @@ class Interpreter:
     @property
     def __block_stack(self) -> List[Block]:
         return self.__tof.block_stack
+
+    def get_context(self) -> InterpreterContext:
+        ctx = InterpreterContext(self)
+        ctx.can = self.__can
+        ctx.can_update_opc = self.__can_update_opc
+        ctx.exec_for_module = self.__exec_for_module
+        ctx.global_frame = self.__global_frame
+        ctx.interrupt_signal = self.__interrupt_signal
+        ctx.interrupted = self.__interrupted
+        ctx.now_state = self.__now_state
+        ctx.opcounter = self.__opcounter
+        ctx.globals = self.__namespace_state.ns_global.ns_dict
+
+        return ctx
+
+    def set_context(self, ctx: InterpreterContext):
+        self.__can = ctx.can
+        self.__can_update_opc = ctx.can_update_opc
+        self.__exec_for_module = ctx.exec_for_module
+        self.__global_frame = ctx.global_frame
+        self.__interrupt_signal = ctx.interrupt_signal
+        self.__interrupted = ctx.interrupted
+        self.__now_state = ctx.now_state
+        self.__opcounter = ctx.opcounter
+        self.__namespace_state.ns_global.ns_dict = ctx.globals
 
     def __set_globals(self, globals: dict):
         self.__namespace_state.ns_global.ns_dict = globals
@@ -542,14 +593,14 @@ class Interpreter:
                 try:
                     self.__tof._latest_call_opcounter = self.__opcounter
 
-                    now_globals = self.__namespace_state.ns_global.ns_dict
+                    # now_globals = self.__namespace_state.ns_global.ns_dict
+                    
+                    with self.get_context():
+                        if func['__global_ns__'] is not None:
+                            self.__set_globals(func['__global_ns__'])
+                        why = self.__run_bytecode(c, f)
 
-                    if func['__global_ns__'] is not None:
-                        self.__set_globals(func['__global_ns__'])
-
-                    why = self.__run_bytecode(c, f)
-
-                    self.__set_globals(now_globals)
+                    # self.__set_globals(now_globals)
 
                     if why == WHY_ERROR:
                         self.__handle_error()
@@ -637,7 +688,6 @@ class Interpreter:
         why = WHY_NORMAL
 
         try:
-            # tmr.start()
             while self.__opcounter < len(code) - 1:  # included argv index
                 try:
                     op = code[self.__opcounter]
@@ -653,7 +703,8 @@ class Interpreter:
                     # print(self.__opcounter, get_opname(op),
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
-                    # print(self.__opcounter)
+                    # print(self.__opcounter
+                    # print(get_opname(op), self.__frame_stack)
 
                     if op == pop_top:
                         tos = self.__pop_top()
@@ -1106,6 +1157,9 @@ class Interpreter:
 
                 # handle interruption
                 if self.__interrupted:
+                    if not self.__can:
+                        self.__can = 1
+
                     self.__interrupted = False
                     if self.__interrupt_signal == MII_DO_JUMP:
                         jump_to = self.__opcounter
@@ -1139,7 +1193,6 @@ class Interpreter:
                 else:
                     self.__opcounter += _BYTE_CODE_SIZE
                     jump_to = self.__opcounter
-
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')
         except Exception as e:
@@ -1148,21 +1201,13 @@ class Interpreter:
         return why
 
     def exec_for_import(self, cobj, frame: Frame, globals: dict = None):
-        old_global_frame = self.__global_frame
-        old_opcounter = self.__opcounter
-
-        old_global = self.__namespace_state.ns_global.ns_dict
-
-        why = self.exec(cobj, frame, True, globals=globals)
-
-        self.__global_frame = old_global_frame
-        self.__namespace_state.ns_global.ns_dict = old_global
-        self.__opcounter = old_opcounter
+        with self.get_context():
+            why = self.exec(cobj, frame, True, globals=globals)
 
         return why
 
-    def exec(self, cobj, frame=None,
-             exec_for_module=False, globals: dict = None):
+    def __exec(self, cobj, frame=None,
+               exec_for_module=False, globals: dict = None):
         if not frame:
             f = Frame()
             f.code = cobj
@@ -1187,6 +1232,11 @@ class Interpreter:
         self.__exec_for_module = exec_for_module
 
         return self.__run_bytecode(cobj, f)
+
+    def exec(self, cobj, frame=None,
+             exec_for_module=False, globals: dict = None):
+        with self.get_context():
+            return self.__exec(cobj, frame, exec_for_module, globals)
 
 
 def test_vm():

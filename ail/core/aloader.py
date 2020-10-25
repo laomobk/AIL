@@ -37,10 +37,13 @@ def _trim_path(path: str) -> str:
 
 
 class ModuleLoader:
-    def __init__(self, paths: list):
-        self.__load_path = paths
+    def __init__(self):
         self.__loaded = {}
         self.__loading_paths = []
+    
+    @property
+    def __load_path(self):
+        return shared.GLOBAL_SHARED_DATA.find_path
 
     def __search_module(self, name: str) -> str:
         """
@@ -159,12 +162,11 @@ class ModuleLoader:
         elif self.__get_type(p) == 'ail':
             source = open(p).read()
             ast = Parser().parse(Lex().lex(source), source, p)
-            cobj = Compiler(filename=p).compile(ast).code_object
+            cobj = Compiler(filename=p, name=p).compile(ast).code_object
 
             frame = Frame(cobj, cobj.varnames, cobj.consts)
 
             namespace = dict()
-
             interpreter = MAIN_INTERPRETER_STATE.global_interpreter
             why = interpreter.exec_for_import(
                     cobj, frame, globals=namespace)
@@ -184,4 +186,4 @@ class ModuleLoader:
         return 1, p
 
 
-MAIN_LOADER = ModuleLoader(shared.GLOBAL_SHARED_DATA.find_path)
+MAIN_LOADER = ModuleLoader()

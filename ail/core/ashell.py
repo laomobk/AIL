@@ -55,7 +55,7 @@ class Shell:
 
         self.__lexer = Lex()
         self.__parser = Parser()
-        self.__compiler = Compiler(filename='<shell>')
+        self.__compiler = Compiler(filename='<shell>', name='<string>')
         
         self.__globals = _SHELL_NAMESPACE
 
