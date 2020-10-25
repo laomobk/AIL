@@ -434,7 +434,15 @@ class Interpreter:
         if isinstance(a, objs.AILObject):
             a_cls = a['__class__']
             b_cls = b['__class__']
-            if a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
+            
+            if a_cls.otype == astr.STRING_TYPE.otype \
+                    and b_cls.otype == astr.STRING_TYPE.otype:
+                a_val = a['__value__']
+                b_val = b['__value__']
+
+                return objs.convert_to_ail_object(a_val + b_val)
+
+            elif a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
                 a_val = a['__value__']
                 b_val = b['__value__']
                 op_method = getattr(a_val, pymth, None)
