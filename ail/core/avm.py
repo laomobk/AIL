@@ -408,7 +408,7 @@ class Interpreter:
         return 0
 
     def __update_lineno(self):
-        ln_index = int(self.__opcounter / 2)
+        ln_index = self.__opcounter // 2
         lno_list = self.__tof.code.lineno_list
 
         if ln_index < 0 or ln_index >= len(lno_list):
