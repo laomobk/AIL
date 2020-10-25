@@ -75,6 +75,8 @@ _obj_type_dict = {
     list: array.ARRAY_TYPE,
 }
 
+_num_otypes = {aint.INTEGER_TYPE.otype, afloat.FLOAT_TYPE.otype}
+
 _binary_op_dict = {
     binary_add: ('+', '__add__', '__add__'),
     binary_div: ('/', '__truediv__', '__div__'),
@@ -88,6 +90,15 @@ _binary_op_dict = {
     binary_or: ('|', '__or__', '__or__'),
     binary_xor: ('xor', '__xor__', '__xor__'),
 }
+
+_binary_compare_op = (
+    '__eq__',
+    '__ge__',
+    '__le__',
+    '__gt__',
+    '__lt__',
+    '__ne__', 
+)
 
 
 class TempEnvironment:
@@ -409,7 +420,7 @@ class Interpreter:
             self.__tof.lineno = lno
 
     def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
-        if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
+        if isinstance(a, fastnum.FastNumber) and isinstance(b, fastnum.FastNumber):
             op_method = getattr(a._value, pymth, None)
 
             if op_method:
@@ -421,6 +432,32 @@ class Interpreter:
                     'TypeError')
 
         if isinstance(a, objs.AILObject):
+            a_cls = a['__class__']
+            b_cls = b['__class__']
+            if a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
+                a_val = a['__value__']
+                b_val = b['__value__']
+                op_method = getattr(a_val, pymth, None)
+
+                if op_method is not None:
+                    res = op_method(b_val)
+                    if res is NotImplemented:
+                        # make __rxxx__
+                        pymth = pymth[:2] + 'r' + pymth[2:]
+                        op_method = getattr(b_val, pymth, None)
+                        res = op_method(a_val)
+                        if res is NotImplemented:
+                            self.raise_error(
+                                'Not support operator \'%s\' between %s and %s'
+                                    % (op, a, b),
+                                'TypeError')
+                    return objs.convert_to_ail_number(res)
+                else:
+                    self.raise_error(
+                        'Not support operator \'%s\' between %s and %s' % (
+                            op, a, b),
+                        'TypeError')
+
             m = a[ailmth]
             mb = b[ailmth]
 
@@ -441,29 +478,37 @@ class Interpreter:
                 return
         return r
 
-    def __compare(self, a, b, cop: str) -> objs.AILObject:
+    def __compare(self, a, b, cmp_opm: str, op: str) -> objs.AILObject:
         if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
             av = a._value
             bv = b._value
 
-            return true if eval('%s %s %s' % (av, cop, bv)) else false
+            res = getattr(av, cmp_opm)(bv)
+            if res is not NotImplemented:
+                return true if res else false
+            self.raise_error('Not support \'%s\' between %s and %s' % 
+                                (op, a, b),
+                             'TypeError')
+        a_cls = a['__class__']
+        b_cls = b['__class__']
+        
+        if a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
+            a_val = a['__value__']
+            b_val = b['__value__']
 
-        if not (type(a), type(b)) != (objs.AILObject, objs.AILObject) or \
-                (a['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE) or \
-                 b['__class__'] not in (afloat.FLOAT_TYPE, aint.INTEGER_TYPE)):
-
-            av = a['__value__']
-            bv = b['__value__']
-
-            if cop in opcs.COMPARE_OPERATORS:
-                res = eval('%s %s %s' % (av, cop, bv))
-            else:
-                self.raise_error(
-                    'Unknown compare operator \'%s\'' % cop,
-                    'VMError'
-                )
+            res = getattr(a_val, cmp_opm)(b_val)
+            if res is not NotImplemented:
+                return true if res else false
+            self.raise_error('Not support \'%s\' between %s and %s' % 
+                                (op, a, b),
+                             'TypeError')
         else:
-            res = a['__equals__'](a, b)
+            opm = a[cmp_opm]
+            if opm is None:    
+                self.raise_error('Not support \'%s\' between %s and %s' % 
+                                    (op, a, b),
+                                 'TypeError')
+            res = opm(b)
 
         return true if res else false
 
@@ -863,7 +908,8 @@ class Interpreter:
                         b = self.__pop_top()
                         a = self.__pop_top()
 
-                        res = self.__check_object(self.__binary_op(op, pym, ailm, a, b))
+                        res = self.__check_object(
+                                self.__binary_op(op, pym, ailm, a, b))
 
                         self.__tof.stack.append(res)
 
@@ -876,13 +922,14 @@ class Interpreter:
                             objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
 
                     elif op == compare_op:
-                        cop = opcs.COMPARE_OPERATORS[argv]
+                        cmp_opm = _binary_compare_op[argv]
+                        op = COMPARE_OPERATORS[argv]
 
                         b = self.__pop_top()
                         a = self.__pop_top()
 
                         self.__tof.stack.append(
-                            self.__compare(a, b, cop)
+                            self.__compare(a, b, cmp_opm, op)
                         )
 
                     elif op == break_loop:

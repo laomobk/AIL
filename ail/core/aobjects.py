@@ -1,7 +1,10 @@
+import inspect
+
+from typing import Union
+
 from . import error
 from ..objects import types
 
-import inspect
 
 INVISIBLE_ATTRS = (
     '__value__',
@@ -243,6 +246,19 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     }.get(type(pyobj), wrapper.WRAPPER_TYPE)
 
     return ObjectCreater.new_object(target_t, pyobj)
+
+
+def convert_to_ail_number(pynum: Union[int, float]) -> AILObject:
+    from ..objects import integer
+    from ..objects import float as afloat
+
+    if isinstance(pynum, int):
+        return integer.get_integer(pynum)
+    elif isinstance(pynum, float):
+        return afloat._new_object(afloat.FLOAT_TYPE, pynum)
+    else:
+        return pynum
+
 
 
 def compare_type(o, *t):
