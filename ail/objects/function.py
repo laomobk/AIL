@@ -1,16 +1,20 @@
 # Function and PyFunction
-from ..core import aobjects as obj
+import inspect
 import types as t
+
+from functools import lru_cache
+
+from ..core import aobjects as obj
+from ..core.aobjects import AILObject
 from ..core.error import AILRuntimeError
 from . import wrapper
-import inspect
 from . import types
 
 
 def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
-    self['__pyfunction__'] = func
-    self['__value__'] = func
-    self['__name__'] = func.__name__
+    self.properties['__pyfunction__'] = func
+    self.properties['__value__'] = func
+    self.properties['__name__'] = func.__name__
 
 
 def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
@@ -73,15 +77,18 @@ PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_
                                      __repr__=pyfunc_func_str)
 
 
+@lru_cache
 def convert_to_func_wrapper(pyf):
     import inspect
-
-    if obj.compare_type(pyf, PY_FUNCTION_TYPE) or \
-            obj.compare_type(pyf, FUNCTION_TYPE):
-        return pyf
 
     if inspect.isfunction(pyf) or inspect.isbuiltin(pyf):
         return obj.ObjectCreater.new_object(
             PY_FUNCTION_TYPE, pyf)
 
-    return obj.convert_to_ail_object(pyf)
+    if not isinstance(pyf, AILObject):
+        return pyf
+
+    if obj.compare_type(pyf, PY_FUNCTION_TYPE) or \
+            obj.compare_type(pyf, FUNCTION_TYPE):
+        return pyf
+

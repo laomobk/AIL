@@ -19,8 +19,8 @@ def float_init(self: obj.AILObject, value: obj.AILObject):
     _vtype = type(value)
 
     if _vtype is float or _vtype is int:
-        self['__value__'] = value
-    elif obj.compare_type(value, FLOAT_TYPE):
+        self.properties['__value__'] = value
+    elif value['__class__'] is FLOAT_TYPE:
         self['__value__'] = value['__value__']
     else:
         return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')

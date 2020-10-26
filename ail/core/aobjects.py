@@ -1,5 +1,7 @@
 import inspect
 
+from functools import lru_cache
+from types import FunctionType
 from typing import Union
 
 from . import error
@@ -52,7 +54,7 @@ class AILCodeObject:
                  global_names: list=None, nonlocal_names: list=None,):
         self.consts = consts
         self.varnames = varnames
-        self.bytecodes = bytecodes
+        self.bytecodes = tuple(bytecodes)
         self.firstlineno = firstlineno
         self.argcount = argcount  # if function or -1
         self.name = name
@@ -84,14 +86,10 @@ class AILObject:
     def __getitem__(self, key: str):
         if key in self.properties:
             k = self.properties[key]
-            if isinstance(k, AILObject):
-                k.reference += 1
             return k
         return None
 
     def __setitem__(self, key: str, value):
-        if isinstance(value, AILObject):
-            value.reference += 1
         self.properties[key] = value
 
     def __getattr__(self, item: str):
@@ -108,7 +106,8 @@ class AILObject:
         try:
             return self['__str__'](self)
         except TypeError:
-            return '<AIL %s object at %s>' % (self['__class__'].name, hex(id(self)))
+            return '<AIL %s object at %s>' % (
+                    self['__class__'].name, hex(id(self)))
 
     def __eq__(self, o):
         try:
@@ -132,15 +131,6 @@ class AILObject:
             return self.__str__()
 
     def __hash__(self) -> int:
-        target = self
-        if target.__hash__ is not None:
-            return target.__hash__()
-
-        if '__value__' in self.properties:
-            target = self['__value__']
-            if target.__hash__ is not None:
-                return target.__hash__()
-
         return hash(self.__hash_target)
 
 
@@ -190,25 +180,22 @@ class ObjectCreater:
 
         if obj_type.methods is not None:
             for mn, mo in obj_type.methods.items():
-                if inspect.isfunction(mo):
+                if not isinstance(mo, AILObject):
                     f = ObjectCreater.__to_wrapper(mo)
 
-                    f.reference += 1
-                    obj.reference += 1
-
-                    f['__this__'] = obj  # bound self to __this__
+                    f.properties['__this__'] = obj  # bound self to __this__
                     obj.properties[mn] = f
 
         # check normal required
+        t_req_keys = set(obj_type.required.keys())
 
-        missing_req = [x for x in ObjectCreater.__required_normal.keys() 
-                       if x not in obj_type.required.keys()]
-
-        for mis in missing_req:
-            obj.properties[mis] = ObjectCreater.__required_normal[mis]
+        for name, default in ObjectCreater.__required_normal.items():
+            if name in t_req_keys:
+                continue
+            obj.properties[name] = default
 
         # call init method
-        init_mthd = obj['__init__']
+        init_mthd = obj.properties['__init__']
         r = init_mthd(obj, *args)
 
         if isinstance(r, error.AILRuntimeError):
@@ -222,35 +209,60 @@ def check_object(obj):
         error.print_global_error(obj)
 
 
+# cache
+_STRING_TYPE = None
+_INTEGER_TYPE =None
+_FLOAT_TYPE = None
+_ARRAY_TYPE = None
+_WRAPPER_TYPE = None
+_PY_FUNCTION_TYPE = None
+_null = None
+_not_loaded = True
+
+
+@lru_cache
 def convert_to_ail_object(pyobj: object) -> AILObject:
+    global _not_loaded
+    global _STRING_TYPE
+    global _INTEGER_TYPE
+    global _FLOAT_TYPE
+    global _ARRAY_TYPE
+    global _WRAPPER_TYPE
+    global _PY_FUNCTION_TYPE
+    global _null
+
     if isinstance(pyobj, AILObject):
         return pyobj
+    
+    if _not_loaded:
+        from ..objects.string import STRING_TYPE as _STRING_TYPE
+        from ..objects.integer import INTEGER_TYPE as _INTEGER_TYPE
+        from ..objects.float import FLOAT_TYPE as _FLOAT_TYPE
+        from ..objects.array import ARRAY_TYPE as _ARRAY_TYPE
+        from ..objects.wrapper import WRAPPER_TYPE as _WRAPPER_TYPE
+        from ..objects.function import PY_FUNCTION_TYPE as _PY_FUNCTION_TYPE
+        from ..objects.null import null as _null
+        _not_loaded = False
 
-    from ..objects.string import STRING_TYPE
-    from ..objects.integer import INTEGER_TYPE
-    from ..objects.float import FLOAT_TYPE
-    from ..objects.array import ARRAY_TYPE
-    from ..objects.wrapper import WRAPPER_TYPE
-    from ..objects.function import PY_FUNCTION_TYPE 
-
-    from types import FunctionType
+    if pyobj is None:
+        return _null
 
     py_t = type(pyobj)
-    ail_t = WRAPPER_TYPE
+    ail_t = _WRAPPER_TYPE
 
     if py_t is int:
-        ail_t = INTEGER_TYPE
+        ail_t = _INTEGER_TYPE
     elif py_t is float:
-        ail_t  = FLOAT_TYPE
+        ail_t  = _FLOAT_TYPE
     elif py_t is str:
-        ail_t = STRING_TYPE
+        ail_t = _STRING_TYPE
     elif py_t is bool:
         from .abuiltins import true, false
         return true if pyobj else false
     elif py_t is list:
-        ail_t = ARRAY_TYPE
+        ail_t = _ARRAY_TYPE
     elif py_t is FunctionType:
-        ail_t = PY_FUNCTION_TYPE
+        ail_t = _PY_FUNCTION_TYPE
 
     return ObjectCreater.new_object(ail_t, pyobj)
 

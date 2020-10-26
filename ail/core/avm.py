@@ -8,6 +8,7 @@ import sys
 import types
 import inspect
 
+from functools import lru_cache
 from typing import List
 
 from . import (
@@ -160,10 +161,10 @@ class Interpreter:
         self.__exec_for_module = False
 
         self.__global_frame = None
-
+    
     @property
     def __tof(self) -> Frame:
-        return self.__now_state.frame_stack[-1]
+        return MAIN_INTERPRETER_STATE.frame_stack[-1]
 
     @property
     def __tos(self) -> objs.AILObject:
@@ -228,9 +229,7 @@ class Interpreter:
         self.__stack.append(obj)
 
     def __pop_top(self) -> objs.AILObject:
-        return self.__stack.pop() \
-            if self.__stack \
-            else self.raise_error('Pop from empty stack', 'VMError')
+        return self.__stack.pop() 
 
     def __push_block(self, b_type: int, b_handler: int, b_level: int = None):
         if b_level is None:
@@ -259,12 +258,7 @@ class Interpreter:
         if isinstance(aobj, error.AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
         if not isinstance(aobj, objs.AILObject) and not not_convert:
-            target = _obj_type_dict.get(type(aobj), awrapper.WRAPPER_TYPE)
-
-            if aobj is None:
-                aobj = null.null
-            else:
-                aobj = objs.ObjectCreater.new_object(target, aobj)
+            return objs.convert_to_ail_object(aobj)
 
         return aobj
 
@@ -347,12 +341,12 @@ class Interpreter:
             self.__stack.clear()
             self.__can = 0
 
-            raise VMInterrupt(MII_ERR_BREAK)
+            raise VMInterrupt(MII_ERR_EXIT)
 
         # set interrupt signal.
         raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
-    def __handle_error(self) -> bool:
+    def __handle_error(self, for_func_call=False) -> bool:
         """
         :return: True if found try block else False
         """
@@ -370,6 +364,8 @@ class Interpreter:
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
         else:
+            if for_func_call:
+                raise VMInterrupt(MII_ERR_BREAK)
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_POP_TO_TRY
 
@@ -418,7 +414,8 @@ class Interpreter:
 
         if lno >= 0:
             self.__tof.lineno = lno
-
+    
+    @lru_cache
     def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
         if isinstance(a, fastnum.FastNumber) and isinstance(b, fastnum.FastNumber):
             op_method = getattr(a._value, pymth, None)
@@ -545,7 +542,8 @@ class Interpreter:
             self.__opcounter = argv
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
-
+    
+    @lru_cache
     def __bool_test(self, obj):
         if '__value__' in obj.properties:
             return bool(obj.properties['__value__'])
@@ -586,10 +584,11 @@ class Interpreter:
         v = self.__tof.variable.get(n)
         if v is not None:
             return v
-
-        for outer in self.__tof.closure_outer:
-            if n in outer:
-                return outer[n]
+        
+        if len(self.__tof.closure_outer) > 0:
+            for outer in self.__tof.closure_outer:
+                if n in outer:
+                    return outer[n]
 
         ns_state = self.__namespace_state
         for ns in (ns_state.ns_global, ns_state.ns_builtins):
@@ -657,7 +656,7 @@ class Interpreter:
                     # self.__set_globals(now_globals)
 
                     if why == WHY_ERROR:
-                        self.__handle_error()
+                        self.__handle_error(True)
                     elif why == WHY_HANDLING_ERR:
                         # do nothing
                         pass
@@ -967,7 +966,7 @@ class Interpreter:
                             tos._closure_outer = []
                             if self.__tof.code.closure:
                                 tos._closure_outer.extend(self.__tof.closure_outer.copy())
-                            tos._closure_outer.insert(0, self.__tof.variable.copy())
+                            tos._closure_outer.insert(0, self.__tof.variable)
 
                         tosf = objs.ObjectCreater.new_object(
                             afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
@@ -1223,6 +1222,12 @@ class Interpreter:
 
                     elif self.__interrupt_signal == MII_ERR_BREAK:
                         why = WHY_ERROR
+                        self.__can_update_opc = False
+
+                        break
+                    
+                    elif self.__interrupt_signal == MII_ERR_EXIT:
+                        why = WHY_ERR_EXIT
                         self.__can_update_opc = False
 
                         break

@@ -37,6 +37,7 @@ fun levelLog(level) {
 @levelLog('info')
 @log
 fun printState() {
+    u
     print 'State: good'
 }
 
