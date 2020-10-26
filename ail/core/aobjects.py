@@ -226,26 +226,33 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     if isinstance(pyobj, AILObject):
         return pyobj
 
-    from ..objects import string
-    from ..objects import integer
-    from ..objects import float as afloat
-    from ..objects import bool as abool
-    from ..objects import array
-    from ..objects import wrapper
-    from ..objects import function
+    from ..objects.string import STRING_TYPE
+    from ..objects.integer import INTEGER_TYPE
+    from ..objects.float import FLOAT_TYPE
+    from ..objects.array import ARRAY_TYPE
+    from ..objects.wrapper import WRAPPER_TYPE
+    from ..objects.function import PY_FUNCTION_TYPE 
 
     from types import FunctionType
 
-    target_t = {
-        str: string.STRING_TYPE,
-        int: integer.INTEGER_TYPE,
-        float: afloat.FLOAT_TYPE,
-        bool: abool.BOOL_TYPE,
-        list: array.ARRAY_TYPE,
-        FunctionType: function.PY_FUNCTION_TYPE,
-    }.get(type(pyobj), wrapper.WRAPPER_TYPE)
+    py_t = type(pyobj)
+    ail_t = WRAPPER_TYPE
 
-    return ObjectCreater.new_object(target_t, pyobj)
+    if py_t is int:
+        ail_t = INTEGER_TYPE
+    elif py_t is float:
+        ail_t  = FLOAT_TYPE
+    elif py_t is str:
+        ail_t = STRING_TYPE
+    elif py_t is bool:
+        from .abuiltins import true, false
+        return true if pyobj else false
+    elif py_t is list:
+        ail_t = ARRAY_TYPE
+    elif py_t is FunctionType:
+        ail_t = PY_FUNCTION_TYPE
+
+    return ObjectCreater.new_object(ail_t, pyobj)
 
 
 def convert_to_ail_number(pynum: Union[int, float]) -> AILObject:
