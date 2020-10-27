@@ -220,7 +220,7 @@ _null = None
 _not_loaded = True
 
 
-@lru_cache
+@lru_cache(None)
 def convert_to_ail_object(pyobj: object) -> AILObject:
     global _not_loaded
     global _STRING_TYPE

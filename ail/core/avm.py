@@ -415,7 +415,7 @@ class Interpreter:
         if lno >= 0:
             self.__tof.lineno = lno
     
-    @lru_cache
+    @lru_cache(None)
     def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
         if isinstance(a, fastnum.FastNumber) and isinstance(b, fastnum.FastNumber):
             op_method = getattr(a._value, pymth, None)
@@ -543,7 +543,7 @@ class Interpreter:
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
     
-    @lru_cache
+    @lru_cache(None)
     def __bool_test(self, obj):
         if '__value__' in obj.properties:
             return bool(obj.properties['__value__'])

@@ -77,7 +77,7 @@ PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_
                                      __repr__=pyfunc_func_str)
 
 
-@lru_cache
+@lru_cache(None)
 def convert_to_func_wrapper(pyf):
     import inspect
 
