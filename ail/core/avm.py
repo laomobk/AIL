@@ -1214,7 +1214,6 @@ class Interpreter:
                 if self.__interrupted:
                     if not self.__can:
                         self.__can = 1
-
                     self.__interrupted = False
                     if self.__interrupt_signal == MII_DO_JUMP:
                         jump_to = self.__opcounter

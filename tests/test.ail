@@ -8,21 +8,6 @@ fun log(func) {
     return wrapper
 }
 
-@log
-fun print_name(name) {
-    print 'Hello'; name
-}
-
-
-struct Person {
-    name
-}
-
-@log
-fun (Person) say_hi(this) {
-    print 'Hello, my name is'; this.name
-}
-
 fun levelLog(level) {
     fun wrapper(func) {
         fun inner(*argv) {
