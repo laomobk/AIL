@@ -17,10 +17,11 @@ syn keyword ailStmt try catch
 syn keyword ailStmt break continue
 syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
+syn keyword ailStmt mod
 
 syn keyword ailConst false true
 
-syn keyword ailRepeat	while for do loop until
+syn keyword ailRepeat while for do loop until
 
 syn keyword ailFunc abs
 syn keyword ailFunc ng

@@ -200,8 +200,6 @@ class Interpreter:
         ctx.can_update_opc = self.__can_update_opc
         ctx.exec_for_module = self.__exec_for_module
         ctx.global_frame = self.__global_frame
-        ctx.interrupt_signal = self.__interrupt_signal
-        ctx.interrupted = self.__interrupted
         ctx.now_state = self.__now_state
         ctx.opcounter = self.__opcounter
         ctx.globals = self.__namespace_state.ns_global.ns_dict
@@ -213,8 +211,6 @@ class Interpreter:
         self.__can_update_opc = ctx.can_update_opc
         self.__exec_for_module = ctx.exec_for_module
         self.__global_frame = ctx.global_frame
-        self.__interrupt_signal = ctx.interrupt_signal
-        self.__interrupted = ctx.interrupted
         self.__now_state = ctx.now_state
         self.__opcounter = ctx.opcounter
         self.__namespace_state.ns_global.ns_dict = ctx.globals
@@ -341,7 +337,7 @@ class Interpreter:
             self.__stack.clear()
             self.__can = 0
 
-            raise VMInterrupt(MII_ERR_EXIT)
+            raise VMInterrupt(MII_ERR_BREAK)
 
         # set interrupt signal.
         raise VMInterrupt(MII_ERR_POP_TO_TRY)
@@ -756,8 +752,8 @@ class Interpreter:
                     # print(self.__opcounter, get_opname(op),
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
-                    # print(self.__opcounter
-                    # print(get_opname(op), self.__frame_stack)
+                    # print(self.__opcounter)
+                    # print(self.__opcounter, get_opname(op), self.__frame_stack)
 
                     if op == pop_top:
                         tos = self.__pop_top()

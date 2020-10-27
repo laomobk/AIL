@@ -1,0 +1,27 @@
+
+fun celToFah(cel) {
+    return cel * 1.8 + 32
+}
+
+fun fahToCel(fah) {
+    return (fah - 32) / 1.8
+}
+
+fun main() {
+    mode = int(console.readln('mode (1 - f2c | 2 - c2f): '))
+    deg = float(console.readln('degree: '))
+
+    if mode == 1 {
+        print 'result:' ; fahToCel(deg)
+    } elif mode == 2 {
+        print 'result:' ; celToFah(deg)
+    } else {
+        print 'wrong input'
+    }
+}
+
+
+if __is_main__ {
+    main()
+}
+
