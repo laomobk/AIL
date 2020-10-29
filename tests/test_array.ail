@@ -5,7 +5,7 @@ fun testNormalArrayAccess() {
     a = ['a', 'b', 'c', 'Nezha']
     print 'a:'; a
 
-    for (i = -10; i < 10; i = i + 1) {
+    for (i = -10; i < 10; ++i) {
         print 'access index'; i
         try {
             print 'a[i] ='; a[i]
@@ -24,7 +24,7 @@ fun testTwoDimArrayAccess() {
     print 'a ='; a
     
     print 'access line'
-    for (y = -10; y < len(a); y = y + 1) {
+    for (y = -10; y < len(a); ++y) {
         try {
             print ' '.join(a[y])    
         } catch err {
@@ -33,7 +33,7 @@ fun testTwoDimArrayAccess() {
     }
 
     print 'access cell'
-    for (y = 0; y < len(a); y = y + 1) {
+    for (y = 0; y < len(a); ++y) {
         for (x = 0; x < len(a[y]); x = x + 1) {
             console.write(str(a[y][x]) + ' ')
         }
@@ -44,7 +44,7 @@ cases.append(testTwoDimArrayAccess)
 
 
 if __is_main__ {
-    for (i = 0; i < len(cases); i = i + 1) {
+    for (i = 0; i < len(cases); ++i) {
         print '\ncall:'; cases[i]
         cases[i]()
     }

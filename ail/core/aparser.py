@@ -311,7 +311,8 @@ class Parser:
         return ast.CellAST(name, nt.ttype, ln)
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
-        if self.__now_tok.ttype in (AIL_SUB, AIL_WAVE):
+        if self.__now_tok.ttype in (
+                AIL_SUB, AIL_WAVE, AIL_PLUS_PLUS, AIL_SUB_SUB):
             ln = self.__now_ln
             op = self.__now_tok.value
             self.__next_tok()  # eat op
@@ -1193,11 +1194,11 @@ class Parser:
             self.__syntax_error()
 
         ln = self.__now_ln
-
+        
         self.__next_tok()  # eat 'catch'
-
+        
         if self.__now_tok.ttype != AIL_IDENTIFIER:
-            self.__syntax_error('require NAME')
+            self.__syntax_error('require name')
 
         cname = self.__now_tok.value
 

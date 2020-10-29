@@ -185,7 +185,8 @@ class Compiler:
 
         return bc
 
-    def __compile_unary_expr(self, tree: ast.UnaryExprAST) -> ByteCode:
+    def __compile_unary_expr(self, 
+            tree: ast.UnaryExprAST, single=False) -> ByteCode:
         bc = ByteCode()
 
         rbc = self.__compile_binary_expr(tree.right_expr)
@@ -196,6 +197,15 @@ class Compiler:
             bc.add_bytecode(unary_negative, 0, tree.ln)
         elif tree.op == '~':
             bc.add_bytecode(unary_invert, 0, tree.ln)
+        elif tree.op in ('++', '--'):
+            operation = {'++': unary_inc, '--': unary_dec}.get(tree.op)
+            store_ast = ast.AssignExprAST(
+                    tree.right_expr, None, tree.ln)
+            store_code = self.__compile_assign_expr(store_ast)
+            bc.add_bytecode(operation, 0, tree.ln)
+            bc += store_code
+            if single:
+                bc.add_bytecode(pop_top, 0, -1)
 
         return bc
 
@@ -243,7 +253,8 @@ class Compiler:
 
         return bc
 
-    def __compile_assign_expr(self, tree: ast.AssignExprAST, single=False) -> ByteCode:
+    def __compile_assign_expr(self, 
+            tree: ast.AssignExprAST, single = False) -> ByteCode:
         bc = ByteCode()
 
         left = tree.left
@@ -253,10 +264,10 @@ class Compiler:
             ast.SubscriptExprAST: store_subscr,
             ast.MemberAccessAST: store_attr
         }[type(left)]
-
-        vc = self.__compile_binary_expr(tree.right)
-
-        bc += vc
+        
+        if tree.right is not None:
+            vc = self.__compile_binary_expr(tree.right)
+            bc += vc
 
         if store_target == store_var:
             ni = self.__buffer.get_or_add_varname_index(left.value)
@@ -964,6 +975,9 @@ class Compiler:
 
             elif isinstance(et, ast.NonlocalStmtAST):
                 tbc = self.__compile_nonlocal_stmt(et)
+
+            elif isinstance(et, ast.UnaryExprAST):
+                tbc = self.__compile_unary_expr(et, single=True)
 
             elif type(et) in ast.BINARY_AST_TYPES:
                 tbc = self.__compile_binary_expr(et, is_single=True)

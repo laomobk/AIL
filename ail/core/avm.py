@@ -122,8 +122,6 @@ class InterpreterContext:
     def __init__(self, interpreter: 'Interpreter'):
         self.now_state = None
         self.opcounter = 0
-        self.interrupted = False
-        self.interrupt_signal = 0
         self.can = 1
         self.can_update_opc = True
         self.exec_for_module = False
@@ -1006,8 +1004,9 @@ class Interpreter:
 
                         if isinstance(l, objs.AILObject):
                             if l['__getitem__'] is None:
-                                self.raise_error('%s object is not subscriptable' %
-                                                 l['__class__'].name, 'TypeError')
+                                self.raise_error(
+                                        '%s object is not subscriptable' %
+                                        l['__class__'].name, 'TypeError')
 
                             rtn = self.__check_object(l['__getitem__'](l, v))
 
@@ -1016,26 +1015,47 @@ class Interpreter:
                     elif op == unary_negative:
                         v = self.__pop_top()
 
-                        if v['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
+                        if v['__class__'] in (
+                                aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
                             vnum = -objs.unpack_ailobj(v)
-                            self.__tof.stack.append(objs.convert_to_ail_object(vnum))
+                            self.__tof.stack.append(
+                                    objs.convert_to_ail_object(vnum))
 
                             self.__decref(v)
                         else:
                             self.raise_error(
-                                'cannot do \'-\' for type: %s' % v['__class__'].name, 'TypeError')
+                                'cannot do \'-\' for type: %s' % 
+                                v['__class__'].name, 'TypeError')
 
                     elif op == unary_invert:
                         v = self.__pop_top()
 
                         if v['__class__'] is aint.INTEGER_TYPE:
                             vnum = ~objs.unpack_ailobj(v)
-                            self.__tof.stack.append(objs.convert_to_ail_object(vnum))
+                            self.__tof.stack.append(
+                                    objs.convert_to_ail_object(vnum))
 
                             self.__decref(v)
                         else:
                             self.raise_error(
-                                'cannot do \'~\' for type: %s' % v['__class__'].name, 'TypeError')
+                                'cannot do \'~\' for type: %s' % 
+                                v['__class__'].name, 'TypeError')
+
+                    elif op == unary_inc or op == unary_dec:
+                        target_method, op = ('__inc__', '++')  \
+                                            if op == unary_inc  \
+                                            else ('__dec__', '--')
+
+                        v = self.__pop_top()
+                        method = v[target_method]
+                        if method is None:
+                            self.raise_error(
+                                    'Cannot \'%s\' to type %s' % 
+                                        (op, v['__class__']),
+                                    'TypeError')
+                        else:
+                            res = self.__check_object(method(v))
+                            self.__push_back(res)
 
                     elif op == load_module:
                         name = self.__tof.consts[argv]['__value__']

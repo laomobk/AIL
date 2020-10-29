@@ -696,6 +696,11 @@ class Lex:
                 self.__ln += lni
                 self.__movchr(mov)
 
+            elif c == '\\':
+                if self.__nextch() == '\n':
+                    self.__ln += 1
+                    self.__movchr(2)
+
             else:
                 self.__error_msg('Unknown character')
 

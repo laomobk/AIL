@@ -199,6 +199,18 @@ def int_xor(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
     return get_integer(res)
 
 
+def int_inc(self: obj.AILObject):
+    val = self['__value__']
+    
+    return get_integer(val + 1)
+
+
+def int_dec(self: obj.AILObject):
+    val = self['__value__']
+    
+    return get_integer(val - 1)
+
+
 def int_eq(self: obj.AILObject, o: obj.AILObject):
     if isinstance(o, obj.AILObject):
         return obj.ObjectCreater.new_object(abool.BOOL_TYPE, self['__value__'] == o['__value__'])
@@ -226,6 +238,8 @@ INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
                                  __and__=int_and,
                                  __or__=int_or,
                                  __xor__=int_xor,
+                                 __inc__=int_inc,
+                                 __dec__=int_dec,
                                  )
 
 
