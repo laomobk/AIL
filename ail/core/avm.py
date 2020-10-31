@@ -19,7 +19,7 @@ from . import (
     aloader
 )
 
-from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY
+from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH
 from .agc import GC
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
@@ -543,12 +543,16 @@ class Interpreter:
             return bool(obj.properties['__value__'])
 
     def __pop_and_unwind_block(self) -> Block:
-        pass
+        b = self.__block_stack.pop()
+        if b.type == BLOCK_CATCH:
+            self.__now_state.handling_err_stack.pop(0)
+
+        return b
 
     def __check_break(self) -> int:
         stack = self.__block_stack
         while stack:
-            b = stack.pop()
+            b = self.__pop_and_unwind_block()
             if b.type == BLOCK_LOOP:
                 return b.handler
         self.raise_error('no block to handle \'break\'', 'VMError')
@@ -567,7 +571,7 @@ class Interpreter:
             if b.type == BLOCK_LOOP:
                 loop_block = b
                 break
-            stack.pop()
+            self.__pop_and_unwind_block()
         else:
             self.raise_error('no block to handle continue', 'VMError')
 
@@ -877,6 +881,10 @@ class Interpreter:
                     elif op == jump_absolute:
                         jump_to = argv
 
+                    elif op == jump_forward:
+                        # normally, jump_to equals self.__opcounter
+                        jump_to += argv
+
                     elif op == jump_if_false:
                         jump_to = self.__get_jump(argv, False, 0)
 
@@ -1167,6 +1175,8 @@ class Interpreter:
                         name = self.__tof.varnames[argv]
                         self.__temp_env_stack.append(TempEnvironment())
 
+                        self.__push_block(BLOCK_CATCH, -1)
+
                         err = self.__now_state.err_stack.pop()
                         self.__store_var(name, err)  # store this error with 'name'
 
@@ -1177,6 +1187,8 @@ class Interpreter:
                         ts = self.__temp_env_stack.pop()
 
                         tn = ts.temp_var
+
+                        self.__pop_block()
 
                         self.__now_state.handling_err_stack.pop(0)  # queue
 

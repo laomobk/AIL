@@ -5,6 +5,7 @@ from . import aobjects as objs
 
 BLOCK_LOOP = 0
 BLOCK_TRY = 1
+BLOCK_CATCH = 2
 
 
 class Block:

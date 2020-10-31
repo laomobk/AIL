@@ -24,20 +24,13 @@ fun testTwoDimArrayAccess() {
     print 'a ='; a
     
     print 'access line'
-    for (y = -10; y < len(a); y = y + 1) {
+    for (y = -10; y < len(a); ++y) {
         try {
-            // print ' '.join(a[y])
+            print ' '.join(a[y])
         } catch err {
             print err.err_msg
+            continue
         }
-    }
-
-    print 'access cell'
-    for (y = 0; y < len(a); ++y) {
-        for (x = 0; x < len(a[y]); x = x + 1) {
-            console.write(str(a[y][x]) + ' ')
-        }
-        print ''
     }
 }
 cases.append(testTwoDimArrayAccess)

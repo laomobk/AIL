@@ -24,14 +24,13 @@ fun testTwoDimArrayAccess() {
     print 'a ='; a
     
     print 'access line'
-    y = -10
-    while y < len(a) {
+    for (y = -10; y < len(a); ++y) {
         try {
             print ' '.join(a[y])
         } catch err {
             print err.err_msg
+            continue
         }
-        y = y + 1
     }
 }
 cases.append(testTwoDimArrayAccess)

@@ -403,7 +403,7 @@ class Compiler:
 
         jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
         # for clean_catch
-        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
+        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 1
         # for jump_absolute
 
         if has_finally:
@@ -642,9 +642,15 @@ class Compiler:
         for et in tree.init_list.expr_list:
             initbc += self.__compile_assign_expr(et, single=True)
 
-        test_ext = extofs + len(initbc.blist)
+        updbc = ByteCode()
 
-        jump_back = test_ext
+        for et in tree.update_list.expr_list:
+            updbc += self.__compile_binary_expr(et, is_single=True)
+
+        test_ext = extofs + len(initbc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
+        # _byte_code_size for jump_forward
+
+        jump_back = test_ext - len(updbc.blist)
 
         if tree.test is not None:
             tbc = self.__compile_test_expr(tree.test, test_ext)
@@ -652,25 +658,23 @@ class Compiler:
             tbc = ByteCode()
             tbc.add_bytecode(load_const, self.__buffer.add_const(True), tree.ln)
 
-        block_ext = extofs + len(tbc.blist) + len(initbc.blist) + _BYTE_CODE_SIZE
-        # _byte_code_size is for jump_if_false_or_pop
+        block_ext = extofs + len(tbc.blist) + \
+                             len(initbc.blist) + \
+                             len(updbc.blist) + _BYTE_CODE_SIZE * 3
+        # _byte_code_size is for jump_if_false_or_pop, setup_for and jump_forward
 
         blc = self.__compile_block(tree.block, block_ext)
 
-        updbc = ByteCode()
+        jump_over = block_ext + len(blc.blist)
 
-        for et in tree.update_list.expr_list:
-            updbc += self.__compile_binary_expr(et, is_single=True)
-
-        jump_over = block_ext + len(blc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
-        # _byte_code_size for jump_absolute
-
-        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
+        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE, -1)
+        # jump over clean_loop
         bc += initbc
+        bc.add_bytecode(jump_forward, len(updbc.blist) + _BYTE_CODE_SIZE, -1)
+        bc += updbc
         bc += tbc
         bc.add_bytecode(jump_if_false_or_pop, jump_over, -1)
         bc += blc
-        bc += updbc
         bc.add_bytecode(jump_absolute, jump_back, -1)
         bc.add_bytecode(pop_for, 0, -1)
 
