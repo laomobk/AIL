@@ -542,6 +542,9 @@ class Interpreter:
         if '__value__' in obj.properties:
             return bool(obj.properties['__value__'])
 
+    def __pop_and_unwind_block(self) -> Block:
+        pass
+
     def __check_break(self) -> int:
         stack = self.__block_stack
         while stack:
@@ -748,9 +751,9 @@ class Interpreter:
                     # 速度可能会慢些
 
                     # print(self.__opcounter, get_opname(op),
-                    #       self.__tof, self.__stack, self.__tof.lineno)
+                    #        self.__tof, self.__stack, self.__tof.lineno)
 
-                    # print(self.__opcounter)
+                    # print(self.__opcounter, self.__stack)
                     # print(self.__opcounter, get_opname(op), self.__frame_stack)
 
                     if op == pop_top:

@@ -1,14 +1,38 @@
 # String
 from ..core import aobjects as obj
+from ..core.aobjects import AILObject
 from ..core.error import AILRuntimeError
 from . import bool, integer, function
 from . import types
 
 
+_new_object = None
+_compare_type = None
+_convert_to_ail_object = None
+_unpack_ailobj = None
+_not_loaded = True
+
+
+def _make_cache():
+    global _not_loaded
+    if _not_loaded:
+        global _new_object
+        global _compare_type
+        global _convert_to_ail_object
+        global _unpack_ailobj
+        _new_object = obj.ObjectCreater.new_object
+        _compare_type = obj.compare_type
+        _convert_to_ail_object = obj.convert_to_ail_object
+        _unpack_ailobj = obj.unpack_ailobj
+        _not_loaded = False
+
+
 def str_init(self, anystr: str):
+    _make_cache()
+
     if type(anystr) == str:
         self['__value__'] = anystr
-    elif type(anystr) == obj.AILObject:
+    elif type(anystr) == AILObject:
         if anystr['__class__'] == STRING_TYPE:
             self['__value__'] = anystr['__value__']
         else:
@@ -19,23 +43,24 @@ def str_init(self, anystr: str):
         self['__value__'] = str(anystr)
 
 
-def str_add(self, ostr: obj.AILObject) -> obj.AILObject:
-    if type(ostr) != obj.AILObject:
+def str_add(self, ostr: AILObject) -> AILObject:
+    _make_cache()
+
+    if type(ostr) != AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
-    # if ostr['__class__'] != STRING_TYPE:
-    #     return AILRuntimeError(
-    #         'Not support \'+\' with type %s' % ostr['__class__'].name, 'TypeError')
 
     ss = self['__value__']
     os = ostr['__value__']
 
     rs = ss + str(os)
 
-    return obj.ObjectCreater.new_object(STRING_TYPE, rs)
+    return _new_object(STRING_TYPE, rs)
 
 
-def str_muit(self, times: obj.AILObject) -> obj.AILObject:
-    if type(times) != obj.AILObject:
+def str_muit(self, times: AILObject) -> AILObject:
+    _make_cache()
+
+    if type(times) != AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
 
     if times['__class__'] != integer.INTEGER_TYPE:
@@ -44,11 +69,13 @@ def str_muit(self, times: obj.AILObject) -> obj.AILObject:
     t = times['__value__']
     rs = self['__value__'] * t
 
-    return obj.ObjectCreater.new_object(STRING_TYPE, rs)
+    return _new_object(STRING_TYPE, rs)
 
 
 def str_getitem(self, index: int):
-    if isinstance(index, obj.AILObject) and \
+    _make_cache()
+
+    if isinstance(index, AILObject) and \
             index['__class__'] == integer.INTEGER_TYPE:
         i = index['__value__']
 
@@ -65,7 +92,7 @@ def str_getitem(self, index: int):
         return AILRuntimeError('index out of range (len %s, index %s)' %
                                (len(l), str(i)), 'IndexError')
 
-    return obj.convert_to_ail_object(l[i])
+    return _convert_to_ail_object(l[i])
 
 
 def str_str(self):
@@ -76,8 +103,10 @@ def str_repr(self):
     return repr(self['__value__'])
 
 
-def str_eq(self, ostr: obj.AILObject) -> obj.AILObject:
-    if type(ostr) != obj.AILObject:
+def str_eq(self, ostr: AILObject) -> AILObject:
+    _make_cache()
+
+    if type(ostr) != AILObject:
         return AILRuntimeError('Cannot operate with Python object', 'TypeError')
 
     if ostr['__class__'] != STRING_TYPE:
@@ -87,10 +116,10 @@ def str_eq(self, ostr: obj.AILObject) -> obj.AILObject:
     os = ostr['__value__']
 
     if len(ss) != len(os):
-        return obj.ObjectCreater.new_object(bool.BOOL_TYPE, 0)
+        return _new_object(bool.BOOL_TYPE, 0)
     else:
         s = sum([a == b for a, b in zip(ss, os)])
-        return obj.ObjectCreater.new_object(bool.BOOL_TYPE, s == len(os))
+        return _new_object(bool.BOOL_TYPE, s == len(os))
 
 
 def str_len(self):
@@ -101,7 +130,9 @@ def str_len(self):
 
 
 def str_join(self, array):
-    array = obj.unpack_ailobj(array)
+    _make_cache()
+
+    array = _unpack_ailobj(array)
 
     if not isinstance(array, list):
         return AILRuntimeError('can only join an iterable', 'TypeError')
@@ -121,7 +152,9 @@ def str_join(self, array):
 
 
 def str_format(self, *items):
-    items = tuple([obj.unpack_ailobj(o) for o in items])
+    _make_cache()
+
+    items = tuple([_unpack_ailobj(o) for o in items])
 
     try:
         return self['__value__'] % items
@@ -150,6 +183,8 @@ STRING_METHODS = {
 
 
 def convert_to_string(aobj) -> obj.AILObject:
+    _make_cache()
+
     if isinstance(aobj, obj.AILObject):
         return aobj['__str__'](aobj)
     else:

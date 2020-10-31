@@ -3,12 +3,27 @@ import inspect
 import types as t
 
 from functools import lru_cache
+from inspect import isbuiltin, isfunction
 
 from ..core import aobjects as obj
 from ..core.aobjects import AILObject
 from ..core.error import AILRuntimeError
 from . import wrapper
 from . import types
+
+
+_new_object = None
+_compare_type = None
+_not_loaded = True
+
+def _make_cache():
+    global _not_loaded
+    if _not_loaded:
+        global _new_object
+        global _compare_type
+        _new_object = obj.ObjectCreater.new_object
+        _compare_type = obj.compare_type
+        _not_loaded = False
 
 
 def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
@@ -18,13 +33,15 @@ def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
 
 
 def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
+    _make_cache()
+
     fobj = self['__pyfunction__']
 
     try:
         rtn = fobj(*args)
         if rtn is None:
             return obj.null
-        return obj.ObjectCreater.new_object(wrapper.WRAPPER_TYPE, rtn)
+        return _new_object(wrapper.WRAPPER_TYPE, rtn)
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonError')
 
@@ -44,7 +61,7 @@ def func_func_str(self: obj.AILObject):
 
 
 def call(pyfw: obj.AILObject, *args):
-    if inspect.isfunction(pyfw):
+    if isfunction(pyfw):
         try:
             return pyfw(*args)
         except Exception as e:
@@ -77,18 +94,16 @@ PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_
                                      __repr__=pyfunc_func_str)
 
 
-@lru_cache(None)
 def convert_to_func_wrapper(pyf):
-    import inspect
-
-    if inspect.isfunction(pyf) or inspect.isbuiltin(pyf):
-        return obj.ObjectCreater.new_object(
+    _make_cache()
+    if isfunction(pyf) or isbuiltin(pyf):
+        return _new_object(
             PY_FUNCTION_TYPE, pyf)
 
     if not isinstance(pyf, AILObject):
         return pyf
 
-    if obj.compare_type(pyf, PY_FUNCTION_TYPE) or \
-            obj.compare_type(pyf, FUNCTION_TYPE):
+    if _compare_type(pyf, PY_FUNCTION_TYPE) or \
+            _compare_type(pyf, FUNCTION_TYPE):
         return pyf
 
