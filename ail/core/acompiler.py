@@ -166,7 +166,7 @@ class Compiler:
             bc += self.__compile_assign_expr(tree, single=is_single)
 
         elif isinstance(tree, ast.UnaryExprAST):
-            bc += self.__compile_unary_expr(tree)
+            bc += self.__compile_unary_expr(tree, is_single)
 
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
