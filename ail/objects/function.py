@@ -16,6 +16,7 @@ _new_object = None
 _compare_type = None
 _not_loaded = True
 
+
 def _make_cache():
     global _not_loaded
     if _not_loaded:

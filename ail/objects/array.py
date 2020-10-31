@@ -101,9 +101,10 @@ def array_contains(self, value):
 
 def array_count(self, value):
     arr = self['__value__']
-    arr = [objs.unpack_ailobj(x) for x in arr]
+    unp = objs.unpack_ailobj
+    arr = [unp(x) for x in arr]
 
-    return arr.count(objs.unpack_ailobj(value))
+    return arr.count(unp(value))
 
 
 def array_insert(self, index, value):
@@ -119,10 +120,11 @@ def array_insert(self, index, value):
 
 def array_remove(self, value):
     arr = self['__value__']
-    arr = [objs.unpack_ailobj(x) for x in arr]
+    unp = objs.unpack_ailobj
+    arr = [unp(x) for x in arr]
     
     try:
-        return arr.remove(objs.unpack_ailobj(value))
+        return arr.remove(unp(value))
     except ValueError:
         return AILRuntimeError('array.remove(x): x not in array', 'ValueError')
 
@@ -133,20 +135,23 @@ def array_sort(self):
 
 def array_index(self, value):
     arr = self['__value__']
-    arr = [objs.unpack_ailobj(x) for x in arr]
+    unp = objs.unpack_ailobj
+    arr = [unp(x) for x in arr]
     
     try:
-        return arr.index(objs.unpack_ailobj(value))
+        return arr.index(unp(value))
     except ValueError:
         return -1
 
 
 def array_extend(self, x):
-    arr = self['__value__']
+    arr = self['__value__']  # type: list
     x = objs.unpack_ailobj(x)
 
     if not isinstance(x, list):
         return AILRuntimeError('array.extend(x): x must a array')
+
+    arr.extend(x)
 
 
 def array_clear(self):

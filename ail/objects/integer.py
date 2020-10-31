@@ -292,7 +292,7 @@ def convert_to_integer(pyint: int):
             return pyint
 
         elif type(pyint) in (int, float, str):
-            return obj.ObjectCreater.new_object(INTEGER_TYPE, int(pyint))
+            return get_integer(pyint)
 
     except ValueError as e:
         return AILRuntimeError(str(e), 'ValueError')
