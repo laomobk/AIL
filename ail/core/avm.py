@@ -866,7 +866,7 @@ class Interpreter:
                         self.__temp_env_stack.append(TempEnvironment())
                         self.__push_block(BLOCK_LOOP, argv)
 
-                    elif op in (setup_doloop, setup_while):
+                    elif op == setup_doloop or op == setup_while:
                         self.__push_block(BLOCK_LOOP, argv)
 
                     elif op == pop_for:
@@ -909,7 +909,7 @@ class Interpreter:
                         if not self.__bool_test(tos):
                             jump_to = argv
 
-                    elif op == pop_jump_if_false_or_pop:
+                    elif op == pop_jump_if_true_or_pop:
                         tos = self.__tof.stack.pop()
 
                         if self.__bool_test(tos):

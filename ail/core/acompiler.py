@@ -596,9 +596,10 @@ class Compiler:
         to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2
         # including setup_while and jump over block
 
-        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
+        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE, -1) 
+        # jump over clean_loop
         bc += tc
-        bc.add_bytecode(jump_if_false_or_pop, to, -1)
+        bc.add_bytecode(pop_jump_if_false_or_pop, to, -1)
 
         bc += bcc
         bc.add_bytecode(jump_absolute, back, -1)
@@ -615,19 +616,21 @@ class Compiler:
 
         bcc = self.__compile_block(tree.block, loopb_ext)
 
-        jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 2
+        jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 4
 
         bc.add_bytecode(setup_doloop, jump_over + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
 
         test_jump = extofs + len(bcc.blist)
 
         tc = self.__compile_test_expr(tree.test, test_jump)
-
-        bc += bcc
+ 
+        jump_back = extofs + _BYTE_CODE_SIZE * 2  # over setup_doloop and jump_forward
+        bc.add_bytecode(jump_forward, len(tc.blist) + _BYTE_CODE_SIZE * 2, -1)
         bc += tc
+        bc.add_bytecode(pop_jump_if_true_or_pop, jump_over, -1)
+        bc += bcc
+        bc.add_bytecode(jump_absolute, jump_back, -1)
 
-        jump_back = extofs + _BYTE_CODE_SIZE  # over setup_doloop
-        bc.add_bytecode(jump_if_false_or_pop, jump_back, -1)
         bc.add_bytecode(pop_loop, 0, -1)
 
         return bc
@@ -673,7 +676,7 @@ class Compiler:
         bc.add_bytecode(jump_forward, len(updbc.blist) + _BYTE_CODE_SIZE, -1)
         bc += updbc
         bc += tbc
-        bc.add_bytecode(jump_if_false_or_pop, jump_over, -1)
+        bc.add_bytecode(pop_jump_if_false_or_pop, jump_over, -1)
         bc += blc
         bc.add_bytecode(jump_absolute, jump_back, -1)
         bc.add_bytecode(pop_for, 0, -1)
