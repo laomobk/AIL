@@ -1,5 +1,5 @@
 from ail.core.aobjects import (
-    AILObject, compare_type
+    AILObject, compare_type, unpack_ailobj
 )
 
 from ail.core.error import AILRuntimeError
@@ -49,7 +49,7 @@ def print_help(x: AILObject = None):
                 print('  %s' % m)
 
     elif compare_type(x, STRUCT_OBJ_TYPE):
-        if x['__type__'] is not None:
+        if unpack_ailobj(x['__type__']) is not None:
             print('[type]')
             print('  %s' % x['__type__']['__name__'])
 

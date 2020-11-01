@@ -1,6 +1,5 @@
 import inspect
 
-from functools import lru_cache
 from types import FunctionType
 from typing import Union
 
@@ -220,7 +219,6 @@ _null = None
 _not_loaded = True
 
 
-@lru_cache(None)
 def convert_to_ail_object(pyobj: object) -> AILObject:
     global _not_loaded
     global _STRING_TYPE

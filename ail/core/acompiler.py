@@ -663,12 +663,12 @@ class Compiler:
 
         block_ext = extofs + len(tbc.blist) + \
                              len(initbc.blist) + \
-                             len(updbc.blist) + _BYTE_CODE_SIZE * 3
+                             len(updbc.blist) + _BYTE_CODE_SIZE * 2
         # _byte_code_size is for jump_if_false_or_pop, setup_for and jump_forward
 
         blc = self.__compile_block(tree.block, block_ext)
 
-        jump_over = block_ext + len(blc.blist)
+        jump_over = block_ext + len(blc.blist) + _BYTE_CODE_SIZE
 
         bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE, -1)
         # jump over clean_loop
