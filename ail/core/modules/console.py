@@ -16,6 +16,7 @@ def _console_writeln(_, msg):
         return AILRuntimeError('message must be a string', 'TypeError')
 
     stdout.write(msg + '\n')
+    stdout.flush()
 
 
 def _console_write(_, msg):
@@ -25,6 +26,7 @@ def _console_write(_, msg):
         return AILRuntimeError('message must be a string', 'TypeError')
 
     stdout.write(msg)
+    stdout.flush()
 
 
 def _console_errorln(_, msg):
