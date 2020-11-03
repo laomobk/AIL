@@ -439,12 +439,24 @@ class Interpreter:
                 op_method = getattr(a_val, pymth, None)
 
                 if op_method is not None:
+                    if b_val == 0:
+                        self.raise_error(
+                                'division by zero', 'ZeroDivisionError')
                     res = op_method(b_val)
                     if res is not NotImplemented:
                         return objs.convert_to_ail_number(res)
+
                     # make __rxxx__
                     pymth = pymth[:2] + 'r' + pymth[2:]
                     op_method = getattr(b_val, pymth, None)
+                    if op_method is None:
+                        self.raise_error(
+                            'Not support operator \'%s\' between %s and %s' % (
+                                op, a, b),
+                            'TypeError')
+                    if a_val == 0:
+                        self.raise_error(
+                                'division by zero', 'ZeroDivisionError')
                     res = op_method(a_val)
                     if res is NotImplemented:
                         self.raise_error(
