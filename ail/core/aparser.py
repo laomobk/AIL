@@ -1190,25 +1190,33 @@ class Parser:
 
     def __parse_new_catch_finally_body(self,
             try_block: ast.BlockExprAST) -> ast.TryCatchExprAST:
-        if self.__now_tok != 'catch':
-            self.__syntax_error()
 
+        has_catch_block = True
         ln = self.__now_ln
         
-        self.__next_tok()  # eat 'catch'
-        
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
-            self.__syntax_error('require name')
+        if self.__now_tok != 'catch':
+            has_catch_block = False
+            catch_block = ast.BlockExprAST([], self.__now_ln)
+            cname = None
+        else:
+            
+            self.__next_tok()  # eat 'catch'
+            
+            if self.__now_tok.ttype != AIL_IDENTIFIER:
+                self.__syntax_error('require name')
 
-        cname = self.__now_tok.value
+            cname = self.__now_tok.value
 
-        self.__next_tok()  # eat NAME
+            self.__next_tok()  # eat NAME
 
-        catch_block = self.__parse_block()
-        if catch_block is None:
-            self.__syntax_error()
+            catch_block = self.__parse_block()
+            if catch_block is None:
+                self.__syntax_error()
 
         if self.__now_tok != 'finally':
+            if not has_catch_block:
+                self.__syntax_error()
+
             return ast.TryCatchExprAST(
                     try_block, catch_block, 
                     ast.BlockExprAST([], self.__now_ln), cname, ln)
