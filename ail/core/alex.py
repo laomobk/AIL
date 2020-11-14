@@ -486,7 +486,8 @@ class Lex:
                     if self.__nextch(2) == '=':  # <<=, >>=
                         if c + self.__nextch() not in ('<<', '>>'):
                             self.__error_msg(
-                                      'Syntax error:{0}'.format(c + self.__nextch() + self.__nextch(2)),)
+                                      'Syntax error:{0}'.format(
+                                          c + self.__nextch() + self.__nextch(2)),)
 
                         self.__stream.append(Token(c + c + '=',
                                                    {
@@ -522,8 +523,8 @@ class Lex:
                         self.__stream.append(Token(
                             c + self.__nextch(),
                             {
-                                '>>': AIL_INP_RSHIFT,
-                                '<<': AIL_INP_LSHIFT
+                                '>>': AIL_RSHIFT,
+                                '<<': AIL_LSHIFT
                             }[c + self.__nextch()],
                             self.__ln
                         ))

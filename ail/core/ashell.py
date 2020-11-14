@@ -27,6 +27,12 @@ error.THROW_ERROR_TO_PYTHON = True
 _MORE_KEYWORD = ('is', 'then', 'do', 'try', 'finally')
 _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
+_VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
+_WELCOME_STR = \
+'''AIL %s
+Type 'help', 'copyright()' to get more information, 'exit()' to exit.
+''' % _VER_STR
+
 
 def _sh_exit():
     sys.exit(0)
@@ -88,15 +94,7 @@ class Shell:
 
     @staticmethod
     def __print_welcome_text():
-        v = ''
-
-        try:
-            v = AIL_VERSION
-        except KeyError:
-            pass
-
-        print('AIL shell %s' % ('(AIL version = %s)' % v) if v else '')
-        print('Type \'exit()\' to exit.\n')
+        print(_WELCOME_STR)
 
     def __run_single_line(self, line: str, block=False):
         single_line = not block

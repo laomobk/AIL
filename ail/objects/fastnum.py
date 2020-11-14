@@ -17,5 +17,5 @@ class FastNumber(obj.AILObject):
         self._value = pynum
 
     def __str(self, *_) -> str:
-        return '< %s >' % self._value
+        return '%s' % self._value
 

@@ -1,7 +1,3 @@
 
-try {
-    print 726
-} finally {
-    print 5013
-}
+1 << 0
 

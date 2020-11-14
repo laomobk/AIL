@@ -439,9 +439,6 @@ class Interpreter:
                 op_method = getattr(a_val, pymth, None)
 
                 if op_method is not None:
-                    if b_val == 0:
-                        self.raise_error(
-                                'division by zero', 'ZeroDivisionError')
                     res = op_method(b_val)
                     if res is not NotImplemented:
                         return objs.convert_to_ail_number(res)
