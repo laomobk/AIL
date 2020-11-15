@@ -2,7 +2,6 @@ begin
 
 // I LOVE YOU...
 
-
 _y_decr = fnum(0.1)
 _x_incr = fnum(0.05)
 _zero = fnum(0)

@@ -1,2 +1,7 @@
 
-import 'mypkg/'
+try {
+    import 'e_test'
+} catch err {
+    print err.toString()
+}
+

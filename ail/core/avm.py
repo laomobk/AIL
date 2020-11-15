@@ -1246,6 +1246,7 @@ class Interpreter:
                         signal = interrupt.signal
                         if signal != -1:
                             self.__interrupt_signal = signal
+
                 except KeyboardInterrupt as _:
                     try:
                         self.raise_error('KeyboardInterrupt', 'Interrupt')
@@ -1263,6 +1264,13 @@ class Interpreter:
                                             self.__tof.lineno))
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_BREAK
+
+                except error._AILRuntimeError as err:
+                    try:
+                        self.raise_error(str(err), 'AILRuntimeError')
+                    except VMInterrupt as interrupt:
+                        self.__interrupted = True
+                        self.__interrupt_signal = interrupt.signal
 
                 # handle interruption
                 if self.__interrupted:

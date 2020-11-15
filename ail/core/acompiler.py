@@ -403,8 +403,8 @@ class Compiler:
 
         jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
         # for clean_catch
-        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 1
-        # for jump_absolute
+        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
+        # for jump_absolute and setup_try
 
         if has_finally:
             fn_ext = jump_over

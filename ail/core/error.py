@@ -6,7 +6,7 @@ from .shared import GLOBAL_SHARED_DATA
 
 
 ERR_NOT_EXIT = False
-THROW_ERROR_TO_PYTHON = False
+THROW_ERROR_TO_PYTHON = True
 
 
 def get_line_from_file(lno: int, fp: str, strip=True):

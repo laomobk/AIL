@@ -1,5 +1,7 @@
 
-import '_nezha' (DATE)
-
-print DATE
+try {
+    import 'e_test'
+} catch err {
+    print err
+}
 
