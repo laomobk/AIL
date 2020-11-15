@@ -792,13 +792,24 @@ class Compiler:
 
     def __compile_import_stmt(self, tree: ast.ImportAST) -> ByteCode:
         bc = ByteCode()
+        ln = tree.ln
 
         nsi = self.__buffer.add_const(tree.path)
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
-        bc.add_bytecode(import_name, nsi, tree.ln)
-        bc.add_bytecode(store_var, ni, tree.ln)
-        bc.add_bytecode(pop_top, 0, tree.ln)  # pop top of stack after store_var
+        bc.add_bytecode(import_name, nsi, ln)
+
+        if len(tree.members) == 0:
+            bc.add_bytecode(store_var, ni, ln)
+            bc.add_bytecode(pop_top, 0, ln)  
+            # pop top of stack after store_var
+        else:  # likes from ... import ...
+            for name in tree.members:
+                mni = self.__buffer.get_or_add_varname_index(name)
+                bc.add_bytecode(import_from, mni, ln)
+                bc.add_bytecode(store_var, mni, ln)
+                bc.add_bytecode(pop_top, 0, -1)
+            bc.add_bytecode(pop_top, 0, -1)  # pop module object 
 
         return bc
 

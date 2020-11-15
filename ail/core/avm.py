@@ -764,7 +764,7 @@ class Interpreter:
                     # 速度可能会慢些
 
                     # print(self.__opcounter, get_opname(op),
-                    #        self.__tof, self.__stack, self.__tof.lineno)
+                    #       self.__tof, self.__stack, self.__tof.lineno)
 
                     # print(self.__opcounter, self.__stack)
                     # print(self.__opcounter, get_opname(op), self.__frame_stack)
@@ -1126,6 +1126,20 @@ class Interpreter:
                             module_object = module.new_module_object(
                                 name, module_path, namespace)
                             self.__push_back(module_object)
+
+                    elif op == import_from:
+                        module_object = self.__tof.stack[-1]
+                        name = self.__tof.varnames[argv]
+
+                        ns = module_object.properties['__namespace__']
+                        m_name = module_object.properties['__name__']
+                        if name in ns:
+                            self.__tof.stack.append(ns[name])
+                        else:
+                            self.raise_error(
+                                    'Cannot import \'%s\' from \'%s\'' % (
+                                        name, m_name), 
+                                    'ImportError')
 
                     elif op == store_subscr:
                         i = self.__pop_top()

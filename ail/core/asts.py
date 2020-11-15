@@ -400,10 +400,11 @@ class LoadAST:
 
 
 class ImportAST:
-    def __init__(self, path: str, name: str, ln: int):
+    def __init__(self, path: str, name: str, ln: int, members: List[str] = None):
         self.path = path
         self.name = name
         self.ln = ln
+        self.members = members if members is not None else list()
 
 
 class StructDefineAST:

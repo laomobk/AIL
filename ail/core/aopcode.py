@@ -102,6 +102,8 @@ jump_forward = 0x43
 setup_finally = 0x44
 end_finally = 0x45
 
+import_from = 0x46
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

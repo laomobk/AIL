@@ -1169,7 +1169,29 @@ class Parser:
 
         self.__next_tok()  # eat path
 
-        return ast.ImportAST(path, name, ln)
+        if self.__now_tok.ttype != AIL_SLBASKET:
+            return ast.ImportAST(path, name, ln)
+
+        self.__next_tok()  # eat '('
+
+        members = []
+
+        while self.__now_tok.ttype != AIL_SRBASKET:
+            if self.__now_tok.ttype != AIL_IDENTIFIER:
+                self.__syntax_error()
+            members.append(self.__now_tok.value)
+            self.__next_tok()  # eat name
+
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                break
+            
+            if self.__now_tok.ttype != AIL_COMMA:
+                self.__syntax_error()
+            self.__next_tok()  # eat ','
+
+        self.__next_tok()  # eat ')'
+
+        return ast.ImportAST(path, name, ln, members)
 
     def __parse_load_stmt(self) -> ast.LoadAST:
         if self.__now_tok != 'load':

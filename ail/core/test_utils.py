@@ -139,7 +139,8 @@ def make_ast_tree(a) -> dict:
         return {'LoadAST': {'name': a.path}}
 
     elif isinstance(a, ast.ImportAST):
-        return {'ImportAST': {'path': a.path, 'name': a.name}}
+        return {'ImportAST': {
+            'path': a.path, 'name': a.name, 'members': a.members}}
 
     elif isinstance(a, ast.MemberAccessAST):
         return {'MemberAccessAST': {
@@ -205,6 +206,7 @@ class ByteCodeDisassembler:
         opcs.store_attr,
         opcs.setup_catch,
         opcs.bind_function,
+        opcs.import_from,
     )
 
     __SHOW_CONST = (
