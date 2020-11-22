@@ -385,8 +385,8 @@ class Compiler:
         bc = ByteCode()
         clbc = ByteCode()  # clean err variable
 
-        extofs += _BYTE_CODE_SIZE  # for setup_try
         has_finally = len(tree.finally_block.stmts) > 0
+        extofs += _BYTE_CODE_SIZE * (2 if has_finally else 1)  # for setup_try
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
@@ -401,8 +401,8 @@ class Compiler:
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
-        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE
-        # for clean_catch
+        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 2
+        # for pop_catch and pop_finally (if it has)
         to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
         # for jump_absolute and setup_try
 
@@ -412,6 +412,8 @@ class Compiler:
         else:
             fnbc = ByteCode()
 
+        if has_finally:
+            bc.add_bytecode(setup_finally, fn_ext, tree.ln)
         bc.add_bytecode(setup_try, to_catch, tree.ln)
         bc += tbc
         bc.add_bytecode(pop_try, 0, -1)
@@ -420,6 +422,8 @@ class Compiler:
         bc += cabc
         bc += clbc
         bc.add_bytecode(pop_catch, 0, -1)
+        if has_finally:
+            bc.add_bytecode(pop_finally, 0, -1)
         bc += fnbc
 
         return bc

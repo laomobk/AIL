@@ -1,7 +1,19 @@
 
-try {
-    import 'e_test'
-} catch err {
-    print err
+fun f() {
+    try {
+        print 'try 1 / 0'
+        1 / 0
+    } catch err {
+        print err
+    } finally {
+        try {
+            print 'try in finally'
+            return 'try'
+        } finally {
+            print 'finally in finally'
+            return 'finally in finally'
+        }
+    }
 }
 
+print f()

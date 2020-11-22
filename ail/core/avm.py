@@ -19,7 +19,7 @@ from . import (
     aloader
 )
 
-from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH
+from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH, BLOCK_FINALLY
 from .agc import GC
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
@@ -159,6 +159,8 @@ class Interpreter:
         self.__exec_for_module = False
 
         self.__global_frame = None
+
+        self.__return_value = None
     
     @property
     def __tof(self) -> Frame:
@@ -434,38 +436,45 @@ class Interpreter:
                 return objs.convert_to_ail_object(a_val + b_val)
 
             elif a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
-                a_val = a['__value__']
-                b_val = b['__value__']
-                op_method = getattr(a_val, pymth, None)
+                try:
+                    a_val = a['__value__']
+                    b_val = b['__value__']
+                    op_method = getattr(a_val, pymth, None)
 
-                if op_method is not None:
-                    res = op_method(b_val)
-                    if res is not NotImplemented:
+                    if op_method is not None:
+                        res = op_method(b_val)
+                        if res is not NotImplemented:
+                            return objs.convert_to_ail_number(res)
+
+                        # make __rxxx__
+                        pymth = pymth[:2] + 'r' + pymth[2:]
+                        op_method = getattr(b_val, pymth, None)
+                        if op_method is None:
+                            self.raise_error(
+                                'Not support operator \'%s\' between %s and %s' % (
+                                    op, a, b),
+                                'TypeError')
+
+                        res = op_method(a_val)
+                        if res is NotImplemented:
+                            self.raise_error(
+                                'Not support operator \'%s\' between %s and %s'
+                                        % (op, a, b),
+                                    'TypeError')
                         return objs.convert_to_ail_number(res)
-
-                    # make __rxxx__
-                    pymth = pymth[:2] + 'r' + pymth[2:]
-                    op_method = getattr(b_val, pymth, None)
-                    if op_method is None:
+                    else:
                         self.raise_error(
                             'Not support operator \'%s\' between %s and %s' % (
                                 op, a, b),
                             'TypeError')
-                    if a_val == 0:
-                        self.raise_error(
-                                'division by zero', 'ZeroDivisionError')
-                    res = op_method(a_val)
-                    if res is NotImplemented:
-                        self.raise_error(
-                            'Not support operator \'%s\' between %s and %s'
-                                    % (op, a, b),
-                                'TypeError')
-                    return objs.convert_to_ail_number(res)
-                else:
+                except ZeroDivisionError as e:
                     self.raise_error(
-                        'Not support operator \'%s\' between %s and %s' % (
-                            op, a, b),
-                        'TypeError')
+                        str(e), 'ZeroDivisionError'
+                    )
+                except Exception as e:
+                    self.raise_error(
+                        str(e), 'PythonMathError'
+                    )
 
             m = a[ailmth]
             mb = b[ailmth]
@@ -521,8 +530,11 @@ class Interpreter:
 
         return true if res else false
 
-    def __manage_block(self, block: Block):
-        pass
+    def __check_block(self, block: Block) -> VMInterrupt:
+        if block.type == BLOCK_FINALLY:
+            self.__opcounter = block.handler
+            return VMInterrupt(MII_DO_JUMP)
+        return None
 
     def __pop_and_get_block(self, b_type: int) -> Block:
         stack = self.__block_stack
@@ -676,6 +688,7 @@ class Interpreter:
                     else:
                         self.__opcounter = self.__tof._latest_call_opcounter
                         # 如无异常，则还原字节码计数器
+                    self.__push_back(self.__return_value)
 
                 except RecursionError as e:
                     self.raise_error(str(e), 'PythonError')
@@ -730,19 +743,15 @@ class Interpreter:
                     func['__class__'].name, 'TypeError')
 
     def __return(self):
-        tos = self.__pop_top()
-
-        if len(self.__frame_stack) > 1:
-            f = self.__frame_stack.pop()
-            for o in f.variable.values():
-                self.__decref(o)
-
-            self.__tof.stack.append(tos)
-
-        else:
-            self.__decref(tos)
-
-        self.__can = 0
+        self.__return_value = self.__pop_top()
+        stack = self.__block_stack
+        while stack:
+            block = stack[-1]
+            interrupt = self.__check_block(block)
+            stack.pop()
+            if interrupt is not None:
+                raise interrupt
+        raise VMInterrupt(MII_RETURN)
 
     def __run_bytecode(self, cobj: objs.AILCodeObject, frame: Frame = None):
         self.__push_new_frame(cobj, frame)
@@ -1194,6 +1203,9 @@ class Interpreter:
                         msg = str(self.__pop_top())
                         self.raise_error(msg, 'Throw')
 
+                    elif op == setup_finally:
+                        self.__push_block(BLOCK_FINALLY, argv)
+
                     elif op == setup_try:
                         self.__push_block(BLOCK_TRY, argv)
 
@@ -1207,6 +1219,9 @@ class Interpreter:
                         self.__store_var(name, err)  # store this error with 'name'
 
                     elif op == pop_try:
+                        self.__pop_block()
+
+                    elif op == pop_finally:
                         self.__pop_block()
 
                     elif op == pop_catch:
@@ -1284,16 +1299,19 @@ class Interpreter:
                         jump_to = self.__opcounter
                         continue
 
+                    elif self.__interrupt_signal == MII_RETURN:
+                        self.__frame_stack.pop()
+                        why = WHY_NORMAL
+                        break
+
                     elif self.__interrupt_signal == MII_ERR_BREAK:
                         why = WHY_ERROR
                         self.__can_update_opc = False
-
                         break
                     
                     elif self.__interrupt_signal == MII_ERR_EXIT:
                         why = WHY_ERR_EXIT
                         self.__can_update_opc = False
-
                         break
 
                     elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
