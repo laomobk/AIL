@@ -1,0 +1,20 @@
+
+import './candy' (newCandy)
+
+CANDY_A = 0
+CANDY_B = 1
+CANDY_C = 2
+
+struct CandyFactory {}
+
+_candy_info = ['A', 'B', 'C']
+_candy_price = [1.5, 0.5, 2]
+
+fun (CandyFactory) getCandy(self, candy_type) {
+    if candy_type >= len(_candy_info) or candy_type < 0 {
+        return null
+    }
+    return newCandy(
+            _candy_info[candy_type], _candy_price[candy_type])
+}
+

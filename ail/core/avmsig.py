@@ -11,6 +11,7 @@ WHY_ERROR = 0x2
 WHY_NORMAL = 0x3
 WHY_HANDLING_ERR = 0x6
 WHY_ERR_EXIT = 0x7
+WHY_RETURN = 0x8
 
 
 class VMInterrupt(BaseException):

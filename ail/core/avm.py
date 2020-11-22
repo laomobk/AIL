@@ -517,9 +517,12 @@ class Interpreter:
                 self.raise_error('Not support \'%s\' between %s and %s' % 
                                     (op, a, b),
                                  'TypeError')
-            res = opm(b)
+            res = opm(a, b)
 
         return true if res else false
+
+    def __manage_block(self, block: Block):
+        pass
 
     def __pop_and_get_block(self, b_type: int) -> Block:
         stack = self.__block_stack
