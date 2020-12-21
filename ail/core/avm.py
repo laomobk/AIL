@@ -19,7 +19,10 @@ from . import (
     aloader
 )
 
-from .aframe import Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH, BLOCK_FINALLY
+from .aframe import (
+        Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH, BLOCK_FINALLY
+)
+
 from .agc import GC
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
@@ -161,6 +164,7 @@ class Interpreter:
         self.__global_frame = None
 
         self.__return_value = None
+        self.__returning = False
     
     @property
     def __tof(self) -> Frame:

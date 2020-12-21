@@ -381,11 +381,111 @@ class Compiler:
 
         return bc
 
-    def __compile_try_catch_expr(self, tree: ast.TryCatchExprAST, extofs: int = 0):
+    def __compile_try_catch_expr(self, tree: ast.TryCatchExprAST, extofs: int = 0):     
+        # structure of try-catch-finally block:
+        # ? setup_finally:  $finally block  (has finally)   +
+        # ? setup_try:      $catch block    (has catch)     +
+        #
+        #   [real_try_block]
+        #   pop_try                                         +
+        #
+        # ? load_const:     null            (has finally)   +
+        # ? jump_absolute:  $over catch     (has catch)     +
+        #   
+        # > catch block:                    (has catch)
+        # 
+        #   setup_catch:    $name_index                     +
+        #   [real_catch_block]
+        #   pop_catch                                       +
+        #
+        # > finally block:                  (has finally)
+        #
+        #   [real_finally_block]
+        #   pop_finally                                     +
+
+        bc = ByteCode()
+        clbc = ByteCode()
+
+        has_finally = len(tree.finally_block.stmts) > 0
+        has_catch = len(tree.catch_block.stmts) > 0
+        if not has_finally:
+            assert has_catch  # otherwise, this try block is meaningless.
+        else:
+            null_index = self.__buffer.add_const(null)
+
+        head_extofs = extofs + \
+                _BYTE_CODE_SIZE * (int(has_finally) + int(has_catch))
+
+        try_block_extofs = head_extofs
+
+        name_index = self.__buffer.get_or_add_varname_index(tree.name)
+
+        try_bc = self.__compile_block(tree.try_block, try_block_extofs)
+        catch_bc = ByteCode()
+        finally_bc = ByteCode()
+
+        catch_block_extofs = head_extofs + \
+                             len(try_bc.blist) + \
+                             _BYTE_CODE_SIZE + \
+                             _BYTE_CODE_SIZE * (
+                                int(has_finally) +  # load_const (null)
+                                int(has_catch)    # jump_absolute $over catch
+                             ) + \
+                             _BYTE_CODE_SIZE  # setup_catch
+
+        if has_catch:
+            catch_bc = self.__compile_block(tree.catch_block, catch_block_extofs)
+        else:
+            catch_block_extofs -= _BYTE_CODE_SIZE  # -setup_catch
+
+        finally_block_extofs = catch_block_extofs
+        if has_catch:
+            finally_block_extofs += len(catch_bc.blist) + \
+                                    _BYTE_CODE_SIZE  # pop_catch
+
+        if has_finally:
+            finally_bc = self.__compile_block(
+                    tree.finally_block, finally_block_extofs)
+        
+        whole_extofs = finally_block_extofs + len(finally_bc.blist) + \
+                       _BYTE_CODE_SIZE  # pop_finally
+
+        # build block bytecode
+
+        to_finally = finally_block_extofs
+        to_catch = catch_block_extofs - _BYTE_CODE_SIZE  # setup_catch
+        
+        if has_finally:
+            bc.add_bytecode(setup_finally, to_finally, -1)
+        if has_catch:
+            bc.add_bytecode(setup_try, to_catch, -1)
+
+        bc += try_bc
+        bc.add_bytecode(pop_try, 0, -1)
+        
+        if has_finally:
+            bc.add_bytecode(load_const, null_index, -1)
+
+        if has_catch:
+            bc.add_bytecode(jump_absolute, to_finally, -1)
+
+            bc.add_bytecode(setup_catch, name_index, -1)
+            bc += catch_bc
+            bc.add_bytecode(pop_catch, 0, -1)
+
+        if has_finally:
+            bc += finally_bc
+            bc.add_bytecode(pop_finally, 0, -1)
+
+        return bc
+
+    def __compile_try_catch_expr0(self,
+            tree: ast.TryCatchExprAST, extofs: int = 0):
         bc = ByteCode()
         clbc = ByteCode()  # clean err variable
 
         has_finally = len(tree.finally_block.stmts) > 0
+        has_catch = len(tree.catch_block.stmts) > 0
         extofs += _BYTE_CODE_SIZE * (2 if has_finally else 1)  # for setup_try
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
@@ -401,29 +501,38 @@ class Compiler:
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
-        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 2
-        # for pop_catch and pop_finally (if it has)
-        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * 2
-        # for jump_absolute and setup_try
+        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 3
+        # for pop_catch load_const, and pop_finally (if it has)
+        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * (
+                3 if has_finally else 2) 
+        # for load_const (if necessary), jump_absolute and setup_try
 
         if has_finally:
-            fn_ext = jump_over
             fnbc = self.__compile_block(tree.finally_block, jump_over)
         else:
             fnbc = ByteCode()
 
         if has_finally:
             bc.add_bytecode(setup_finally, fn_ext, tree.ln)
-        bc.add_bytecode(setup_try, to_catch, tree.ln)
-        bc += tbc
-        bc.add_bytecode(pop_try, 0, -1)
-        bc.add_bytecode(jump_absolute, jump_over, -1)
-        bc.add_bytecode(setup_catch, ni, -1)
-        bc += cabc
-        bc += clbc
-        bc.add_bytecode(pop_catch, 0, -1)
+
+        if has_catch:
+            bc.add_bytecode(setup_try, to_catch, tree.ln)
+            bc += tbc
+            bc.add_bytecode(pop_try, 0, -1)
+
+        if has_finally:
+            bc.add_bytecode(load_const, self.__buffer.add_const(null), -1)
+        
+        if has_catch:
+            bc.add_bytecode(jump_absolute, jump_over, -1)
+            bc.add_bytecode(setup_catch, ni, -1)
+            bc += cabc
+            bc += clbc
+            bc.add_bytecode(pop_catch, 0, -1)
+        
         if has_finally:
             bc.add_bytecode(pop_finally, 0, -1)
+
         bc += fnbc
 
         return bc
