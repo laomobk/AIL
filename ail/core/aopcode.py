@@ -104,6 +104,10 @@ pop_finally = 0x45
 
 import_from = 0x46
 
+push_none = 0x47
+
+end_finally = 0x48
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

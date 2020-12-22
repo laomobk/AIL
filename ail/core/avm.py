@@ -534,9 +534,11 @@ class Interpreter:
 
         return true if res else false
 
-    def __check_block(self, block: Block) -> VMInterrupt:
+    def __check_block(self, block: Block, for_return: bool = False) -> VMInterrupt:
         if block.type == BLOCK_FINALLY:
             self.__opcounter = block.handler
+            if for_return:
+                self.__push_back(WHY_RETURN)
             return VMInterrupt(MII_DO_JUMP)
         return None
 
@@ -746,15 +748,16 @@ class Interpreter:
                     '\'%s\' object is not callable.' %
                     func['__class__'].name, 'TypeError')
 
-    def __return(self):
-        self.__return_value = self.__pop_top()
+    def __return(self, set_value: bool = True):
+        if set_value:
+            self.__return_value = self.__pop_top()
         stack = self.__block_stack
         while stack:
             block = stack[-1]
-            interrupt = self.__check_block(block)
-            stack.pop()
+            interrupt = self.__check_block(block, True)
             if interrupt is not None:
                 raise interrupt
+            stack.pop()
         raise VMInterrupt(MII_RETURN)
 
     def __run_bytecode(self, cobj: objs.AILCodeObject, frame: Frame = None):
@@ -883,6 +886,9 @@ class Interpreter:
                             else:
                                 self.raise_error(
                                     'name \'%s\' is not defined' % n, 'NameError')
+
+                    elif op == push_none:
+                        self.__push_back(None)
 
                     elif op == return_value:
                         self.__return()
@@ -1224,9 +1230,16 @@ class Interpreter:
 
                     elif op == pop_try:
                         self.__pop_block()
-
+                    
                     elif op == pop_finally:
                         self.__pop_block()
+
+                    elif op == end_finally:
+                        self.__pop_block()
+                        why = self.__pop_top()  # if no why, None will be pushed.
+
+                        if why == WHY_RETURN:
+                            self.__return(False)
 
                     elif op == pop_catch:
                         ts = self.__temp_env_stack.pop()

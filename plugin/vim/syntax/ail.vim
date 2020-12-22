@@ -13,7 +13,7 @@ syn keyword ailStmt	then end endif is begin wend
 syn keyword ailStmt	fun struct
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
-syn keyword ailStmt try catch
+syn keyword ailStmt try catch finally
 syn keyword ailStmt break continue
 syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal

@@ -1,11 +1,11 @@
 
 fun f() {
     try {
-        a = 0
-    } catch err {
-        b = err
+        a = 'nezha'
+        return a
     } finally {
-        c = 0
+        b = 'aobing'
+        return b
     }
 }
 
