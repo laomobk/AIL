@@ -1,12 +1,26 @@
 
 fun f() {
     try {
-        a = 'nezha'
-        return a
+        1 / 0
     } finally {
-        b = 'aobing'
-        return b
+        print 'error'
     }
 }
 
-print f()
+fun f2() {
+    a = 0
+    while a < 10 {
+        try {
+            continue
+        } finally {
+            print a
+            ++a
+        }
+    }
+}
+
+fun f3() {
+    1 / 0
+}
+
+print f3()

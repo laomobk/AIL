@@ -300,7 +300,7 @@ class Interpreter:
             else:
                 return self.__tof.variable.pop(name, None)
 
-    def raise_error(self, msg: str, err_type: str):
+    def raise_error(self, msg: str, err_type: str, reraise: bool = False):
         errs = make_err_struct_object(
             error.AILRuntimeError(
                 msg, err_type, self.__tof, self.get_stack_trace()),
@@ -309,14 +309,27 @@ class Interpreter:
         if err_type != 'VMError':
             self.__now_state.err_stack.append(errs)
         else:
-            error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
+            error.print_exception_for_vm(
+                    self.__now_state.handling_err_stack, errs)
             raise VMInterrupt(MII_ERR_BREAK, handle_it=False)
-
-        self.__now_state.handling_err_stack.append(errs)
+        
+        if not reraise:
+            self.__now_state.handling_err_stack.append(errs)
 
         stack = self.__block_stack
         while stack:
-            b = stack.pop()
+            b = stack[-1]
+            if b.type == BLOCK_FINALLY:
+                self.__push_back(err_type)
+                self.__push_back(msg)
+                self.__push_back(WHY_HANDLING_ERR)
+
+                self.__now_state.err_stack.pop()
+                self.__opcounter = b.handler
+                raise VMInterrupt(MII_DO_JUMP)
+
+            stack.pop()
+
             if b.type != BLOCK_TRY:
                 continue
 
@@ -572,17 +585,29 @@ class Interpreter:
         if '__value__' in obj.properties:
             return bool(obj.properties['__value__'])
 
-    def __pop_and_unwind_block(self) -> Block:
-        b = self.__block_stack.pop()
+    def __pop_and_unwind_block(self, why) -> Block:
+        stack = self.__block_stack
+        b = self.__block_stack[-1]
+
         if b.type == BLOCK_CATCH:
             self.__now_state.handling_err_stack.pop(0)
+        elif b.type == BLOCK_FINALLY:
+            if why == WHY_BREAK or why == WHY_CONTINUE:
+                for loop_b in stack[::-1]:
+                    if loop_b.type == BLOCK_LOOP:
+                        break
+                self.__push_back(loop_b.handler)
+                self.__push_back(why)
+                self.__opcounter = b.handler
+                raise VMInterrupt(MII_DO_JUMP)
 
+        stack.pop()
         return b
 
     def __check_break(self) -> int:
         stack = self.__block_stack
         while stack:
-            b = self.__pop_and_unwind_block()
+            b = self.__pop_and_unwind_block(WHY_BREAK)
             if b.type == BLOCK_LOOP:
                 return b.handler
         self.raise_error('no block to handle \'break\'', 'VMError')
@@ -601,7 +626,7 @@ class Interpreter:
             if b.type == BLOCK_LOOP:
                 loop_block = b
                 break
-            self.__pop_and_unwind_block()
+            self.__pop_and_unwind_block(WHY_CONTINUE)
         else:
             self.raise_error('no block to handle continue', 'VMError')
 
@@ -1235,11 +1260,23 @@ class Interpreter:
                         self.__pop_block()
 
                     elif op == end_finally:
-                        self.__pop_block()
                         why = self.__pop_top()  # if no why, None will be pushed.
 
                         if why == WHY_RETURN:
                             self.__return(False)
+
+                        elif why == WHY_HANDLING_ERR:
+                            msg = self.__pop_top()
+                            err_type = self.__pop_top()
+                            self.raise_error(msg, err_type, True)
+
+                        elif why == WHY_CONTINUE or why == WHY_BREAK:
+                            goto = self.__pop_top()
+                            goto -= _BYTE_CODE_SIZE * 2 * int(why == WHY_CONTINUE)
+                            # if is continue, go back one bytecode
+                            
+                            self.__opcounter = goto
+                            raise VMInterrupt(MII_DO_JUMP)
 
                     elif op == pop_catch:
                         ts = self.__temp_env_stack.pop()
@@ -1339,7 +1376,7 @@ class Interpreter:
                             self.__frame_stack.pop()
 
                         can = self.__handle_error()
-
+                        
                         if not can:
                             why = WHY_HANDLING_ERR
                             break

@@ -387,7 +387,7 @@ class Compiler:
         # ? setup_try:      $catch block    (has catch)     +
         #
         #   [real_try_block]
-        #   pop_try                                         +
+        #   pop_try                         (has catch)     +
         #
         # ? jump_absolute:  $over catch     (has catch)     +
         #   
@@ -398,11 +398,12 @@ class Compiler:
         #   pop_catch                                       +
         #
         # ? push_none                       (has finally)   +
+        #   pop_finally                     (has_finally)   +
         #
         # > finally block:                  (has finally)
         #
         #   [real_finally_block]
-        #   pop_finally                                     +
+        #   end_finally                                     +
 
         bc = ByteCode()
         clbc = ByteCode()
@@ -425,10 +426,9 @@ class Compiler:
 
         catch_block_extofs = head_extofs + \
                              len(try_bc.blist) + \
-                             _BYTE_CODE_SIZE + \
                              _BYTE_CODE_SIZE * (
                                 int(has_catch)    # jump_absolute $over catch
-                             ) + \
+                             ) * 2 + \
                              _BYTE_CODE_SIZE  # setup_catch
 
         if has_catch:
@@ -437,7 +437,7 @@ class Compiler:
             catch_block_extofs -= _BYTE_CODE_SIZE  # -setup_catch
 
         finally_block_extofs = catch_block_extofs + \
-                               _BYTE_CODE_SIZE  # push_none
+                               _BYTE_CODE_SIZE * 2 # push_none and pop_finally
         if has_catch:
             finally_block_extofs += len(catch_bc.blist) + \
                                     _BYTE_CODE_SIZE  # pop_catch
@@ -451,9 +451,10 @@ class Compiler:
 
         # build block bytecode
         
-        to_finally = finally_block_extofs
+        to_finally = finally_block_extofs - _BYTE_CODE_SIZE  # -pop_finally
         jump_to_finally = finally_block_extofs - \
-                          _BYTE_CODE_SIZE if has_finally else 0  # push_none
+                          (_BYTE_CODE_SIZE * 2) if has_finally else 0  
+                          # push_none and pop_finally
         to_catch = catch_block_extofs - _BYTE_CODE_SIZE  # setup_catch
         
         if has_finally:
@@ -461,10 +462,10 @@ class Compiler:
         if has_catch:
             bc.add_bytecode(setup_try, to_catch, -1)
 
-        bc += try_bc
-        bc.add_bytecode(pop_try, 0, -1) 
+        bc += try_bc 
 
         if has_catch:
+            bc.add_bytecode(pop_try, 0, -1)
             bc.add_bytecode(jump_absolute, jump_to_finally, -1)
 
             bc.add_bytecode(setup_catch, name_index, -1)
@@ -473,8 +474,9 @@ class Compiler:
 
         if has_finally:
             bc.add_bytecode(push_none, 0, -1)
-            bc += finally_bc
             bc.add_bytecode(pop_finally, 0, -1)
+            bc += finally_bc
+            bc.add_bytecode(end_finally, 0, -1)
 
         return bc
 
