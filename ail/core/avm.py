@@ -361,10 +361,11 @@ class Interpreter:
         try_block = None
         # find catch block
         stack = self.__block_stack
-        if stack:
+        while stack:
             b = stack.pop()
             if b.type == BLOCK_TRY:
                 try_block = b
+                break
 
         if try_block is not None:
             to = try_block.handler
