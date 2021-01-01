@@ -336,28 +336,23 @@ class Interpreter:
             self.__opcounter = b.handler
             raise VMInterrupt(MII_DO_JUMP)
 
-        for f in self.__frame_stack:
-            for b in f.block_stack:
-                if b.type == BLOCK_TRY:
-                    break
-        else:
-            error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
+        if len(self.__stack) > 1:
+            raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
-            # if not ERR_NOT_EXIT (usually), the following code will not execute.
+        error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
 
-            # Used to be to get used to shell, it's useless now.
-            # if not error.ERR_NOT_EXIT:
-            #     sys.exit(1)
+        # if not ERR_NOT_EXIT (usually), the following code will not execute.
 
-            # for interactive mode.
-            self.__now_state.handling_err_stack.clear()
-            self.__stack.clear()
-            self.__can = 0
+        # Used to be to get used to shell, it's useless now.
+        # if not error.ERR_NOT_EXIT:
+        #     sys.exit(1)
 
-            raise VMInterrupt(MII_ERR_BREAK)
+        # for interactive mode.
+        self.__now_state.handling_err_stack.clear()
+        self.__stack.clear()
+        self.__can = 0
 
-        # set interrupt signal.
-        raise VMInterrupt(MII_ERR_POP_TO_TRY)
+        raise VMInterrupt(MII_ERR_BREAK)
 
     def __handle_error(self, for_func_call=False) -> bool:
         """
