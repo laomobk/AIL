@@ -1,7 +1,5 @@
 begin
 
-import 'mypkg/'
-
-print mypkg.nezha
+import 'b'
 
 end

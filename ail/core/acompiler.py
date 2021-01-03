@@ -436,8 +436,9 @@ class Compiler:
         else:
             catch_block_extofs -= _BYTE_CODE_SIZE  # -setup_catch
 
-        finally_block_extofs = catch_block_extofs + \
-                               _BYTE_CODE_SIZE * 2 # push_none and pop_finally
+        finally_block_extofs = catch_block_extofs + (
+                               _BYTE_CODE_SIZE * 2 if has_finally else 0) 
+        # push_none and pop_finally
         if has_catch:
             finally_block_extofs += len(catch_bc.blist) + \
                                     _BYTE_CODE_SIZE  # pop_catch
@@ -452,8 +453,8 @@ class Compiler:
         # build block bytecode
         
         to_finally = finally_block_extofs - _BYTE_CODE_SIZE  # -pop_finally
-        jump_to_finally = finally_block_extofs - \
-                          (_BYTE_CODE_SIZE * 2) if has_finally else 0  
+        jump_to_finally = finally_block_extofs - (
+                          (_BYTE_CODE_SIZE * 2) if has_finally else 0 )
                           # push_none and pop_finally
         to_catch = catch_block_extofs - _BYTE_CODE_SIZE  # setup_catch
         

@@ -300,7 +300,7 @@ class Interpreter:
             else:
                 return self.__tof.variable.pop(name, None)
 
-    def raise_error(self, msg: str, err_type: str, reraise: bool = False):
+    def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
                 msg, err_type, self.__tof, self.get_stack_trace()),
@@ -309,74 +309,49 @@ class Interpreter:
         if err_type != 'VMError':
             self.__now_state.err_stack.append(errs)
         else:
+            # force terminate.
+            self.__now_state.handling_err_stack.extend(self.__now_state.err_stack)
             error.print_exception_for_vm(
                     self.__now_state.handling_err_stack, errs)
             raise VMInterrupt(MII_ERR_BREAK, handle_it=False)
-        
-        if not reraise:
-            self.__now_state.handling_err_stack.append(errs)
 
-        stack = self.__block_stack
-        while stack:
-            b = stack[-1]
-            if b.type == BLOCK_FINALLY:
-                self.__push_back(err_type)
-                self.__push_back(msg)
-                self.__push_back(WHY_HANDLING_ERR)
+        raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
-                self.__now_state.err_stack.pop()
-                self.__opcounter = b.handler
-                raise VMInterrupt(MII_DO_JUMP)
-
-            stack.pop()
-
-            if b.type != BLOCK_TRY:
-                continue
-
-            self.__opcounter = b.handler
-            raise VMInterrupt(MII_DO_JUMP)
-
-        if len(self.__stack) > 1:
-            raise VMInterrupt(MII_ERR_POP_TO_TRY)
-
-        error.print_exception_for_vm(self.__now_state.handling_err_stack, errs)
-
-        # if not ERR_NOT_EXIT (usually), the following code will not execute.
-
-        # Used to be to get used to shell, it's useless now.
-        # if not error.ERR_NOT_EXIT:
-        #     sys.exit(1)
-
-        # for interactive mode.
-        self.__now_state.handling_err_stack.clear()
-        self.__stack.clear()
-        self.__can = 0
-
-        raise VMInterrupt(MII_ERR_BREAK)
-
-    def __handle_error(self, for_func_call=False) -> bool:
+    def __handle_error(self) -> bool:
         """
         :return: True if found try block else False
         """
         try_block = None
-        # find catch block
+        # find catch block or finally block
         stack = self.__block_stack
         while stack:
             b = stack.pop()
             if b.type == BLOCK_TRY:
                 try_block = b
                 break
+            elif b.type == BLOCK_FINALLY:
+                # assert: if this condition is True, it means no try block.
+                self.__push_back(WHY_HANDLING_ERR)
+                self.__opcounter = b.handler
+                self.__interrupted = True
+                self.__interrupt_signal = MII_DO_JUMP
+                stack.append(b)  # push block again.
+                return 
 
         if try_block is not None:
             to = try_block.handler
             self.__opcounter = to
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
-        else:
-            if for_func_call:
-                raise VMInterrupt(MII_ERR_BREAK)
+        elif len(self.__frame_stack) > 1:
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_POP_TO_TRY
+        else:
+            err = self.__now_state.err_stack.pop()
+            self.__now_state.handling_err_stack.extend(self.__now_state.err_stack)
+            error.print_exception_for_vm(self.__now_state.handling_err_stack, err)
+            self.__interrupted = True
+            self.__interrupt_signal = MII_ERR_BREAK
 
     def __chref(self, ailobj: objs.AILObject, mode: int):
         """
@@ -547,6 +522,7 @@ class Interpreter:
         if block.type == BLOCK_FINALLY:
             self.__opcounter = block.handler
             if for_return:
+                self.__push_back(self.__return_value)
                 self.__push_back(WHY_RETURN)
             return VMInterrupt(MII_DO_JUMP)
         return None
@@ -707,9 +683,7 @@ class Interpreter:
 
                     # self.__set_globals(now_globals)
 
-                    if why == WHY_ERROR:
-                        self.__handle_error(True)
-                    elif why == WHY_HANDLING_ERR:
+                    if why == WHY_HANDLING_ERR or why == WHY_ERROR:
                         # do nothing
                         pass
                     else:
@@ -807,7 +781,7 @@ class Interpreter:
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
                     # print(self.__opcounter, self.__stack)
-                    # print(self.__opcounter, get_opname(op), self.__frame_stack)
+                    # print(self.__opcounter, get_opname(op), self.__frame_stack[-1])
 
                     if op == pop_top:
                         tos = self.__pop_top()
@@ -1247,6 +1221,8 @@ class Interpreter:
                         self.__push_block(BLOCK_CATCH, -1)
 
                         err = self.__now_state.err_stack.pop()
+                        self.__now_state.err_stack.clear()  # throw away
+                        self.__now_state.handling_err_stack.append(err)
                         self.__store_var(name, err)  # store this error with 'name'
 
                     elif op == pop_try:
@@ -1259,12 +1235,11 @@ class Interpreter:
                         why = self.__pop_top()  # if no why, None will be pushed.
 
                         if why == WHY_RETURN:
+                            self.__return_value = self.__pop_top()
                             self.__return(False)
 
                         elif why == WHY_HANDLING_ERR:
-                            msg = self.__pop_top()
-                            err_type = self.__pop_top()
-                            self.raise_error(msg, err_type, True)
+                            raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
                         elif why == WHY_CONTINUE or why == WHY_BREAK:
                             goto = self.__pop_top()
@@ -1320,6 +1295,8 @@ class Interpreter:
                         self.raise_error('KeyboardInterrupt', 'Interrupt')
                     except VMInterrupt as interrupt:
                         if interrupt.signal != MII_ERR_BREAK:
+                            self.__now_state.handling_err_stack.extend(
+                                    self.__now_state.err_stack)
                             error.print_exception_for_vm(
                                     self.__now_state.handling_err_stack,
                                         make_err_struct_object(
@@ -1340,6 +1317,10 @@ class Interpreter:
                         self.__interrupted = True
                         self.__interrupt_signal = interrupt.signal
 
+                if self.__interrupted and \
+                        self.__interrupt_signal == MII_ERR_POP_TO_TRY:
+                    self.__handle_error()
+
                 # handle interruption
                 if self.__interrupted:
                     if not self.__can:
@@ -1355,6 +1336,9 @@ class Interpreter:
                         break
 
                     elif self.__interrupt_signal == MII_ERR_BREAK:
+                        self.__interrupted = True
+                        self.__interrupt_signal = MII_ERR_BREAK
+                        # keep interrupted state
                         why = WHY_ERROR
                         self.__can_update_opc = False
                         break
@@ -1367,15 +1351,9 @@ class Interpreter:
                     elif self.__interrupt_signal == MII_ERR_POP_TO_TRY:
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_POP_TO_TRY
-
-                        if len(self.__frame_stack) > 1:
-                            self.__frame_stack.pop()
-
-                        can = self.__handle_error()
-                        
-                        if not can:
-                            why = WHY_HANDLING_ERR
-                            break
+                        self.__frame_stack.pop()
+                        self.__can = 0
+                        break
 
                 if not self.__can:
                     self.__can = 1

@@ -6,7 +6,7 @@ from .shared import GLOBAL_SHARED_DATA
 
 
 ERR_NOT_EXIT = False
-THROW_ERROR_TO_PYTHON = True
+THROW_ERROR_TO_PYTHON = False
 
 
 def get_line_from_file(lno: int, fp: str, strip=True):
@@ -170,8 +170,7 @@ def format_error(error: AILRuntimeError):
 
 def print_exception_for_vm(handling_err_stack: list, err_struct):
     from .modules._error import _err_to_string
-
-    for err in handling_err_stack[:-1]:
+    for err in handling_err_stack:
         sys.stderr.write('Traceback (most recent call last):\n')
         print_stack_trace(err.error_object.stack_trace)
         sys.stderr.write(_err_to_string(err) + '\n')
