@@ -1295,8 +1295,6 @@ class Interpreter:
                         self.raise_error('KeyboardInterrupt', 'Interrupt')
                     except VMInterrupt as interrupt:
                         if interrupt.signal != MII_ERR_BREAK:
-                            self.__now_state.handling_err_stack.extend(
-                                    self.__now_state.err_stack)
                             error.print_exception_for_vm(
                                     self.__now_state.handling_err_stack,
                                         make_err_struct_object(
