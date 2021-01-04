@@ -944,7 +944,8 @@ class Compiler:
         if self.__mode == COMPILER_MODE_FUNC:
             name = '%s.%s' % (self.__name, tree.name)
 
-        cobj = Compiler(mode=COMPILER_MODE_FUNC, filename=self.__filename, name=name,
+        cobj = Compiler(mode=COMPILER_MODE_FUNC, 
+                        filename=self.__filename, name=name,
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = argc
         cobj.var_arg = var_arg
@@ -983,6 +984,7 @@ class Compiler:
             bc.add_bytecode(bind_function, bindtoi, tree.ln)
         else: 
             bc.add_bytecode(store_var, namei, tree.ln)
+            bc.add_bytecode(pop_top, 0, -1)
         
         return bc
 

@@ -7,5 +7,5 @@ AIL_VERSION = '%s.%s %s' % (AIL_MAIN_VERSION,
                             AIL_VERSION_STATE)
 
 
-AIL_COPYRIGHT = '2020 Chenhongbo'
+AIL_COPYRIGHT = '2021 Chenhongbo'
 
