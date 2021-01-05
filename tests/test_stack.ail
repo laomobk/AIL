@@ -13,3 +13,5 @@ fun testRecursion() {
 }
 
 
+testRecursion()
+
