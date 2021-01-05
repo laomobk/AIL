@@ -13,6 +13,13 @@ ALEX_VERSION_DATE = (10, 27, 2019)
 
 __all__ = ['Token', 'TokenStream', 'Lex']
 
+_hex_num_chars = ('0123456789ABCDEFabcdef', 16)
+_ord_num_chars_with_sci = ('0123456789.eE', 10)
+_ord_num_chars = ('0123456789', 10)
+_oct_num_chars = ('01234567', 8)
+_bin_num_chars = ('01', 2)
+_sci_num_chars = ('0123456789+-', 12)
+
 
 def get_source_char(source: str, index: int) -> str:
     if 0 <= index < len(source):
@@ -99,6 +106,65 @@ def get_identifier(source: str, cursor: int) -> tuple:
 
 def get_number(source: str, cursor: int) -> tuple:
     """
+    :return: when 'char offset' = -1, that means it was a invalid number.
+    :returns: (char offset, string value of this number)
+    """
+    buffer = ''
+    char_cur = cursor
+
+    num_chars, base = _ord_num_chars_with_sci
+
+    if cursor >= len(source):
+        return -1, None
+
+    if source[char_cur] == '0':  # special
+        char_cur += 1
+        now_char = get_source_char(source, char_cur)
+
+        num_chars, base = {
+            'x': _hex_num_chars,
+            'X': _hex_num_chars,
+            'o': _oct_num_chars,
+            'O': _oct_num_chars,
+            'b': _bin_num_chars,
+            'B': _bin_num_chars,
+            'e': _sci_num_chars,
+            'E': _sci_num_chars,
+            '.': (num_chars[:-1], 10),  # like ord, but no '.'
+        }.get(now_char, (0, -1))
+
+        if base == -1:
+            return 1, '0'  # just '0'
+        else:
+            char_cur += 1
+            buffer += '0' + now_char
+        
+        now_char = get_source_char(source, char_cur)
+        if now_char not in num_chars or now_char == '':
+            return -1, None
+
+    while char_cur < len(source):
+        ch = get_source_char(source, char_cur)
+
+        if ch not in num_chars:
+            break
+
+        if ch == '.' and '.' in num_chars and base == 10:
+            num_chars = _ord_num_chars[0]  # drop '.'
+        elif (ch == 'e' or ch == 'E') and \
+             ('e' in num_chars or 'E' in num_chars) and \
+             base == 10:
+
+            num_chars = _sci_num_chars[0]
+
+        buffer += ch
+        char_cur += 1
+
+    return char_cur - cursor, buffer
+
+
+def get_number_old(source: str, cursor: int) -> tuple:
+    """
     source : 源码文件
     cursor : 源码字符指针
 
@@ -147,7 +213,8 @@ def get_number(source: str, cursor: int) -> tuple:
     return cur, buffer
 
 
-def parse_complex_escape_character(start_char: str, source: str, index: int) -> tuple:
+def parse_complex_escape_character(
+        start_char: str, source: str, index: int) -> tuple:
     """
     :return: real_char:
              -1: invalid escape character

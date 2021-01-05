@@ -1,0 +1,14 @@
+
+bin_int = 0b1011010110
+
+oct_int = 0o1326
+
+ord_int = 726
+ord_float = 50.13
+
+hex_int = 0x2d6
+
+print '0b1011010110 ->'; bin_int
+print '0o1326 ->'; oct_int
+print '0x2d6 ->'; hex_int
+
