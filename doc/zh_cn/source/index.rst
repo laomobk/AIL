@@ -13,5 +13,6 @@ AIL 文档
     版本介绍    <whatsnew/index.rst>
     入门教程    <tutorial/index.rst>
     标准库参考  <library/index.rst>
+    语言参考    <reference/index.rst>
 
 
