@@ -350,6 +350,8 @@ class Interpreter:
             err = self.__now_state.err_stack.pop()
             self.__now_state.handling_err_stack.extend(self.__now_state.err_stack)
             error.print_exception_for_vm(self.__now_state.handling_err_stack, err)
+            self.__stack.clear()
+            self.__frame_stack.pop()
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_BREAK
 
@@ -780,7 +782,7 @@ class Interpreter:
                     # print(self.__opcounter, get_opname(op),
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
-                    # print(self.__opcounter, self.__stack)
+                    # print(self.__opcounter, get_opname(op), self.__stack)
                     # print(self.__opcounter, get_opname(op), self.__frame_stack[-1])
 
                     if op == pop_top:
@@ -791,7 +793,8 @@ class Interpreter:
                         tosl = [self.__pop_top() for _ in range(argv)][::-1]
 
                         for tos in tosl:
-                            tosm = self.__check_object(tos['__str__'](tos), not_convert=True)
+                            tosm = self.__check_object(
+                                    tos['__str__'](tos), not_convert=True)
 
                             sys.stdout.write(tosm + ' ')
                         sys.stdout.write('\n')
@@ -1334,9 +1337,6 @@ class Interpreter:
                         break
 
                     elif self.__interrupt_signal == MII_ERR_BREAK:
-                        self.__interrupted = True
-                        self.__interrupt_signal = MII_ERR_BREAK
-                        # keep interrupted state
                         why = WHY_ERROR
                         self.__can_update_opc = False
                         break
