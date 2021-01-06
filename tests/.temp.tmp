@@ -1,4 +1,0 @@
-begin
-import 'test_import'
-end
-
