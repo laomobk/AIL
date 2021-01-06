@@ -135,13 +135,18 @@ def get_number(source: str, cursor: int) -> tuple:
 
         if base == -1:
             return 1, '0'  # just '0'
-        else:
+        elif base != 12:
             char_cur += 1
             buffer += '0' + now_char
-        
-        now_char = get_source_char(source, char_cur)
-        if now_char not in num_chars or now_char == '':
-            return -1, None
+
+        if base == 12:
+            num_chars = _ord_num_chars_with_sci[0]
+            base = 10
+            char_cur -= 1  # back to 0
+        else:
+            now_char = get_source_char(source, char_cur)
+            if now_char not in num_chars or now_char == '':
+                return -1, None
 
     while char_cur < len(source):
         ch = get_source_char(source, char_cur)
@@ -150,17 +155,24 @@ def get_number(source: str, cursor: int) -> tuple:
             break
 
         if ch == '.' and '.' in num_chars and base == 10:
-            num_chars = _ord_num_chars[0]  # drop '.'
+            num_chars = _ord_num_chars[0] + 'Ee'  # drop '.'
+
         elif (ch == 'e' or ch == 'E') and \
              ('e' in num_chars or 'E' in num_chars) and \
              base == 10:
 
-            num_chars = _sci_num_chars[0]
+            num_chars = _ord_num_chars[0]
 
             now_char = get_source_char(source, char_cur + 1)
 
-            if now_char not in num_chars or now_char == '':
+            if now_char == '+' or now_char == '-':
+                buffer += 'e' + now_char
+                char_cur += 2
+                continue
+
+            elif now_char not in num_chars or now_char == '':
                 return -1, None
+
         elif ch in ('+', '-') and \
              ('+' in num_chars or '-' in num_chars) and \
              base == 10:

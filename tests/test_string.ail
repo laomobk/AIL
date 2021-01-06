@@ -1,0 +1,10 @@
+
+single_line = 'Nezha'
+
+muit_line = 'Hello
+Nezha'
+
+
+print single_line
+print muit_line
+
