@@ -157,6 +157,16 @@ def get_number(source: str, cursor: int) -> tuple:
 
             num_chars = _sci_num_chars[0]
 
+            now_char = get_source_char(source, char_cur + 1)
+
+            if now_char not in num_chars or now_char == '':
+                return -1, None
+        elif ch in ('+', '-') and \
+             ('+' in num_chars or '-' in num_chars) and \
+             base == 10:
+            
+            num_chars = _ord_num_chars[0]
+
         buffer += ch
         char_cur += 1
 
