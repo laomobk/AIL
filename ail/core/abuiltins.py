@@ -20,6 +20,7 @@ from ..objects import (
     bool    as abool,
     wrapper as awrapper,
     float   as afloat,
+    complex as acomplex,
     array   as array,
     struct  as struct,
     module  as amodule,
@@ -276,6 +277,13 @@ def func_fnum(obj):
         return fastnum.FastNumber(v)
 
 
+def func_complex(real, imag):
+    real = objs.unpack_ailobj(real)
+    imag = objs.unpack_ailobj(imag)
+
+    return objs.ObjectCreater.new_object(acomplex.COMPLEX_TYPE, real, imag)
+
+
 true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
 false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 
@@ -313,6 +321,7 @@ BUILTINS = {
     'dir': objs.convert_to_ail_object(func_dir),
     'console': objs.convert_to_ail_object(get_console_object()),
     'help': objs.convert_to_ail_object(print_help),
+    'complex': objs.convert_to_ail_object(func_complex),
 }
 
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)

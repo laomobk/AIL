@@ -12,4 +12,5 @@ I_STRUCT_TYPE       = 0xa
 I_STRUCT_OBJ_TYPE   = 0xb
 I_NAMESPACE_TYPE    = 0xc
 I_MODULE_TYPE       = 0xd
+I_COMPLEX_TYPE      = 0xe
 

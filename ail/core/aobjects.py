@@ -212,6 +212,7 @@ def check_object(obj):
 _STRING_TYPE = None
 _INTEGER_TYPE =None
 _FLOAT_TYPE = None
+_COMPLEX_TYPE = None
 _ARRAY_TYPE = None
 _WRAPPER_TYPE = None
 _PY_FUNCTION_TYPE = None
@@ -224,6 +225,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     global _STRING_TYPE
     global _INTEGER_TYPE
     global _FLOAT_TYPE
+    global _COMPLEX_TYPE
     global _ARRAY_TYPE
     global _WRAPPER_TYPE
     global _PY_FUNCTION_TYPE
@@ -236,6 +238,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         from ..objects.string import STRING_TYPE as _STRING_TYPE
         from ..objects.integer import INTEGER_TYPE as _INTEGER_TYPE
         from ..objects.float import FLOAT_TYPE as _FLOAT_TYPE
+        from ..objects.complex import COMPLEX_TYPE as _COMPLEX_TYPE
         from ..objects.array import ARRAY_TYPE as _ARRAY_TYPE
         from ..objects.wrapper import WRAPPER_TYPE as _WRAPPER_TYPE
         from ..objects.function import PY_FUNCTION_TYPE as _PY_FUNCTION_TYPE
@@ -252,6 +255,8 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         ail_t = _INTEGER_TYPE
     elif py_t is float:
         ail_t  = _FLOAT_TYPE
+    elif py_t is complex:
+        ail_t = _COMPLEX_TYPE
     elif py_t is str:
         ail_t = _STRING_TYPE
     elif py_t is bool:
@@ -268,11 +273,14 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
 def convert_to_ail_number(pynum: Union[int, float]) -> AILObject:
     from ..objects import integer
     from ..objects import float as afloat
+    from ..objects import complex as acomplex
 
     if isinstance(pynum, int):
         return integer.get_integer(pynum)
     elif isinstance(pynum, float):
         return afloat._new_object(afloat.FLOAT_TYPE, pynum)
+    elif isinstance(pynum, complex):
+        return acomplex.to_complex(pynum)
     else:
         return pynum
 
