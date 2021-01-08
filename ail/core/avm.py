@@ -35,6 +35,7 @@ from ..objects import (
     bool      as abool,
     wrapper   as awrapper,
     float     as afloat,
+    complex   as acomplex,
     array     as array,
     function  as afunc,
     null      as null,
@@ -79,7 +80,9 @@ _obj_type_dict = {
     list: array.ARRAY_TYPE,
 }
 
-_num_otypes = {aint.INTEGER_TYPE.otype, afloat.FLOAT_TYPE.otype}
+_num_otypes = {aint.INTEGER_TYPE.otype, 
+               afloat.FLOAT_TYPE.otype, 
+               acomplex.COMPLEX_TYPE.otype}
 
 _binary_op_dict = {
     binary_add: ('+', '__add__', '__add__'),
