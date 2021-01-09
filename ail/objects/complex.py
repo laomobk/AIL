@@ -13,12 +13,16 @@ from . import bool as abool
 _PY_NUM_TYPES = (int, float)
 
 
+def _replace_j_with_i(complex_repr: str) -> str:
+    return complex_repr.replace('j', 'i', 1)
+
+
 def complex_str(self: AILObject):
-    return '%s' % self['__value__']
+    return _replace_j_with_i(str(self['__value__']))
 
 
 def complex_repr(self):
-    return '%s' % self['__value__']
+    return _replace_j_with_i(repr(self['__value__']))
 
 
 def complex_init(self: AILObject, *real_imag_or_complex):

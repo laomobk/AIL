@@ -274,7 +274,8 @@ class Interpreter:
         if self.__tof is self.__global_frame:
             self.__namespace_state.ns_global.ns_dict[name] = value
         else:
-            if name in self.__tof.code.global_names:
+            if name in self.__tof.code.global_names and \
+                    name in self.__tof.code.global_names:
                 self.__namespace_state.ns_global.ns_dict[name] = value
             elif name in self.__tof.code.nonlocal_names:
                 for outer in self.__tof.closure_outer:
