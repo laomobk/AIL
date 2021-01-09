@@ -257,7 +257,7 @@ fun test_main() {
 }
 
 
-if __is_main__ {
+if __main__ {
     test_main()
 }
 

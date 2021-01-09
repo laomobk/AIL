@@ -36,7 +36,7 @@ fun testTwoDimArrayAccess() {
 cases.append(testTwoDimArrayAccess)
 
 
-if __is_main__ {
+if __main__ {
     for (i = 0; i < len(cases); ++i) {
         print '\ncall:'; cases[i]
         cases[i]()

@@ -18,7 +18,7 @@ fun printYanghuiTriangle(row) {
 }
 
 
-if __is_main__ {
+if __main__ {
     row = 0
     while true {
         try {

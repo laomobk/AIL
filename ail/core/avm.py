@@ -791,7 +791,6 @@ class Interpreter:
 
                     if op == pop_top:
                         tos = self.__pop_top()
-                        self.__decref(tos)
 
                     elif op == print_value:
                         tosl = [self.__pop_top() for _ in range(argv)][::-1]
@@ -1397,7 +1396,7 @@ class Interpreter:
 
         f.lineno = cobj.firstlineno
 
-        self.__namespace_state.ns_global.ns_dict['__is_main__'] = \
+        self.__namespace_state.ns_global.ns_dict['__main__'] = \
             objs.convert_to_ail_object(cobj.is_main)
 
         self.__global_frame = f

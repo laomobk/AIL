@@ -35,7 +35,7 @@ fun range(from, to, step) {
 }
 
 
-if __is_main__ {
+if __main__ {
     fun testRange(rName, rangeObj) {
         print 'test range:'; rName
 

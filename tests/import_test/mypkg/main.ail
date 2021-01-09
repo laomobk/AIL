@@ -9,7 +9,7 @@ fun main() {
     print 'nezha.slogan =' ; nezha.slogan
 }
 
-if __is_main__ {
+if __main__ {
     main()
 }
 
