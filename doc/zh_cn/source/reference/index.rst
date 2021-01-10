@@ -10,4 +10,5 @@ AIL 语言参考手册
     operators.rst
     types.rst
     namespace.rst
+    struct.rst
 
