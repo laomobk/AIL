@@ -814,10 +814,13 @@ class Interpreter:
                             msg = str(tos)
 
                         inp = input(msg)
-
-                        sip = [astr.convert_to_string(x)
-                               for x in re.split(r'\s+', inp) if x]
-                        # Remove empty string
+                        
+                        if vc > 1:
+                            sip = [astr.convert_to_string(x)
+                                   for x in re.split(r'\s+', inp) if x]
+                            # Remove empty string
+                        else:
+                            sip = [astr.convert_to_string(inp)]
 
                         if vl and len(vl) != len(sip):
                             self.raise_error(
