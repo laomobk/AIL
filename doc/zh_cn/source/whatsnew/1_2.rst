@@ -1,92 +1,61 @@
-AIL 1.2 更新日志
-================
+AIL 1.2  DragonLi
++++++++++++++++++
+
+**2021年2月**
+
+DragonLi版本相比1.0版本，提高了稳定性，增加了诸多元素。
 
 
-新增：闭包的支持
-################
-
-在1.2版本中，闭包正式被支持，现在您可以使用闭包来编写程序了。
-
-::
-    
-    // closure.ail
-
-    fun f() is 
-        x = 726
-
-        fun inner() is
-            return outer.x
-        end
-
-        return inner
-    end
-
-    print f()()
-
-::
-
-    $ ail ./closure.ail
-    726
-
-需要注意的是，您需要通过 :code:`outer` 对象来对外函数名称空间进行访问。
+主要更新
+~~~~~~~~
 
 
-新增：方法绑定
-##############
+语法更新
+########
 
-在1.2版本以前，想要给 :code:`struct object` 绑定方法，需要显式赋值：
-
-::
-    
-    struct Person is
-        name
-        say_hi
-    end
-
-    fun say_hi() is
-        print 'hello, my name is' ; this.name
-    end
-
-    nezha = new(Person)
-    nezha.name = 'Nezha'
-    nezha.say_hi = sai_hi
+DragonLi 版本的代码块增加了对 :code:`{ }` 的支持，从此不必再写 :code:`end` 这类单词来作为块的开始或结尾。但AIL仍然保留了这种以单词作为标志的块语法。
 
 
-这种方法虽然行得通，但是经过考虑，这是极不优雅的。于是在AIL1.2版本中， **方法绑定** 被正式加入:
+新的异常处理机制和栈回溯提示
+############################
 
-::
+DragonLi 版本重写了异常处理机制，得益于虚拟机内部新增的 *block* 机制，AIL 的异常处理和捕获机制能更稳定运行。
 
-    struct Person is
-        name
-    end
+栈回溯一改以往令人迷惑的提示方式，提供了更为友好的栈回溯提示 (与Python的栈回溯提示类似)：
 
-    fun (Person) say_hi() is
-        print 'hello, my name is' ; this.name
-    end
+.. code::
 
-    nezha = new(Person)
-    nezha.name = 'Nezha'
-
-
-Person，也就是被绑定者，必须是 **struct type** 。
-
-
-新增：elif 语句
-###############
-
-在1.2以前，想要表示类似 **if - else if - else** 这类结构将极为繁琐。AIL1.2版本中，:code:`elif` 被加入。
-
-::
-
-    if x == 726 then
-        print 'it is 726'
-    elif x == 1026 
-        print 'it is 1026'
-    else
-        print 'it is 810？
-    endif
+    Traceback (most recent call last):
+      File 'example_err.ail', line 9, in <main>
+        print f()
+      File 'example_err.ail', line 6, in f
+        return f2()
+      File 'example_err.ail', line 4, in f.f2
+        return 1 / 0
+    ZeroDivisionError: division by zero
 
 
-elif 的加入让判断操作更为简便。
+其他更新
+~~~~~~~~
 
+* import 机制
+* 闭包
+* 参数解包，可变参数
+* 自增/自减运算符（左侧）
+
+
+Bug修复
+~~~~~~~
+
+* try-catch-finally 跳转问题
+* continue, break 跳转问题
+* load 交叉导入问题
+* 函数调用异常问题
+
+
+优化
+~~~~
+
+* 优化了load的导入方式
+* 优化了基本类型运算的速度
 

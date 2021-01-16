@@ -144,7 +144,9 @@ def launch_main(argv: list) -> int:
                 ast, filename=file_path).compile(ast).code_object
         code_object.is_main = True
 
-        why = MAIN_INTERPRETER_STATE.global_interpreter.exec(code_object)
+        why = MAIN_INTERPRETER_STATE.global_interpreter.exec(
+                code_object)
+
         if why in (WHY_HANDLING_ERR, WHY_ERROR):
             return 1
 
