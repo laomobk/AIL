@@ -30,8 +30,15 @@ _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 _VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
 _WELCOME_STR = \
 '''AIL %s
-Type 'help', 'copyright()' to get more information, 'exit()' to exit.
+Type 'help(...)', '$help', 'copyright()' to get more information, 'exit()' to exit.
 ''' % _VER_STR
+_SH_HELP_STR = \
+'''AIL shell commands:
+    $help   get commands help
+    $exit   exit shell forcibly
+    $break  break more mode forcibly
+    $edit   editor mode
+'''
 
 
 def _sh_exit():
@@ -54,6 +61,7 @@ class Shell:
 
         self.ps1 = '>> '
         self.ps2 = '.. '
+        self.ps3 = '> '
 
         self.__more_level = 0
 
@@ -134,21 +142,40 @@ class Shell:
         ps = self.ps1
 
         in_more = False
+        in_edit = False
+        run_buf = False
 
         while True:
             try:
+                if run_buf:
+                    run_buf = False
+                    self.__run_block()
+                
                 line = input(ps)
-
-                more = self.__get_more_line_state(line)
+                
+                if not in_edit:
+                    more = self.__get_more_line_state(line)
 
                 if line == '$exit':
                     break
 
-                if line == '$break':
+                elif line == '$break':
                     self.__buffer.clear()
                     self.__more_level = 0
                     in_more = False
                     ps = self.ps1
+                    continue
+
+                elif line == '$edit':
+                    self.__buffer.clear()
+                    self.__more_level = 0
+                    in_edit = True
+                    in_more = True
+                    ps = self.ps3
+                    print('(editor mode, ^C - cancel, ^D - run code.)')
+
+                elif line == '$help':
+                    print(_SH_HELP_STR)
                     continue
 
                 elif more == 1:
@@ -179,11 +206,21 @@ class Shell:
                 self.__buffer = []
 
             except EOFError as e:
-                print()
-                break
+                if not in_edit:
+                    print()
+                    break
+                in_edit = False
+                in_more = False
+                ps = self.ps1
+                self.__more_level = 0
+                run_buf = True
 
             except KeyboardInterrupt as e:
                 in_more = False
+                if in_edit:
+                    in_edit = False
+                    ps = self.ps1
+
                 print('\n%s' % str(type(e).__name__))
                 self.__buffer = []
 
