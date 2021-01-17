@@ -104,18 +104,51 @@ break语句和continue语句在try语句中被执行时，finally部分的内容
 try-catch-finally语句
 =====================
 
-try-catch-finally语句（以下简称try语句）用于进行异常捕获或者用于执行一些必须要执行的代码。
+try-catch-finally语句（以下简称try语句）用于进行异常捕获或者用于执行一些必须要执行的代码。语法如下：
 
 .. code::
     
+    'try' '{'
+        stmt*
+    '}' 'catch' NAME '{'
+        stmt*
+    '}']? 'finally' '{'
+        stmt*
+    '}'
+
+需要注意的是，该语句可以选择是否有catch或finally，也可以两者一起，当两者都有时， **finally语句在catch下面** 。
+
+try 语句块内的代码，通常是可能会引发异常的代码。当try内又异常被抛出后， *如果有catch块* 则程序会立即跳转到catch块内，并且将被捕获的异常赋值给 *NAME* 变量。
+
+而finally保证了无论是否有异常发生，块内的代码总是会被执行。
+
+.. code::
+
     try {
-        // ...
-    } catch err {
-        // ...
+        0 / 1
     } finally {
-        // ...
+        print 'here is finallyA'
     }
 
-try 语句块内的代码，通常是可能会引发异常的代码。当try内又异常被抛出后， *如果有catch块* 则程序会立即跳转到
+    try {
+        1 / 0
+    } finally {
+        print 'here is finallyB'
+    }
 
+
+
+执行结果：
+
+.. code::
+    
+    here is finallyA
+    here is finallyB
+    Traceback (most recent call last):
+      File 'test_finally.ail', line 7, in <main>
+        1 / 0
+    ZeroDivisionError: division by zero
+
+
+可以看到，无论异常是否发生，即使没有catch进行捕获，finally的内容让仍然会被执行。
 

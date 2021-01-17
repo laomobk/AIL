@@ -141,10 +141,10 @@ class Shell:
 
                 more = self.__get_more_line_state(line)
 
-                if line == '!exit!':
+                if line == '$exit':
                     break
 
-                if line == '!break!':
+                if line == '$break':
                     self.__buffer.clear()
                     self.__more_level = 0
                     in_more = False
