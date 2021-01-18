@@ -12,5 +12,6 @@ AIL 语言参考手册
     namespace.rst
     struct.rst
     input_print.rst
+    lexical.rst
     basic_ctrl_flow.rst
 

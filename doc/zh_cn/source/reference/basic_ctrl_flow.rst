@@ -107,16 +107,23 @@ try-catch-finally语句
 try-catch-finally语句（以下简称try语句）用于进行异常捕获或者用于执行一些必须要执行的代码。语法如下：
 
 .. code::
+
+    try_stmt := try_with_catch | try_finally_only
     
-    'try' '{'
+    try_with_catch := 'try' '{'
         stmt*
     '}' 'catch' NAME '{'
         stmt*
-    '}']? 'finally' '{'
+    '}' ['finally' '{'
+        stmt*
+    '}']?
+
+    try_finally_only := 'try' '{'
+        stmt*
+    '}' 'finally' '{'
         stmt*
     '}'
 
-需要注意的是，该语句可以选择是否有catch或finally，也可以两者一起，当两者都有时， **finally语句在catch下面** 。
 
 try 语句块内的代码，通常是可能会引发异常的代码。当try内又异常被抛出后， *如果有catch块* 则程序会立即跳转到catch块内，并且将被捕获的异常赋值给 *NAME* 变量。
 
