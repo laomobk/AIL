@@ -214,6 +214,7 @@ class Shell:
                 ps = self.ps1
                 self.__more_level = 0
                 run_buf = True
+                print()
 
             except KeyboardInterrupt as e:
                 in_more = False
