@@ -1,0 +1,21 @@
+
+struct NewInt {
+    __value
+}
+
+fun makeInt(i) {
+    return new(NewInt, [i])
+}
+
+fun (NewInt) __add__(self, other) {
+    return self.__value - other
+}
+
+fun (NewInt) __sub__(self, other) {
+    return self.__value + other
+}
+
+
+n = makeInt(10)
+print 'n + 5 ='; n + 5
+

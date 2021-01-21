@@ -469,6 +469,12 @@ class Interpreter:
                     self.raise_error(
                         str(e), 'PythonMathError'
                     )
+            elif a_cls.otype == struct.STRUCT_OBJ_TYPE.otype:
+                m = a.members.get(ailmth)
+                if m is not None:
+                    self.call_function(m, 1, [b])
+                    r = self.__pop_top()
+                    return r
 
             m = a[ailmth]
             mb = b[ailmth]
@@ -514,6 +520,11 @@ class Interpreter:
             self.raise_error('Not support \'%s\' between %s and %s' % 
                                 (op, a, b),
                              'TypeError')
+        elif a_cls.otype == struct.STRUCT_OBJ_TYPE.otype:
+            m = a.members.get(cmp_opm)
+            if m is not None:
+                self.call_function(m, 1, [b])
+                return self.__pop_top()
         else:
             opm = a[cmp_opm]
             if opm is None:    

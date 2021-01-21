@@ -28,6 +28,10 @@ def _err_to_string(this):
                             line_detail, type, msg)
 
 
+def _err_eq(this, type_name):
+    return this.members['err_type'] == type_name
+
+
 def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -1):
     msg = err_obj.msg
     type = err_obj.err_type
@@ -42,6 +46,7 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -
         'toString': convert_to_ail_object(_err_to_string),
         '__lineno': lineno,
         '__frame': frame,
+        '__eq__': convert_to_ail_object(_err_eq)
     }
 
     err_struct = new_struct_object('ERR_T', null, err_d, err_d.keys())

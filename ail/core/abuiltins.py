@@ -14,6 +14,8 @@ from .modules.helper import print_help
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE
 
+from .err_types import *
+
 from ..objects import (
     string  as astr,
     integer as aint,
@@ -322,6 +324,20 @@ BUILTINS = {
     'console': objs.convert_to_ail_object(get_console_object()),
     'help': objs.convert_to_ail_object(print_help),
     'complex': objs.convert_to_ail_object(func_complex),
+
+    ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
+    PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),
+    TYPE_ERROR: objs.convert_to_ail_object(TYPE_ERROR),
+    UNHASHABLE_ERROR: objs.convert_to_ail_object(UNHASHABLE_ERROR),
+    INDEX_ERROR: objs.convert_to_ail_object(INDEX_ERROR),
+    OBJECT_ERROR: objs.convert_to_ail_object(OBJECT_ERROR),
+    OS_ERROR: objs.convert_to_ail_object(OS_ERROR),
+    LOAD_ERROR: objs.convert_to_ail_object(LOAD_ERROR),
+    IMPORT_ERROR: objs.convert_to_ail_object(IMPORT_ERROR),
+    RECURSION_ERROR: objs.convert_to_ail_object(RECURSION_ERROR),
+    VM_ERROR: objs.convert_to_ail_object(VM_ERROR),
+    NAME_ERROR: objs.convert_to_ail_object(NAME_ERROR),
+    ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR)
 }
 
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)

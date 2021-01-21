@@ -676,8 +676,8 @@ class Parser:
                 else_block = self.__parse_block()
                 if else_block is None:
                     self.__syntax_error()
-
-                return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
+                break
+            
             elif self.__now_tok == 'elif':
                 self.__next_tok()  # eat 'elif'
                 elif_test = self.__parse_test_expr()
@@ -692,6 +692,10 @@ class Parser:
 
                 elif_list.append(
                     ast.IfExprAST(elif_test, elif_block, [], None, ln))
+            else:
+                break
+            
+        return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
 
     def __parse_if_else_expr0(self) -> ast.IfExprAST:
         ln = self.__now_ln

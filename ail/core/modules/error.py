@@ -13,3 +13,4 @@ def error(err_type: AILObject, err_msg: AILObject) -> AILObject:
 
     err_obj = AILRuntimeError(err_type, err_msg)
     return make_err_struct_object(err_obj, '<Unknown>', -1)
+
