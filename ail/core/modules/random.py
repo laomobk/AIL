@@ -29,7 +29,10 @@ def _random_randint(a, b):
         return AILRuntimeError(
                 'a, b must be an integer', 'TypeError')
 
+    return random.randint(a, b)
+
 
 _AIL_NAMESPACE_ = {
-        'random': convert_to_ail_object(_random_random)
+        'random': convert_to_ail_object(_random_random),
+        'randint': convert_to_ail_object(_random_randint)
 }
