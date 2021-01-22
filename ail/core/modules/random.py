@@ -21,6 +21,15 @@ def _random_random(seed=None):
     return random.random()
 
 
+def _random_randint(a, b):
+    a = unpack_ailobj(a)
+    b = unpack_ailobj(b)
+
+    if not isinstance(a, int) or not isinstance(b, int):
+        return AILRuntimeError(
+                'a, b must be an integer', 'TypeError')
+
+
 _AIL_NAMESPACE_ = {
         'random': convert_to_ail_object(_random_random)
 }

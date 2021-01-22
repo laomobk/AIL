@@ -304,6 +304,12 @@ class Interpreter:
             else:
                 return self.__tof.variable.pop(name, None)
 
+    def _make_runtime_error_obj(self, msg: str, err_type: str):
+        return make_err_struct_object(
+                error.AILRuntimeError(
+                    msg, err_type, self.__tof, self.get_stack_trace()),
+                self.__tof.code.name, self.__tof.lineno)
+
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
             error.AILRuntimeError(
