@@ -1,4 +1,3 @@
-begin
 
 str_t       = 0x0
 int_t       = 0x1
@@ -11,7 +10,30 @@ type_t      = 0x7
 null_t      = 0x8
 array_t     = 0x9
 struct_t    = 0xa
-struct_t    = 0xb
+struct_obj_t    = 0xb
 
 
-end
+struct Integer {
+    __value
+}
+
+fun (Integer) value() {
+    return self.__value
+}
+
+fun (Integer) toString(self) {
+    return self.__value.toString()
+}
+
+fun (Integer) __add__(self, other) {
+    if equal(type(other), Integer) {
+        return self.__value
+    }
+    return self.__value + other
+}
+
+fun integerFromValue(val) {
+    val = int(val)
+    return new(Integer, [val])
+}
+

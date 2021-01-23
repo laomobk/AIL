@@ -761,6 +761,15 @@ class Interpreter:
                         rtn = objs.ObjectCreater.new_object(target, rtn)
 
                 self.__tof.stack.append(rtn)
+            elif func['__class__'] == struct.STRUCT_TYPE:
+                struct_obj = abuiltins.new_struct(func)
+                new_func = struct_obj.members.get('__init__')
+
+                if new_func is not None:
+                    self.call_function(
+                            new_func, argv, argl, ex)
+                self.__tof.stack.append(struct_obj)
+
             else:
                 self.raise_error(
                     '\'%s\' object is not callable.' %

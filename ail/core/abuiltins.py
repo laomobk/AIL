@@ -175,11 +175,12 @@ def new_struct(struct_type, default_list=None):
         md = {k: v for k, v in zip(m, default_list)}
     else:
         md = {k: null.null for k in m}
-
-    md.update(struct_type['__bind_functions__'])
+    
+    bind_func = struct_type['__bind_functions__']
+    md.update(bind_func)
 
     name = struct_type['__name__']
-    pl = struct_type.protected
+    pl = struct_type.protected 
 
     return objs.ObjectCreater.new_object(
         struct.STRUCT_OBJ_TYPE, name, md, struct_type, pl)

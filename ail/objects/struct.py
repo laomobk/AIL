@@ -11,7 +11,7 @@ _BIND_BOUND_FUNCTION = object()
 
 
 def _is_reserved_name(name):
-    return name[:2] == '__'
+    return name[:2] == '__' and name[-2:] != '__'
 
 
 def _copy_function(f: obj.AILObject) -> obj.AILObject:
