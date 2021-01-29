@@ -419,7 +419,7 @@ class TokenStream:
 
         return self.__tli[index] \
             if len(self.__tli) > index \
-            else None
+            else self.__tli[-1]  # EOF
 
     def __len__(self):
         return len(self.__tli)

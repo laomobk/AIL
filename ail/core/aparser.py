@@ -51,9 +51,20 @@ class Parser:
     def __mov_tp(self, step=1):
         self.__tc += step
 
-    def __next_tok(self) -> Token:
+    def __next_tok(self, 
+            ignore_newline: bool = False, convert_semi: bool = True) -> Token:
         self.__tc += 1
+        if convert_semi and self.__now_tok.ttype == AIL_SEMI:
+            self.__now_tok.ttype = AIL_ENTER
+
+        if self.__now_tok.ttype == AIL_ENTER and ignore_newline:
+            self.__next_tok(ignore_newline, convert_semi)
+
         return self.__tok_stream[self.__tc]
+
+    def __skip_newlines(self):
+        while self.__now_tok.ttype == AIL_ENTER:
+            self.__next_tok()
 
     def __peek(self, step=1) -> Token:
         return self.__tok_stream[self.__tc + step]
@@ -664,7 +675,8 @@ class Parser:
 
     def __parse_new_else_elif_block(self, test: ast.TestExprAST,
                                     if_block: ast.BlockExprAST,
-                                    else_block: ast.BlockExprAST, ln: int) -> ast.IfExprAST:
+                                    else_block: ast.BlockExprAST, 
+                                    ln: int) -> ast.IfExprAST:
         elif_list = []
 
         if self.__now_tok.value not in ('else', 'elif') :
@@ -672,7 +684,7 @@ class Parser:
 
         while self.__now_tok.ttype != AIL_EOF:
             if self.__now_tok == 'else':
-                self.__next_tok()  # eat 'else'
+                self.__next_tok(ignore_newline=True)  # eat 'else'
                 else_block = self.__parse_block()
                 if else_block is None:
                     self.__syntax_error()
@@ -692,6 +704,7 @@ class Parser:
 
                 elif_list.append(
                     ast.IfExprAST(elif_test, elif_block, [], None, ln))
+
             else:
                 break
             
@@ -1023,6 +1036,8 @@ class Parser:
         else:
             arg_list = self.__parse_func_def_arg_list()
 
+        self.__skip_newlines()
+
         self.__level += 1
 
         # for new function syntax (':' instead of 'is')
@@ -1265,6 +1280,8 @@ class Parser:
             self.__next_tok()  # eat '{'
 
         try_b = self.__parse_block(start='try', end='catch')
+
+        self.__skip_newlines()
 
         if new_block_style:
             return self.__parse_new_catch_finally_body(try_b)
