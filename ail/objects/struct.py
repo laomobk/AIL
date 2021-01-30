@@ -116,7 +116,7 @@ def structobj_str_old(self):
 
 
 def structobj_str(self):
-    return '<struct %s object at %s>' % (self['__name__'], hex(id(self)))
+    return '<\'%s\' object at %s>' % (self['__name__'], hex(id(self)))
 
 
 STRUCT_OBJ_TYPE = obj.AILObjectType('<struct object type>', 

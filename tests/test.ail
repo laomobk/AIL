@@ -1,13 +1,2 @@
 
-m = {
-    'Nezha': {
-        'name': 'Nezha'
-    },
-    'Aobing': {
-        'name': 'Aobing'
-    }
-}
-
-
-print m
-
+{}

@@ -214,6 +214,7 @@ _INTEGER_TYPE =None
 _FLOAT_TYPE = None
 _COMPLEX_TYPE = None
 _ARRAY_TYPE = None
+_MAP_TYPE = None
 _WRAPPER_TYPE = None
 _PY_FUNCTION_TYPE = None
 _null = None
@@ -227,6 +228,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     global _FLOAT_TYPE
     global _COMPLEX_TYPE
     global _ARRAY_TYPE
+    global _MAP_TYPE
     global _WRAPPER_TYPE
     global _PY_FUNCTION_TYPE
     global _null
@@ -240,6 +242,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         from ..objects.float import FLOAT_TYPE as _FLOAT_TYPE
         from ..objects.complex import COMPLEX_TYPE as _COMPLEX_TYPE
         from ..objects.array import ARRAY_TYPE as _ARRAY_TYPE
+        from ..objects.map import MAP_TYPE as _MAP_TYPE
         from ..objects.wrapper import WRAPPER_TYPE as _WRAPPER_TYPE
         from ..objects.function import PY_FUNCTION_TYPE as _PY_FUNCTION_TYPE
         from ..objects.null import null as _null
@@ -264,6 +267,8 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         return true if pyobj else false
     elif py_t is list:
         ail_t = _ARRAY_TYPE
+    elif py_t is dict:
+        ail_t = _MAP_TYPE
     elif py_t is FunctionType:
         ail_t = _PY_FUNCTION_TYPE
 

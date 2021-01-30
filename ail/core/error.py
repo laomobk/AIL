@@ -22,6 +22,8 @@ def get_line_from_file(lno: int, fp: str, strip=True):
 
     if not os.path.exists(fp):
         return ''
+
+    last_line = ''
     
     try:
         f = open(fp, encoding='UTF-8')
@@ -33,7 +35,9 @@ def get_line_from_file(lno: int, fp: str, strip=True):
                 return ln
             tlno += 1
 
-        return ''
+        if strip:
+            return last_line.strip()
+        return last_line
     except (OSError, UnicodeDecodeError):
         return ''
 
@@ -48,6 +52,7 @@ def get_line_from_source(lno: int, source: str, strip=True):
         return ''
 
     tlno = 1
+    last_line = ''
 
     try:
         for ln in source.split('\n'):
@@ -56,13 +61,16 @@ def get_line_from_source(lno: int, source: str, strip=True):
                     return ln.strip()
                 return ln
             tlno += 1
-
-        return ''
+            last_line = ln
+        
+        if strip:
+            return last_line.strip()
+        return last_line
     except (OSError, UnicodeDecodeError):
         return ''
 
 
-@debugger.debug_python_runtime
+# @debugger.debug_python_runtime
 def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None):
     """
     line : 行号

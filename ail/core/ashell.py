@@ -83,20 +83,14 @@ class Shell:
         ignore_more = False
         hold_on_more = 0
 
-        for tok in ts.token_list:
+        for index, tok in enumerate(ts.token_list):
             if tok.ttype == tokent.AIL_IDENTIFIER:
                 if tok.value in _MORE_KEYWORD:
                     return 1
                 if tok.value in _END_KEYWORD:
                     return -1
-            elif tok.ttype == tokent.AIL_COLON:
+            elif tok.ttype == tokent.AIL_COLON and index == len(ts.token_list) - 1:
                 return 1
-            elif tok.ttype == tokent.AIL_LLBASKET:
-                if hold_on_more == 0:
-                    return 1
-                return 0
-            elif tok.ttype == tokent.AIL_LRBASKET:
-                hold_on_more = -1
 
         return hold_on_more
 

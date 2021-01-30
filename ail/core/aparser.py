@@ -1528,7 +1528,7 @@ class Parser:
                       start_msg: str = None, end_msg: str = None,
                       start_enter=True, for_if_else: bool = False, 
                       for_program: bool = False) -> ast.BlockExprAST:
-        if self.__now_tok.ttype == AIL_LLBASKET:
+        if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
             return self.__parse_new_block()
 
         ln = self.__now_ln
