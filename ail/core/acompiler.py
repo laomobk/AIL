@@ -361,7 +361,31 @@ class Compiler:
         keys = tree.keys
         values = tree.values
 
-        for kt, vt in zip(keys, values):
+        const_key = False
+        
+        # check keys whether is a const key
+        for key in keys:
+            if isinstance(key, ast.CellAST) and \
+                    (key.type == AIL_NUMBER or key.type == AIL_STRING):
+                continue
+            break
+        else:
+            const_key = True
+
+        if const_key:
+            key_list = [key.value if key.type == AIL_STRING else eval(key.value)
+                        for key in keys]
+
+            for vt in values[::-1]:
+                vtc = self.__compile_binary_expr(vt)
+                bc += vtc
+            list_index = self.__buffer.add_const(key_list)
+            bc.add_bytecode(load_const, list_index, -1)
+            bc.add_bytecode(build_const_key_map, len(keys), tree.ln)
+
+            return bc
+
+        for kt, vt in zip(keys[::-1], values[::-1]):
             ktc = self.__compile_binary_expr(kt)
             vtc = self.__compile_binary_expr(vt)
             bc += ktc

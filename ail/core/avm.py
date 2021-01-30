@@ -1066,6 +1066,20 @@ class Interpreter:
 
                         self.__push_back(o)
 
+                    elif op == build_const_key_map:
+                        m = dict()
+
+                        keys = self.__pop_top()['__value__']
+                        # 'keys' is an array object
+                        for i in range(argv):
+                            value = self.__pop_top()
+                            m[keys[i]] = value
+
+                        o = objs.ObjectCreater.new_object(
+                            amap.MAP_TYPE, m)
+
+                        self.__push_back(o)
+
                     elif op == join_array:
                         arr_list = [self.__stack.pop() for _ in range(argv)][::-1]
 

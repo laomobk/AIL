@@ -11,6 +11,7 @@ from ..objects import (
     bool    as abool,
     wrapper as awrapper,
     float   as afloat,
+    array,
 )
 
 from ..objects.null import null
@@ -124,6 +125,7 @@ class ByteCodeFileBuffer:
             int: aint.INTEGER_TYPE,
             float: afloat.FLOAT_TYPE,
             bool: abool.BOOL_TYPE,
+            list: array.ARRAY_TYPE,
         }.get(type(const), awrapper.WRAPPER_TYPE)
 
         allowed_type = (obj.AILCodeObject,)

@@ -124,9 +124,11 @@ class AILObject:
             return super().__eq__(o)
 
     def __repr__(self):
-        try:
-            return self['__repr__'](self)
-        except TypeError:
+        repr_func = self['__repr__']
+
+        if repr_func is not None:
+            return repr_func(self)
+        else:
             return self.__str__()
 
     def __hash__(self) -> int:
