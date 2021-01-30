@@ -31,7 +31,7 @@ def wrapper_func_setattr(self, name, value):
                            'AttributeError')
 
 
-WRAPPER_TYPE = obj.AILObjectType('<Python object wrapper>', types.I_WRAPPER_TYPE,
+WRAPPER_TYPE = obj.AILObjectType('<python object wrapper type>', types.I_WRAPPER_TYPE,
                                  __init__=wrapper_func_init,
                                  __str__=wrapper_func_str,
                                  __repr__=wrapper_func_repr,

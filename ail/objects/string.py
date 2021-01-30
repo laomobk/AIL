@@ -191,7 +191,7 @@ def convert_to_string(aobj) -> obj.AILObject:
         return obj.ObjectCreater.new_object(STRING_TYPE, str(aobj))
 
 
-STRING_TYPE = obj.AILObjectType('<AIL string type>', types.I_STR_TYPE,
+STRING_TYPE = obj.AILObjectType('<string type>', types.I_STR_TYPE,
                                 STRING_METHODS,
                                 __init__=str_init,
                                 __add__=str_add,

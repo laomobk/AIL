@@ -101,7 +101,7 @@ def float_pow(self: obj.AILObject, other: obj.AILObject) -> obj.AILObject:
     return _new_object(FLOAT_TYPE, res)
 
 
-FLOAT_TYPE = obj.AILObjectType('<AIL float type>', types.I_FLOAT_TYPE,
+FLOAT_TYPE = obj.AILObjectType('<float type>', types.I_FLOAT_TYPE,
                                __init__=float_init,
                                __add__=float_add,
                                __str__=float_str,

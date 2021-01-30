@@ -108,6 +108,9 @@ push_none = 0x47
 
 end_finally = 0x48
 
+build_map = 0x49
+build_py_tuple = 0x4a
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

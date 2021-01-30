@@ -83,12 +83,13 @@ def call(pyfw: obj.AILObject, *args):
         return AILRuntimeError(str(e), 'PythonError')
 
 
-FUNCTION_TYPE = obj.AILObjectType('<AIL function type>', types.I_FUNC_TYPE,
+FUNCTION_TYPE = obj.AILObjectType('<function type>', types.I_FUNC_TYPE,
                                   __init__=func_func_init,
                                   __str__=func_func_str,
                                   __repr__=func_func_str)
 
-PY_FUNCTION_TYPE = obj.AILObjectType('<Python funtion wrapper>', types.I_PYFUNC_TYPE,
+PY_FUNCTION_TYPE = obj.AILObjectType('<python funtion wrapper type>', 
+                                     types.I_PYFUNC_TYPE,
                                      __init__=pyfunc_func_init,
                                      __call__=pyfunc_func_call,
                                      __str__=pyfunc_func_str,

@@ -17,6 +17,7 @@ _AIL_NAMESPACE_ = {
     RECURSION_ERROR: convert_to_ail_object(RECURSION_ERROR),
     VM_ERROR: convert_to_ail_object(VM_ERROR),
     NAME_ERROR: convert_to_ail_object(NAME_ERROR),
-    ZERO_DIVISION_ERROR: convert_to_ail_object(ZERO_DIVISION_ERROR)
+    ZERO_DIVISION_ERROR: convert_to_ail_object(ZERO_DIVISION_ERROR),
+    KEY_ERROR: convert_to_ail_object(KEY_ERROR)
 }
 

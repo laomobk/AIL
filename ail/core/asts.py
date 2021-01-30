@@ -386,6 +386,13 @@ class ArrayAST:
         self.ln = ln
 
 
+class MapAST:
+    def __init__(self, keys: list, values: list, ln :int):
+        self.keys = keys
+        self.values = values
+        self.ln = ln
+
+
 class SubscriptExprAST:
     def __init__(self, left: AddSubExprAST, expr: AddSubExprAST, ln: int):
         self.expr = expr
@@ -477,6 +484,7 @@ BINARY_AST_TYPES = (
     DefineExprAST,
     CallExprAST,
     ArrayAST,
+    MapAST,
     SubscriptExprAST,
     MemberAccessAST,
     AssignExprAST,

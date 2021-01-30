@@ -166,7 +166,7 @@ def array_copy(self):
     return self['__value__'].copy()
 
 
-ARRAY_TYPE = objs.AILObjectType('<AIL array type>', types.I_ARRAY_TYPE,
+ARRAY_TYPE = objs.AILObjectType('<array type>', types.I_ARRAY_TYPE,
                                 methods={
                                     'append': array_append,
                                     'pop': array_pop,

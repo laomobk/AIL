@@ -214,6 +214,67 @@ class Parser:
 
         return ast.ArrayAST(items, ln)
 
+    def __parse_map_expr(self) -> ast.MapAST:
+        ln = self.__now_ln
+
+        if self.__now_tok.ttype != AIL_LLBASKET:
+            self.__syntax_error()
+
+        self.__next_tok(ignore_newline=True)  # eat '{' and NEWLINES
+
+        keys = []
+        values = []
+
+        if self.__now_tok.ttype == AIL_LRBASKET:
+            self.__next_tok()
+            return ast.MapAST(keys, values, ln)
+        
+        key = self.__parse_binary_expr()
+        self.__skip_newlines()
+
+        if self.__now_tok.ttype != AIL_COLON:
+            self.__syntax_error()
+        
+        self.__next_tok()  # eat ':'
+        self.__skip_newlines()
+
+        value = self.__parse_binary_expr()
+        self.__skip_newlines()
+
+        keys.append(key)
+        values.append(value)
+
+        while self.__now_tok.ttype == AIL_COMMA:
+            self.__next_tok()
+            self.__skip_newlines()
+
+            if self.__now_tok.ttype == AIL_LRBASKET:
+                if len(keys) == 0:
+                    self.__syntax_error()
+                else:
+                    break
+
+            key = self.__parse_binary_expr()
+            self.__skip_newlines()
+
+            if self.__now_tok.ttype != AIL_COLON:
+                self.__syntax_error()
+            self.__next_tok()  # eat ':'
+
+            self.__skip_newlines()
+            value = self.__parse_binary_expr()
+            self.__skip_newlines()
+
+            keys.append(key)
+            values.append(value)
+
+        if self.__now_tok.ttype != AIL_LRBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '}'
+
+        return ast.MapAST(keys, values, ln)
+
     def __parse_member_access_expr(self, 
                                    set_attr=False, 
                                    try_=False) -> ast.MemberAccessAST:
@@ -286,6 +347,13 @@ class Parser:
 
         if self.__now_tok.ttype == AIL_MLBASKET:
             a = self.__parse_array_expr()
+
+            if a is None:
+                self.__syntax_error()
+
+            return a
+        elif self.__now_tok.ttype == AIL_LLBASKET:
+            a = self.__parse_map_expr()
 
             if a is None:
                 self.__syntax_error()

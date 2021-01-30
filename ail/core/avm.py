@@ -37,6 +37,7 @@ from ..objects import (
     float     as afloat,
     complex   as acomplex,
     array     as array,
+    map       as amap,
     function  as afunc,
     null      as null,
     namespace,
@@ -1049,8 +1050,21 @@ class Interpreter:
                         o = objs.ObjectCreater.new_object(
                             array.ARRAY_TYPE, l)
 
-                        self.__incref(o)
                         self.__tof.stack.append(o)
+
+                    elif op == build_map:
+                        m = dict()
+
+                        for _ in range(argv):
+                            v = self.__pop_top()
+                            k = self.__pop_top()
+                            
+                            m[k] = v
+
+                        o = objs.ObjectCreater.new_object(
+                            amap.MAP_TYPE, m)
+
+                        self.__push_back(o)
 
                     elif op == join_array:
                         arr_list = [self.__stack.pop() for _ in range(argv)][::-1]

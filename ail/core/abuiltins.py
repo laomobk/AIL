@@ -24,6 +24,7 @@ from ..objects import (
     float   as afloat,
     complex as acomplex,
     array   as array,
+    map     as amap,
     struct  as struct,
     module  as amodule,
     fastnum,
@@ -216,6 +217,30 @@ def func_array(size, default=None):
     return AILRuntimeError('array() needs an integer.', 'TypeError')
 
 
+def func_map(*args):
+    if len(args) == 0:
+        return amap.convert_to_ail_map(dict())
+    elif len(args) == 1:
+        pairs = args[0]
+
+        if not isinstance(pairs, list):
+            return AILRuntimeError(
+                    'all of map(pairs) arguments must be array.', 'TypeError')
+
+        m = dict()
+        for p in pairs:
+            p = objs.unpack_ailobj(p)
+            if not isinstance(p, list) or len(p) != 2:
+                return AILRuntimeError(
+                        'each pair must like: [key, value]', 'ValueError')
+            k, v = p
+            m[k] = v
+
+        return amap.convert_to_ail_map(m)
+    else:
+        return AILRuntimeError('map() needs 0 or 1 arguments', 'ValueError')
+
+
 def func_isinstance(o, stype):
     if objs.compare_type(o, struct.STRUCT_OBJ_TYPE) and \
             objs.compare_type(stype, struct.STRUCT_TYPE):
@@ -325,6 +350,7 @@ BUILTINS = {
     'console': objs.convert_to_ail_object(get_console_object()),
     'help': objs.convert_to_ail_object(print_help),
     'complex': objs.convert_to_ail_object(func_complex),
+    'map': objs.convert_to_ail_object(func_map),
 
     ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
     PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),
@@ -338,7 +364,8 @@ BUILTINS = {
     RECURSION_ERROR: objs.convert_to_ail_object(RECURSION_ERROR),
     VM_ERROR: objs.convert_to_ail_object(VM_ERROR),
     NAME_ERROR: objs.convert_to_ail_object(NAME_ERROR),
-    ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR)
+    ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR),
+    KEY_ERROR: objs.convert_to_ail_object(KEY_ERROR),
 }
 
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)

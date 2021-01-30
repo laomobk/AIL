@@ -159,6 +159,9 @@ class Compiler:
         elif isinstance(tree, ast.ArrayAST):
             bc += self.__compile_array_expr(tree)
 
+        elif isinstance(tree, ast.MapAST):
+            bc += self.__compile_map_expr(tree)
+
         elif isinstance(tree, ast.MemberAccessAST):
             bc += self.__compile_member_access_expr(tree)
 
@@ -349,6 +352,22 @@ class Compiler:
             bc += etc
 
         bc.add_bytecode(build_array, len(items.item_list), tree.ln)
+
+        return bc
+
+    def __compile_map_expr(self, tree: ast.MapAST) -> ByteCode:
+        bc = ByteCode()
+
+        keys = tree.keys
+        values = tree.values
+
+        for kt, vt in zip(keys, values):
+            ktc = self.__compile_binary_expr(kt)
+            vtc = self.__compile_binary_expr(vt)
+            bc += ktc
+            bc += vtc
+
+        bc.add_bytecode(build_map, len(keys), tree.ln)
 
         return bc
 

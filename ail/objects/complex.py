@@ -120,7 +120,7 @@ def int_to_string(self):
     return str(self)
 
 
-COMPLEX_TYPE = AILObjectType('<AIL complex type>', types.I_COMPLEX_TYPE,
+COMPLEX_TYPE = AILObjectType('<complex type>', types.I_COMPLEX_TYPE,
                                  __init__=complex_init,
                                  __add__=complex_add,
                                  __div__=complex_div,

@@ -119,7 +119,7 @@ def structobj_str(self):
     return '<struct %s object at %s>' % (self['__name__'], hex(id(self)))
 
 
-STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>', 
+STRUCT_OBJ_TYPE = obj.AILObjectType('<struct object type>', 
                                     types.I_STRUCT_OBJ_TYPE,
                                     __init__=structobj_init,
                                     __setattr__=structobj_setattr,
@@ -127,7 +127,7 @@ STRUCT_OBJ_TYPE = obj.AILObjectType('<AIL struct object type>',
                                     __str__=structobj_str,
                                     __repr__=structobj_str)
 
-STRUCT_TYPE = obj.AILObjectType('<AIL struct type>', types.I_STRUCT_TYPE,
+STRUCT_TYPE = obj.AILObjectType('<struct type>', types.I_STRUCT_TYPE,
                                 __init__=struct_init,
                                 __getattr__=struct_getattr,
                                 __setattr__=struct_setattr,

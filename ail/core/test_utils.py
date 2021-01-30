@@ -127,6 +127,10 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ArrayAST):
         return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 
+    elif isinstance(a, ast.MapAST):
+        return {'MapAST': {'keys': make_ast_tree(a.keys), 
+                           'values': make_ast_tree(a.values)}}
+
     elif isinstance(a, ast.ItemListAST):
         return unpack_list(a.item_list)
 

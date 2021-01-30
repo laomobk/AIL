@@ -221,7 +221,7 @@ def int_to_string(self):
     return str(self)
 
 
-INTEGER_TYPE = obj.AILObjectType('<AIL integer type>', types.I_INT_TYPE,
+INTEGER_TYPE = obj.AILObjectType('<integer type>', types.I_INT_TYPE,
                                  methods={'to_string': int_to_string},
                                  __init__=int_init,
                                  __add__=int_add,

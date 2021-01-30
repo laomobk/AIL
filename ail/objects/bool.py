@@ -21,7 +21,7 @@ def bool_str(self: obj.AILObject):
     return '%s' % ('false' if not self['__value__'] else 'true')
 
 
-BOOL_TYPE = obj.AILObjectType('<AIL bool type>', types.I_TYPE_TYPE,
+BOOL_TYPE = obj.AILObjectType('<bool type>', types.I_TYPE_TYPE,
                               __init__=bool_init,
                               __eq__=bool_eq,
                               __str__=bool_str)
