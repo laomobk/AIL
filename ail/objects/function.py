@@ -48,7 +48,7 @@ def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
 
 
 def pyfunc_func_str(self: obj.AILObject):
-    return '<AIL Python function wrapper at %s>' % (hex(id(self)))
+    return '<python function \'%s\'>' % self['__name__']
 
 
 def func_func_init(self, cobj: t.CodeType, globals: dict, name: str):
@@ -58,7 +58,7 @@ def func_func_init(self, cobj: t.CodeType, globals: dict, name: str):
 
 
 def func_func_str(self: obj.AILObject):
-    return '<AIL function \'%s\' at %s>' % (self['__name__'], hex(id(self)))
+    return '<function \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
 def call(pyfw: obj.AILObject, *args):

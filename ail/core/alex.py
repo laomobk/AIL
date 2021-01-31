@@ -325,6 +325,7 @@ def get_string(source: str, cursor: int) -> tuple:
 
                 ccur += 2
                 cur += 2
+            continue
 
         if instr and source[ccur] == schr:
             hasEND = True  # 是否是因为while的条件而退出
