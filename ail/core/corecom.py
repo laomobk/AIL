@@ -44,6 +44,14 @@ def _get_err_stack_object():
     return new_struct_object('ERROR_STACK_T', null, stack_d, stack_d.keys())
 
 
+def _set_raise_python_error(_, b):
+    b = unpack_ailobj(b)
+    if isinstance(b, bool):
+        MAIN_INTERPRETER_STATE.global_interpreter.set_raise_python_error(b)
+        return
+    return AILRuntimeError('needs a bool value')
+
+
 def _sys_exit(_, code):
     if not compare_type(code, INTEGER_TYPE):
         return AILRuntimeError('exit() needs an integer.')
@@ -65,7 +73,8 @@ def _get_cc_object(_):
         '_refresh': convert_to_func_wrapper(_get_cc_object),
         # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
         'exit': convert_to_func_wrapper(_sys_exit),
-        'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv)
+        'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv),
+        'setPythonErrorRaise': convert_to_ail_object(_set_raise_python_error)
     }
 
     _ccom_t = ObjectCreater.new_object(

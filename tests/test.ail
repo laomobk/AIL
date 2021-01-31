@@ -1,2 +1,7 @@
 
-print '\'\'\''
+try {
+    1 / 0
+} catch _ {
+    print 're-throw...'
+    throw
+}

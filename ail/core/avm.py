@@ -48,7 +48,7 @@ from ..objects import (
 
 from .modules._error import (
     make_err_struct_object, throw_error, catch_error,
-    print_all_error, _err_to_string)
+    print_all_error, _err_to_string, get_err_struct)
 from .test_utils import get_opname
 from .version import AIL_VERSION
 
@@ -169,6 +169,8 @@ class Interpreter:
 
         self.__return_value = None
         self.__returning = False
+
+        self.__raise_python_error = False
     
     @property
     def __tof(self) -> Frame:
@@ -201,6 +203,10 @@ class Interpreter:
     @property
     def __block_stack(self) -> List[Block]:
         return self.__tof.block_stack
+
+    def set_raise_python_error(self, b: bool):
+        if isinstance(b, bool):
+            self.__raise_python_error = b
 
     def get_context(self) -> InterpreterContext:
         ctx = InterpreterContext(self)
@@ -310,6 +316,16 @@ class Interpreter:
                 error.AILRuntimeError(
                     msg, err_type, self.__tof, self.get_stack_trace()),
                 self.__tof.code.name, self.__tof.lineno)
+
+    def _err_reraise(self):
+        if len(self.__now_state.handling_err_stack) == 0:
+            return
+        err = self.__now_state.handling_err_stack.pop()
+        self.__now_state.handling_err_stack.clear()
+        self.__now_state.err_stack.append(err)
+
+        # switch to ERROR HANDLING mode again
+        raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
@@ -742,6 +758,8 @@ class Interpreter:
                 try:
                     rtn = self.__check_object(pyf(*argl))
                 except Exception as e:
+                    if self.__raise_python_error:
+                        raise
                     self.raise_error(
                         str(e), 'PythonError'
                     )
@@ -1267,9 +1285,23 @@ class Interpreter:
                         self.__tof.stack.append(PROTECTED_SIGNAL)
 
                     elif op == throw_error:
-                        self.__tof._marked_opcounter = self.__opcounter
-                        msg = str(self.__pop_top())
-                        self.raise_error(msg, 'Throw')
+                        _err = objs.unpack_ailobj(self.__pop_top())
+                        e_msg = ''
+                        e_type = ''
+                        if isinstance(_err, str):
+                            e_msg = _err
+                            e_type = 'Throw'
+                        elif objs.compare_type(_err, struct.STRUCT_OBJ_TYPE):
+                            if struct.struct_obj_isinstance(_err, get_err_struct()):
+                                e_msg = objs.unpack_ailobj(_err.members['err_msg'])
+                                e_type = objs.unpack_ailobj(_err.members['err_type'])
+                            else:
+                                self.raise_error('needs Error object or string', 'TypeError')
+                        elif _err is None:
+                            self._err_reraise()
+                        else:
+                            self.raise_error('needs Error object or string', 'TypeError')
+                        self.raise_error(e_msg, e_type)
 
                     elif op == setup_finally:
                         self.__push_block(BLOCK_FINALLY, argv)

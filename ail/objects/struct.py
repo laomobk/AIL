@@ -201,3 +201,10 @@ def struct_object_setattr(struct_obj: obj.AILObject,
 def new_struct(name: str, members: list, protected_members: list):
     return obj.ObjectCreater.new_object(
         STRUCT_TYPE, name, members, protected_members)
+
+
+def struct_obj_isinstance(struct_obj, struct_type) -> bool:
+    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE) or \
+            not obj.compare_type(struct_type, STRUCT_TYPE):
+        return False
+    return struct_obj['__type__'] is struct_type

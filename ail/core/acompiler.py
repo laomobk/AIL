@@ -932,9 +932,13 @@ class Compiler:
     def __compile_throw_expr(self, tree: ast.ThrowExprAST) -> ByteCode:
         bc = ByteCode()
 
-        ec = self.__compile_binary_expr(tree.expr)
+        if tree.expr is None:
+            bc.add_bytecode(push_none, 0, -1)
 
-        bc += ec
+        else:
+            ec = self.__compile_binary_expr(tree.expr)
+            bc += ec
+            
         bc.add_bytecode(throw_error, 0, tree.ln)
 
         return bc

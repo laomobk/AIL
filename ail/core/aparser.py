@@ -1192,6 +1192,9 @@ class Parser:
 
         self.__next_tok()  # eat 'throw'
 
+        if self.__now_tok.ttype == AIL_ENTER:
+            return ast.ThrowExprAST(None, ln)
+
         expr = self.__parse_binary_expr()
 
         if expr is None or \

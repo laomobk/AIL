@@ -1,10 +1,23 @@
 import sys
 
 from ..error import AILRuntimeError, get_line_from_file
-from ...objects.struct import new_struct_object, convert_to_pyobj
-from ...objects.null import null
+from ...objects.struct import new_struct_object, convert_to_pyobj, new_struct
 from ..astate import MAIN_INTERPRETER_STATE
 from ..aobjects import unpack_ailobj, convert_to_ail_object
+
+
+_ERR_STRUCT_MEMBERS = [
+    'err_msg',
+    'err_type',
+    'err_where',
+    'err_filename',
+    'toString',
+    '__lineno',
+    '__frame',
+    '__eq__'
+]
+
+_ERR_STRUCT_TEMP = None
 
 
 def _err_to_string(this):
@@ -32,6 +45,16 @@ def _err_eq(this, type_name):
     return this.members['err_type'] == type_name
 
 
+def get_err_struct():
+    global _ERR_STRUCT_TEMP
+
+    if _ERR_STRUCT_TEMP is None:
+        _ERR_STRUCT_TEMP = new_struct(
+            'Error', _ERR_STRUCT_MEMBERS, _ERR_STRUCT_MEMBERS)
+
+    return _ERR_STRUCT_TEMP
+
+
 def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -1):
     msg = err_obj.msg
     type = err_obj.err_type
@@ -49,7 +72,7 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -
         '__eq__': convert_to_ail_object(_err_eq)
     }
 
-    err_struct = new_struct_object('ERR_T', null, err_d, err_d.keys())
+    err_struct = new_struct_object(str(type), get_err_struct(), err_d, list(err_d.keys()))
     err_struct.error_object = err_obj
 
     return err_struct
