@@ -11,10 +11,8 @@ _ERR_STRUCT_MEMBERS = [
     'err_type',
     'err_where',
     'err_filename',
-    'toString',
     '__lineno',
     '__frame',
-    '__eq__'
 ]
 
 _ERR_STRUCT_TEMP = None
@@ -45,12 +43,22 @@ def _err_eq(this, type_name):
     return this.members['err_type'] == type_name
 
 
+def _err_init(this, msg, type):
+    this.members['err_msg'] = str(msg)
+    this.members['err_type'] = str(type)
+
+
 def get_err_struct():
     global _ERR_STRUCT_TEMP
 
     if _ERR_STRUCT_TEMP is None:
         _ERR_STRUCT_TEMP = new_struct(
             'Error', _ERR_STRUCT_MEMBERS, _ERR_STRUCT_MEMBERS)
+        _ERR_STRUCT_TEMP['__bind_functions__'] = {
+            '__init__': convert_to_ail_object(_err_init),
+            '__eq__': convert_to_ail_object(_err_eq),
+            'toString': convert_to_ail_object(_err_to_string),
+        }
 
     return _ERR_STRUCT_TEMP
 
@@ -69,7 +77,8 @@ def make_err_struct_object(err_obj: AILRuntimeError, where: str, lineno: int = -
         'toString': convert_to_ail_object(_err_to_string),
         '__lineno': lineno,
         '__frame': frame,
-        '__eq__': convert_to_ail_object(_err_eq)
+        '__eq__': convert_to_ail_object(_err_eq),
+        '__init__': convert_to_ail_object(_err_init),
     }
 
     err_struct = new_struct_object(str(type), get_err_struct(), err_d, list(err_d.keys()))

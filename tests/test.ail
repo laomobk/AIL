@@ -1,7 +1,10 @@
 
-try {
-    1 / 0
-} catch _ {
-    print 're-throw...'
-    throw
-}
+{
+    'name': 'Nezha',
+    'age': 3,
+}.forEach(fun (key, value) {
+    print index; elem
+})
+
+
+

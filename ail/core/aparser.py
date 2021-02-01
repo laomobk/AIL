@@ -47,13 +47,31 @@ class Parser:
         self.__tc = 0
 
         self.__level = 0  # level 0
+        self.__parenthesis_level = 0
 
     def __mov_tp(self, step=1):
         self.__tc += step
 
     def __next_tok(self, 
-            ignore_newline: bool = False, convert_semi: bool = True) -> Token:
+            ignore_newline: bool = False, 
+            convert_semi: bool = True, just_next: bool = False) -> Token:
+        if just_next:
+            self.__tc += 1
+            if convert_semi and self.__now_tok.ttype == AIL_SEMI:
+                self.__now_tok.ttype = AIL_ENTER
+            return
+
+        if self.__parenthesis_level > 0:
+            self.__skip_newlines()
+
+        if self.__now_tok.ttype in (AIL_SLBASKET, AIL_MLBASKET):
+            self.__parenthesis_level += 1
+        elif self.__now_tok.ttype in (AIL_SRBASKET, AIL_MRBASKET) and \
+                self.__parenthesis_level > 0:
+            self.__parenthesis_level -= 1
+
         self.__tc += 1
+
         if convert_semi and self.__now_tok.ttype == AIL_SEMI:
             self.__now_tok.ttype = AIL_ENTER
 
@@ -63,8 +81,8 @@ class Parser:
         return self.__tok_stream[self.__tc]
 
     def __skip_newlines(self):
-        while self.__now_tok.ttype == AIL_ENTER:
-            self.__next_tok()
+        while self.__now_tok == '\n':
+            self.__next_tok(just_next=True)
 
     def __peek(self, step=1) -> Token:
         return self.__tok_stream[self.__tc + step]
@@ -163,30 +181,22 @@ class Parser:
         if self.__now_tok.ttype == AIL_MRBASKET:
             return ast.ItemListAST([], self.__now_ln)
 
-        while self.__now_tok.ttype == AIL_ENTER or \
-                self.__now_tok.value == '\n':  # ignore ENTER
-            self.__next_tok()  # eat ENTER
-
         il = []
 
         while self.__now_tok.ttype != AIL_MRBASKET:
             eitem = self.__parse_binary_expr()
+
+            self.__skip_newlines()
 
             if eitem is None:
                 self.__syntax_error()
 
             il.append(eitem)
 
-            while self.__now_tok.ttype == AIL_ENTER or \
-                    self.__now_tok.value == '\n':  # ignore ENTER
-                self.__next_tok()  # eat ENTER
-
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()
 
-            while self.__now_tok.ttype == AIL_ENTER or \
-                    self.__now_tok.value == '\n':  # ignore ENTER
-                self.__next_tok()  # eat ENTER
+            self.__skip_newlines()
 
         return ast.ItemListAST(il, self.__now_ln)
 
@@ -197,6 +207,7 @@ class Parser:
             self.__syntax_error()
 
         self.__next_tok()  # eat '['
+        self.__skip_newlines()
 
         if self.__now_tok.ttype == AIL_MRBASKET:
             self.__next_tok()  # eat ']'
@@ -359,6 +370,15 @@ class Parser:
                 self.__syntax_error()
 
             return a
+        elif self.__now_tok == 'fun':
+            ph_lev = self.__parenthesis_level
+            self.__parenthesis_level = 0
+
+            expr = self.__parse_func_def_stmt(anonymous_function=True)
+
+            self.__parenthesis_level = ph_lev
+
+            return expr
 
         if self.__now_tok == '(':
             self.__next_tok()
@@ -1072,13 +1092,14 @@ class Parser:
             self.__syntax_error()
 
 
-    def __parse_func_def_stmt(self) -> ast.FunctionDefineAST:
+    def __parse_func_def_stmt(
+            self, anonymous_function: bool = False) -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
 
         bindto = None
 
-        if self.__now_tok == '(':
+        if self.__now_tok == '(' and not anonymous_function:
             if self.__next_tok().ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
             bindto = self.__now_tok.value
@@ -1086,13 +1107,18 @@ class Parser:
             if self.__next_tok() != ')':
                 self.__syntax_error()
             self.__next_tok()
+        
+        if anonymous_function:
+            name = '<anonymous function>'
+        else:
+            if self.__now_tok.ttype != AIL_IDENTIFIER:
+                self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
-            self.__syntax_error()
+            name = self.__now_tok.value
 
-        name = self.__now_tok.value
+            self.__next_tok()  # eat NAME
 
-        if self.__next_tok() != '(':
+        if self.__now_tok != '(':
             self.__syntax_error()
 
         self.__next_tok()  # eat '('
@@ -1492,7 +1518,7 @@ class Parser:
         else:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_ENTER:  
+        if self.__now_tok.ttype != AIL_ENTER:
             # a stmt should be end of ENTER
             self.__syntax_error()
 

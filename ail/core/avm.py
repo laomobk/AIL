@@ -319,9 +319,8 @@ class Interpreter:
 
     def _err_reraise(self):
         if len(self.__now_state.handling_err_stack) == 0:
-            return
+            self.raise_error('no handling error', 'ValueError')
         err = self.__now_state.handling_err_stack.pop()
-        self.__now_state.handling_err_stack.clear()
         self.__now_state.err_stack.append(err)
 
         # switch to ERROR HANDLING mode again

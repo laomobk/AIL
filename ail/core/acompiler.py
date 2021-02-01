@@ -171,6 +171,9 @@ class Compiler:
         elif isinstance(tree, ast.UnaryExprAST):
             bc += self.__compile_unary_expr(tree, is_single)
 
+        elif isinstance(tree, ast.FunctionDefineAST):
+            bc += self.__compile_function(tree, anonymous_function=True)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -975,7 +978,10 @@ class Compiler:
 
         return bc
 
-    def __compile_function(self, tree: ast.FunctionDefineAST) -> ByteCode:
+    def __compile_function(
+            self, 
+            tree: ast.FunctionDefineAST, 
+            anonymous_function: bool = False) -> ByteCode:
         bc = ByteCode()
 
         has_bindto = tree.bindto is not None
@@ -1001,6 +1007,10 @@ class Compiler:
             cobj.closure = True
 
         ci = self.__buffer.add_const(cobj)
+        if anonymous_function:
+            bc.add_bytecode(load_const, ci, -1)
+            bc.add_bytecode(make_function, 0, -1)
+            return bc
 
         namei = self.__buffer.get_or_add_varname_index(tree.name)
 

@@ -2,7 +2,7 @@
 from .types import I_MAP_TYPE
 
 from ..core.aobjects import (
-    AILObject, AILObjectType, ObjectCreater, compare_type
+    AILObject, AILObjectType, ObjectCreater, compare_type, call_object
 )
 from ..core.error import AILRuntimeError
 
@@ -34,7 +34,16 @@ def map_str(self):
     return str(self['__value__'])
 
 
+def map_for_each(self, func):
+    d = self['__value__']
+    for key, value in d.items():
+        call_object(func, key, value, type_check=True)
+
+
 MAP_TYPE = AILObjectType('<map type>', I_MAP_TYPE,
+                         methods={
+                            'forEach': map_for_each,
+                         },
                          __init__=map_init,
                          __getitem__=map_getitem,
                          __setitem__=map_setitem,

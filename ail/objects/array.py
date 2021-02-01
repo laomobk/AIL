@@ -4,6 +4,7 @@ from typing import Iterable
 from . import types
 from . import integer
 from ..core import aobjects as objs
+from ..core.astate import MAIN_INTERPRETER_STATE
 from ..core.error import AILRuntimeError
 
 
@@ -166,6 +167,13 @@ def array_copy(self):
     return self['__value__'].copy()
 
 
+def array_for_each(self, func):
+    arr = self['__value__']
+    for i, ele in enumerate(arr):
+        objs.call_object(func, i, ele, type_check=True)
+
+
+
 ARRAY_TYPE = objs.AILObjectType('<array type>', types.I_ARRAY_TYPE,
                                 methods={
                                     'append': array_append,
@@ -180,6 +188,7 @@ ARRAY_TYPE = objs.AILObjectType('<array type>', types.I_ARRAY_TYPE,
                                     'clear': array_clear,
                                     'reverse': array_reverse,
                                     'copy': array_copy,
+                                    'forEach': array_for_each,
                                 },
                                 __init__=array_init,
                                 __getitem__=array_getitem,

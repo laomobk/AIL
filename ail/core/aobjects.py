@@ -312,3 +312,21 @@ def unpack_ailobj(ailobj: AILObject):
     return ailobj
 
 
+
+_MAIN_INTERPRETER_STATE = None
+
+def call_object(obj, *args, type_check: bool = False):
+    global _MAIN_INTERPRETER_STATE
+    if _MAIN_INTERPRETER_STATE is None:
+        from .astate import MAIN_INTERPRETER_STATE
+
+    args = list(args)
+
+    if type_check:
+        for i, ele in enumerate(args):
+            if not isinstance(ele, AILObject):
+                args[i] = convert_to_ail_object(ele)
+
+    interpreter = MAIN_INTERPRETER_STATE.global_interpreter
+    interpreter.call_function(obj, len(args), args)
+

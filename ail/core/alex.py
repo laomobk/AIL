@@ -537,7 +537,9 @@ class Lex:
 
                 elif self.__nextch() in ('+', '-'):  # 自增自减
                     self.__stream.append(Token(c + c,
-                                               AIL_PLUS_PLUS if self.__nextch() == '+' else AIL_SUB_SUB,
+                                               AIL_PLUS_PLUS 
+                                                    if self.__nextch() == '+' 
+                                                    else AIL_SUB_SUB,
                                                self.__ln))
                     self.__movchr(2)
 
@@ -676,10 +678,6 @@ class Lex:
 
             elif c in ('(', ')', '[', ']', '{', '}',
                        ',', '.', ';', '$', '@', '#', '\\', ':', '~'):
-                if c in ('(', '['):
-                    self.__blevel += 1
-                elif c in (')', ']'):
-                    self.__blevel -= 1 if self.__blevel > 0 else 0
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
                     self.__ln += 1

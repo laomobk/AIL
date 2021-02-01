@@ -4,6 +4,7 @@ import os.path
 import sys
 from importlib import import_module
 from .core import shared
+from .core import aconfig
 from .core.astate import MAIN_INTERPRETER_STATE
 from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 
@@ -41,7 +42,7 @@ class ArgParser:
 
     def _do_help(self, _):
         print(_HELP)
-        self.__ok = False
+        self.__ok = -1
 
     _do_h = _do_help
 
@@ -54,6 +55,18 @@ class ArgParser:
             return True
         self.__ok = False
         return False
+
+    def _do_debug(self, opt: _Option):
+        n = self.__next_arg()
+        if n == 'show_syntax_error_frame':
+            aconfig._DEBUG_SHOW_FRAME = True
+        else:
+            print('--debug: invalid debug setting')
+            self.__ok = False
+            return
+        self.__ok = True
+
+    _do_d = _do_debug
 
     def parse(self, arg_list: list) -> _Option:
         option = _Option()
@@ -72,14 +85,17 @@ class ArgParser:
                 handler(option)
             elif arg[:1] == '-':
                 handler = getattr(
-                    self, '_do_%s' % arg[2:], self._do_h)
+                    self, '_do_%s' % arg[1:], self._do_h)
                 handler(option)
             else:
                 if self._do_literal(option):
                     break
 
+            if self.__ok == -1:
+                return None
+
             if not self.__ok:
-                self._do_help()
+                self._do_help(option)
                 return None
 
             arg = self.__next_arg()
@@ -113,13 +129,13 @@ def launch_py_test(test_name):
 def launch_main(argv: list) -> int:
     option = ArgParser().parse(argv)
 
+    if option is None:
+        return 1
+
     if option.shell_mode:
         from .core import ashell
         ashell.Shell().run_shell()
         return 0
-
-    if option is None:
-        return 1
 
     file_path = option.filename
     file_dir = os.path.dirname(
