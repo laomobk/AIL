@@ -1,6 +1,7 @@
 from os.path import split
 
-from .aconfig import _PACKAGE_INIT_FILENAME
+from . import aconfig
+
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
 from .error import error_msg
@@ -597,8 +598,12 @@ class Parser:
             self.__syntax_error()
 
         el = [exp]
+        
+        sep = ','
+        if aconfig._OLD_PRINT:
+            sep = ';'
 
-        while self.__now_tok == ';':
+        while self.__now_tok == sep:
             self.__next_tok()
             e = self.__parse_binary_expr()
 
@@ -1275,7 +1280,7 @@ class Parser:
             if directory == '':
                 directory = '.'
 
-            path = '/'.join((directory, target, _PACKAGE_INIT_FILENAME))
+            path = '/'.join((directory, target, aconfig._PACKAGE_INIT_FILENAME))
             alias = target
 
         if alias is None:

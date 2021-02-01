@@ -1,10 +1,8 @@
 
-{
-    'name': 'Nezha',
-    'age': 3,
-}.forEach(fun (key, value) {
-    print index; elem
-})
-
-
+(fun () {
+    a = 0;
+    b = 0;
+    c = 0;
+    print a, b, c
+})()
 

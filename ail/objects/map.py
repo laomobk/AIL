@@ -37,7 +37,8 @@ def map_str(self):
 def map_for_each(self, func):
     d = self['__value__']
     for key, value in d.items():
-        call_object(func, key, value, type_check=True)
+        if not call_object(func, key, value, type_check=True):
+            break
 
 
 MAP_TYPE = AILObjectType('<map type>', I_MAP_TYPE,

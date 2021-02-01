@@ -492,7 +492,7 @@ class Lex:
             else '<EOF>'
 
     def __error_msg(self, msg):
-        error_msg(self.__ln, msg, self.__filename)
+        error_msg(self.__ln, msg, self.__filename, source=self.__source)
 
     def lex(self, source: str, filename: str = '<string>') -> TokenStream:
         if filename is not None:

@@ -34,6 +34,8 @@ def get_line_from_file(lno: int, fp: str, strip=True):
                     return ln.strip()
                 return ln
             tlno += 1
+            if ln:
+                last_line = ln
 
         if strip:
             return last_line.strip()
@@ -61,7 +63,8 @@ def get_line_from_source(lno: int, source: str, strip=True):
                     return ln.strip()
                 return ln
             tlno += 1
-            last_line = ln
+            if ln:
+                last_line = ln
         
         if strip:
             return last_line.strip()

@@ -68,6 +68,10 @@ class ArgParser:
 
     _do_d = _do_debug
 
+    def _do_old(self, _):
+        aconfig._OLD_PRINT = True
+        self.__ok = True
+
     def parse(self, arg_list: list) -> _Option:
         option = _Option()
         self.__now_arg_list = arg_list

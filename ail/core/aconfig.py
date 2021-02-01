@@ -5,3 +5,5 @@ _PACKAGE_INIT_FILENAME = '_package'
 
 _DEBUG_SHOW_FRAME = False
 
+_OLD_PRINT = False
+

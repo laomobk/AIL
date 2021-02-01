@@ -170,7 +170,8 @@ def array_copy(self):
 def array_for_each(self, func):
     arr = self['__value__']
     for i, ele in enumerate(arr):
-        objs.call_object(func, i, ele, type_check=True)
+        if not objs.call_object(func, i, ele, type_check=True):
+            break
 
 
 

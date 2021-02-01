@@ -3,12 +3,12 @@ cases = []
 
 fun testNormalArrayAccess() {
     a = ['a', 'b', 'c', 'Nezha']
-    print 'a:'; a
+    print 'a:', a
 
     for (i = -10; i < 10; ++i) {
-        print 'access index'; i
+        print 'access index', i
         try {
-            print 'a[i] ='; a[i]
+            print 'a[i] =', a[i]
         } catch err {
             print err.err_msg
         }
@@ -21,7 +21,7 @@ fun testTwoDimArrayAccess() {
          [0, 1, 0, 1, 0],
          [1, 0, 2, 0, 1]]
 
-    print 'a ='; a
+    print 'a =', a
     
     print 'access line'
     for (y = -10; y < len(a); ++y) {
@@ -45,7 +45,7 @@ cases.append(testTwoDimArrayAccess)
 
 if __main__ {
     for (i = 0; i < len(cases); ++i) {
-        print '\ncall:'; cases[i]
+        print '\ncall:', cases[i]
         cases[i]()
     }
 }

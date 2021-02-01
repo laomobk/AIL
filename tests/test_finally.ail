@@ -245,7 +245,7 @@ fun test_main() {
         try {
             v = cases[i]()
             if not equal(v, null) {
-                print '<< case return: '; v
+                print '<< case return: ', v
             }
         } catch err {
             print '<< occurred exception:'

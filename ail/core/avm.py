@@ -720,15 +720,18 @@ class Interpreter:
                             self.__set_globals(func['__global_ns__'])
                         why = self.__run_bytecode(c, f)
 
+                    ok = True
+
                     # self.__set_globals(now_globals)
 
                     if why == WHY_HANDLING_ERR or why == WHY_ERROR:
-                        # do nothing
-                        pass
+                        ok = False
                     else:
                         self.__opcounter = self.__tof._latest_call_opcounter
                         # 如无异常，则还原字节码计数器
                     self.__push_back(self.__return_value)
+
+                    return ok
 
                 except RecursionError as e:
                     self.raise_error(str(e), 'PythonError')
@@ -1442,6 +1445,7 @@ class Interpreter:
                         self.__interrupt_signal = MII_ERR_POP_TO_TRY
                         self.__frame_stack.pop()
                         self.__can = 0
+                        why = WHY_HANDLING_ERR
                         break
 
                 if not self.__can:
