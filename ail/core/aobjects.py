@@ -292,7 +292,6 @@ def convert_to_ail_number(pynum: Union[int, float]) -> AILObject:
         return pynum
 
 
-
 def compare_type(o, *t):
     if isinstance(o, AILObject):
         if o['__class__'] in t:

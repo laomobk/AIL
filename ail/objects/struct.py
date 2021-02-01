@@ -198,9 +198,12 @@ def struct_object_setattr(struct_obj: obj.AILObject,
     struct_obj.members[name] = value
 
 
-def new_struct(name: str, members: list, protected_members: list):
-    return obj.ObjectCreater.new_object(
+def new_struct(
+        name: str, members: list, protected_members: list, bind_functions: dict = None):
+    s = obj.ObjectCreater.new_object(
         STRUCT_TYPE, name, members, protected_members)
+    s['__bind_functions__'] = bind_functions
+    return s
 
 
 def struct_obj_isinstance(struct_obj, struct_type) -> bool:
