@@ -1,8 +1,6 @@
 
-(fun () {
-    a = 0;
-    b = 0;
-    c = 0;
-    print a, b, c
-})()
+struct A {
+    a
+}
 
+print new(A).a
