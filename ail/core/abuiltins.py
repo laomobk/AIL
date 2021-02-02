@@ -1,4 +1,6 @@
 from .error import AILRuntimeError
+
+from . import aconfig
 from . import aobjects as objs
 from . import corecom as ccom
 
@@ -49,25 +51,25 @@ def func_neg(x: objs.AILObject):
 
 
 def func_globals():
-    keys = MAIN_INTERPRETER_STATE.namespace_state.ns_global.ns_dict.keys()
-    return array.convert_to_array(keys)
+    ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_global.ns_dict
+    return amap.convert_to_ail_map(ns_dict)
 
 
 def func_builtins():
-    keys = MAIN_INTERPRETER_STATE.namespace_state.ns_builtins.ns_dict.keys()
-    return array.convert_to_array(keys)
+    ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_builtins.ns_dict
+    return amap.convert_to_ail_map(ns_dict)
 
 
 def func_locals():
     frame_stack = MAIN_INTERPRETER_STATE.frame_stack
     if len(frame_stack) > 0:
-        return array.convert_to_array(frame_stack[-1].variable.keys())
+        return amap.convert_to_ail_map(frame_stack[-1].variable)
     return AILRuntimeError('No frame found', 'VMError')
 
 
 def func_dir(module):
     if objs.compare_type(module, amodule.MODULE_TYPE):
-        return array.convert_to_array(module['__namespace__'].keys())
+        return amap.convert_to_ail_map(module['__namespace__'])
     return AILRuntimeError('dir() requires a module object', 'TypeError')
 
 
@@ -248,6 +250,33 @@ def func_isinstance(o, stype):
     return False
 
 
+def func_isimplement(type_or_obj, *stypes):
+    if len(stypes) == 0:
+        return AILRuntimeError(
+                'isimplement() needs two or more arguments', 'ValueError')
+
+    _type = type_or_obj
+    _is_reserved_name = struct._is_reserved_name
+
+    if objs.compare_type(type_or_obj, struct.STRUCT_TYPE):
+        pass
+    elif objs.compare_type(type_or_obj, struct.STRUCT_OBJ_TYPE):
+        _type = type_or_obj['__type__']
+    else:
+        return AILRuntimeError('isimplement() needs struct or object')
+
+    members = _type.members + list(_type['__bind_functions__'].keys())
+
+    for stype in stypes:
+        if not objs.compare_type(stype, struct.STRUCT_TYPE):
+            return AILRuntimeError('isimplement(): not a struct')
+
+        for s_member in stype.members + list(stype['__bind_functions__'].keys()):
+            if _is_reserved_name(s_member):
+                continue
+            if s_member not in members:
+                return False
+
 def func_equal_type(a, b):
     if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
         return a['__class__'].otype == b['__class__'].otype
@@ -315,58 +344,65 @@ def func_complex(real, imag):
 true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
 false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 
-BUILTINS = {
-    'abs': objs.convert_to_ail_object(func_abs),
-    'ng': objs.convert_to_ail_object(func_neg),
-    'int_input': objs.convert_to_ail_object(func_int_input),
-    '__version__': objs.convert_to_ail_object(_AIL_VERSION),
-    '__main_version__': objs.convert_to_ail_object(_AIL_MAIN_VERSION),
-    'chr': objs.convert_to_ail_object(func_chr),
-    'ord': objs.convert_to_ail_object(func_ord),
-    'hex': objs.convert_to_ail_object(func_hex),
-    'make_type': objs.convert_to_ail_object(func_make_type),
-    'new': objs.convert_to_ail_object(new_struct),
-    'null': null.null,
-    'true': true,
-    'false': false,
-    'len': objs.convert_to_ail_object(func_len),
-    'equal': objs.convert_to_ail_object(func_equal),
-    'type': objs.convert_to_ail_object(func_type),
-    'array': objs.convert_to_ail_object(func_array),
-    'equal_type': objs.convert_to_ail_object(func_equal_type),
-    'isinstance': objs.convert_to_ail_object(func_isinstance),
-    'str': objs.convert_to_ail_object(func_str),
-    'repr': objs.convert_to_ail_object(func_repr),
-    '_get_ccom': objs.convert_to_ail_object(ccom.get_cc_object),
-    'open': objs.convert_to_ail_object(_open),
-    'int': objs.convert_to_ail_object(func_int),
-    'float': objs.convert_to_ail_object(func_float),
-    'addr': objs.convert_to_ail_object(func_addr),
-    'fnum': objs.convert_to_ail_object(func_fnum),
-    'globals': objs.convert_to_ail_object(func_globals),
-    'builtins': objs.convert_to_ail_object(func_builtins),
-    'locals': objs.convert_to_ail_object(func_locals),
-    'dir': objs.convert_to_ail_object(func_dir),
-    'console': objs.convert_to_ail_object(get_console_object()),
-    'help': objs.convert_to_ail_object(print_help),
-    'complex': objs.convert_to_ail_object(func_complex),
-    'map': objs.convert_to_ail_object(func_map),
-
-    ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
-    PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),
-    TYPE_ERROR: objs.convert_to_ail_object(TYPE_ERROR),
-    UNHASHABLE_ERROR: objs.convert_to_ail_object(UNHASHABLE_ERROR),
-    INDEX_ERROR: objs.convert_to_ail_object(INDEX_ERROR),
-    OBJECT_ERROR: objs.convert_to_ail_object(OBJECT_ERROR),
-    OS_ERROR: objs.convert_to_ail_object(OS_ERROR),
-    LOAD_ERROR: objs.convert_to_ail_object(LOAD_ERROR),
-    IMPORT_ERROR: objs.convert_to_ail_object(IMPORT_ERROR),
-    RECURSION_ERROR: objs.convert_to_ail_object(RECURSION_ERROR),
-    VM_ERROR: objs.convert_to_ail_object(VM_ERROR),
-    NAME_ERROR: objs.convert_to_ail_object(NAME_ERROR),
-    ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR),
-    KEY_ERROR: objs.convert_to_ail_object(KEY_ERROR),
-}
-
+BUILTINS = {}
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
+
+def init_builtins():
+    global BUILTINS, BUILTINS_NAMESPACE
+
+    BUILTINS = {
+        'abs': objs.convert_to_ail_object(func_abs),
+        'ng': objs.convert_to_ail_object(func_neg),
+        'int_input': objs.convert_to_ail_object(func_int_input),
+        '__version__': objs.convert_to_ail_object(_AIL_VERSION),
+        '__main_version__': objs.convert_to_ail_object(_AIL_MAIN_VERSION),
+        'chr': objs.convert_to_ail_object(func_chr),
+        'ord': objs.convert_to_ail_object(func_ord),
+        'hex': objs.convert_to_ail_object(func_hex),
+        'make_type': objs.convert_to_ail_object(func_make_type),
+        'new': objs.convert_to_ail_object(new_struct),
+        'null': null.null,
+        'true': true,
+        'false': false,
+        'len': objs.convert_to_ail_object(func_len),
+        'equal': objs.convert_to_ail_object(func_equal),
+        'type': objs.convert_to_ail_object(func_type),
+        'array': objs.convert_to_ail_object(func_array),
+        'equal_type': objs.convert_to_ail_object(func_equal_type),
+        'isinstance': objs.convert_to_ail_object(func_isinstance),
+        'isimplement': objs.convert_to_ail_object(func_isimplement),
+        'str': objs.convert_to_ail_object(func_str),
+        'repr': objs.convert_to_ail_object(func_repr),
+        '_get_ccom': objs.convert_to_ail_object(ccom.get_cc_object),
+        'open': objs.convert_to_ail_object(_open),
+        'int': objs.convert_to_ail_object(func_int),
+        'float': objs.convert_to_ail_object(func_float),
+        'addr': objs.convert_to_ail_object(func_addr),
+        'fnum': objs.convert_to_ail_object(func_fnum),
+        'globals': objs.convert_to_ail_object(func_globals),
+        'builtins': objs.convert_to_ail_object(func_builtins),
+        'locals': objs.convert_to_ail_object(func_locals),
+        'dir': objs.convert_to_ail_object(func_dir),
+        'console': objs.convert_to_ail_object(get_console_object()),
+        'help': objs.convert_to_ail_object(print_help),
+        'complex': objs.convert_to_ail_object(func_complex),
+        'map': objs.convert_to_ail_object(func_map),
+
+        ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
+        PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),
+        TYPE_ERROR: objs.convert_to_ail_object(TYPE_ERROR),
+        UNHASHABLE_ERROR: objs.convert_to_ail_object(UNHASHABLE_ERROR),
+        INDEX_ERROR: objs.convert_to_ail_object(INDEX_ERROR),
+        OBJECT_ERROR: objs.convert_to_ail_object(OBJECT_ERROR),
+        OS_ERROR: objs.convert_to_ail_object(OS_ERROR),
+        LOAD_ERROR: objs.convert_to_ail_object(LOAD_ERROR),
+        IMPORT_ERROR: objs.convert_to_ail_object(IMPORT_ERROR),
+        RECURSION_ERROR: objs.convert_to_ail_object(RECURSION_ERROR),
+        VM_ERROR: objs.convert_to_ail_object(VM_ERROR),
+        NAME_ERROR: objs.convert_to_ail_object(NAME_ERROR),
+        ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR),
+        KEY_ERROR: objs.convert_to_ail_object(KEY_ERROR),
+    }
+
+    BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
 

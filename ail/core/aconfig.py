@@ -7,3 +7,5 @@ _DEBUG_SHOW_FRAME = False
 
 _OLD_PRINT = False
 
+_LOAD_BUILTINS = True
+

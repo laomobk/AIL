@@ -7,6 +7,7 @@ from .core import shared
 from .core import aconfig
 from .core.astate import MAIN_INTERPRETER_STATE
 from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
+from .core.abuiltins import init_builtins
 
 from ._config import (
     AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
@@ -131,6 +132,8 @@ def launch_py_test(test_name):
 
 
 def launch_main(argv: list) -> int:
+    init_builtins()
+
     option = ArgParser().parse(argv)
 
     if option is None:
