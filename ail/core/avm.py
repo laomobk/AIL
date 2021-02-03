@@ -665,7 +665,7 @@ class Interpreter:
 
         return None
 
-    def call_function(self, func, argv, argl, ex: bool = False):
+    def call_function(self, func, argv, argl, ex: bool = False, frame = None):
         self.__tof._marked_opcounter = self.__opcounter
 
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
@@ -700,10 +700,10 @@ class Interpreter:
                 if ex:
                     argd[var_arg] = array.convert_to_array(argl[c.argcount:])
                 # init new frame
-                f = Frame()
+                f = Frame() if frame is None else frame
 
                 f.varnames = c.varnames
-                f.variable = argd
+                f.variable.update(argd)
                 f.code = c
                 f.consts = c.consts
 
@@ -1282,6 +1282,10 @@ class Interpreter:
                             struct.STRUCT_TYPE, name, nl, pl)
 
                         self.__store_var(name, o)
+
+                    elif op == build_class:
+                        pops = [self.__pop_top() for _ in range(argv)]
+                        class_func, class_name, meta, *bases = pops
 
                     elif op == set_protected:
                         self.__tof.stack.append(PROTECTED_SIGNAL)

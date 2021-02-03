@@ -315,7 +315,7 @@ def unpack_ailobj(ailobj: AILObject):
 _MAIN_INTERPRETER_STATE = None
 
 
-def call_object(obj, *args, type_check: bool = False) -> bool:
+def call_object(obj, *args, type_check: bool = False, frame = None) -> bool:
     """
     :return: an AIL runtime error has occurred or not.
     """
@@ -331,5 +331,5 @@ def call_object(obj, *args, type_check: bool = False) -> bool:
                 args[i] = convert_to_ail_object(ele)
 
     interpreter = MAIN_INTERPRETER_STATE.global_interpreter
-    return interpreter.call_function(obj, len(args), args)
+    return interpreter.call_function(obj, len(args), args, frame=frame)
 

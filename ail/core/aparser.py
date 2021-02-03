@@ -19,6 +19,7 @@ _keywords_uc = (
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
+    'EXTENDS'
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -1096,6 +1097,51 @@ class Parser:
         else:
             self.__syntax_error()
 
+    def __parse_class_bases(self) -> list:
+        bases = []
+
+        first = self.__parse_binary_expr()
+        bases.append(first)
+
+        while self.__now_tok == ',':
+            sub = self.__parse_binary_expr()
+            bases.append(sub)
+
+        return bases
+
+    def __parse_class_def_stmt(self) -> ast.ClassDefineAST:
+        """
+        the class definition actually a function definition.
+        """
+
+        ln = self.__now_ln
+        self.__next_tok()  # eat 'class'
+        
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error()
+
+        class_name = self.__now_tok.value
+        bases = []
+        meta = None
+
+        self.__next_tok()  # eat NAME
+
+        if self.__now_tok.ttype == AIL_COLON:
+            self.__next_tok()  # 'eat ':'
+            meta = self.__parse_binary_expr()
+
+        if self.__now_tok == 'extends':
+            self.__next_tok()
+            bases = self.__parse_class_bases()
+
+        body = self.__parse_block('is', 'end',
+                                   start_msg=
+                                   'class body should starts with \'is\' or \':\'')
+
+        func = ast.FunctionDefineAST(
+                class_name, ast.ArgListAST([], ln), body, None, ln)
+
+        return ast.ClassDefineAST(class_name, func, bases, meta, ln)
 
     def __parse_func_def_stmt(
             self, anonymous_function: bool = False) -> ast.FunctionDefineAST:
@@ -1495,6 +1541,9 @@ class Parser:
 
         elif nt == 'struct':
             a = self.__parse_struct_def_stmt()
+
+        elif nt == 'class':
+            a = self.__parse_class_def_stmt()
 
         elif nt == 'assert':
             a = self.__parse_assert_expr()

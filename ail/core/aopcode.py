@@ -111,6 +111,8 @@ end_finally = 0x48
 build_map = 0x49
 build_const_key_map = 0x4a
 
+build_class = 0x4b
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2

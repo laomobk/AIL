@@ -320,6 +320,17 @@ class FunctionDefineAST:
         self.ln = ln
 
 
+class ClassDefineAST:
+    def __init__(self, 
+            name: str, func: FunctionDefineAST, 
+            bases: List[ExprAST], meta: List[ExprAST], ln: int):
+        self.name = name
+        self.func = func
+        self.bases = bases
+        self.meta = meta
+        self.ln = ln
+
+
 class ReturnAST:
     """
     return_stmt := 'return' expr

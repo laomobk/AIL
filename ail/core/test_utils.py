@@ -109,6 +109,15 @@ def make_ast_tree(a) -> dict:
                     'bindto': make_ast_tree(a.bindto),
                     'decorator': make_ast_tree(a.decorator)}}
 
+    elif isinstance(a, ast.ClassDefineAST):
+        return {'ClassDefAST': 
+                {
+                    'name': a.name,
+                    'bases': make_ast_tree(a.bases),
+                    'meta': make_ast_tree(a.meta),
+                    'func': make_ast_tree(a.func),
+                }}
+
     elif isinstance(a, ast.ReturnAST):
         return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
 
@@ -275,7 +284,6 @@ class ByteCodeDisassembler:
 
     def __get_opcode_comment(self, opcode: int, argv: int) -> str:
         cmt = '( %s )'
-        cmts = '( \'%s\' )'
 
         if opcode in self.__SHOW_CONST:
             c = self.__consts[argv]
@@ -283,15 +291,13 @@ class ByteCodeDisassembler:
             if isinstance(c, obj.AILCodeObject) and c not in self.__dis_task:
                 self.__dis_task.append(c)
 
-            if type(c) == str:
-                return cmts % c
-            return cmt % c
+            return cmt % repr(c)
 
         elif opcode in self.__SHOW_VARNAME:
             return cmt % self.__varnames[argv]
 
         elif opcode in self.__SHOW_COMPARE_OP:
-            return cmt % opcs.COMPARE_OPERATORS[argv]
+            return cmt % repr(opcs.COMPARE_OPERATORS[argv])
 
         return ''
 

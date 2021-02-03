@@ -1094,6 +1094,51 @@ class Compiler:
 
         return bc
 
+    def __compile_class(self, tree: ast.ClassDefineAST) -> ByteCode:
+        """
+        structure of class definition:
+          load_const               (code object of class define function)
+          make_function 
+
+          load_const               (class name)
+        
+        [has meta]:
+          *codes for meta expr     (meta class)
+        [else]:
+          push_none
+        
+        [has base(s)]
+         *codes for bases expr     (bases)
+        [else]
+         ** nothing **
+
+        """
+
+        bc = ByteCode()
+
+        has_meta = tree.meta is not None
+
+        func_bc = self.__compile_function(tree.func)
+        name_index = self.__buffer.add_const(tree.name)
+
+        bc += func_bc
+        bc.add_bytecode(load_const, name_index, tree.ln)
+
+        if has_meta:
+            meta_bc = self.__compile_binary_expr(tree.meta)
+            bc += meta_bc
+        else:
+            bc.add_bytecode(push_none, 0, -1)
+
+        popc = 3 + len(tree.bases)  # class func, class name, meta class [, *bases]
+
+        for base in tree.bases:
+            bc += self.__compile_binary_expr(base)
+
+        bc.add_bytecode(build_class, popc, tree.ln)
+
+        return bc
+
     def __compile_block(self, tree: ast.BlockExprAST, firstoffset=0) -> ByteCode:
         bc = self.__general_bytecode = ByteCode()
         last_ln = 0
@@ -1146,6 +1191,9 @@ class Compiler:
 
             elif isinstance(et, ast.StructDefineAST):
                 tbc = self.__compile_struct(et)
+
+            elif isinstance(et, ast.ClassDefineAST):
+                tbc = self.__compile_class(et)
 
             elif isinstance(et, ast.ForExprAST):
                 tbc = self.__compile_for_stmt(et, total_offset)

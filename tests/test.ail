@@ -1,6 +1,13 @@
 
-struct A {
-    a
+class Person:BaseClass extends Object {
+    alias = 'Human'
+
+    fun __init__(self, name) {
+        self.name = name
+    }
+
+    fun jump(self) {
+        print name, 'is jumping...'
+    }
 }
 
-print new(A).a
