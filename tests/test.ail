@@ -1,13 +1,9 @@
 
-class Person:BaseClass extends Object {
-    alias = 'Human'
-
+class Person {
     fun __init__(self, name) {
         self.name = name
     }
-
-    fun jump(self) {
-        print name, 'is jumping...'
-    }
 }
+
+print Person('Nezha').name
 

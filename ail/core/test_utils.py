@@ -114,7 +114,6 @@ def make_ast_tree(a) -> dict:
                 {
                     'name': a.name,
                     'bases': make_ast_tree(a.bases),
-                    'meta': make_ast_tree(a.meta),
                     'func': make_ast_tree(a.func),
                 }}
 

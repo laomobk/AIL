@@ -44,6 +44,7 @@ from ..objects import (
     module,
     struct,
     fastnum,
+    class_object,
 )
 
 from .modules._error import (
@@ -231,9 +232,6 @@ class Interpreter:
 
     def __set_globals(self, globals: dict):
         self.__namespace_state.ns_global.ns_dict = globals
-
-    def __check_and_get_namespace(self, name: str):
-        return None
 
     def __push_back(self, obj: objs.AILObject):
         self.__stack.append(obj)
@@ -665,7 +663,9 @@ class Interpreter:
 
         return None
 
-    def call_function(self, func, argv, argl, ex: bool = False, frame = None):
+    def call_function(self,
+                      func, argc, argl,
+                      ex: bool=False, frame=None):
         self.__tof._marked_opcounter = self.__opcounter
 
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
@@ -684,15 +684,15 @@ class Interpreter:
                         # 2020-10-13
                         # f.variable['this'] = this  # add this pointer
 
-                        argv += 1
+                        argc += 1
                         argl.insert(0, this)
                 except TypeError:
                     pass
                 
-                if (c.argcount != argv and not ex) or (c.argcount > argv and ex):
+                if (c.argcount != argc and not ex) or (c.argcount > argc and ex):
                     self.raise_error(
                         '\'%s\' takes %d argument(s), but got %d.' % (
-                            c.name, c.argcount, argv),
+                            c.name, c.argcount, argc),
                         'TypeError'
                     )
                 
@@ -729,8 +729,8 @@ class Interpreter:
                     else:
                         self.__opcounter = self.__tof._latest_call_opcounter
                         # 如无异常，则还原字节码计数器
-                    self.__push_back(self.__return_value)
 
+                    self.__push_back(self.__return_value)
                     return ok
 
                 except RecursionError as e:
@@ -746,7 +746,7 @@ class Interpreter:
                     has_this = True
                     this = copy.copy(func['__this__'])
                     argl.insert(0, this)  # add this to 0
-                    argv += 1
+                    argc += 1
 
                 if not hasattr(pyf, '__call__'):
                     self.raise_error(
@@ -765,7 +765,7 @@ class Interpreter:
                     self.raise_error(
                         str(e), 'PythonError'
                     )
-                    return
+                    return False
 
                 if not isinstance(rtn, objs.AILObject):
                     target = {
@@ -782,14 +782,26 @@ class Interpreter:
                         rtn = objs.ObjectCreater.new_object(target, rtn)
 
                 self.__tof.stack.append(rtn)
+                return True
+
             elif func['__class__'] == struct.STRUCT_TYPE:
                 struct_obj = abuiltins.new_struct(func)
                 new_func = struct_obj.members.get('__init__')
 
+                ok = True
+
                 if new_func is not None:
-                    self.call_function(
-                            new_func, argv, argl, ex)
+                    ok = self.call_function(
+                            new_func, argc, argl, ex)
+
                 self.__tof.stack.append(struct_obj)
+
+                return ok
+
+            elif func['__class__'] == class_object.CLASS_TYPE:
+                cls = func
+                obj = self.__check_object(class_object.new_object(cls, *argl))
+                self.__push_back(obj)
 
             else:
                 self.raise_error(
@@ -910,8 +922,6 @@ class Interpreter:
 
                     elif op == load_global:
                         n = self.__tof.varnames[argv]
-
-                        ns = self.__check_and_get_namespace(n)
 
                         if ns is not None:
                             self.__tof.stack.append(ns)
@@ -1285,7 +1295,12 @@ class Interpreter:
 
                     elif op == build_class:
                         pops = [self.__pop_top() for _ in range(argv)]
-                        class_func, class_name, meta, *bases = pops
+                        class_name, class_func, *bases = pops
+
+                        cls = class_object.build_class(
+                            class_func, class_name, bases)
+
+                        self.__push_back(cls)
 
                     elif op == set_protected:
                         self.__tof.stack.append(PROTECTED_SIGNAL)
@@ -1385,11 +1400,12 @@ class Interpreter:
                                 target_struct['__bind_functions__'][func_name] = \
                                     bound_function
                 except VMInterrupt as interrupt:
-                    if interrupt.handle_it:
-                        self.__interrupted = True
-                        signal = interrupt.signal
-                        if signal != -1:
-                            self.__interrupt_signal = signal
+                    if interrupt.signal != MII_CONTINUE:
+                        if interrupt.handle_it:
+                            self.__interrupted = True
+                            signal = interrupt.signal
+                            if signal != -1:
+                                self.__interrupt_signal = signal
 
                 except KeyboardInterrupt as _:
                     try:

@@ -11,10 +11,10 @@ def super_init(self, instance, bases, _class):
 
 
 def _calculate_base_order(bases):
-    pass
+    return []
 
 
-def _find_class_from_order(name):
+def _find_class_from_order(self, name):
     order = self['__base_order__']
     assert isinstance(order, dict)
     
@@ -30,16 +30,16 @@ def _find_class_from_order(name):
 
 
 def super_getattr(self, name):
-    cls = _find_class_from_order(name)
+    cls = _find_class_from_order(self, name)
     
     if cls is not None:
-        cls['__dict__'][name]
+        return cls['__dict__'][name]
 
     return AILRuntimeError('super: cannot find attribute from super class')
 
 
 def super_setattr(self, name, value):
-    cls = _find_class_from_order(name)
+    cls = _find_class_from_order(self, name)
 
     if cls is not None:
         cls['__dict__'][name] = convert_to_ail_object(value)

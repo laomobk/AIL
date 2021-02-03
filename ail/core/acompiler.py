@@ -981,7 +981,8 @@ class Compiler:
     def __compile_function(
             self, 
             tree: ast.FunctionDefineAST, 
-            anonymous_function: bool = False) -> ByteCode:
+            anonymous_function: bool = False,
+            just_make: bool = False) -> ByteCode:
         bc = ByteCode()
 
         has_bindto = tree.bindto is not None
@@ -1039,7 +1040,7 @@ class Compiler:
         if has_bindto:
             bc.add_bytecode(load_varname, namei, tree.ln)
             bc.add_bytecode(bind_function, bindtoi, tree.ln)
-        else: 
+        elif not just_make:
             bc.add_bytecode(store_var, namei, tree.ln)
             bc.add_bytecode(pop_top, 0, -1)
         
@@ -1102,11 +1103,6 @@ class Compiler:
 
           load_const               (class name)
         
-        [has meta]:
-          *codes for meta expr     (meta class)
-        [else]:
-          push_none
-        
         [has base(s)]
          *codes for bases expr     (bases)
         [else]
@@ -1116,26 +1112,20 @@ class Compiler:
 
         bc = ByteCode()
 
-        has_meta = tree.meta is not None
-
-        func_bc = self.__compile_function(tree.func)
-        name_index = self.__buffer.add_const(tree.name)
+        func_bc = self.__compile_function(tree.func, just_make=True)
+        name_const_index = self.__buffer.add_const(tree.name)
+        name_var_index = self.__buffer.get_or_add_varname_index(tree.name)
 
         bc += func_bc
-        bc.add_bytecode(load_const, name_index, tree.ln)
+        bc.add_bytecode(load_const, name_const_index, tree.ln)
 
-        if has_meta:
-            meta_bc = self.__compile_binary_expr(tree.meta)
-            bc += meta_bc
-        else:
-            bc.add_bytecode(push_none, 0, -1)
-
-        popc = 3 + len(tree.bases)  # class func, class name, meta class [, *bases]
+        popc = 2 + len(tree.bases)  # class func, class name [, *bases]
 
         for base in tree.bases:
             bc += self.__compile_binary_expr(base)
 
         bc.add_bytecode(build_class, popc, tree.ln)
+        bc.add_bytecode(store_var, name_var_index, tree.ln)
 
         return bc
 

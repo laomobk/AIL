@@ -14,4 +14,6 @@ I_NAMESPACE_TYPE    = 0xc
 I_MODULE_TYPE       = 0xd
 I_COMPLEX_TYPE      = 0xe
 I_MAP_TYPE          = 0xf
-
+I_CLASS_TYPE        = 0x10
+I_SUPER_TYPE        = 0x11
+I_OBJECT_TYPE       = 0x12

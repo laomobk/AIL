@@ -1122,13 +1122,8 @@ class Parser:
 
         class_name = self.__now_tok.value
         bases = []
-        meta = None
 
         self.__next_tok()  # eat NAME
-
-        if self.__now_tok.ttype == AIL_COLON:
-            self.__next_tok()  # 'eat ':'
-            meta = self.__parse_binary_expr()
 
         if self.__now_tok == 'extends':
             self.__next_tok()
@@ -1141,7 +1136,7 @@ class Parser:
         func = ast.FunctionDefineAST(
                 class_name, ast.ArgListAST([], ln), body, None, ln)
 
-        return ast.ClassDefineAST(class_name, func, bases, meta, ln)
+        return ast.ClassDefineAST(class_name, func, bases, ln)
 
     def __parse_func_def_stmt(
             self, anonymous_function: bool = False) -> ast.FunctionDefineAST:

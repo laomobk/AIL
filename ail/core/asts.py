@@ -323,11 +323,10 @@ class FunctionDefineAST:
 class ClassDefineAST:
     def __init__(self, 
             name: str, func: FunctionDefineAST, 
-            bases: List[ExprAST], meta: List[ExprAST], ln: int):
+            bases: List[ExprAST], ln: int):
         self.name = name
         self.func = func
         self.bases = bases
-        self.meta = meta
         self.ln = ln
 
 
