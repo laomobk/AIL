@@ -1126,6 +1126,7 @@ class Compiler:
 
         bc.add_bytecode(build_class, popc, tree.ln)
         bc.add_bytecode(store_var, name_var_index, tree.ln)
+        bc.add_bytecode(pop_top, 0, -1)
 
         return bc
 

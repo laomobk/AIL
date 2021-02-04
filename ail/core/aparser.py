@@ -1104,6 +1104,7 @@ class Parser:
         bases.append(first)
 
         while self.__now_tok == ',':
+            self.__next_tok()
             sub = self.__parse_binary_expr()
             bases.append(sub)
 

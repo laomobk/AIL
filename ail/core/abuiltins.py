@@ -31,6 +31,7 @@ from ..objects import (
     module  as amodule,
     fastnum,
     null,
+    super_object
 )
 
 
@@ -387,6 +388,7 @@ def init_builtins():
         'help': objs.convert_to_ail_object(print_help),
         'complex': objs.convert_to_ail_object(func_complex),
         'map': objs.convert_to_ail_object(func_map),
+        'super': objs.convert_to_ail_object(super_object.get_super),
 
         ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
         PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),

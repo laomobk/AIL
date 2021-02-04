@@ -263,6 +263,10 @@ class Interpreter:
         self.__frame_stack.append(f)
 
     def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
+        if sig_check_continue(aobj):
+            if not_convert:
+                return objs.unpack_ailobj(self.__pop_top())
+            return self.__pop_top()
         if isinstance(aobj, error.AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
         if not isinstance(aobj, objs.AILObject) and not not_convert:
@@ -699,6 +703,11 @@ class Interpreter:
                 argd = {k: v for k, v in zip(c.varnames[:c.argcount], argl)}
                 if ex:
                     argd[var_arg] = array.convert_to_array(argl[c.argcount:])
+
+                if func['__super__'] is not None:
+                    _super = func['__super__']
+                    argd['super'] = _super
+
                 # init new frame
                 f = Frame() if frame is None else frame
 
@@ -803,6 +812,7 @@ class Interpreter:
                 obj = self.__check_object(class_object.new_object(cls, *argl))
                 self.__push_back(obj)
 
+                return True
             else:
                 self.raise_error(
                     '\'%s\' object is not callable.' %
@@ -1285,7 +1295,8 @@ class Interpreter:
                     elif op == store_struct:
                         name = self.__pop_top()
                         nl = [self.__pop_top() for _ in range(argv)][::-1]
-                        pl = [nl[i - 1] for i in range(len(nl)) if nl[i] == PROTECTED_SIGNAL]
+                        pl = [nl[i - 1] for i in range(len(nl))
+                              if nl[i] == PROTECTED_SIGNAL]
                         nl = [x for x in nl if x != PROTECTED_SIGNAL]
 
                         o = objs.ObjectCreater.new_object(
@@ -1295,7 +1306,9 @@ class Interpreter:
 
                     elif op == build_class:
                         pops = [self.__pop_top() for _ in range(argv)]
-                        class_name, class_func, *bases = pops
+                        *bases, class_name, class_func = pops
+
+                        bases = bases[::-1]
 
                         cls = class_object.build_class(
                             class_func, class_name, bases)

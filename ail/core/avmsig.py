@@ -5,10 +5,10 @@
 MII_DO_JUMP = 0x1
 MII_ERR_BREAK = 0x4
 MII_ERR_POP_TO_TRY = 0x5
-MII_ERR_RERAISE = 0xa
 MII_ERR_EXIT = 0x8
 MII_RETURN = 0x9
-MII_CONTINUE = 0xa
+MII_ERR_RERAISE = 0xa
+MII_CONTINUE = 0xb
 
 WHY_ERROR = 0x2
 WHY_NORMAL = 0x3
@@ -24,6 +24,10 @@ class VMInterrupt(BaseException):
         super(VMInterrupt, self).__init__()
         self.signal = signal
         self.handle_it = handle_it
+
+
+def sig_check_continue(sig: VMInterrupt):
+    return isinstance(sig, VMInterrupt) and sig.signal == MII_CONTINUE
 
 
 VM_INTERRUPT_SIGNAL = VMInterrupt()

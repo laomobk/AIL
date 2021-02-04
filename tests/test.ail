@@ -1,9 +1,23 @@
 
-class Person {
-    fun __init__(self, name) {
-        self.name = name
+class A {
+    fun a(self) {
+        print 'A.a'
     }
 }
 
-print Person('Nezha').name
+class B {}
+
+class C extends A, B {
+    fun m(self) {
+        super(self, C).a(self)
+    }
+
+    fun __str__(self) {
+        x
+        return 'Nezha'
+    }
+}
+
+
+print C()
 

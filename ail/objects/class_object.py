@@ -1,7 +1,9 @@
 
+from copy import deepcopy
 from typing import List
 
 from .function import PY_FUNCTION_TYPE, FUNCTION_TYPE
+from .super_object import get_super
 from .types import I_CLASS_TYPE, I_OBJECT_TYPE
 
 from ..core.aobjects import (
@@ -15,6 +17,16 @@ from ..core.error import AILRuntimeError
 from ..core.avmsig import VMInterrupt, MII_CONTINUE
 
 
+def _clear_empty(x):
+    i = 0
+
+    while i < len(x):
+        if len(x[i]) == 0:
+            x.pop(i)
+        else:
+            i += 1
+
+
 def _get_method_str_func(obj_name: str):
     def _method_str(m):
         return '<method %s of %s at %s>' % (
@@ -22,9 +34,18 @@ def _get_method_str_func(obj_name: str):
     return _method_str
 
 
-def _check_bound(self, aobj: AILObject):
+def _copy_function(f: AILObject) -> AILObject:
+    new_f = deepcopy(f)
+    new_f.properties = f.properties.copy()
+
+    return new_f
+
+
+def _check_bound(self, aobj):
     if isinstance(aobj, AILObject) and \
             aobj['__class__'] in (FUNCTION_TYPE, PY_FUNCTION_TYPE):
+
+        aobj = _copy_function(aobj)
 
         aobj['__repr__'] = _get_method_str_func(self['__name__'])
         aobj['__this__'] = self  # bound self to __this__
@@ -33,10 +54,15 @@ def _check_bound(self, aobj: AILObject):
 
 
 def class_init(self, 
-               name: str, bases: List[AILObject], dict_: dict):
+        name: str, bases: List[AILObject], dict_: dict):
     self['__name__'] = name
-    self['__base__'] = bases
+    self['__bases__'] = bases
     self['__dict__'] = dict_
+    
+    mro = calculate_mro(self)
+
+    self['__mro__'] = mro
+    dict_['__mro__'] = _conv(mro)
 
 
 def class_getattr_with_default(cls, name, default=None):
@@ -44,8 +70,8 @@ def class_getattr_with_default(cls, name, default=None):
 
 
 def class_getattr(cls, name):
-    cls['__dict__'].get(
-        name, AILRuntimeError('name %s is not define' % name, NAME_ERROR))
+    return cls['__dict__'].get(
+            name, AILRuntimeError('name %s is not define' % name, NAME_ERROR))
 
 
 def class_setattr(self, name, value):
@@ -65,11 +91,55 @@ def check_class(cls):
 def build_class(class_func, class_name, bases) -> AILObject:
     func_frame = Frame()
 
+    if len(bases) == 0:
+        bases.append(CLASS_OBJECT)
+
     call_object(class_func, frame=func_frame)
 
     class_dict = func_frame.variable
 
-    return ObjectCreater.new_object(CLASS_TYPE, class_name, bases, class_dict)
+    return ObjectCreater.new_object(
+            CLASS_TYPE, class_name, bases, class_dict)
+
+
+def new_class(class_name: str, bases: List[AILObject], _dict: dict):
+    return ObjectCreater.new_object(CLASS_TYPE, class_name, bases, _dict)
+
+
+def calculate_mro(cls):
+    # use C3 linearization algorithm to calculate mro
+    bases = cls['__bases__']
+
+    if len(bases) == 0:
+        return [cls]
+    
+    items = [c['__mro__'].copy() for c in bases] + [[c for c in bases]]
+
+    mro = list()
+    last_items = items
+    
+    i = 0
+    while i < len(last_items):
+        head = last_items[i][0]
+
+        for item in last_items:
+            if item is last_items[i]:
+                continue
+
+            if head in item[1:]:
+                break
+        else:
+            for _item in last_items:
+                if head in _item:
+                    _item.remove(head)
+            mro.append(head)
+            _clear_empty(last_items)
+            i = 0
+            continue
+        i += 1
+    
+    mro.insert(0, cls)
+    return mro
 
 
 def new_object(_class, *args):
@@ -83,12 +153,16 @@ def new_object(_class, *args):
     obj_dict = dict()
     obj['__dict__'] = obj_dict
 
+    super_obj = get_super(obj, _class)
+
     for k, v in _class['__dict__'].items():
-        if _check_bound(obj, v):
+        v = _check_bound(obj, v)
+        if v is not None:
             obj_dict[k] = v
 
     init = class_getattr_with_default(_class, '__init__')
-    call_object(init, *args)
+    if init is not None:
+        call_object(init, *args)
 
     return obj
 
@@ -110,7 +184,7 @@ def object_getattr(self, name):
         return val
 
     cls = self['__this_class__']
-    class_getattr(cls, name)
+    return class_getattr(cls, name)
 
 
 def object_setattr(self, name, value):
@@ -136,6 +210,11 @@ def object_setitem(self, name, value):
 
 
 def object_str(self):
+    to_str = object_getattr_with_default(self, '__str__')
+    if to_str is not None:
+        call_object(to_str)
+        return VMInterrupt(MII_CONTINUE)
+
     cls = self['__this_class__']
     return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
 
@@ -147,3 +226,12 @@ OBJECT_TYPE = AILObjectType(
     __str__=object_str,
     __repr__=object_str,
 )
+
+
+CLASS_OBJECT = new_class(
+    'Object', [], 
+    {
+        '__str__': _conv(object_str),
+    }
+)
+

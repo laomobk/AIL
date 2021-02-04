@@ -6,7 +6,7 @@ from typing import Union
 from . import error
 from ..objects import types
 
-from .avmsig import VMInterrupt, MII_ERR_POP_TO_TRY
+from .avmsig import VMInterrupt, MII_ERR_POP_TO_TRY, sig_check_continue
 
 INVISIBLE_ATTRS = (
     '__value__',
@@ -312,11 +312,18 @@ def unpack_ailobj(ailobj: AILObject):
     return ailobj
 
 
+def get_state():
+    if _MAIN_INTERPRETER_STATE is None:
+        from .astate import MAIN_INTERPRETER_STATE as _MAIN_INTERPRETER_STATE
+    return _MAIN_INTERPRETER_STATE
+
+
 _MAIN_INTERPRETER_STATE = None
 
 
 def call_object(obj, *args,
-                type_check: bool = False, frame=None, handle_error=True) -> bool:
+                type_check: bool = False, 
+                frame=None, handle_error=True) -> bool:
     """
     :return: an AIL runtime error has occurred or not.
     """
