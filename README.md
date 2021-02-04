@@ -1,6 +1,5 @@
-# AIL-Language 1.2 Build
+# AIL 1.2 Alpha
 
+AIL 是一门面向对象的解释型编程语言，拥有许多易用的数据结构。
 
-**Wait and see...**
-
-***see branch 'refactoring' to learn more***
+***AIL 仍处于开发完善中，最新开发进程可查看 alpha 分支***
