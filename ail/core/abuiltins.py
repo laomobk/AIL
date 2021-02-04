@@ -31,7 +31,8 @@ from ..objects import (
     module  as amodule,
     fastnum,
     null,
-    super_object
+    super_object,
+    class_object,
 )
 
 
@@ -244,10 +245,22 @@ def func_map(*args):
         return AILRuntimeError('map() needs 0 or 1 arguments', 'ValueError')
 
 
-def func_isinstance(o, stype):
+def func_isinstance(o, _type):
     if objs.compare_type(o, struct.STRUCT_OBJ_TYPE) and \
-            objs.compare_type(stype, struct.STRUCT_TYPE):
-        return o['__type__'] == stype
+            objs.compare_type(_type, struct.STRUCT_TYPE):
+        return o['__type__'] == _type
+    elif objs.compare_type(o, class_object.OBJECT_TYPE):
+        o_cls = o['__this_class__']
+        if not objs.compare_type(_type, class_object.CLASS_TYPE):
+            return False
+
+        if _type is o_cls:
+            return True
+
+        o_mro = o_cls['__mro__']
+        for cls in o_mro:
+            if _type is cls:
+                return True
     return False
 
 
@@ -278,6 +291,7 @@ def func_isimplement(type_or_obj, *stypes):
             if s_member not in members:
                 return False
 
+
 def func_equal_type(a, b):
     if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
         return a['__class__'].otype == b['__class__'].otype
@@ -285,11 +299,14 @@ def func_equal_type(a, b):
 
 
 def func_str(a):
-    return str(a)
+    return objs.get_state().global_interpreter.check_object(a['__str__'](a))
 
 
 def func_repr(a):
-    return repr(a)
+    repr_f = a['__repr__']
+    if repr_f is None:
+        repr_f = a['__str__']
+    return objs.get_state().global_interpreter.check_object(repr_f(a))
 
 
 def func_show_struct(sobj):
@@ -348,6 +365,7 @@ false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 BUILTINS = {}
 BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
 
+
 def init_builtins():
     global BUILTINS, BUILTINS_NAMESPACE
 
@@ -389,6 +407,7 @@ def init_builtins():
         'complex': objs.convert_to_ail_object(func_complex),
         'map': objs.convert_to_ail_object(func_map),
         'super': objs.convert_to_ail_object(super_object.get_super),
+        'Object': class_object.CLASS_OBJECT,
 
         ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
         PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),

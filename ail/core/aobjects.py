@@ -104,7 +104,8 @@ class AILObject:
 
     def __str__(self):
         try:
-            return self['__str__'](self)
+            return get_state().global_interpreter.check_object(
+                self['__str__'](self), not_convert=True)
         except TypeError:
             return '<AIL %s object at %s>' % (
                     self['__class__'].name, hex(id(self)))
@@ -313,6 +314,7 @@ def unpack_ailobj(ailobj: AILObject):
 
 
 def get_state():
+    global _MAIN_INTERPRETER_STATE
     if _MAIN_INTERPRETER_STATE is None:
         from .astate import MAIN_INTERPRETER_STATE as _MAIN_INTERPRETER_STATE
     return _MAIN_INTERPRETER_STATE

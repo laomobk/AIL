@@ -1,23 +1,10 @@
 
-class A {
-    fun a(self) {
-        print 'A.a'
-    }
-}
 
-class B {}
-
-class C extends A, B {
-    fun m(self) {
-        super(self, C).a(self)
-    }
-
+class C {
     fun __str__(self) {
-        x
-        return 'Nezha'
+        return '<The C Object>'
     }
 }
 
 
-print C()
-
+print repr(C())

@@ -25,6 +25,9 @@ class VMInterrupt(BaseException):
         self.signal = signal
         self.handle_it = handle_it
 
+    def __str__(self):
+        return '<VMInterrupt signal: %s>' % self.signal
+
 
 def sig_check_continue(sig: VMInterrupt):
     return isinstance(sig, VMInterrupt) and sig.signal == MII_CONTINUE

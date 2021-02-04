@@ -262,7 +262,7 @@ class Interpreter:
 
         self.__frame_stack.append(f)
 
-    def __check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
+    def check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if sig_check_continue(aobj):
             if not_convert:
                 return objs.unpack_ailobj(self.__pop_top())
@@ -509,7 +509,7 @@ class Interpreter:
                     'TypeError')
                 return
 
-            r = self.__check_object(m(a, b))
+            r = self.check_object(m(a, b))
         else:
             if hasattr(a, pymth):
                 r = getattr(a, pymth)(b)
@@ -704,10 +704,6 @@ class Interpreter:
                 if ex:
                     argd[var_arg] = array.convert_to_array(argl[c.argcount:])
 
-                if func['__super__'] is not None:
-                    _super = func['__super__']
-                    argd['super'] = _super
-
                 # init new frame
                 f = Frame() if frame is None else frame
 
@@ -767,7 +763,7 @@ class Interpreter:
                                 else o for o in argl]
                     # unpack argl for builtin function
                 try:
-                    rtn = self.__check_object(pyf(*argl))
+                    rtn = self.check_object(pyf(*argl))
                 except Exception as e:
                     if self.__raise_python_error:
                         raise
@@ -809,7 +805,7 @@ class Interpreter:
 
             elif func['__class__'] == class_object.CLASS_TYPE:
                 cls = func
-                obj = self.__check_object(class_object.new_object(cls, *argl))
+                obj = self.check_object(class_object.new_object(cls, *argl))
                 self.__push_back(obj)
 
                 return True
@@ -865,7 +861,7 @@ class Interpreter:
                         tosl = [self.__pop_top() for _ in range(argv)][::-1]
 
                         for tos in tosl:
-                            tosm = self.__check_object(
+                            tosm = self.check_object(
                                     tos['__str__'](tos), not_convert=True)
 
                             sys.stdout.write(tosm + ' ')
@@ -878,7 +874,7 @@ class Interpreter:
                         tos = self.__pop_top()
 
                         if isinstance(tos, objs.AILObject):
-                            msg = self.__check_object(tos['__str__'](tos))
+                            msg = self.check_object(tos['__str__'](tos))
                         else:
                             msg = str(tos)
 
@@ -1023,7 +1019,7 @@ class Interpreter:
                         b = self.__pop_top()
                         a = self.__pop_top()
 
-                        res = self.__check_object(
+                        res = self.check_object(
                                 self.__binary_op(op, pym, ailm, a, b))
 
                         self.__tof.stack.append(res)
@@ -1148,7 +1144,7 @@ class Interpreter:
                                         '%s object is not subscriptable' %
                                         l['__class__'].name, 'TypeError')
 
-                            rtn = self.__check_object(l['__getitem__'](l, v))
+                            rtn = self.check_object(l['__getitem__'](l, v))
 
                             self.__tof.stack.append(rtn)
 
@@ -1194,7 +1190,7 @@ class Interpreter:
                                         (op, v['__class__']),
                                     'TypeError')
                         else:
-                            res = self.__check_object(method(v))
+                            res = self.check_object(method(v))
                             self.__push_back(res)
 
                     elif op == load_module:
@@ -1224,7 +1220,7 @@ class Interpreter:
                         namespace, module_path = aloader.MAIN_LOADER.load_namespace(
                             name, True)
 
-                        namespace = self.__check_object(namespace, True)
+                        namespace = self.check_object(namespace, True)
 
                         if namespace is None:
                             pass
@@ -1272,14 +1268,14 @@ class Interpreter:
                                                  o['__class__'].name, 'TypeError')
 
                             else:
-                                self.__check_object(afunc.call(o['__setitem__'], o, i, v))
+                                self.check_object(afunc.call(o['__setitem__'], o, i, v))
                                 self.__tof.stack.append(v)
 
                     elif op == load_attr:
                         o = self.__pop_top()
                         vn = self.__tof.varnames[argv]
 
-                        r = self.__check_object(o['__getattr__'](o, vn))
+                        r = self.check_object(o['__getattr__'](o, vn))
 
                         self.__tof.stack.append(r)
 
@@ -1288,7 +1284,7 @@ class Interpreter:
                         ni = self.__tof.varnames[argv]
                         v = self.__pop_top()
 
-                        self.__check_object(o['__setattr__'](o, ni, v))
+                        self.check_object(o['__setattr__'](o, ni, v))
 
                         self.__tof.stack.append(v)
 

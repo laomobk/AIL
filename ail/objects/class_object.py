@@ -66,12 +66,21 @@ def class_init(self,
 
 
 def class_getattr_with_default(cls, name, default=None):
-    return cls['__dict__'].get(name, default)
+    mro = cls['__mro__']
+    for cls in mro:
+        val = cls['__dict__'].get(name)
+        if val is not None:
+            return val
+    return default
 
 
 def class_getattr(cls, name):
-    return cls['__dict__'].get(
-            name, AILRuntimeError('name %s is not define' % name, NAME_ERROR))
+    mro = cls['__mro__']
+    for cls in mro:
+        val = cls['__dict__'].get(name)
+        if val is not None:
+            return val
+    return AILRuntimeError('name %s is not define' % name, NAME_ERROR)
 
 
 def class_setattr(self, name, value):
@@ -153,14 +162,12 @@ def new_object(_class, *args):
     obj_dict = dict()
     obj['__dict__'] = obj_dict
 
-    super_obj = get_super(obj, _class)
-
     for k, v in _class['__dict__'].items():
         v = _check_bound(obj, v)
         if v is not None:
             obj_dict[k] = v
 
-    init = class_getattr_with_default(_class, '__init__')
+    init = object_getattr_with_default(obj, '__init__')
     if init is not None:
         call_object(init, *args)
 
@@ -175,7 +182,12 @@ CLASS_TYPE = AILObjectType('<class type>', I_CLASS_TYPE,
 
 
 def object_getattr_with_default(self, name, default=None):
-    return self['__dict__'].get(name, default)
+    val = self['__dict__'].get(name, None)
+    if val is not None:
+        return val
+
+    cls = self['__this_class__']
+    return class_getattr_with_default(cls, name, default)
 
 
 def object_getattr(self, name):
@@ -210,11 +222,33 @@ def object_setitem(self, name, value):
 
 
 def object_str(self):
-    to_str = object_getattr_with_default(self, '__str__')
+    cls = self['__this_class__']
+    to_str = object_getattr_with_default(cls, '__str__')
     if to_str is not None:
         call_object(to_str)
         return VMInterrupt(MII_CONTINUE)
 
+    cls = self['__this_class__']
+    return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
+
+
+def object_repr(self):
+    cls = self['__this_class__']
+    to_str = class_getattr_with_default(cls, '__repr__')
+    if to_str is not None:
+        call_object(to_str, self)
+        return VMInterrupt(MII_CONTINUE)
+
+    cls = self['__this_class__']
+    return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
+
+
+def object___str__(self):
+    cls = self['__this_class__']
+    return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
+
+
+def object___repr__(self):
     cls = self['__this_class__']
     return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
 
@@ -224,14 +258,15 @@ OBJECT_TYPE = AILObjectType(
     __getattr__=object_getattr,
     __setattr__=object_setattr,
     __str__=object_str,
-    __repr__=object_str,
+    __repr__=object_repr,
 )
 
 
 CLASS_OBJECT = new_class(
     'Object', [], 
     {
-        '__str__': _conv(object_str),
+        '__str__': _conv(object___str__),
+        '__repr__': _conv(object___repr__),
     }
 )
 
