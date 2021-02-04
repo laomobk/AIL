@@ -670,8 +670,6 @@ class Interpreter:
     def call_function(self,
                       func, argc, argl,
                       ex: bool=False, frame=None):
-        self.__tof._marked_opcounter = self.__opcounter
-
         if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
             if func['__class__'] == afunc.FUNCTION_TYPE:
                 c: objs.AILCodeObject = func['__code__']

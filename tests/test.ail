@@ -1,10 +1,14 @@
 
 
-class C {
-    fun __str__(self) {
-        return '<The C Object>'
+class Person {
+    fun __init__(self, name) {
+        self.name = name
+    }
+
+    fun sayHi(self) {
+        print 'My name is', self.name
     }
 }
 
 
-print repr(C())
+print Person('Nezha')

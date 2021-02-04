@@ -17,6 +17,9 @@ from ..core.error import AILRuntimeError
 from ..core.avmsig import VMInterrupt, MII_CONTINUE
 
 
+_func_type = (FUNCTION_TYPE, PY_FUNCTION_TYPE)
+
+
 def _clear_empty(x):
     i = 0
 
@@ -29,7 +32,7 @@ def _clear_empty(x):
 
 def _get_method_str_func(obj_name: str):
     def _method_str(m):
-        return '<method %s of %s at %s>' % (
+        return '<method %s of %s object at %s>' % (
                 m['__name__'], obj_name, hex(id(m)))
     return _method_str
 
@@ -41,20 +44,20 @@ def _copy_function(f: AILObject) -> AILObject:
     return new_f
 
 
-def _check_bound(self, aobj):
+def _check_bound(self, aobj, class_name: str):
     if isinstance(aobj, AILObject) and \
-            aobj['__class__'] in (FUNCTION_TYPE, PY_FUNCTION_TYPE):
+            aobj['__class__'] in _func_type:
 
         aobj = _copy_function(aobj)
 
-        aobj['__repr__'] = _get_method_str_func(self['__name__'])
+        aobj['__repr__'] = _get_method_str_func(class_name)
         aobj['__this__'] = self  # bound self to __this__
         return aobj
     return None
 
 
 def class_init(self, 
-        name: str, bases: List[AILObject], dict_: dict):
+               name: str, bases: List[AILObject], dict_: dict):
     self['__name__'] = name
     self['__bases__'] = bases
     self['__dict__'] = dict_
@@ -162,11 +165,6 @@ def new_object(_class, *args):
     obj_dict = dict()
     obj['__dict__'] = obj_dict
 
-    for k, v in _class['__dict__'].items():
-        v = _check_bound(obj, v)
-        if v is not None:
-            obj_dict[k] = v
-
     init = object_getattr_with_default(obj, '__init__')
     if init is not None:
         call_object(init, *args)
@@ -190,42 +188,61 @@ def object_getattr_with_default(self, name, default=None):
     return class_getattr_with_default(cls, name, default)
 
 
+def object_init(self):
+    self._bound_methods = {}
+
+
 def object_getattr(self, name):
     val = self['__dict__'].get(name, None)
     if val is not None:
         return val
 
     cls = self['__this_class__']
-    return class_getattr(cls, name)
+    val = class_getattr_with_default(cls, name)
 
+    if val is None:
+        return AILRuntimeError('name %s is not define' % name, NAME_ERROR)
+
+    if val['__class__'] not in _func_type:
+        return val
+
+    # method key = %CLASS_NAME%$%INSTANCE_ID%$%METHOD_NAME%
+    method_key = '%s$%s$%s' % (cls['__name__'], id(self), name)
+    bound_methods = self._bound_methods
+    m = bound_methods.get(method_key)
+    if m is not None:
+        return m
+    m = _check_bound(self, val, cls['__name__'])
+    bound_methods[method_key] = m
+    return m
 
 def object_setattr(self, name, value):
     self['__dict__'][name] = value
 
 
 def object_getitem(self, name):
-    getitem = object_getattr_with_default(self, '__getitem__')
+    getitem = class_getattr_with_default(self, '__getitem__')
     if getitem is None:
         return AILRuntimeError('\'%s\' object is not subscriptable', TYPE_ERROR)
-    call_object(getitem, name)
+    call_object(getitem, self, name)
 
     raise VMInterrupt(MII_CONTINUE)  # jump over the last operation in VM
 
 
 def object_setitem(self, name, value):
-    setitem = object_getattr_with_default(self, '__setitem__')
+    setitem = class_getattr_with_default(self, '__setitem__')
     if setitem is None:
         return AILRuntimeError('\'C\' object does not support item assignment', TYPE_ERROR)
-    call_object(setitem, name, value)
+    call_object(setitem, self, name, value)
 
     raise VMInterrupt(MII_CONTINUE)  # jump over the last operation in VM
 
 
 def object_str(self):
     cls = self['__this_class__']
-    to_str = object_getattr_with_default(cls, '__str__')
+    to_str = class_getattr_with_default(cls, '__str__')
     if to_str is not None:
-        call_object(to_str)
+        call_object(to_str, self)
         return VMInterrupt(MII_CONTINUE)
 
     cls = self['__this_class__']
@@ -255,6 +272,7 @@ def object___repr__(self):
 
 OBJECT_TYPE = AILObjectType(
     '<object type>', I_OBJECT_TYPE,
+    __init__=object_init,
     __getattr__=object_getattr,
     __setattr__=object_setattr,
     __str__=object_str,
@@ -269,4 +287,3 @@ CLASS_OBJECT = new_class(
         '__repr__': _conv(object___repr__),
     }
 )
-

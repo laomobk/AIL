@@ -112,12 +112,13 @@ class Shell:
         
         MAIN_INTERPRETER_STATE.global_interpreter.exec(
             cobj, self.__main_frame, globals=self.__globals)
-        MAIN_INTERPRETER_STATE.frame_stack.clear()
 
         if self.__main_frame.stack:
             tof = self.__main_frame.stack.pop()
             if tof is not null.null and tof is not None:
                 print(repr(tof))
+
+        MAIN_INTERPRETER_STATE.frame_stack.clear()
 
     def __run_block(self):
         self.__run_single_line('\n'.join(self.__buffer), True)

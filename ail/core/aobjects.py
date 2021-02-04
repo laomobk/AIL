@@ -103,12 +103,16 @@ class AILObject:
         super().__setattr__(key, value)
 
     def __str__(self):
-        try:
-            return get_state().global_interpreter.check_object(
-                self['__str__'](self), not_convert=True)
-        except TypeError:
-            return '<AIL %s object at %s>' % (
-                    self['__class__'].name, hex(id(self)))
+        s = self['__str__'](self)
+        if isinstance(s, str):
+            return s
+
+        s = get_state().global_interpreter.check_object(s, not_convert=True)
+
+        if not isinstance(s, str):
+            return '<(NON-STRING STR) AIL Object at %s>' % hex(id(self))
+
+        return s
 
     def __eq__(self, o):
         try:
@@ -128,10 +132,13 @@ class AILObject:
     def __repr__(self):
         repr_func = self['__repr__']
 
-        if repr_func is not None:
-            return repr_func(self)
-        else:
-            return self.__str__()
+        r = repr_func(self)
+        if isinstance(r, str):
+            return r
+        r = get_state().global_interpreter.check_object(r, not_convert=True)
+        if not isinstance(r, str):
+            return '<(NON-STRING REPR) AIL Object at %s>' % hex(id(self))
+        return r
 
     def __hash__(self) -> int:
         return hash(self.__hash_target)
@@ -350,3 +357,4 @@ def call_object(obj, *args,
     if not ok:
         raise VMInterrupt(MII_ERR_POP_TO_TRY)
     return ok
+
