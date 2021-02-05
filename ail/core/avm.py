@@ -236,6 +236,9 @@ class Interpreter:
     def __push_back(self, obj: objs.AILObject):
         self.__stack.append(obj)
 
+    def pop_top(self):
+        return self.__pop_top()
+
     def __pop_top(self) -> objs.AILObject:
         return self.__stack.pop() 
 
@@ -1075,6 +1078,8 @@ class Interpreter:
 
                         if self.__exec_for_module:
                             tosf['__global_ns__'] = self.__namespace_state.ns_global.ns_dict
+
+                        tosf['__signature__'] = tos._function_signature
 
                         self.__push_back(tosf)
 

@@ -4,8 +4,10 @@ from ail.core.aobjects import (
 
 from ail.core.error import AILRuntimeError
 
-from ail.objects.struct import STRUCT_OBJ_TYPE, STRUCT_TYPE
+from ail.objects.class_object import CLASS_TYPE, OBJECT_TYPE
+from ail.objects.function import FUNCTION_TYPE, PY_FUNCTION_TYPE
 from ail.objects.module import MODULE_TYPE
+from ail.objects.struct import STRUCT_OBJ_TYPE, STRUCT_TYPE
 
 
 class _AILHelper:
@@ -66,6 +68,35 @@ def print_help(x: AILObject = None):
             if not m.startswith('_'):
                 print('  %s' % m)
 
+    elif compare_type(x, CLASS_TYPE):
+        print('[name]')
+        print('  %s' % x['__name__'])
+
+        print('[bases]')
+        print('  %s' % x['__bases__'])
+
+        print('[mro]')
+        print('  %s' % x['__mro__'])
+        
+        class_dict = x['__dict__']
+        class_var = []
+        class_methods = []
+
+        for k, v in class_dict.items():
+            if compare_type(v, PY_FUNCTION_TYPE, FUNCTION_TYPE):
+                if k[:1] == '_' and not k[:2] == k[-2:] == '__':
+                    class_methods.append(k)
+            else:
+                class_var.append(k)
+
+        if class_var:
+            print('[class var]')
+            print('\n  '.join(class_var))
+
+        if class_methods:
+            print('[methods]')
+            print('\n  '.join(class_methods))
+
     elif compare_type(x, MODULE_TYPE):
         print('[type]')
         print('  module')
@@ -80,6 +111,10 @@ def print_help(x: AILObject = None):
         for m in x['__namespace__'].keys():
             if not m.startswith('_'):
                 print('  %s' % m)
+
+    elif compare_type(x, FUNCTION_TYPE):
+        print('[signature]')
+        print('  %s' % x['__signature__'])
 
     elif isinstance(x, AILObject):
         methods = _DEFAULT_HELPER.list_methods(x)

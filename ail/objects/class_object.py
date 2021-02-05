@@ -107,7 +107,7 @@ def build_class(class_func, class_name, bases) -> AILObject:
     if len(bases) == 0:
         bases.append(CLASS_OBJECT)
 
-    call_object(class_func, frame=func_frame)
+    call_object(class_func, frame=func_frame, throw_top=True)
 
     class_dict = func_frame.variable
 
@@ -163,9 +163,11 @@ def new_object(_class, *args):
 
     obj['__this_class__'] = _class
 
+    obj['__init__'](obj)
+
     init = class_getattr_with_default(_class, '__init__')
     if init is not None:
-        call_object(init, obj, *args)
+        call_object(init, obj, *args, throw_top=True)
 
     return obj
 
@@ -188,7 +190,11 @@ def object_getattr_with_default(self, name, default=None):
 
 def object_init(self):
     self._bound_methods = dict()
-    self['__dict__'] = dict()
+    obj_dict = dict()
+
+    self['__dict__'] = obj_dict
+
+    obj_dict['__class__'] = self['__this_class__']
 
 
 def object_getattr(self, name):

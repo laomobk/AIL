@@ -57,6 +57,24 @@ _cell_action_map = {
 }
 
 
+def _make_function_signature(tree: ast.FunctionDefineAST):
+    func_signature_template = 'fun {bind_to}{name}({arg_list})'
+    arg_list_str_list = []
+
+    name = tree.name
+    bind_to = '(%s) ' % tree.bindto if tree.bindto is not None else ''
+    arg_list = tree.arg_list.exp_list
+
+    for arg in arg_list:
+        arg_name = arg.expr.value
+        arg_list_str_list.append('%s%s' % ('*' if arg.star else '', arg_name))
+
+    arg_list_str = ', '.join(arg_list_str_list)
+
+    return func_signature_template.format(
+            bind_to=bind_to, name=name, arg_list=arg_list_str)
+
+
 class Compiler:
     def __init__(self, mode=COMPILER_MODE_MAIN, filename='<DEFAULT>',
                  ext_varname: tuple = (), name: str = COMPILE_MAIN_NAME):
@@ -985,6 +1003,8 @@ class Compiler:
             just_make: bool = False) -> ByteCode:
         bc = ByteCode()
 
+        signature = _make_function_signature(tree)
+
         has_bindto = tree.bindto is not None
 
         ext = [c.expr.value for c in tree.arg_list.exp_list]
@@ -1003,6 +1023,7 @@ class Compiler:
                         ext_varname=ext).compile(tree.block).code_object
         cobj.argcount = argc
         cobj.var_arg = var_arg
+        cobj._function_signature = signature
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True

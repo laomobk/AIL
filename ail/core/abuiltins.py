@@ -299,7 +299,7 @@ def func_equal_type(a, b):
 
 
 def func_str(a):
-    return objs.get_state().global_interpreter.check_object(a['__str__'](a))
+    return objs.get_state().global_interpreter.check_object(a['__str__'](a), not_convert=True)
 
 
 def func_repr(a):

@@ -10,7 +10,7 @@ class ExprAST:
 
 
 class ArgItemAST:
-    def __init__(self, expr: 'BinaryExprListAST', star: bool, ln: int):
+    def __init__(self, expr: 'ExprAST', star: bool, ln: int):
         self.expr = expr
         self.star = star
         self.ln = ln

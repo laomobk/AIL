@@ -45,7 +45,8 @@ class NullType:
 class AILCodeObject:
     __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno', 'lineno_list',
                  'argcount', 'name', 'lnotab', 'closure', 'is_main', 'filename',
-                 '_closure_outer', 'global_names', 'nonlocal_names', 'var_arg')
+                 '_closure_outer', 'global_names', 'nonlocal_names', 'var_arg',
+                 '_function_signature')
 
     def __init__(self, consts: list, varnames: list,
                  bytecodes: list, firstlineno: int, filename: str,
@@ -68,6 +69,8 @@ class AILCodeObject:
 
         self.var_arg: str = None
         self._closure_outer: list = list()  # empty if not closure
+
+        self._function_signature = ''
 
     def __str__(self):
         return '<AIL CodeObject \'%s\'>' % self.name
@@ -335,7 +338,8 @@ _MAIN_INTERPRETER_STATE = None
 
 def call_object(obj, *args,
                 type_check: bool = False, 
-                frame=None, handle_error=True) -> bool:
+                frame=None, handle_error=True,
+                throw_top=False) -> bool:
     """
     :return: an AIL runtime error has occurred or not.
     """
@@ -359,5 +363,7 @@ def call_object(obj, *args,
         obj, len(args), args, frame=frame)
     if not ok:
         raise VMInterrupt(MII_ERR_POP_TO_TRY)
-    return ok
+    if throw_top:
+        interpreter.pop_top()
+    return True
 
