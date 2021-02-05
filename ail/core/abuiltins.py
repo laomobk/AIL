@@ -37,9 +37,13 @@ from ..objects import (
 
 
 def func_abs(x: objs.AILObject):
-    if x['__value__'] is not None and x['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
-        v = x['__value__']
-        return v if v >= 0 else -v
+    """
+    abs(x: integer) -> integer
+    :returns: x if x >= 0 else -x
+    """
+    x = objs.unpack_ailobj(x)
+    if isinstance(x, int):
+        return x if x >= 0 else -x
 
     return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
 

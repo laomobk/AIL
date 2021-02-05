@@ -81,6 +81,7 @@ def print_help(x: AILObject = None):
         class_dict = x['__dict__']
         class_var = []
         class_methods = []
+        doc_string = x['__doc__']
 
         for k, v in class_dict.items():
             if compare_type(v, PY_FUNCTION_TYPE, FUNCTION_TYPE):
@@ -96,6 +97,10 @@ def print_help(x: AILObject = None):
         if class_methods:
             print('[methods]')
             print('\n  '.join(class_methods))
+
+        if doc_string:
+            print('\n[doc]')
+            print(doc_string)
 
     elif compare_type(x, MODULE_TYPE):
         print('[type]')
@@ -115,6 +120,17 @@ def print_help(x: AILObject = None):
     elif compare_type(x, FUNCTION_TYPE):
         print('[signature]')
         print('  %s' % x['__signature__'])
+
+        doc_string = x['__doc__']
+        if doc_string:
+            print('\n[doc]')
+            print(doc_string)
+
+    elif compare_type(x, PY_FUNCTION_TYPE):
+        doc_string = x['__doc__']
+        if doc_string:
+            print('\n[doc]')
+            print(doc_string)
 
     elif isinstance(x, AILObject):
         methods = _DEFAULT_HELPER.list_methods(x)

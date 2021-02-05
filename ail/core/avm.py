@@ -236,10 +236,7 @@ class Interpreter:
     def __push_back(self, obj: objs.AILObject):
         self.__stack.append(obj)
 
-    def pop_top(self):
-        return self.__pop_top()
-
-    def __pop_top(self) -> objs.AILObject:
+    def pop_top(self) -> objs.AILObject:
         return self.__stack.pop() 
 
     def __push_block(self, b_type: int, b_handler: int, b_level: int = None):
@@ -268,8 +265,8 @@ class Interpreter:
     def check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
         if sig_check_continue(aobj):
             if not_convert:
-                return objs.unpack_ailobj(self.__pop_top())
-            return self.__pop_top()
+                return objs.unpack_ailobj(self.pop_top())
+            return self.pop_top()
         if isinstance(aobj, error.AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
         if not isinstance(aobj, objs.AILObject) and not not_convert:
@@ -316,7 +313,7 @@ class Interpreter:
             else:
                 return self.__tof.variable.pop(name, None)
 
-    def _make_runtime_error_obj(self, msg: str, err_type: str):
+    def make_runtime_error_obj(self, msg: str, err_type: str):
         return make_err_struct_object(
                 error.AILRuntimeError(
                     msg, err_type, self.__tof, self.get_stack_trace()),
@@ -411,7 +408,7 @@ class Interpreter:
             if tos['__class__'] in (aint.INTEGER_TYPE, abool.BOOL_TYPE):
                 if why and tos['__value__'] or not why and not tos['__value__']:
                     if pop:
-                        self.__pop_top()
+                        self.pop_top()
                     return jump_to
 
         else:
@@ -500,7 +497,7 @@ class Interpreter:
                 m = a.members.get(ailmth)
                 if m is not None:
                     self.call_function(m, 1, [b])
-                    r = self.__pop_top()
+                    r = self.pop_top()
                     return r
 
             m = a[ailmth]
@@ -551,7 +548,7 @@ class Interpreter:
             m = a.members.get(cmp_opm)
             if m is not None:
                 self.call_function(m, 1, [b])
-                return self.__pop_top()
+                return self.pop_top()
         else:
             opm = a[cmp_opm]
             if opm is None:    
@@ -817,7 +814,7 @@ class Interpreter:
 
     def __return(self, set_value: bool = True):
         if set_value:
-            self.__return_value = self.__pop_top()
+            self.__return_value = self.pop_top()
         stack = self.__block_stack
         while stack:
             block = stack[-1]
@@ -856,10 +853,10 @@ class Interpreter:
                     # print(self.__opcounter, get_opname(op), self.__frame_stack[-1])
 
                     if op == pop_top:
-                        tos = self.__pop_top()
+                        tos = self.pop_top()
 
                     elif op == print_value:
-                        tosl = [self.__pop_top() for _ in range(argv)][::-1]
+                        tosl = [self.pop_top() for _ in range(argv)][::-1]
 
                         for tos in tosl:
                             tosm = self.check_object(
@@ -871,8 +868,8 @@ class Interpreter:
                     elif op == input_value:
                         vc = argv
 
-                        vl = [self.__pop_top() for _ in range(vc)][::-1]
-                        tos = self.__pop_top()
+                        vl = [self.pop_top() for _ in range(vc)][::-1]
+                        tos = self.pop_top()
 
                         if isinstance(tos, objs.AILObject):
                             msg = self.check_object(tos['__str__'](tos))
@@ -1017,8 +1014,8 @@ class Interpreter:
                     elif op in BINARY_OPS:
                         op, pym, ailm = _binary_op_dict.get(op)
 
-                        b = self.__pop_top()
-                        a = self.__pop_top()
+                        b = self.pop_top()
+                        a = self.pop_top()
 
                         res = self.check_object(
                                 self.__binary_op(op, pym, ailm, a, b))
@@ -1026,7 +1023,7 @@ class Interpreter:
                         self.__tof.stack.append(res)
 
                     elif op == binary_not:
-                        o = self.__pop_top()
+                        o = self.pop_top()
 
                         b = not self.__bool_test(o)
 
@@ -1037,8 +1034,8 @@ class Interpreter:
                         cmp_opm = _binary_compare_op[argv]
                         op = COMPARE_OPERATORS[argv]
 
-                        b = self.__pop_top()
-                        a = self.__pop_top()
+                        b = self.pop_top()
+                        a = self.pop_top()
 
                         self.__tof.stack.append(
                             self.__compare(a, b, cmp_opm, op)
@@ -1051,20 +1048,20 @@ class Interpreter:
                         jump_to = self.__check_continue()
 
                     elif op == call_func:
-                        argl = [self.__pop_top() for _ in range(argv)][::-1]
-                        func: objs.AILObject = self.__pop_top()
+                        argl = [self.pop_top() for _ in range(argv)][::-1]
+                        func: objs.AILObject = self.pop_top()
 
                         self.call_function(func, argv, argl)
 
                     elif op == call_func_ex:
-                        arg_array = self.__pop_top()
-                        func = self.__pop_top()
+                        arg_array = self.pop_top()
+                        func = self.pop_top()
                         arr_list = objs.unpack_ailobj(arg_array)
 
                         self.call_function(func, len(arr_list), arr_list, ex=True)
 
                     elif op == make_function:
-                        tos = copy.copy(self.__pop_top())  # type: objs.AILCodeObject
+                        tos = copy.copy(self.pop_top())  # type: objs.AILCodeObject
 
                         if tos.closure:
                             tos._closure_outer = []
@@ -1095,8 +1092,8 @@ class Interpreter:
                         m = dict()
 
                         for _ in range(argv):
-                            v = self.__pop_top()
-                            k = self.__pop_top()
+                            v = self.pop_top()
+                            k = self.pop_top()
                             
                             m[k] = v
 
@@ -1108,10 +1105,10 @@ class Interpreter:
                     elif op == build_const_key_map:
                         m = dict()
 
-                        keys = self.__pop_top()['__value__']
+                        keys = self.pop_top()['__value__']
                         # 'keys' is an array object
                         for i in range(argv):
-                            value = self.__pop_top()
+                            value = self.pop_top()
                             m[keys[i]] = value
 
                         o = objs.ObjectCreater.new_object(
@@ -1138,8 +1135,8 @@ class Interpreter:
                                 array.convert_to_array(result))
 
                     elif op == binary_subscr:
-                        v = self.__pop_top()
-                        l = self.__pop_top()
+                        v = self.pop_top()
+                        l = self.pop_top()
 
                         if isinstance(l, objs.AILObject):
                             if l['__getitem__'] is None:
@@ -1152,7 +1149,7 @@ class Interpreter:
                             self.__tof.stack.append(rtn)
 
                     elif op == unary_negative:
-                        v = self.__pop_top()
+                        v = self.pop_top()
 
                         if v['__class__'] in (
                                 aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
@@ -1167,7 +1164,7 @@ class Interpreter:
                                 v['__class__'].name, 'TypeError')
 
                     elif op == unary_invert:
-                        v = self.__pop_top()
+                        v = self.pop_top()
 
                         if v['__class__'] is aint.INTEGER_TYPE:
                             vnum = ~objs.unpack_ailobj(v)
@@ -1185,7 +1182,7 @@ class Interpreter:
                                             if op == unary_inc  \
                                             else ('__dec__', '--')
 
-                        v = self.__pop_top()
+                        v = self.pop_top()
                         method = v[target_method]
                         if method is None:
                             self.raise_error(
@@ -1261,9 +1258,9 @@ class Interpreter:
                                     'ImportError')
 
                     elif op == store_subscr:
-                        i = self.__pop_top()
-                        o = self.__pop_top()
-                        v = self.__pop_top()
+                        i = self.pop_top()
+                        o = self.pop_top()
+                        v = self.pop_top()
 
                         if isinstance(o, objs.AILObject):
                             if o['__setitem__'] is None:
@@ -1275,7 +1272,7 @@ class Interpreter:
                                 self.__tof.stack.append(v)
 
                     elif op == load_attr:
-                        o = self.__pop_top()
+                        o = self.pop_top()
                         vn = self.__tof.varnames[argv]
 
                         r = self.check_object(o['__getattr__'](o, vn))
@@ -1283,17 +1280,17 @@ class Interpreter:
                         self.__tof.stack.append(r)
 
                     elif op == store_attr:
-                        o = self.__pop_top()
+                        o = self.pop_top()
                         ni = self.__tof.varnames[argv]
-                        v = self.__pop_top()
+                        v = self.pop_top()
 
                         self.check_object(o['__setattr__'](o, ni, v))
 
                         self.__tof.stack.append(v)
 
                     elif op == store_struct:
-                        name = self.__pop_top()
-                        nl = [self.__pop_top() for _ in range(argv)][::-1]
+                        name = self.pop_top()
+                        nl = [self.pop_top() for _ in range(argv)][::-1]
                         pl = [nl[i - 1] for i in range(len(nl))
                               if nl[i] == PROTECTED_SIGNAL]
                         nl = [x for x in nl if x != PROTECTED_SIGNAL]
@@ -1304,7 +1301,7 @@ class Interpreter:
                         self.__store_var(name, o)
 
                     elif op == build_class:
-                        pops = [self.__pop_top() for _ in range(argv)]
+                        pops = [self.pop_top() for _ in range(argv)]
                         *bases, class_name, class_func = pops
 
                         bases = bases[::-1]
@@ -1318,7 +1315,7 @@ class Interpreter:
                         self.__tof.stack.append(PROTECTED_SIGNAL)
 
                     elif op == throw_error:
-                        _err = objs.unpack_ailobj(self.__pop_top())
+                        _err = objs.unpack_ailobj(self.pop_top())
                         e_msg = ''
                         e_type = ''
                         if isinstance(_err, str):
@@ -1360,17 +1357,17 @@ class Interpreter:
                         self.__pop_block()
 
                     elif op == end_finally:
-                        why = self.__pop_top()  # if no why, None will be pushed.
+                        why = self.pop_top()  # if no why, None will be pushed.
 
                         if why == WHY_RETURN:
-                            self.__return_value = self.__pop_top()
+                            self.__return_value = self.pop_top()
                             self.__return(False)
 
                         elif why == WHY_HANDLING_ERR:
                             raise VMInterrupt(MII_ERR_POP_TO_TRY)
 
                         elif why == WHY_CONTINUE or why == WHY_BREAK:
-                            goto = self.__pop_top()
+                            goto = self.pop_top()
                             goto -= _BYTE_CODE_SIZE * 2 * int(why == WHY_CONTINUE)
                             # if is continue, go back one bytecode
                             
@@ -1396,8 +1393,8 @@ class Interpreter:
                         if target_struct is None:
                             self.raise_error('can not find bound target', 'NameError')
                         else:
-                            func_name = objs.unpack_ailobj(self.__pop_top())
-                            bound_function = self.__pop_top()
+                            func_name = objs.unpack_ailobj(self.pop_top())
+                            bound_function = self.pop_top()
 
                             if not objs.compare_type(
                                     bound_function,

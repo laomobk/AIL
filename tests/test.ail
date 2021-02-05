@@ -1,7 +1,7 @@
 
-# Nezha
-# is a good film
-fun f() is
-end
 
-print doc(f)
+# f(a: int, b: int) -> int
+# @returns a + b
+fun f(a, b) {
+    return a + b
+}
