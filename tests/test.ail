@@ -1,14 +1,19 @@
 
 
-class Person {
-    fun __init__(self, name) {
-        self.name = name
-    }
-
-    fun sayHi(self) {
-        print 'My name is', self.name
-    }
+class C {
+    x = 5013
 }
 
 
-print Person('Nezha')
+c1 = C()
+c2 = C()
+
+print c1.x
+print c2.x
+
+print 'C.x = 726'
+C.x = 726
+
+print c1.x
+print c2.x
+

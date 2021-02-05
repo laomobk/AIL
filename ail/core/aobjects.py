@@ -131,6 +131,9 @@ class AILObject:
 
     def __repr__(self):
         repr_func = self['__repr__']
+        
+        if repr_func is None:
+            return self.__str__()
 
         r = repr_func(self)
         if isinstance(r, str):

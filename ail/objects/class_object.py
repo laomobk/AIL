@@ -30,9 +30,10 @@ def _clear_empty(x):
             i += 1
 
 
-def _get_method_str_func(obj_name: str):
+def _get_method_str_func(obj_name: str, is_pyfunc: bool=False):
     def _method_str(m):
-        return '<method %s of %s object at %s>' % (
+        return '<method%s %s of %s object at %s>' % (
+                ' wrapper' if is_pyfunc else '',
                 m['__name__'], obj_name, hex(id(m)))
     return _method_str
 
@@ -45,12 +46,12 @@ def _copy_function(f: AILObject) -> AILObject:
 
 
 def _check_bound(self, aobj, class_name: str):
-    if isinstance(aobj, AILObject) and \
-            aobj['__class__'] in _func_type:
-
+    cls = aobj['__class__']
+    if isinstance(aobj, AILObject) and cls in _func_type:
         aobj = _copy_function(aobj)
 
-        aobj['__repr__'] = _get_method_str_func(class_name)
+        aobj['__repr__'] = _get_method_str_func(
+                class_name, cls is PY_FUNCTION_TYPE)
         aobj['__this__'] = self  # bound self to __this__
         return aobj
     return None
@@ -119,7 +120,7 @@ def new_class(class_name: str, bases: List[AILObject], _dict: dict):
 
 
 def calculate_mro(cls):
-    # use C3 linearization algorithm to calculate mro
+    # using C3 linearization algorithm to calculate mro
     bases = cls['__bases__']
 
     if len(bases) == 0:
@@ -162,12 +163,9 @@ def new_object(_class, *args):
 
     obj['__this_class__'] = _class
 
-    obj_dict = dict()
-    obj['__dict__'] = obj_dict
-
-    init = object_getattr_with_default(obj, '__init__')
+    init = class_getattr_with_default(_class, '__init__')
     if init is not None:
-        call_object(init, *args)
+        call_object(init, obj, *args)
 
     return obj
 
@@ -189,10 +187,13 @@ def object_getattr_with_default(self, name, default=None):
 
 
 def object_init(self):
-    self._bound_methods = {}
+    self._bound_methods = dict()
+    self['__dict__'] = dict()
 
 
 def object_getattr(self, name):
+    if name == '__attrs__':
+        return self['__dict__']
     val = self['__dict__'].get(name, None)
     if val is not None:
         return val
@@ -210,11 +211,15 @@ def object_getattr(self, name):
     method_key = '%s$%s$%s' % (cls['__name__'], id(self), name)
     bound_methods = self._bound_methods
     m = bound_methods.get(method_key)
+    
     if m is not None:
         return m
+
     m = _check_bound(self, val, cls['__name__'])
     bound_methods[method_key] = m
+    
     return m
+
 
 def object_setattr(self, name, value):
     self['__dict__'][name] = value

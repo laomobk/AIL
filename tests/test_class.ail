@@ -1,0 +1,15 @@
+
+
+class Person {
+    __init__ = fun (self, name) {
+        self.name = name
+    }
+
+    sayHi = fun (self) {
+        print 'My name is', self.name
+    }
+}
+
+
+print Person('Nezha')
+
