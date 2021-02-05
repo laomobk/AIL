@@ -1,5 +1,5 @@
-# AIL 1.2 Alpha 0
+# AIL 1.2 Alpha 2
 
-## 新年快乐！
-## HAPPY NEW YEAR!
+
+***这是 AIL 1.2 Alpha 2 分支。***
 
