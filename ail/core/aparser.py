@@ -1070,8 +1070,26 @@ class Parser:
 
         return ast.StructDefineAST(name, vl, pl, ln)
 
+    def __parse_doc_string_object(self):
+        if self.__now_tok.ttype != AIL_DOC_STRING:
+            self.__syntax_error()
+        doc_string = self.__now_tok.value
+
+        self.__next_tok(convert_semi=False)  # eat DOC STRING
+
+        nt = self.__now_tok
+        if nt == 'class':
+            return self.__parse_class_def_stmt(doc_string=doc_string)
+        elif nt == 'fun':
+            return self.__parse_func_def_stmt(doc_string=doc_string)
+        elif nt == '@':
+            return self.__parse_func_def_with_decorator_stmt(doc_string=doc_string)
+        else:
+            self.__syntax_error('invalid definition under doc string')
+
     def __parse_func_def_with_decorator_stmt(self, 
-            parsed: list = None) -> ast.FunctionDefineAST:
+                                             parsed: list = None,
+                                             doc_string='') -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat '@'
 
@@ -1090,7 +1108,7 @@ class Parser:
         if self.__now_tok == '@':
             return self.__parse_func_def_with_decorator_stmt(parsed)
         elif self.__now_tok == 'fun':
-            func = self.__parse_func_def_stmt()
+            func = self.__parse_func_def_stmt(doc_string=doc_string)
             func.decorator.extend(parsed)
 
             return func
@@ -1110,7 +1128,7 @@ class Parser:
 
         return bases
 
-    def __parse_class_def_stmt(self) -> ast.ClassDefineAST:
+    def __parse_class_def_stmt(self, doc_string='') -> ast.ClassDefineAST:
         """
         the class definition actually a function definition.
         """
@@ -1137,10 +1155,11 @@ class Parser:
         func = ast.FunctionDefineAST(
                 class_name, ast.ArgListAST([], ln), body, None, ln)
 
-        return ast.ClassDefineAST(class_name, func, bases, ln)
+        return ast.ClassDefineAST(class_name, func, bases, ln, doc_string)
 
     def __parse_func_def_stmt(
-            self, anonymous_function: bool = False) -> ast.FunctionDefineAST:
+            self, anonymous_function: bool = False,
+            doc_string='') -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
 
@@ -1192,7 +1211,7 @@ class Parser:
 
         self.__level -= 1
 
-        return ast.FunctionDefineAST(name, arg_list, block, bindto, ln)
+        return ast.FunctionDefineAST(name, arg_list, block, bindto, ln, doc_string)
 
     def __parse_continue_stmt(self) -> ast.ContinueAST:
         if self.__now_tok != 'continue':
@@ -1528,6 +1547,9 @@ class Parser:
 
         elif nt == 'fun':
             a = self.__parse_func_def_stmt()
+
+        elif nt.ttype == AIL_DOC_STRING:
+            a = self.__parse_doc_string_object()
 
         elif nt == '@':
             a = self.__parse_func_def_with_decorator_stmt()

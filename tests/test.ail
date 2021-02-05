@@ -1,3 +1,7 @@
 
-fun f() {}
+# Nezha
+# is a good film
+fun f() is
+end
 
+print doc(f)

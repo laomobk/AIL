@@ -6,7 +6,8 @@ from functools import lru_cache
 from inspect import isbuiltin, isfunction
 
 from ..core import aobjects as obj
-from ..core.aobjects import AILObject
+from ..core.adoc import set_doc
+from ..core.aobjects import AILObject, AILCodeObject
 from ..core.error import AILRuntimeError
 from . import wrapper
 from . import types
@@ -32,6 +33,8 @@ def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
     self.properties['__value__'] = func
     self.properties['__name__'] = func.__name__
 
+    set_doc(self, func.__doc__)
+
 
 def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
     _make_cache()
@@ -51,10 +54,11 @@ def pyfunc_func_str(self: obj.AILObject):
     return '<python function \'%s\'>' % self['__name__']
 
 
-def func_func_init(self, cobj: t.CodeType, globals: dict, name: str):
-    self['__code__'] = cobj
+def func_func_init(self, code: AILCodeObject, globals: dict, name: str):
+    self['__code__'] = code
     self['__globals__'] = globals
     self['__name__'] = name
+    self['__doc__'] = code.doc_string
 
 
 def func_func_str(self: obj.AILObject):

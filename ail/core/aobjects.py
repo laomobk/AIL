@@ -46,7 +46,7 @@ class AILCodeObject:
     __slots__ = ('consts', 'varnames', 'bytecodes', 'firstlineno', 'lineno_list',
                  'argcount', 'name', 'lnotab', 'closure', 'is_main', 'filename',
                  '_closure_outer', 'global_names', 'nonlocal_names', 'var_arg',
-                 '_function_signature')
+                 'doc_string', '_function_signature')
 
     def __init__(self, consts: list, varnames: list,
                  bytecodes: list, firstlineno: int, filename: str,
@@ -68,6 +68,8 @@ class AILCodeObject:
         self.nonlocal_names = nonlocal_names
 
         self.var_arg: str = None
+        self.doc_string: str = ''
+
         self._closure_outer: list = list()  # empty if not closure
 
         self._function_signature = ''

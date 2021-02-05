@@ -350,6 +350,37 @@ def get_string(source: str, cursor: int) -> tuple:
     return cur + 1, lni, buffer  # 跳过最后一个引号
 
 
+def get_doc_string(source: str, cursor: int) -> tuple:
+    """
+    :param source: 源码文件
+    :param cursor: 字符指针
+    :return: (offset, ln_inc, doc_string)
+    """
+    ccur = cursor + 1  # skip '#'
+    ln_inc = 0
+
+    new_line = False
+
+    doc_string = ''
+
+    while ccur < len(source):
+        if new_line:
+            new_line = False
+            if source[ccur] != '#':
+                break
+            ccur += 1
+            continue
+
+        if source[ccur] == '\n':
+            ln_inc += 1
+            new_line = True
+
+        doc_string += source[ccur]
+        ccur += 1
+
+    return ccur - cursor, ln_inc, doc_string
+
+
 class Cursor:  # 字符指针类型
     """
     指向源码中的字符的指针
@@ -638,6 +669,17 @@ class Lex:
                     ))
                     self.__movchr()
 
+            elif c == '#':  # 井号
+                offset, ln_inc, doc_string = get_doc_string(self.__source, self.__chp)
+                self.__stream.append(
+                    Token(
+                        doc_string,
+                        AIL_DOC_STRING,
+                        self.__ln,
+                    ))
+                self.__ln += ln_inc
+                self.__movchr(offset)
+
             elif c == '/':  # 斜杠
                 if self.__nextch() == '/':  # 单行注释
                     # 移动指针至下一行或EOF
@@ -677,7 +719,7 @@ class Lex:
                     self.__movchr()
 
             elif c in ('(', ')', '[', ']', '{', '}',
-                       ',', '.', ';', '$', '@', '#', '\\', ':', '~'):
+                       ',', '.', ';', '$', '@', '\\', ':', '~'):
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
                     self.__ln += 1
@@ -696,7 +738,6 @@ class Lex:
                             ';': AIL_SEMI,
                             '$': AIL_MONEY,
                             '@': AIL_AT,
-                            '#': AIL_WELL,
                             '\\': AIL_ESCAPE,
                             ':': AIL_COLON,
                             '~': AIL_WAVE,

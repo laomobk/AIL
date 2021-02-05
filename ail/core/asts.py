@@ -311,23 +311,27 @@ class FunctionDefineAST:
     """
 
     def __init__(self, name: str, arg_list: ArgListAST,
-                 block: BlockExprAST, bindto: str, ln: int):
+                 block: BlockExprAST, bindto: str, ln: int,
+                 doc_str=''):
         self.name = name
         self.arg_list = arg_list
         self.block = block
         self.bindto = bindto
         self.decorator = list()
         self.ln = ln
+        self.doc_str=  doc_str
 
 
 class ClassDefineAST:
     def __init__(self, 
-            name: str, func: FunctionDefineAST, 
-            bases: List[ExprAST], ln: int):
+                 name: str, func: FunctionDefineAST,
+                 bases: List[ExprAST], ln: int,
+                 doc_str=''):
         self.name = name
         self.func = func
         self.bases = bases
         self.ln = ln
+        self.doc_str = doc_str
 
 
 class ReturnAST:

@@ -15,6 +15,7 @@ AIL_ASSI            = 110   #   =
 AIL_IDENTIFIER      = 20    #   FOOOOOO
 AIL_NUMBER          = 21    #   2.3 / 123
 AIL_STRING          = 22    #   "..." / '...'
+AIL_DOC_STRING      = 23    #   # ...
 
 AIL_SLBASKET        = 30    #   (
 AIL_SRBASKET        = 31    #   )

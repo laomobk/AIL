@@ -292,6 +292,13 @@ def func_isimplement(type_or_obj, *stypes):
                 return False
 
 
+def func_doc(o):
+    doc_string = o['__doc__']
+    if doc_string is None:
+        return ''
+    return doc_string
+
+
 def func_equal_type(a, b):
     if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
         return a['__class__'].otype == b['__class__'].otype
@@ -407,6 +414,7 @@ def init_builtins():
         'complex': objs.convert_to_ail_object(func_complex),
         'map': objs.convert_to_ail_object(func_map),
         'super': objs.convert_to_ail_object(super_object.get_super),
+        'doc': objs.convert_to_ail_object(func_doc),
         'Object': class_object.CLASS_OBJECT,
 
         ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),

@@ -58,7 +58,7 @@ def _check_bound(self, aobj, class_name: str):
 
 
 def class_init(self, 
-               name: str, bases: List[AILObject], dict_: dict):
+               name: str, bases: List[AILObject], dict_: dict, doc_string=''):
     self['__name__'] = name
     self['__bases__'] = bases
     self['__dict__'] = dict_
@@ -67,6 +67,9 @@ def class_init(self,
 
     self['__mro__'] = mro
     dict_['__mro__'] = _conv(mro)
+    self['__doc__'] = doc_string
+
+    dict_['__doc__'] = doc_string
 
 
 def class_getattr_with_default(cls, name, default=None):
@@ -111,12 +114,17 @@ def build_class(class_func, class_name, bases) -> AILObject:
 
     class_dict = func_frame.variable
 
+    doc_string = class_func['__doc__']
+    if doc_string is None:
+        doc_string = ''
+
     return ObjectCreater.new_object(
-            CLASS_TYPE, class_name, bases, class_dict)
+            CLASS_TYPE, class_name, bases, class_dict, doc_string)
 
 
-def new_class(class_name: str, bases: List[AILObject], _dict: dict):
-    return ObjectCreater.new_object(CLASS_TYPE, class_name, bases, _dict)
+def new_class(class_name: str, bases: List[AILObject], _dict: dict, doc_string=''):
+    return ObjectCreater.new_object(
+        CLASS_TYPE, class_name, bases, _dict, doc_string)
 
 
 def calculate_mro(cls):

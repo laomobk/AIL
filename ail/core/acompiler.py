@@ -1000,7 +1000,8 @@ class Compiler:
             self, 
             tree: ast.FunctionDefineAST, 
             anonymous_function: bool = False,
-            just_make: bool = False) -> ByteCode:
+            just_make: bool = False,
+            doc_string: str = '') -> ByteCode:
         bc = ByteCode()
 
         signature = _make_function_signature(tree)
@@ -1024,6 +1025,11 @@ class Compiler:
         cobj.argcount = argc
         cobj.var_arg = var_arg
         cobj._function_signature = signature
+
+        if doc_string != '':
+            cobj.doc_string = doc_string
+        else:
+            cobj.doc_string = tree.doc_str
 
         if self.__mode == COMPILER_MODE_FUNC:
             cobj.closure = True
@@ -1133,7 +1139,8 @@ class Compiler:
 
         bc = ByteCode()
 
-        func_bc = self.__compile_function(tree.func, just_make=True)
+        func_bc = self.__compile_function(
+            tree.func, just_make=True, doc_string=tree.doc_str)
         name_const_index = self.__buffer.add_const(tree.name)
         name_var_index = self.__buffer.get_or_add_varname_index(tree.name)
 
