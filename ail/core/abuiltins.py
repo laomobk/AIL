@@ -45,7 +45,7 @@ def func_abs(x: objs.AILObject):
     if isinstance(x, int):
         return x if x >= 0 else -x
 
-    return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
+    return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x), 'TypeError')
 
 
 def func_neg(x: objs.AILObject):
@@ -57,12 +57,12 @@ def func_neg(x: objs.AILObject):
         v = x['__value__']
         return -v if v > 0 else v
 
-    return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x))
+    return AILRuntimeError('abs need a AIL number argument, but got %s' % repr(x), 'TypeError')
 
 
 def func_globals():
     """
-    globals() -> map[string, any]
+    globals() -> Map[string, any]
     @returns the global namespace
     """
     ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_global.ns_dict
@@ -71,7 +71,7 @@ def func_globals():
 
 def func_builtins():
     """
-    builtins() -> map[string, any]
+    builtins() -> Map[string, any]
     @returns the builtin namespace
     """
     ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_builtins.ns_dict
@@ -80,7 +80,7 @@ def func_builtins():
 
 def func_locals():
     """
-    locals() -> map[string, any]
+    locals() -> Map[string, any]
     @returns the local namespace
     """
     frame_stack = MAIN_INTERPRETER_STATE.frame_stack
@@ -90,6 +90,10 @@ def func_locals():
 
 
 def func_dir(module):
+    """
+    dir(module: module) -> Map[string, any]
+    @returns a map of namespace
+    """
     if objs.compare_type(module, amodule.MODULE_TYPE):
         return amap.convert_to_ail_map(module['__namespace__'])
     return AILRuntimeError('dir() requires a module object', 'TypeError')
@@ -115,6 +119,11 @@ def func_py_getattr(pyobj, name):
 
 
 def func_chr(x):
+    """
+    chr(x: integer) -> string
+    @param x x in [0, 0x10ffff]
+    @returns an unicode string of one character with ordinal x
+    """
     if isinstance(x, objs.AILObject) and \
             x['__class__'] == aint.INTEGER_TYPE:
         v = x['__value__']
@@ -127,6 +136,11 @@ def func_chr(x):
 
 
 def func_ord(x):
+    """
+    ord(x: string) -> integer
+    @param x an unicode string of one charater
+    @returns the unicode code point for x.
+    """
     if isinstance(x, objs.AILObject) and \
             x['__class__'] == astr.STRING_TYPE:
         v = x['__value__']
@@ -139,6 +153,10 @@ def func_ord(x):
 
 
 def func_hex(x):
+    """
+    hex(x: integer) -> string
+    @returns the representation of x
+    """
     if isinstance(x, objs.AILObject) and \
             x['__class__'] == aint.INTEGER_TYPE:
         v = x['__value__']
@@ -151,27 +169,28 @@ def func_hex(x):
 
 
 def func_int_input(msg: objs.AILObject):
+    """
+    int_input(prompt: string) -> integer
+    @throws ValueError if the input value not a ordinal number
+    """
     try:
         i = int(input(str(msg)))
-
         return i
     except ValueError as e:
         return AILRuntimeError(str(e), 'ValueError')
 
 
-def func_make_type(name, default_attrs: objs.AILObject = None):
-    if default_attrs is not None and \
-            not objs.compare_type(default_attrs, array.ARRAY_TYPE):
-        return AILRuntimeError('type() needs an array to set default attribute.')
-    return objs.ObjectCreater.new_object(atype.TYPE_TYPE, name, default_attrs)
-
-
 def new_struct(struct_type, default_list=None):
+    """
+    new(structType: Struct [, defaultList: array]) -> StructObject
+    @returns a struct object of StructType, if no default list provided, all attributes
+    will set null
+    """
     # return a struct object
 
     if default_list is not None and \
             not objs.compare_type(default_list, array.ARRAY_TYPE):
-        return AILRuntimeError('member initialize need an array')
+        return AILRuntimeError('member initialize need an array', 'TypeError')
     elif default_list is not None:
         default_list = default_list['__value__']
 
@@ -180,7 +199,7 @@ def new_struct(struct_type, default_list=None):
                                'TypeError')
 
     if not objs.compare_type(struct_type, struct.STRUCT_TYPE):
-        return AILRuntimeError('new() need a struct type')
+        return AILRuntimeError('new() need a struct type', 'TypeError')
 
     m = struct_type.members.keys()
 
@@ -200,18 +219,22 @@ def new_struct(struct_type, default_list=None):
         md = {k: v for k, v in zip(m, default_list)}
     else:
         md = {k: null.null for k in m}
-    
+
     bind_func = struct_type['__bind_functions__']
     md.update(bind_func)
 
     name = struct_type['__name__']
-    pl = struct_type.protected 
+    pl = struct_type.protected
 
     return objs.ObjectCreater.new_object(
         struct.STRUCT_OBJ_TYPE, name, md, struct_type, pl)
 
 
 def func_len(o: objs.AILObject):
+    """
+    len(o: array|string) -> int
+    @returns the length of the param o
+    """
     if isinstance(o, objs.AILObject):
         if o['__len__'] is not None:
             return o['__len__'](o)
@@ -220,28 +243,44 @@ def func_len(o: objs.AILObject):
 
 
 def func_type(o: objs.AILObject):
+    """
+    type(o: Any) -> integer
+    @returns the type number of param o
+    """
     if o['__class__'] == struct.STRUCT_OBJ_TYPE:
         return o['__type__']
     return o['__class__'].otype
 
 
 def func_equal(a, b):
-    return a == b
+    """
+    equal(a: Any, b: Any) -> boolean
+    @returns address of a == address of b
+    """
+    return id(a) == id(b)
 
 
 def func_array(size, default=None):
+    """
+    array(size: integer [, default: Any]) -> array
+    @param size the size of array
+    @param default the default value of array
+    """
     if objs.compare_type(size, aint.INTEGER_TYPE):
         if default is None:
             l = [null.null for _ in range(size['__value__'])]
         else:
             l = [objs.unpack_ailobj(default)
-                    for _ in range(size['__value__'])]
+                 for _ in range(size['__value__'])]
         o = objs.ObjectCreater.new_object(array.ARRAY_TYPE, l)
         return o
     return AILRuntimeError('array() needs an integer.', 'TypeError')
 
 
 def func_map(*args):
+    """
+    map(pairs: Array[List])
+    """
     if len(args) == 0:
         return amap.convert_to_ail_map(dict())
     elif len(args) == 1:
@@ -249,14 +288,14 @@ def func_map(*args):
 
         if not isinstance(pairs, list):
             return AILRuntimeError(
-                    'all of map(pairs) arguments must be array.', 'TypeError')
+                'all of map(pairs) arguments must be array.', 'TypeError')
 
         m = dict()
         for p in pairs:
             p = objs.unpack_ailobj(p)
             if not isinstance(p, list) or len(p) != 2:
                 return AILRuntimeError(
-                        'each pair must like: [key, value]', 'ValueError')
+                    'each pair must like: [key, value]', 'ValueError')
             k, v = p
             m[k] = v
 
@@ -266,6 +305,11 @@ def func_map(*args):
 
 
 def func_isinstance(o, _type):
+    """
+    isinstance(obj :Object|StructObject, clsOrStruct: Class|Struct) -> boolean
+    @return whether a object is an instance of a class or subclass or whether
+            an struct object is created from that struct
+    """
     if objs.compare_type(o, struct.STRUCT_OBJ_TYPE) and \
             objs.compare_type(_type, struct.STRUCT_TYPE):
         return o['__type__'] == _type
@@ -285,9 +329,13 @@ def func_isinstance(o, _type):
 
 
 def func_isimplement(type_or_obj, *stypes):
+    """
+    isimplement(typeOrObject: Struct|StructObject, *structTypes: StructType) -> boolean
+    @return whether a struct type or struct object have all bound functions in struct type(s)
+    """
     if len(stypes) == 0:
         return AILRuntimeError(
-                'isimplement() needs two or more arguments', 'ValueError')
+            'isimplement() needs two or more arguments', 'ValueError')
 
     _type = type_or_obj
     _is_reserved_name = struct._is_reserved_name
@@ -297,13 +345,13 @@ def func_isimplement(type_or_obj, *stypes):
     elif objs.compare_type(type_or_obj, struct.STRUCT_OBJ_TYPE):
         _type = type_or_obj['__type__']
     else:
-        return AILRuntimeError('isimplement() needs struct or object')
+        return AILRuntimeError('isimplement() needs struct or object', 'TypeError')
 
     members = _type.members + list(_type['__bind_functions__'].keys())
 
     for stype in stypes:
         if not objs.compare_type(stype, struct.STRUCT_TYPE):
-            return AILRuntimeError('isimplement(): not a struct')
+            return AILRuntimeError('isimplement(): not a struct', 'TypeError')
 
         for s_member in stype.members + list(stype['__bind_functions__'].keys()):
             if _is_reserved_name(s_member):
@@ -313,6 +361,11 @@ def func_isimplement(type_or_obj, *stypes):
 
 
 def func_doc(o):
+    """
+    doc(o: Any) -> string
+    @return the doc string of an object
+    @return '' if no doc string
+    """
     doc_string = o['__doc__']
     if doc_string is None:
         return ''
@@ -320,16 +373,29 @@ def func_doc(o):
 
 
 def func_equal_type(a, b):
+    """
+    equal_type(a: Any, b: Any) -> boolean
+    @return whether the type of a equals the type of b
+    """
     if isinstance(a, objs.AILObject) and isinstance(b, objs.AILObject):
         return a['__class__'].otype == b['__class__'].otype
     return False
 
 
 def func_str(a):
-    return objs.get_state().global_interpreter.check_object(a['__str__'](a), not_convert=True)
+    """
+    str(x: Any) -> string
+    @returns the string form of an object
+    """
+    return objs.get_state().global_interpreter.check_object(
+        a['__str__'](a), not_convert=True)
 
 
 def func_repr(a):
+    """
+    repr(x: Any) -> string
+    @returns the printable representation of an object
+    """
     repr_f = a['__repr__']
     if repr_f is None:
         repr_f = a['__str__']
@@ -337,6 +403,10 @@ def func_repr(a):
 
 
 def func_show_struct(sobj):
+    """
+    show_struct(obj: StructObject) -> string
+    @returns a pretty info string of the struct object
+    """
     if not (objs.compare_type(sobj, struct.STRUCT_OBJ_TYPE) or
             objs.compare_type(sobj, struct.STRUCT_TYPE)):
         return AILRuntimeError('show_struct needs a struct type or object', 'TypeError')
@@ -350,29 +420,53 @@ def func_show_struct(sobj):
     return ln1 + block
 
 
+_py_int_func_types = (str, int, float)
+
+
 def func_int(obj):
+    """
+    int(x: string|integer|float) -> integer
+    convert x to integer
+    """
     v = objs.unpack_ailobj(obj)
 
     try:
         return int(v)
+    except (ValueError, TypeError) as _:
+        return AILRuntimeError('cannot convert %s to integer' % obj, 'TypeError')
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonError')
 
 
 def func_float(obj):
+    """
+    float(x: string|integer|float) -> float
+    convert x to float
+    """
+
     v = objs.unpack_ailobj(obj)
 
     try:
         return float(v)
+    except (ValueError, TypeError) as _:
+        return AILRuntimeError('cannot convert %s to float' % obj, 'TypeError')
     except Exception as e:
         return AILRuntimeError(str(e), 'PythonError')
 
 
 def func_addr(obj):
+    """
+    addr(x: Any) -> integer
+    @returns the address of the object in memory.
+    """
     return id(obj)
 
 
 def func_fnum(obj):
+    """
+    fnum(x: integer|float) -> _fastnum
+    @returns the FastNumber wrapper of x
+    """
     v = objs.unpack_ailobj(obj)
 
     if type(v) in (int, float):
@@ -380,6 +474,10 @@ def func_fnum(obj):
 
 
 def func_complex(real, imag):
+    """
+    complex(real: integer, imag: integer) -> Complex
+    @returns an complex: real + imag j
+    """
     real = objs.unpack_ailobj(real)
     imag = objs.unpack_ailobj(imag)
 
@@ -387,8 +485,12 @@ def func_complex(real, imag):
 
 
 def func_super(_class, instance):
+    """
+    super(type: Class, obj: Object) -> Class
+    @returns the next (or last) class in the MRO table of an object
+    """
     if objs.compare_type(_class, class_object.CLASS_TYPE) and \
-        objs.compare_type(instance, class_object.OBJECT_TYPE):
+            objs.compare_type(instance, class_object.OBJECT_TYPE):
         return super_object.get_super(_class, instance)
 
 
@@ -411,7 +513,6 @@ def init_builtins():
         'chr': objs.convert_to_ail_object(func_chr),
         'ord': objs.convert_to_ail_object(func_ord),
         'hex': objs.convert_to_ail_object(func_hex),
-        'make_type': objs.convert_to_ail_object(func_make_type),
         'new': objs.convert_to_ail_object(new_struct),
         'null': null.null,
         'true': true,
@@ -460,4 +561,3 @@ def init_builtins():
     }
 
     BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
-
