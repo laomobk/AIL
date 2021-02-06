@@ -56,6 +56,8 @@ _cell_action_map = {
     AIL_STRING: lambda s: s
 }
 
+_class_name_stack = list()
+
 
 def _make_function_signature(tree: ast.FunctionDefineAST):
     func_signature_template = 'fun {bind_to}{name}({arg_list})'
@@ -1013,7 +1015,7 @@ class Compiler:
         var_arg = exp_list[-1].expr.value \
                     if exp_list and exp_list[-1].star else None
         argc = len(exp_list) - (0 if var_arg is None else 1)
-
+ 
         name = tree.name
 
         if self.__mode == COMPILER_MODE_FUNC:
@@ -1136,11 +1138,11 @@ class Compiler:
          ** nothing **
 
         """
-
         bc = ByteCode()
-
+        
         func_bc = self.__compile_function(
             tree.func, just_make=True, doc_string=tree.doc_str)
+
         name_const_index = self.__buffer.add_const(tree.name)
         name_var_index = self.__buffer.get_or_add_varname_index(tree.name)
 

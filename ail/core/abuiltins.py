@@ -39,7 +39,7 @@ from ..objects import (
 def func_abs(x: objs.AILObject):
     """
     abs(x: integer) -> integer
-    :returns: x if x >= 0 else -x
+    @returns x if x >= 0 else -x
     """
     x = objs.unpack_ailobj(x)
     if isinstance(x, int):
@@ -49,7 +49,11 @@ def func_abs(x: objs.AILObject):
 
 
 def func_neg(x: objs.AILObject):
-    if x['__value__'] is not None and x['__class__'] in (aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
+    """
+    neg(x: number) - number
+    """
+    if x['__value__'] is not None and x['__class__'] in (
+            aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
         v = x['__value__']
         return -v if v > 0 else v
 
@@ -57,16 +61,28 @@ def func_neg(x: objs.AILObject):
 
 
 def func_globals():
+    """
+    globals() -> map[string, any]
+    @returns the global namespace
+    """
     ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_global.ns_dict
     return amap.convert_to_ail_map(ns_dict)
 
 
 def func_builtins():
+    """
+    builtins() -> map[string, any]
+    @returns the builtin namespace
+    """
     ns_dict = MAIN_INTERPRETER_STATE.namespace_state.ns_builtins.ns_dict
     return amap.convert_to_ail_map(ns_dict)
 
 
 def func_locals():
+    """
+    locals() -> map[string, any]
+    @returns the local namespace
+    """
     frame_stack = MAIN_INTERPRETER_STATE.frame_stack
     if len(frame_stack) > 0:
         return amap.convert_to_ail_map(frame_stack[-1].variable)
@@ -370,6 +386,12 @@ def func_complex(real, imag):
     return objs.ObjectCreater.new_object(acomplex.COMPLEX_TYPE, real, imag)
 
 
+def func_super(_class, instance):
+    if objs.compare_type(_class, class_object.CLASS_TYPE) and \
+        objs.compare_type(instance, class_object.OBJECT_TYPE):
+        return super_object.get_super(_class, instance)
+
+
 true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
 false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 
@@ -417,7 +439,7 @@ def init_builtins():
         'help': objs.convert_to_ail_object(print_help),
         'complex': objs.convert_to_ail_object(func_complex),
         'map': objs.convert_to_ail_object(func_map),
-        'super': objs.convert_to_ail_object(super_object.get_super),
+        'super': objs.convert_to_ail_object(func_super),
         'doc': objs.convert_to_ail_object(func_doc),
         'Object': class_object.CLASS_OBJECT,
 

@@ -39,6 +39,13 @@ _FROM_MAIN = 0
 _FROM_FUNC = 1
 
 
+_class_name_stack = list()
+
+
+def _make_private_name(name):
+    return '$'.join(_class_name_stack)
+
+
 class Parser:
     def __init__(self):
         self.__filename = '<NO FILE>'
@@ -94,7 +101,14 @@ class Parser:
 
     @property
     def __now_tok(self) -> Token:
-        return self.__tok_stream[self.__tc]
+        tok = self.__tok_stream[self.__tc]
+
+        if len(_class_name_stack) > 0 and tok.ttype == AIL_IDENTIFIER \
+                and tok.value not in _keywords:
+            val = tok.value
+            if val[:2] == '__' and val[-2:] != '__' and len(_class_name_stack) > 0:
+                tok.value = '%s$%s' % (_make_private_name(val), val)
+        return tok
 
     @property
     def __now_ln(self) -> int:
@@ -1147,10 +1161,12 @@ class Parser:
         if self.__now_tok == 'extends':
             self.__next_tok()
             bases = self.__parse_class_bases()
-
+        
+        _class_name_stack.append(class_name)
         body = self.__parse_block('is', 'end',
                                    start_msg=
                                    'class body should starts with \'is\' or \':\'')
+        _class_name_stack.pop()
 
         func = ast.FunctionDefineAST(
                 class_name, ast.ArgListAST([], ln), body, None, ln)

@@ -6,6 +6,7 @@ from ..core.aobjects import (
     convert_to_ail_object, ObjectCreater
 )
 from ..core.error import AILRuntimeError
+from ..core.err_types import ATTRIBUTE_ERROR
 
 
 def super_init(self, instance, bases, _class):
@@ -30,7 +31,7 @@ def _find_class_from_order(self, name):
         if val is not None:
             return base
 
-    return NonE
+    return None
 
 
 def super_getattr(self, name):
@@ -39,7 +40,8 @@ def super_getattr(self, name):
     if cls is not None:
         return cls['__dict__'][name]
 
-    return AILRuntimeError('super: cannot find attribute from super class')
+    return AILRuntimeError(
+            'super: cannot find attribute from super class', ATTRIBUTE_ERROR)
 
 
 def super_setattr(self, name, value):
@@ -63,7 +65,7 @@ SUPER_TYPE = AILObjectType(
 )
 
 
-def get_super(instance, _class):
+def get_super(_class, instance):
     return ObjectCreater.new_object(
             SUPER_TYPE, instance, _class['__bases__'], _class)
 

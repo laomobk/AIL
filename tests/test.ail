@@ -1,7 +1,43 @@
 
 
-# f(a: int, b: int) -> int
-# @returns a + b
-fun f(a, b) {
-    return a + b
+class C {
+    class __Inner {
+        class __Inner_Inner {}
+        fun showInner(self) {
+            print self.__Inner_Inner
+        }
+    }
+
+    fun f2(self) {
+        print 'C.f2', self
+        self.__check()
+    }
+
+    fun __check(self) {
+        print 'C.__check()', self
+        self.__Inner().showInner()
+    }
 }
+
+
+class A extends C {
+    fun f(self) {
+        self.__check()
+    }
+
+    fun __check(self) {
+        print 'A.__check()', self
+    }
+}
+
+
+class B extends A {
+    fun m(self) {
+        self.f2()
+    }
+}
+
+
+b = B()
+b.m()
+

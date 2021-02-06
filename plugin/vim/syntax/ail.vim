@@ -54,6 +54,7 @@ syn match  ailNumber		"\<\d\+\.\d*\>"
 syn match  ailNumber		"\.\d\+\>"
 
 syn match ailComment "\v(\/\/).*$"
+syn match ailComment "\v(#).*$"
 
 syn region ailString start=/\v"/ skip=/\v\\./ end=/\v"/
 syn region ailString start=/\v'/ skip=/\v\\./ end=/\v'/
