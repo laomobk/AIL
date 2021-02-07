@@ -14,7 +14,7 @@ syn keyword ailStmt	fun struct class extends
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch finally
-syn keyword ailStmt break continue
+syn keyword ailStmt break continue throw
 syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt mod

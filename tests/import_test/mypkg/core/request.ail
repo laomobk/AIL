@@ -9,7 +9,7 @@ print 'core/request.ail'
 fun get() {
     print 'core/request.get()'
     url = urlutil.trim(url)
-    print 'requesting...  url =' ; url
+    print 'requesting...  url =', url
 }
 
 end
