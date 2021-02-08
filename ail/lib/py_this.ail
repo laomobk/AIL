@@ -29,8 +29,6 @@ Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"
 //
 //print("".join([d.get(c, c) for c in s]))
 
-res = ''
-
 i = 0
 p = 0
 while i < len(s) {
@@ -40,18 +38,18 @@ while i < len(s) {
         p = 65
     }
 
-    if equal(s[i], '\n') or equal(s[i], ' ') or equal(s[i], '.') or equal(s[i], ',') or equal(s[i], "'") {
+    if s[i] == '\n' or s[i] == ' ' or s[i] == '.' or s[i] == ',' or s[i] == "'" {
         c = s[i]
-    } elif equal(s[i], '!') or equal(s[i], '-') or equal(s[i], '*') {
+    } elif s[i] == '!' or s[i] == '-' or s[i] == '*' {
         c = s[i]
     } else {
 	    c = chr((ord(s[i]) - p + 13) mod 26 + p)
 	}
 
-	res = res + c
+	console.write(c)
 	i = i + 1
 }
 
-print res
+console.writeln('')
 
 end

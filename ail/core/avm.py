@@ -533,17 +533,21 @@ class Interpreter:
                              'TypeError')
         a_cls = a['__class__']
         b_cls = b['__class__']
+        a_val = a['__value__']
+        b_val = b['__value__']
         
         if a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
-            a_val = a['__value__']
-            b_val = b['__value__']
-
             res = getattr(a_val, cmp_opm)(b_val)
             if res is not NotImplemented:
                 return true if res else false
             self.raise_error('Not support \'%s\' between %s and %s' % 
                                 (op, a, b),
                              'TypeError')
+        elif type(a_val) is str and type(b_val) is str:
+            res = getattr(a_val, cmp_opm)(b_val)
+            if res is not NotImplemented:
+                return true if res else false
+            self.raise_error('not support \'%s\' between 2 string' % op, 'TypeError')
         elif a_cls.otype == struct.STRUCT_OBJ_TYPE.otype:
             m = a.members.get(cmp_opm)
             if m is not None:
@@ -805,6 +809,7 @@ class Interpreter:
             elif func['__class__'] == class_object.CLASS_TYPE:
                 cls = func
                 obj = self.check_object(class_object.new_object(cls, *argl))
+
                 self.__push_back(obj)
 
                 return True

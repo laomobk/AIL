@@ -9,6 +9,7 @@ from .types import I_CLASS_TYPE, I_OBJECT_TYPE
 from ..core.aobjects import (
     AILObject, AILObjectType, ObjectCreater,
     call_object, compare_type, convert_to_ail_object as _conv,
+    check_object, get_state
 )
 
 from ..core.err_types import TYPE_ERROR, NAME_ERROR
@@ -58,10 +59,12 @@ def _check_bound(self, aobj, class_name: str):
 
 
 def class_init(self, 
-               name: str, bases: List[AILObject], dict_: dict, doc_string=''):
+               name: str, bases: List[AILObject], dict_: dict, doc_string='', 
+               protected_member: list = None):
     self['__name__'] = name
     self['__bases__'] = bases
     self['__dict__'] = dict_
+    self['__protected_member__'] = protected_member 
     
     mro = calculate_mro(self)
 
@@ -166,6 +169,11 @@ def calculate_mro(cls):
 def new_object(_class, *args):
     if not compare_type(_class, CLASS_TYPE):
         return AILRuntimeError('__new__() needs class object', TYPE_ERROR)
+
+    cls_new = class_getattr_with_default(_class, '__new__')
+    if cls_new is not None:
+        call_object(cls_new, _class, *args)
+        return get_state().global_interpreter.pop_top()
 
     obj = ObjectCreater.new_object(OBJECT_TYPE)
 
