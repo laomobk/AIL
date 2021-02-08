@@ -8,8 +8,7 @@ from .types import I_CLASS_TYPE, I_OBJECT_TYPE
 
 from ..core.aobjects import (
     AILObject, AILObjectType, ObjectCreater,
-    call_object, compare_type, convert_to_ail_object as _conv,
-    check_object, get_state
+    call_object, compare_type, convert_to_ail_object as _conv, get_state
 )
 
 from ..core.err_types import TYPE_ERROR, NAME_ERROR

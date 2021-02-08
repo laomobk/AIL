@@ -222,20 +222,16 @@ class ObjectCreater:
         return obj
 
 
-def check_object(obj):
-    if isinstance(obj, error.AILRuntimeError):
-        error.print_global_error(obj)
-
-
 # cache
 _STRING_TYPE = None
-_INTEGER_TYPE =None
+_INTEGER_TYPE = None
 _FLOAT_TYPE = None
 _COMPLEX_TYPE = None
 _ARRAY_TYPE = None
 _MAP_TYPE = None
 _WRAPPER_TYPE = None
 _PY_FUNCTION_TYPE = None
+_BYTES_TYPE = None
 _null = None
 _not_loaded = True
 
@@ -250,6 +246,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
     global _MAP_TYPE
     global _WRAPPER_TYPE
     global _PY_FUNCTION_TYPE
+    global _BYTES_TYPE
     global _null
 
     if isinstance(pyobj, AILObject):
@@ -264,6 +261,7 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         from ..objects.map import MAP_TYPE as _MAP_TYPE
         from ..objects.wrapper import WRAPPER_TYPE as _WRAPPER_TYPE
         from ..objects.function import PY_FUNCTION_TYPE as _PY_FUNCTION_TYPE
+        from ..objects.bytes import BYTES_TYPE as _BYTES_TYPE
         from ..objects.null import null as _null
         _not_loaded = False
 
@@ -281,6 +279,8 @@ def convert_to_ail_object(pyobj: object) -> AILObject:
         ail_t = _COMPLEX_TYPE
     elif py_t is str:
         ail_t = _STRING_TYPE
+    elif py_t is bytes:
+        ail_t = _BYTES_TYPE
     elif py_t is bool:
         from .abuiltins import true, false
         return true if pyobj else false
@@ -369,3 +369,6 @@ def call_object(obj, *args,
         interpreter.pop_top()
     return True
 
+
+def check_object(obj, not_convert=False):
+    return get_state().global_interpreter.check_object(obj, not_convert)

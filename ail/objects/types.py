@@ -17,3 +17,4 @@ I_MAP_TYPE          = 0xf
 I_CLASS_TYPE        = 0x10
 I_SUPER_TYPE        = 0x11
 I_OBJECT_TYPE       = 0x12
+I_BYTES_TYPE        = 0x13

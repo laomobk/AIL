@@ -162,6 +162,20 @@ def str_format(self, *items):
         return AILRuntimeError(str(e), 'TypeError')
 
 
+def str_encode(self, encoding='UTF-8'):
+    encoding = obj.unpack_ailobj(encoding)
+    if not isinstance(encoding, str):
+        return AILRuntimeError(
+            '\'encoding\' must be string', 'TypeError')
+
+    val = self['__value__']  # type: str
+
+    try:
+        return val.encode(encoding)
+    except UnicodeEncodeError as e:
+        return AILRuntimeError(e.reason, 'UnicodeEncodeError')
+
+
 str_is_digit = lambda self: str.isdigit(self['__value__'])
 str_is_alpha = lambda self: str.isalpha(self['__value__'])
 str_is_decimal = lambda self: str.isdecimal(self['__value__'])
@@ -179,6 +193,7 @@ STRING_METHODS = {
     'isUpper': str_is_upper,
     'join': str_join,
     'format': str_format,
+    'encode': str_encode,
 }
 
 

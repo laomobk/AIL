@@ -15,4 +15,6 @@ VM_ERROR = 'VMError'
 NAME_ERROR = 'NameError'
 ZERO_DIVISION_ERROR = 'ZeroDivisionError'
 KEY_ERROR = 'KeyError'
-
+UNICODE_DECODE_ERROR = 'UnicodeDecodeError'
+UNICODE_ENCODE_ERROR = 'UnicodeEncodeError'
+FILE_NOT_FOUND_ERROR = 'FileNotFoundError'

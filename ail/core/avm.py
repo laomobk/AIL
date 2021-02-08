@@ -767,7 +767,6 @@ class Interpreter:
                 try:
                     rtn = self.check_object(pyf(*argl))
                 except Exception as e:
-                    raise
                     if self.__raise_python_error:
                         raise
                     self.raise_error(

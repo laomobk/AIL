@@ -12,6 +12,7 @@ from .version import (
 from .modules._fileio import _open
 from .modules.console import get_console_object
 from .modules.helper import print_help
+from .modules.fileio import CLASS_FILEIO
 
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE
@@ -543,6 +544,7 @@ def init_builtins():
         'super': objs.convert_to_ail_object(func_super),
         'doc': objs.convert_to_ail_object(func_doc),
         'Object': class_object.CLASS_OBJECT,
+        'FileIO': CLASS_FILEIO,
 
         ATTRIBUTE_ERROR: objs.convert_to_ail_object(ATTRIBUTE_ERROR),
         PYTHON_ERROR: objs.convert_to_ail_object(PYTHON_ERROR),
@@ -558,6 +560,9 @@ def init_builtins():
         NAME_ERROR: objs.convert_to_ail_object(NAME_ERROR),
         ZERO_DIVISION_ERROR: objs.convert_to_ail_object(ZERO_DIVISION_ERROR),
         KEY_ERROR: objs.convert_to_ail_object(KEY_ERROR),
+        UNICODE_DECODE_ERROR: objs.convert_to_ail_object(UNICODE_DECODE_ERROR),
+        UNICODE_ENCODE_ERROR: objs.convert_to_ail_object(UNICODE_ENCODE_ERROR),
+        FILE_NOT_FOUND_ERROR: objs.convert_to_ail_object(FILE_NOT_FOUND_ERROR),
     }
 
     BUILTINS_NAMESPACE = Namespace('builtins', BUILTINS)
