@@ -162,8 +162,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.AssignExprAST):
         return {'AssignExprAST': {
             'left': make_ast_tree(a.left),
-            'right': make_ast_tree(a.right)},
-            'op': a.op}
+            'right': make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.StructDefineAST):
         return {'StructDefineAST': {

@@ -317,14 +317,13 @@ class Compiler:
 
         if store_target == store_var:
             namei = self.__buffer.get_or_add_varname_index(left.value)
+            bc.add_bytecode(opcode, 0, ln)
             bc.add_bytecode(store_target, namei, ln)
+        elif store_target == store_attr:
+            pass 
 
     def __compile_assign_expr(self, 
             tree: ast.AssignExprAST, single = False) -> ByteCode:
-
-        if tree.op in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1):
-            return self.__compile_inplace_assign_expr(tree, single)
-
         bc = ByteCode()
 
         left = tree.left

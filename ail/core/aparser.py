@@ -33,6 +33,19 @@ _cmp_op = (
     AIL_UEQ
 )
 
+_inplace_op_dict = {
+    AIL_INP_BIN_AND: ('&', ast.BitOpExprAST, True),
+    AIL_INP_BIN_OR: ('|', ast.BitOpExprAST, True),
+    AIL_INP_DIV: ('/', ast.MuitDivExprAST, True),
+    AIL_INP_LSHIFT: ('<<', ast.BitShiftExprAST, True),
+    AIL_INP_MOD: ('mod', ast.ModExprAST, False),
+    AIL_INP_MULT: ('*', ast.MuitDivExprAST, True),
+    AIL_INP_PLUS: ('+', ast.AddSubExprAST, True),
+    AIL_INP_RSHIFT: ('>>', ast.BitShiftExprAST, True),
+    AIL_INP_SUB: ('-', ast.AddSubExprAST, True),
+    AIL_INP_XOR: ('xor', ast.BinXorExprAST, False),
+}
+
 _literal_names = ('null', 'true', 'false')
 
 _FROM_MAIN = 0
@@ -655,11 +668,10 @@ class Parser:
             self.__syntax_error()
 
         ttype = self.__now_tok.ttype
-
-        if ttype != AIL_ASSI and \
-                (AIL_INP_PLUS >= ttype >= AIL_INP_BIN_AND):
+        
+        if ttype != AIL_ASSI and (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND):
             return left
-
+        
         # check left is valid or not
         if type(left) not in (ast.MemberAccessAST,
                               ast.CellAST, ast.SubscriptExprAST):
@@ -677,7 +689,22 @@ class Parser:
         if r is None:
             self.__syntax_error()
 
-        return ast.AssignExprAST(left, r, ttype, self.__now_ln)
+        if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1):
+            r = self.__convert_inplace_assign_expr_for_right(
+                    left, r, ttype, self.__now_ln)
+
+        return ast.AssignExprAST(left, r, self.__now_ln)
+
+    def __convert_inplace_assign_expr_for_right(
+            self, left, right, ttype, ln) -> ast.ExprAST:
+        op_str, op_ast, need_op_str = _inplace_op_dict.get(ttype)
+
+        if need_op_str:
+            arg = (op_str, left, [[op_str, right]], ln)
+        else:
+            arg = (left, [[op_str, right]], ln)
+
+        return op_ast(*arg)
 
     def __parse_assign_expr0(self) -> ast.DefineExprAST:
         n = self.__now_tok.value
