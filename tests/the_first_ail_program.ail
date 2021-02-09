@@ -1,0 +1,10 @@
+
+begin
+
+if i_like(nezha) then
+    while 1 then
+        print "I Love Nezha"
+    wend
+endif
+
+end

@@ -49,7 +49,7 @@ def _mode_to_flag(self, mode_str: str) -> int:
             self._file_appending = True
             flags |= os.O_CREAT | os.O_APPEND
         elif s == '+':
-            if rwa:
+            if plus:
                 return _ERROR_MODE_AGAIN
             rwa = True
             self._file_readable = True
@@ -109,17 +109,34 @@ def _fileio___init__(self, file_path, mode, buf_size=1024):
     fd = os.open(path, flags, bufsize)
     self._file_object_fd = fd
 
+    object_setattr(self, 'readable', convert_to_ail_object(self._file_readable))
+    object_setattr(self, 'writeable', convert_to_ail_object(self._file_writeable))
+    object_setattr(self, 'created', convert_to_ail_object(self._file_created))
+    object_setattr(self, 'appending', convert_to_ail_object(self._file_appending))
+    object_setattr(self, 'closed', convert_to_ail_object(False))
+
 
 def _fileio_readall(self, block_size=1024):
+    """
+    readAll([blockSize=1024]) -> bytes
+
+    read a readable file from current cursor to EOF.
+    """
     fd = self._file_object_fd
     if fd < 0:
         return _ERROR_CLOSED
+
+    if not self._file_readable:
+        return AILRuntimeError('file is not readable', 'OSError')
+
     block_size = unpack_ailobj(block_size)
     if not isinstance(block_size, int):
         return AILRuntimeError(
             '\'blockSize\' must be integer', 'TypeError')
+
     b = os.read(fd, block_size)
     total_b = b
+
     while b:
         b = os.read(fd, block_size)
         total_b += b
@@ -128,9 +145,19 @@ def _fileio_readall(self, block_size=1024):
 
 
 def _fileio_read(self, n):
+    """
+    read(n: integer) -> bytes
+
+    read n bytes from a readable file, if reach the EOF or reach EOF while 
+    reading, the length of the bytes which it returns will less than n or 
+    equals 0.
+    """
     fd = self._file_object_fd
     if fd < 0:
         return _ERROR_CLOSED
+
+    if not self._file_readable:
+        return AILRuntimeError('file is not readable', 'OSError')
     
     n = unpack_ailobj(n)
     
@@ -146,9 +173,18 @@ def _fileio_read(self, n):
 
 
 def _fileio_write(self, b):
+    """
+    write(data: bytes) -> integer
+
+    write data to a writeable file.
+    @returns the size of wrote data.
+    """
     fd = self._file_object_fd
     if fd < 0:
         return _ERROR_CLOSED
+
+    if not self._file_writeable:
+        return AILRuntimeError('file is not writeable', 'OSError')
 
     b = unpack_ailobj(b)
     if not isinstance(b, bytes):
@@ -158,6 +194,19 @@ def _fileio_write(self, b):
 
 
 def _fileio_seek(self, pos, whence=os.SEEK_SET):
+    """
+    seek(pos [, whence=SEEK_SET]) -> integer
+
+    move the cursor of a file.
+    
+    @param whence:
+        SEEK_SET: cursor directly set to pos.
+        SEEK_CUR: cursor will go forward 'pos' step from current position.
+        SEEK_END: cursor will go forward 'posl' step from EOF, in this case, 
+                  the 'pos' can less than 0.
+        
+    @returns the offset of cursor to the cursor after seek().
+    """
     fd = self._file_object_fd
     if fd < 0:
         return _ERROR_CLOSED
@@ -174,9 +223,25 @@ def _fileio_seek(self, pos, whence=os.SEEK_SET):
         return AILRuntimeError('invalid \'whence\' argument', 'TypeError')
 
     if pos < 0 and whence != os.SEEK_END:
-        return AILRuntimeError('not support negative offset in this whence', 'TypeError')
+        return AILRuntimeError(
+                'not support negative offset in this whence', 'TypeError')
 
     return os.lseek(fd, pos, whence)
+
+
+def _fileio_close(self):
+    """
+    close()
+
+    close a file.
+    """
+    fd = self._file_object_fd
+    if fd < 0:
+        return _ERROR_CLOSED 
+
+    os.close(fd)
+    self._file_object_fd = -1
+    object_setattr(self, 'closed', convert_to_ail_object(True))
 
 
 CLASS_FILEIO = new_class(
@@ -187,6 +252,7 @@ CLASS_FILEIO = new_class(
         'read': convert_to_ail_object(_fileio_read),
         'write': convert_to_ail_object(_fileio_write),
         'seek': convert_to_ail_object(_fileio_seek),
+        'close': convert_to_ail_object(_fileio_close),
     }
 )
 

@@ -692,6 +692,11 @@ class Interpreter:
 
                         argc += 1
                         argl.insert(0, this)
+
+                    if func['__self__'] is not None:
+                        this = copy.copy(func['__self__'])
+                        argc += 1
+                        argl.insert(0, this)
                 except TypeError:
                     pass
                 
@@ -753,6 +758,12 @@ class Interpreter:
                     has_this = True
                     this = copy.copy(func['__this__'])
                     argl.insert(0, this)  # add this to 0
+                    argc += 1
+
+                if func['__self__'] is not None:
+                    has_this = True
+                    this = func['__self__']
+                    argl.insert(0, this)
                     argc += 1
 
                 if not hasattr(pyf, '__call__'):

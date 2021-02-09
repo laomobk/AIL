@@ -52,7 +52,7 @@ def _check_bound(self, aobj, class_name: str):
 
         aobj['__repr__'] = _get_method_str_func(
                 class_name, cls is PY_FUNCTION_TYPE)
-        aobj['__this__'] = self  # bound self to __this__
+        aobj['__self__'] = self  # bound self to __this__
         return aobj
     return None
 
