@@ -90,7 +90,7 @@ _binary_op_dict = {
     binary_add: ('+', '__add__', '__add__'),
     binary_div: ('/', '__truediv__', '__div__'),
     binary_mod: ('mod', '__mod__', '__mod__'),
-    binary_muit: ('*', '__mul__', '__muit__'),
+    binary_mult: ('*', '__mul__', '__muit__'),
     binary_pow: ('^', '__pow__', '__pow__'),
     binary_sub: ('-', '__sub__', '__sub__'),
     binary_lshift: ('<<', '__lshift__', '__lshift__'),

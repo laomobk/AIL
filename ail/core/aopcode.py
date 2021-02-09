@@ -13,7 +13,7 @@ compare_op      = 0x08
 
 binary_add      = 0x09
 binary_sub      = 0x0a
-binary_muit     = 0x0b
+binary_mult     = 0x0b
 binary_div      = 0x0c
 binary_mod      = 0x0d
 binary_pow      = 0x0e
@@ -113,6 +113,18 @@ build_const_key_map = 0x4a
 
 build_class = 0x4b
 
+inplace_add = 0x4c
+inplace_sub = 0x4d
+inplace_mult = 0x4e
+inplace_div = 0x4f
+inplace_mod = 0x50
+inplace_xor = 0x51
+inplace_bin_or = 0x52
+inplace_lshift = 0x53
+inplace_rshift = 0x54
+inplace_bin_and = 0x55
+
+
 COMP_EQ     = 0
 COMP_LEQ    = 1
 COMP_SEQ    = 2
@@ -132,7 +144,7 @@ BINARY_OPS = (
     binary_add,
     binary_div,
     binary_mod,
-    binary_muit,
+    binary_mult,
     binary_pow,
     binary_sub,
     binary_lshift,

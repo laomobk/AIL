@@ -3,7 +3,7 @@
 AIL_PLUS            = 10    #   +
 AIL_SUB             = 11    #   -
 AIL_DIV             = 12    #   /
-AIL_MUIT            = 13    #   *
+AIL_MULT            = 13    #   *
 AIL_MOD             = 14    #   %
 AIL_XOR             = 15    #   ^
 AIL_BIN_OR          = 16    #   |
@@ -50,7 +50,7 @@ AIL_SUB_SUB         = 51    #   --
 
 AIL_INP_PLUS        = 60    #   +=
 AIL_INP_SUB         = 61    #   -=
-AIL_INP_MUIT        = 62    #   *=
+AIL_INP_MULT        = 62    #   *=
 AIL_INP_DIV         = 63    #   /=
 AIL_INP_MOD         = 64    #   %=
 AIL_INP_XOR         = 65    #   ^=

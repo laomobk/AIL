@@ -166,10 +166,12 @@ class AssignExprAST(ExprAST):
     assi_expr := cell ['=' expr]* NEWLINE
     """
 
-    def __init__(self, left: BitOpExprAST,right: BitOpExprAST, ln: int):
+    def __init__(self, left: BitOpExprAST, right: BitOpExprAST,
+                 op: int, ln: int):
         self.right = right
         self.left = left
         self.ln = ln
+        self.op = op
 
 
 class DefineExprAST(ExprAST):

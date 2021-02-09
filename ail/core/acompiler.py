@@ -3,7 +3,14 @@ import pickle
 from typing import List, Union, Tuple
 
 from .aopcode import *
-from .tokentype import AIL_STRING, AIL_IDENTIFIER, AIL_NUMBER
+from .tokentype import (
+    AIL_STRING, AIL_IDENTIFIER, AIL_NUMBER,
+    AIL_ASSI,
+    AIL_INP_PLUS, AIL_INP_SUB, AIL_INP_MULT,
+    AIL_INP_DIV, AIL_INP_MOD, AIL_INP_XOR,
+    AIL_INP_BIN_OR, AIL_INP_LSHIFT, AIL_INP_RSHIFT,
+    AIL_INP_BIN_AND
+)
 
 from .abytecode import (
     ByteCode,
@@ -40,7 +47,7 @@ COMPILE_MAIN_NAME = '<main>'
 _opcode_map = {
     '+': binary_add,
     '-': binary_sub,
-    '*': binary_muit,
+    '*': binary_mult,
     '/': binary_div,
     'mod': binary_mod,
     '^': binary_pow,
@@ -49,6 +56,19 @@ _opcode_map = {
     '&': binary_and,
     '|': binary_or,
     'xor': binary_xor,
+}
+
+_assign_op_map = {
+    AIL_INP_PLUS: inplace_add,
+    AIL_INP_SUB: inplace_sub,
+    AIL_INP_MULT: inplace_mult,
+    AIL_INP_DIV: inplace_div,
+    AIL_INP_MOD: inplace_mod,
+    AIL_INP_XOR: inplace_xor,
+    AIL_INP_BIN_OR: inplace_bin_or,
+    AIL_INP_LSHIFT: inplace_lshift,
+    AIL_INP_RSHIFT: inplace_rshift,
+    AIL_INP_BIN_AND: inplace_bin_and,
 }
 
 _cell_action_map = {
@@ -279,8 +299,32 @@ class Compiler:
 
         return bc
 
+    def __compile_inplace_assign_expr(
+            self, tree: ast.AssignExprAST, single=False) -> ByteCode:
+        opcode = _assign_op_map.get(tree.op)
+        assert opcode is not None
+
+        bc = ByteCode()
+        ln = tree.ln
+
+        left = tree.left
+
+        store_target = {
+            ast.CellAST: store_var,
+            ast.SubscriptExprAST: store_subscr,
+            ast.MemberAccessAST: store_attr
+        }[type(left)]
+
+        if store_target == store_var:
+            namei = self.__buffer.get_or_add_varname_index(left.value)
+            bc.add_bytecode(store_target, namei, ln)
+
     def __compile_assign_expr(self, 
             tree: ast.AssignExprAST, single = False) -> ByteCode:
+
+        if tree.op in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1):
+            return self.__compile_inplace_assign_expr(tree, single)
+
         bc = ByteCode()
 
         left = tree.left

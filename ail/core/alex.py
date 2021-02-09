@@ -558,7 +558,7 @@ class Lex:
                     self.__stream.append(Token(c + '=',
                                                {
                                                    '+': AIL_INP_PLUS,
-                                                   '*': AIL_INP_MUIT,
+                                                   '*': AIL_INP_MULT,
                                                    '%': AIL_INP_MOD,
                                                    '^': AIL_INP_XOR,
                                                    '-': AIL_INP_SUB
@@ -594,7 +594,7 @@ class Lex:
                     self.__stream.append(Token(c,
                                                {
                                                    '+': AIL_PLUS,
-                                                   '*': AIL_MUIT,
+                                                   '*': AIL_MULT,
                                                    '%': AIL_MOD,
                                                    '^': AIL_XOR,
                                                    '|': AIL_BIN_OR,

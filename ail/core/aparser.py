@@ -129,7 +129,7 @@ class Parser:
     def __parse_arg_item(self) -> ast.ArgItemAST:
         star = False
 
-        if self.__now_tok.ttype == AIL_MUIT:
+        if self.__now_tok.ttype == AIL_MULT:
             self.__next_tok()  # eat '*'
             star = True
         expr = self.__parse_binary_expr()
@@ -485,14 +485,14 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype not in (AIL_MUIT, AIL_DIV):
+        if self.__now_tok.ttype not in (AIL_MULT, AIL_DIV):
             return left
 
         left_op = self.__now_tok.value
 
         rl = []
 
-        while self.__now_tok.ttype in (AIL_MUIT, AIL_DIV):
+        while self.__now_tok.ttype in (AIL_MULT, AIL_DIV):
             r_op = self.__now_tok.value
             self.__next_tok()
 
@@ -654,7 +654,10 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_ASSI:
+        ttype = self.__now_tok.ttype
+
+        if ttype != AIL_ASSI and \
+                (AIL_INP_PLUS >= ttype >= AIL_INP_BIN_AND):
             return left
 
         # check left is valid or not
@@ -674,7 +677,7 @@ class Parser:
         if r is None:
             self.__syntax_error()
 
-        return ast.AssignExprAST(left, r, self.__now_ln)
+        return ast.AssignExprAST(left, r, ttype, self.__now_ln)
 
     def __parse_assign_expr0(self) -> ast.DefineExprAST:
         n = self.__now_tok.value
