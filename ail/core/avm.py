@@ -1027,6 +1027,39 @@ class Interpreter:
                         if self.__bool_test(tos):
                             jump_to = argv
 
+                    elif op == jump_forward_if_false:
+                        tos = self.pop_top()
+                        if not self.__bool_test(tos):
+                            jump_to += argv
+                        self.__push_back(tos)
+
+                    elif op == jump_forward_if_false_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if not self.__bool_test(tos):
+                            jump_to += argv
+                            self.__tof.stack.append(tos)
+
+                    elif op == jump_forward_true_or_pop:
+                        tos = self.__tof.stack[-1]
+
+                        if self.__bool_test(tos):
+                            jump_to += argv
+                        else:
+                            self.__tof.stack.pop()
+
+                    elif op == pop_jump_forward_if_true_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if self.__bool_test(tos):
+                            jump_to += argv
+
+                    elif op == pop_jump_forward_if_false_or_pop:
+                        tos = self.__tof.stack.pop()
+
+                        if not self.__bool_test(tos):
+                            jump_to += argv
+
                     elif op in BINARY_OPS:
                         op, pym, ailm = _binary_op_dict.get(op)
 

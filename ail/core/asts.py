@@ -506,4 +506,5 @@ BINARY_AST_TYPES = (
     BinXorExprAST,
     BitShiftExprAST,
     BitOpExprAST,
+    TestExprAST,
 )

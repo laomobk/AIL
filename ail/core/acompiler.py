@@ -50,12 +50,12 @@ _opcode_map = {
     '*': binary_mult,
     '/': binary_div,
     'mod': binary_mod,
-    '^': binary_pow,
+    '**': binary_pow,
     '<<': binary_lshift,
     '>>': binary_rshift,
     '&': binary_and,
     '|': binary_or,
-    'xor': binary_xor,
+    '^': binary_xor,
 }
 
 _assign_op_map = {
@@ -210,6 +210,9 @@ class Compiler:
 
         elif isinstance(tree, ast.UnaryExprAST):
             bc += self.__compile_unary_expr(tree, is_single)
+
+        elif isinstance(tree, ast.TestExprAST):
+            return self.__compile_test_expr(tree, 0)
 
         elif isinstance(tree, ast.FunctionDefineAST):
             bc += self.__compile_function(tree, anonymous_function=True)
@@ -717,23 +720,20 @@ class Compiler:
 
         rbcl = []
 
-        r_ext = len(lbc.blist) + extofs + _BYTE_CODE_SIZE
+        r_ext = len(lbc.blist) + _BYTE_CODE_SIZE
 
         for rt in tree.right:
             tbc = self.__compile_and_expr(rt, r_ext)
             rbcl.append(tbc)
 
-        # count right total offset
-        # jump_ofs = lofs + rofs + extofs + (EACH_BYTECODE_SIZE)
-        jopc = len(rbcl)  # jump operator count | jopc = len(rbcl) + len([left bytecode offset])
-        jofs = extofs + sum([len(b.blist) for b in rbcl]) + len(lbc.blist) + _BYTE_CODE_SIZE * jopc
-
         bc += lbc
 
-        for tbc in rbcl:
-            bc.add_bytecode(jump_if_true_or_pop, jofs, -1)
-            bc += tbc
-            jopc += 1
+        for jopc in range(1, len(rbcl) + 1):
+            rbc = rbcl.pop(0)
+            last_ofs = sum([len(x.blist) for x in rbcl]) + len(rbc.blist) + \
+                    _BYTE_CODE_SIZE * (len(rbcl) + 1)
+            bc.add_bytecode(jump_forward_true_or_pop, last_ofs, -1)
+            bc += rbc
 
         return bc
 
@@ -766,23 +766,20 @@ class Compiler:
 
         rbcl = []
 
-        r_ext = len(lbc.blist) + extofs + _BYTE_CODE_SIZE
+        r_ext = len(lbc.blist) +  _BYTE_CODE_SIZE
 
         for rt in tree.right:
             tbc = self.__compile_not_test_expr(rt, r_ext)
             rbcl.append(tbc)
 
-        # count right total offset
-        # jump_ofs = lofs + rofs + extofs + (EACH_BYTECODE_SIZE)
-        jopc = len(rbcl)  # jump operator count | jopc = len(rbcl) + len([left bytecode offset])
-        jofs = extofs + sum([len(b.blist) for b in rbcl]) + len(lbc.blist) + _BYTE_CODE_SIZE * jopc
-
         bc += lbc
 
-        for tbc in rbcl:
-            bc.add_bytecode(jump_if_false_or_pop, jofs, -1)
-            bc += tbc
-            jopc += 1
+        for jopc in range(1, len(rbcl) + 1):
+            rbc = rbcl.pop(0)
+            last_ofs = sum([len(x.blist) for x in rbcl]) + len(rbc.blist) + \
+                    _BYTE_CODE_SIZE * (len(rbcl) + 1)
+            bc.add_bytecode(jump_forward_if_false_or_pop, last_ofs, -1)
+            bc += rbc
 
         return bc
 
@@ -985,11 +982,11 @@ class Compiler:
         ec = self.__compile_test_expr(tree.expr, extofs)
         ci = self.__buffer.add_const('AssertionError')
 
-        jump = extofs + len(ec.blist) + _BYTE_CODE_SIZE * 3
+        jump = len(ec.blist) + _BYTE_CODE_SIZE * 3
 
         bc += ec
 
-        bc.add_bytecode(jump_if_true_or_pop, jump, -1)
+        bc.add_bytecode(jump_forward_true_or_pop, jump, -1)
         bc.add_bytecode(load_const, ci, -1)
         bc.add_bytecode(throw_error, 0, tree.ln)
 

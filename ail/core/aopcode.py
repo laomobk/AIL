@@ -124,6 +124,12 @@ inplace_lshift = 0x53
 inplace_rshift = 0x54
 inplace_bin_and = 0x55
 
+jump_forward_if_false_or_pop = 0x56
+jump_forward_true_or_pop = 0x57
+jump_forward_if_false = 0x58
+pop_jump_forward_if_true_or_pop = 0x59
+pop_jump_forward_if_false_or_pop = 0x5a
+
 
 COMP_EQ     = 0
 COMP_LEQ    = 1

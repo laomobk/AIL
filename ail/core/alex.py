@@ -590,6 +590,21 @@ class Lex:
                     ))
                     self.__movchr(2)
 
+                elif c == '*' and self.__nextch() == '*':
+                    if self.__nextch(2) == '=':
+                        self.__stream.append(Token(
+                            '**=',
+                            AIL_INP_POW,
+                            self.__ln
+                        ))
+                        self.__movchr(3)
+                    else:
+                        self.__stream.append(Token(
+                            '**',
+                            AIL_POW,
+                            self.__ln
+                        ))
+                        self.__movchr(2)
                 else:
                     self.__stream.append(Token(c,
                                                {

@@ -11,6 +11,7 @@ AIL_BIN_AND         = 17    #   &
 AIL_LSHIFT          = 18    #   <<
 AIL_RSHIFT          = 19    #   >>
 AIL_ASSI            = 110   #   =
+AIL_POW             = 111   #   **
 
 AIL_IDENTIFIER      = 20    #   FOOOOOO
 AIL_NUMBER          = 21    #   2.3 / 123
@@ -58,3 +59,4 @@ AIL_INP_BIN_OR      = 66    #   |=
 AIL_INP_LSHIFT      = 67    #   <<=
 AIL_INP_RSHIFT      = 68    #   >>=
 AIL_INP_BIN_AND     = 69    #   &=
+AIL_INP_POW         = 610   #   **=

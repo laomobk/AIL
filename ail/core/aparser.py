@@ -19,7 +19,7 @@ _keywords_uc = (
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
-    'EXTENDS'
+    'EXTENDS', 'AND', 'OR', 'NOT'
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -44,6 +44,7 @@ _inplace_op_dict = {
     AIL_INP_RSHIFT: ('>>', ast.BitShiftExprAST, True),
     AIL_INP_SUB: ('-', ast.AddSubExprAST, True),
     AIL_INP_XOR: ('xor', ast.BinXorExprAST, False),
+    AIL_INP_POW: ('**', ast.PowerExprAST, False)
 }
 
 _literal_names = ('null', 'true', 'false')
@@ -460,17 +461,17 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok != '^':
+        if self.__now_tok != '**':
             return left
 
         rl = []
 
-        while self.__now_tok == '^':
+        while self.__now_tok == '**':
             self.__next_tok()
             r = self.__parse_unary_expr()
             if r is None:
                 self.__syntax_error()
-            rl.append(('^', r))
+            rl.append(('**', r))
         return ast.PowerExprAST(left, rl, self.__now_ln)
 
     def __parse_mod_expr(self) -> ast.ModExprAST:
@@ -523,21 +524,21 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok != 'xor':
+        if self.__now_tok != '^':
             return left
 
         rl = []
 
-        while self.__now_tok == 'xor':
+        while self.__now_tok == '^':
             self.__next_tok()
             r = self.__parse_bit_shift_expr()
             if r is None:
                 self.__syntax_error()
-            rl.append(('xor', r))
+            rl.append(('^', r))
         return ast.BinXorExprAST(left, rl, self.__now_ln)
 
     def __parse_binary_expr(self) -> ast.BitOpExprAST:
-        expr = self.__parse_assign_expr()
+        expr = self.__parse_test_expr()
 
         return expr
 
@@ -669,7 +670,9 @@ class Parser:
 
         ttype = self.__now_tok.ttype
         
-        if ttype != AIL_ASSI and (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND):
+        if ttype != AIL_ASSI and \
+                (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND) and \
+                ttype != AIL_INP_POW:
             return left
         
         # check left is valid or not
@@ -689,7 +692,8 @@ class Parser:
         if r is None:
             self.__syntax_error()
 
-        if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1):
+        if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1) or \
+                ttype == AIL_INP_POW:
             r = self.__convert_inplace_assign_expr_for_right(
                     left, r, ttype, self.__now_ln)
 
@@ -729,7 +733,7 @@ class Parser:
             left = expr
 
         else:
-            left = self.__parse_binary_expr()
+            left = self.__parse_assign_expr()
 
         if left is None:
             self.__syntax_error()
@@ -742,7 +746,7 @@ class Parser:
         while self.__now_tok.ttype in _cmp_op:
             now_op = self.__now_tok.value
             self.__next_tok()  # eat cmp op
-            r = self.__parse_binary_expr()
+            r = self.__parse_assign_expr()
 
             if r is None:
                 self.__syntax_error()
@@ -805,6 +809,10 @@ class Parser:
 
     def __parse_test_expr(self) -> ast.TestExprAST:
         t = self.__parse_or_test_expr()
+
+        if type(t) not in (
+                ast.AndTestAST, ast.OrTestAST, ast.NotTestAST, ast.CmpTestAST):
+            return t
 
         if t is None:
             self.__syntax_error()
@@ -1622,7 +1630,7 @@ class Parser:
             a = self.__parse_import_stmt()
 
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
-                nt.value not in (_keywords + limit):
+                (nt.value not in (_keywords + limit) or nt.value == 'not'):
             a = self.__parse_binary_expr()
 
         elif nt.ttype == AIL_ENTER:
