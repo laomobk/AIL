@@ -866,7 +866,7 @@ class Interpreter:
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
                     # print(self.__opcounter, get_opname(op), self.__stack)
-                    # print(self.__opcounter, get_opname(op), self.__frame_stack[-1])
+                    # print(self.__opcounter, get_opname(op), self.__frame_stack)
 
                     if op == pop_top:
                         tos = self.pop_top()
@@ -1511,6 +1511,7 @@ class Interpreter:
                     elif self.__interrupt_signal == MII_ERR_BREAK:
                         why = WHY_ERROR
                         self.__can_update_opc = False
+                        self.__interrupted = True
                         break
                     
                     elif self.__interrupt_signal == MII_ERR_EXIT:

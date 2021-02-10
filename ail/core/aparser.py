@@ -146,6 +146,8 @@ class Parser:
         if self.__now_tok.ttype == AIL_MULT:
             self.__next_tok()  # eat '*'
             star = True
+
+        self.__skip_newlines()
         expr = self.__parse_binary_expr()
 
         return ast.ArgItemAST(expr, star, self.__now_ln)
@@ -156,14 +158,20 @@ class Parser:
         alist = []
 
         while self.__now_tok.ttype != AIL_SRBASKET:
+            self.__skip_newlines()
+
             a = self.__parse_arg_item()
             if not isinstance(a.expr, ast.CellAST) or  \
                     a.expr.type != AIL_IDENTIFIER:
                 self.__syntax_error(ln=a.ln)
             alist.append(a)
 
+            self.__skip_newlines()
+
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()  # eat ','
+
+            self.__skip_newlines()
 
             if a.star:
                 break
