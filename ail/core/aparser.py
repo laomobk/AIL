@@ -720,20 +720,7 @@ class Parser:
         return ast.DefineExprAST(n, v, self.__now_ln)
 
     def __parse_comp_test_expr(self) -> ast.CmpTestAST:
-        if self.__now_tok == '(':
-            self.__next_tok()  # eat '('
-
-            expr = self.__parse_test_expr()
-
-            if self.__now_tok != ')':
-                self.__syntax_error()
-
-            self.__next_tok()  # eat ')'
-
-            left = expr
-
-        else:
-            left = self.__parse_assign_expr()
+        left = self.__parse_assign_expr()
 
         if left is None:
             self.__syntax_error()

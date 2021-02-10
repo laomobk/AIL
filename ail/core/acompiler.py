@@ -785,11 +785,13 @@ class Compiler:
 
     def __compile_test_expr(self, tree: ast.TestExprAST, extofs: int = 0) -> ByteCode:
         bc = ByteCode()
-        test = tree.test
 
-        if type(test) in ast.BINARY_AST_TYPES:
-            return self.__compile_binary_expr(test)
-        elif isinstance(test, ast.CmpTestAST):
+        if type(tree) in ast.BINARY_AST_TYPES and type(tree) != ast.TestExprAST:
+            return self.__compile_binary_expr(tree)
+
+        test = tree.test
+        
+        if isinstance(test, ast.CmpTestAST):
             return self.__compile_comp_expr(test, extofs)
         else:
             return self.__compile_or_expr(test, extofs)
