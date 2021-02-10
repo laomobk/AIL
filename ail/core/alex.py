@@ -21,6 +21,19 @@ _bin_num_chars = ('01', 2)
 _sci_num_chars = ('0123456789+-', 12)
 
 
+def isidentifier(ch: str) -> bool:
+    if ch.isalpha():
+        return True
+    if u"\U0001F600" <= ch and ch <= u"\U0001F64F":
+        return True
+    elif u"\U0001F300" <= ch and ch <= u"\U0001F5FF":
+        return True
+    elif u"\U0001F680" <= ch and ch <= u"\U0001F6FF":
+        return True
+    elif u"\U0001F1E0" <= ch and ch <= u"\U0001F1FF":
+        return True
+
+
 def get_source_char(source: str, index: int) -> str:
     if 0 <= index < len(source):
         return source[index]
@@ -93,7 +106,7 @@ def get_identifier(source: str, cursor: int) -> tuple:
 
         if not (source[ccur].isnumeric() or \
                 source[ccur] == '_' or \
-                source[ccur].isalpha()):
+                isidentifier(source[ccur])):
             break
 
         buffer += source[ccur]
@@ -784,7 +797,7 @@ class Lex:
                 # 忽略空白符
                 self.__movchr()
 
-            elif c.isalpha() or c == '_':
+            elif isidentifier(c) or c == '_':
                 # 如果是标识符
                 mov, buf = get_identifier(self.__source, self.__chp)
                 self.__stream.append(Token(
