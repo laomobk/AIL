@@ -1,15 +1,11 @@
 from time import (
     ctime,
-    time_ns, time, strftime,
+    time, strftime,
     sleep,
 )
 
 from ail.api.object import *
 from ail.api.error import AILRuntimeError
-
-
-def time_nano_time():
-    return time_ns()
 
 
 def time_time():
@@ -48,7 +44,6 @@ def time_sleep(sec):
 
 _IS_AIL_MODULE_ = True
 _AIL_NAMESPACE_ = {
-    'nanoTime': time_nano_time,
     'time': time_time,
     'formatTime': time_format_time,
     'currentTime': time_ctime,
