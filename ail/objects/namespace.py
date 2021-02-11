@@ -1,7 +1,8 @@
 from .types import I_NAMESPACE_TYPE
 
 from ..core.aobjects import (
-    AILObject, AILObjectType, ObjectCreater, unpack_ailobj
+    AILObject, AILObjectType, ObjectCreater, unpack_ailobj,
+    create_object,
 )
 
 from ..core.error import AILRuntimeError
@@ -39,7 +40,7 @@ def new_namespace(ns_name: str,
     if default is None:
         default = dict()
 
-    return ObjectCreater.new_object(
+    return create_object(
             NAMESPACE_TYPE, ns_name, ns_dict, ns_last)
 
 

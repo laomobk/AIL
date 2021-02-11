@@ -18,7 +18,8 @@ from . import (
 )
 
 from .aframe import (
-        Frame, Block, BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH, BLOCK_FINALLY
+        Frame, Block, 
+        BLOCK_LOOP, BLOCK_TRY, BLOCK_CATCH, BLOCK_FINALLY
 )
 
 from .agc import GC
@@ -32,8 +33,9 @@ from .aobjects import (
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
 from .astacktrace import StackTrace
 from .error import (
-    AILRuntimeError, print_stack_trace, print_global_error, print_exception_for_vm,
-    BuiltinAILRuntimeError
+    AILRuntimeError, print_stack_trace, print_global_error, 
+    print_exception_for_vm,
+    BuiltinAILRuntimeError,
 )
 
 from . import shared
@@ -217,6 +219,13 @@ class Interpreter:
     def set_raise_python_error(self, b: bool):
         if isinstance(b, bool):
             self.__raise_python_error = b
+
+    def reset(self):
+        """
+        reset:
+            interrupted = False
+        """
+        self.__interrupted = False
 
     def get_context(self) -> InterpreterContext:
         ctx = InterpreterContext(self)
@@ -1520,7 +1529,11 @@ class Interpreter:
                     elif self.__interrupt_signal == MII_ERR_BREAK:
                         why = WHY_ERROR
                         self.__can_update_opc = False
-                        self.__interrupted = True
+
+                        if len(self.__frame_stack) > 2:
+                            self.__interrupted = True
+                        else:
+                            self.__interrupted = False
                         break
                     
                     elif self.__interrupt_signal == MII_ERR_EXIT:

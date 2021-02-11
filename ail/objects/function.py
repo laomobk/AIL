@@ -6,6 +6,12 @@ from functools import lru_cache
 from inspect import isbuiltin, isfunction
 
 from ..core import aobjects as obj
+
+from ..core.aobjects import (
+    AILObjectType,
+    AILObject,
+)
+
 from ..core.adoc import set_doc
 from ..core.aobjects import AILObject, AILCodeObject
 from ..core.error import AILRuntimeError
@@ -23,12 +29,12 @@ def _make_cache():
     if _not_loaded:
         global _new_object
         global _compare_type
-        _new_object = obj.ObjectCreater.new_object
+        _new_object = obj.create_object
         _compare_type = obj.compare_type
         _not_loaded = False
 
 
-def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
+def pyfunc_func_init(self: AILObject, func: t.FunctionType):
     self.properties['__pyfunction__'] = func
     self.properties['__value__'] = func
     self.properties['__name__'] = func.__name__
@@ -36,7 +42,7 @@ def pyfunc_func_init(self: obj.AILObject, func: t.FunctionType):
     set_doc(self, func.__doc__)
 
 
-def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
+def pyfunc_func_call(self: AILObject, *args) -> AILObject:
     _make_cache()
 
     fobj = self['__pyfunction__']
@@ -50,7 +56,7 @@ def pyfunc_func_call(self: obj.AILObject, *args) -> obj.AILObject:
         return AILRuntimeError(str(e), 'PythonError')
 
 
-def pyfunc_func_str(self: obj.AILObject):
+def pyfunc_func_str(self: AILObject):
     return '<python function \'%s\'>' % self['__name__']
 
 
@@ -61,18 +67,18 @@ def func_func_init(self, code: AILCodeObject, globals: dict, name: str):
     self['__doc__'] = code.doc_string
 
 
-def func_func_str(self: obj.AILObject):
+def func_func_str(self: AILObject):
     return '<function \'%s\' at %s>' % (self['__name__'], hex(id(self)))
 
 
-def call(pyfw: obj.AILObject, *args):
+def call(pyfw: AILObject, *args):
     if isfunction(pyfw):
         try:
             return pyfw(*args)
         except Exception as e:
             return AILRuntimeError(str(e), 'PythonError')
 
-    if not isinstance(pyfw, obj.AILObject):
+    if not isinstance(pyfw, AILObject):
         return AILRuntimeError('Cannot call an object that is not AILObject', 'TypeError')
 
     if pyfw['__class__'] not in (PY_FUNCTION_TYPE, FUNCTION_TYPE):
@@ -87,12 +93,12 @@ def call(pyfw: obj.AILObject, *args):
         return AILRuntimeError(str(e), 'PythonError')
 
 
-FUNCTION_TYPE = obj.AILObjectType('<function type>', types.I_FUNC_TYPE,
+FUNCTION_TYPE = AILObjectType('<function type>', types.I_FUNC_TYPE,
                                   __init__=func_func_init,
                                   __str__=func_func_str,
                                   __repr__=func_func_str)
 
-PY_FUNCTION_TYPE = obj.AILObjectType('<python funtion wrapper type>', 
+PY_FUNCTION_TYPE = AILObjectType('<python funtion wrapper type>', 
                                      types.I_PYFUNC_TYPE,
                                      __init__=pyfunc_func_init,
                                      __call__=pyfunc_func_call,

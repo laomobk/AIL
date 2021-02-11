@@ -2,7 +2,8 @@
 from .types import I_MAP_TYPE
 
 from ..core.aobjects import (
-    AILObject, AILObjectType, ObjectCreater, compare_type, call_object
+    AILObject, AILObjectType, ObjectCreater, compare_type, call_object,
+    create_object
 )
 from ..core.error import AILRuntimeError
 
@@ -57,7 +58,7 @@ def convert_to_ail_map(pydict):
         return pydict
 
     if isinstance(pydict, dict):
-        return ObjectCreater.new_object(MAP_TYPE, pydict)
+        return create_object(MAP_TYPE, pydict)
 
     return pydict
 

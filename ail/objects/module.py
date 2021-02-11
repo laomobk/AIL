@@ -2,7 +2,7 @@
 
 from .types import I_MODULE_TYPE
 
-from ..core.aobjects import AILObject, AILObjectType, ObjectCreater
+from ..core.aobjects import AILObject, AILObjectType, ObjectCreater, create_object
 from ..core.error import AILRuntimeError
 
 
@@ -48,5 +48,5 @@ MODULE_TYPE = AILObjectType('<module type>', I_MODULE_TYPE,
 
 def new_module_object(
         module_name: str, module_path: str, namespace: dict) -> AILObject:
-    return ObjectCreater.new_object(MODULE_TYPE, module_name, module_path, namespace)
+    return create_object(MODULE_TYPE, module_name, module_path, namespace)
 

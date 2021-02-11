@@ -3,22 +3,28 @@ from typing import Iterable
 
 from . import types
 from . import integer
-from ..core import aobjects as objs
+
+from ..core.aobjects import (
+    AILObjectType,
+    AILObject, convert_to_ail_object, 
+    unpack_ailobj, call_object, create_object
+)
+
 from ..core.astate import MAIN_INTERPRETER_STATE
 from ..core.error import AILRuntimeError
 
 
-def array_init(self: objs.AILObject, pylist: list):
+def array_init(self: AILObject, pylist: list):
     # check object
     pl = pylist.copy()
 
     for index, item in enumerate(pl):
-        pl[index] = objs.convert_to_ail_object(item)
+        pl[index] = convert_to_ail_object(item)
 
     self['__value__'] = pl
 
 
-def array_str(self: objs.AILObject):
+def array_str(self: AILObject):
     return '[%s]' % (
             ', '.join(
                 [repr(x) 
@@ -27,7 +33,7 @@ def array_str(self: objs.AILObject):
 
 
 def _check_index(self, index):
-    if isinstance(index, objs.AILObject) and \
+    if isinstance(index, AILObject) and \
             index['__class__'] == integer.INTEGER_TYPE:
         i = index['__value__']
 
@@ -58,7 +64,7 @@ def array_getitem(self, index: int):
 
     l = self['__value__']
 
-    return objs.convert_to_ail_object(l[i])
+    return convert_to_ail_object(l[i])
 
 
 def array_setitem(self, index, value):
@@ -91,10 +97,10 @@ def array_pop(self):
 
 def array_contains(self, value):
     arr = self['__value__']
-    val = objs.unpack_ailobj(value)
+    val = unpack_ailobj(value)
 
     for x in arr:
-        x = objs.unpack_ailobj(x)
+        x = unpack_ailobj(x)
         if x == val:
             return True
     return False
@@ -102,7 +108,7 @@ def array_contains(self, value):
 
 def array_count(self, value):
     arr = self['__value__']
-    unp = objs.unpack_ailobj
+    unp = unpack_ailobj
     arr = [unp(x) for x in arr]
 
     return arr.count(unp(value))
@@ -110,7 +116,7 @@ def array_count(self, value):
 
 def array_insert(self, index, value):
     arr = self['__value__']
-    index = objs.unpack_ailobj(index)
+    index = unpack_ailobj(index)
 
     if not isinstance(index, int):
         return AILRuntimeError(
@@ -121,7 +127,7 @@ def array_insert(self, index, value):
 
 def array_remove(self, value):
     arr = self['__value__']
-    unp = objs.unpack_ailobj
+    unp = unpack_ailobj
     arr = [unp(x) for x in arr]
     
     try:
@@ -136,7 +142,7 @@ def array_sort(self):
 
 def array_index(self, value):
     arr = self['__value__']
-    unp = objs.unpack_ailobj
+    unp = unpack_ailobj
     arr = [unp(x) for x in arr]
     
     try:
@@ -147,7 +153,7 @@ def array_index(self, value):
 
 def array_extend(self, x):
     arr = self['__value__']  # type: list
-    x = objs.unpack_ailobj(x)
+    x = unpack_ailobj(x)
 
     if not isinstance(x, list):
         return AILRuntimeError('array.extend(x): x must a array')
@@ -170,12 +176,12 @@ def array_copy(self):
 def array_for_each(self, func):
     arr = self['__value__']
     for i, ele in enumerate(arr):
-        if not objs.call_object(func, i, ele, type_check=True):
+        if not call_object(func, i, ele, type_check=True):
             break
 
 
 
-ARRAY_TYPE = objs.AILObjectType('<array type>', types.I_ARRAY_TYPE,
+ARRAY_TYPE = AILObjectType('<array type>', types.I_ARRAY_TYPE,
                                 methods={
                                     'append': array_append,
                                     'pop': array_pop,
@@ -202,5 +208,5 @@ ARRAY_TYPE = objs.AILObjectType('<array type>', types.I_ARRAY_TYPE,
 
 def convert_to_array(iterable: Iterable):
     if isinstance(iterable, IterableType):
-        return objs.ObjectCreater.new_object(ARRAY_TYPE, list(iterable))
+        return create_object(ARRAY_TYPE, list(iterable))
     return None

@@ -1,7 +1,7 @@
 # Integer
 from ..core.aobjects import (
         unpack_ailobj, compare_type, ObjectCreater, 
-        AILObject, AILObjectType
+        AILObject, AILObjectType, create_object
 )
 
 from ..core.error import AILRuntimeError
@@ -110,9 +110,9 @@ def complex_div(self: AILObject, other: AILObject) -> AILObject:
 
 def complex_eq(self: AILObject, o: AILObject):
     if isinstance(o, AILObject):
-        return ObjectCreater.new_object(
+        return create_object(
                 abool.BOOL_TYPE, self['__value__'] == o['__value__'])
-    return ObjectCreater.new_object(
+    return create_object(
             abool.BOOL_TYPE, self['__value__'] == o)
 
 
@@ -136,7 +136,7 @@ _VALID_TYPES = (aint.INTEGER_TYPE, afloat.FLOAT_TYPE, COMPLEX_TYPE)
 
 def to_complex(num):
     if isinstance(num, complex):
-        return ObjectCreater.new_object(COMPLEX_TYPE, num)
+        return create_object(COMPLEX_TYPE, num)
     elif compare_type(num, COMPLEX_TYPE):
         return num
     else:

@@ -8,7 +8,8 @@ from .types import I_CLASS_TYPE, I_OBJECT_TYPE
 
 from ..core.aobjects import (
     AILObject, AILObjectType, ObjectCreater,
-    call_object, compare_type, convert_to_ail_object as _conv, get_state
+    call_object, compare_type, convert_to_ail_object as _conv, get_state,
+    create_object
 )
 
 from ..core.err_types import TYPE_ERROR, NAME_ERROR
@@ -120,12 +121,12 @@ def build_class(class_func, class_name, bases) -> AILObject:
     if doc_string is None:
         doc_string = ''
 
-    return ObjectCreater.new_object(
+    return create_object(
             CLASS_TYPE, class_name, bases, class_dict, doc_string)
 
 
 def new_class(class_name: str, bases: List[AILObject], _dict: dict, doc_string=''):
-    return ObjectCreater.new_object(
+    return create_object(
         CLASS_TYPE, class_name, bases, _dict, doc_string)
 
 
@@ -174,7 +175,7 @@ def new_object(_class, *args):
         call_object(cls_new, _class, *args)
         return get_state().global_interpreter.pop_top()
 
-    obj = ObjectCreater.new_object(OBJECT_TYPE)
+    obj = create_object(OBJECT_TYPE)
 
     obj['__this_class__'] = _class
 

@@ -15,3 +15,4 @@ _NULL_TYPE = obj.AILObjectType('<null type>', types.I_NULL_TYPE,
                                __init__=null_init)
 
 null = obj.ObjectCreater.new_object(_NULL_TYPE)
+

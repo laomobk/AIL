@@ -89,23 +89,10 @@ class AILObject:
         self.reference = 0
 
     def __getitem__(self, key: str):
-        if key in self.properties:
-            k = self.properties[key]
-            return k
-        return None
+        return self.properties.get(key)
 
     def __setitem__(self, key: str, value):
         self.properties[key] = value
-
-    def __getattr__(self, item: str):
-        if item[:5] == 'aprop':
-            return self.__getitem__(item[6:])
-        return super().__getattribute__(item)
-
-    def __setattr__(self, key: str, value):
-        if key[:5] == 'aprop':
-            self.__setitem__(key[6:])
-        super().__setattr__(key, value)
 
     def __str__(self):
         s = self['__str__'](self)

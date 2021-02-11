@@ -1,7 +1,7 @@
 
 i = fnum(0)
 o = fnum(1)
-m = fnum(1000000)
+m = fnum(1000)
 
 while i < m {
     i += o

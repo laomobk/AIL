@@ -1,6 +1,14 @@
 from copy import deepcopy
 
 from ..core import aobjects as obj
+
+from ..core.aobjects import (
+    AILObjectType,
+    AILObject, convert_to_ail_object, 
+    unpack_ailobj, call_object, create_object,
+    compare_type
+)
+
 from . import null
 from ..core.error import AILRuntimeError
 from . import types
@@ -14,7 +22,7 @@ def _is_reserved_name(name):
     return name[:2] == '__' and name[-2:] != '__'
 
 
-def _copy_function(f: obj.AILObject) -> obj.AILObject:
+def _copy_function(f: AILObject) -> AILObject:
     new_f = deepcopy(f)
     new_f.properties = f.properties.copy()
 
@@ -28,8 +36,8 @@ def _get_method_str_func(obj_name: str):
     return _method_str
 
 
-def _check_bound(self, aobj: obj.AILObject):
-    if isinstance(aobj, obj.AILObject) and \
+def _check_bound(self, aobj: AILObject):
+    if isinstance(aobj, AILObject) and \
             aobj['__class__'] in (afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
         aobj = _copy_function(aobj)
 
@@ -52,7 +60,7 @@ def struct_init(self, name: str, members: list,
     self.members = d
 
 
-def structobj_init(self, name: str, members: dict, struct_type: obj.AILObject,
+def structobj_init(self, name: str, members: dict, struct_type: AILObject,
                    protected_members: list, bind_funcs: dict = None):
     self['__type__'] = struct_type
     self['__name__'] = name
@@ -119,7 +127,7 @@ def structobj_str(self):
     return '<\'%s\' object at %s>' % (self['__name__'], hex(id(self)))
 
 
-STRUCT_OBJ_TYPE = obj.AILObjectType('<struct object type>', 
+STRUCT_OBJ_TYPE = AILObjectType('<struct object type>', 
                                     types.I_STRUCT_OBJ_TYPE,
                                     __init__=structobj_init,
                                     __setattr__=structobj_setattr,
@@ -127,7 +135,7 @@ STRUCT_OBJ_TYPE = obj.AILObjectType('<struct object type>',
                                     __str__=structobj_str,
                                     __repr__=structobj_str)
 
-STRUCT_TYPE = obj.AILObjectType('<struct type>', types.I_STRUCT_TYPE,
+STRUCT_TYPE = AILObjectType('<struct type>', types.I_STRUCT_TYPE,
                                 __init__=struct_init,
                                 __getattr__=struct_getattr,
                                 __setattr__=struct_setattr,
@@ -163,24 +171,24 @@ class _StructObjectWrapper:
 
 
 def convert_to_pyobj(struct_obj) -> _StructObjectWrapper:
-    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+    if not compare_type(struct_obj, STRUCT_OBJ_TYPE):
         return None
     st = _StructObjectWrapper(struct_obj)
 
     return st
 
 
-def new_struct_object(name: str, struct_type: obj.AILObject,
-                      members: dict, protected_members: list) -> obj.AILObject:
+def new_struct_object(name: str, struct_type: AILObject,
+                      members: dict, protected_members: list) -> AILObject:
     if struct_type is None:
         struct_type = null
 
-    return obj.ObjectCreater.new_object(
+    return create_object(
         STRUCT_OBJ_TYPE, name, members, struct_type, protected_members)
 
 
-def struct_object_getattr(struct_obj: obj.AILObject, name: str) -> obj.AILObject:
-    if not struct_obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+def struct_object_getattr(struct_obj: AILObject, name: str) -> AILObject:
+    if not struct_compare_type(struct_obj, STRUCT_OBJ_TYPE):
         return None
 
     members = struct_obj.members
@@ -188,26 +196,26 @@ def struct_object_getattr(struct_obj: obj.AILObject, name: str) -> obj.AILObject
     return members.get(name, None)
 
 
-def struct_object_setattr(struct_obj: obj.AILObject,
-                          name: str, value: obj.AILObject) -> obj.AILObject:
-    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE):
+def struct_object_setattr(struct_obj: AILObject,
+                          name: str, value: AILObject) -> AILObject:
+    if not compare_type(struct_obj, STRUCT_OBJ_TYPE):
         return None
 
-    value = obj.convert_to_ail_object(value)
+    value = convert_to_ail_object(value)
 
     struct_obj.members[name] = value
 
 
 def new_struct(
         name: str, members: list, protected_members: list, bind_functions: dict = None):
-    s = obj.ObjectCreater.new_object(
+    s = create_object(
         STRUCT_TYPE, name, members, protected_members)
     s['__bind_functions__'] = bind_functions
     return s
 
 
 def struct_obj_isinstance(struct_obj, struct_type) -> bool:
-    if not obj.compare_type(struct_obj, STRUCT_OBJ_TYPE) or \
-            not obj.compare_type(struct_type, STRUCT_TYPE):
+    if not compare_type(struct_obj, STRUCT_OBJ_TYPE) or \
+            not compare_type(struct_type, STRUCT_TYPE):
         return False
     return struct_obj['__type__'] is struct_type

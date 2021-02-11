@@ -203,7 +203,7 @@ def convert_to_string(aobj) -> obj.AILObject:
     if isinstance(aobj, obj.AILObject):
         return aobj['__str__'](aobj)
     else:
-        return obj.ObjectCreater.new_object(STRING_TYPE, str(aobj))
+        return _new_object(STRING_TYPE, str(aobj))
 
 
 STRING_TYPE = obj.AILObjectType('<string type>', types.I_STR_TYPE,
