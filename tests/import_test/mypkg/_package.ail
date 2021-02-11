@@ -1,7 +1,0 @@
-
-import './core/'
-import './utils/'
-import './misc/'
-
-name = '哪吒'
-

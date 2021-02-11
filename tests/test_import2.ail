@@ -1,7 +1,0 @@
-begin
-
-import t 'test_import'
-
-t.say()
-
-end

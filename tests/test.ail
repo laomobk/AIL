@@ -1,9 +1,0 @@
-
-i = fnum(0)
-o = fnum(1)
-m = fnum(1000000)
-
-while i < m {
-    i += o
-}
-

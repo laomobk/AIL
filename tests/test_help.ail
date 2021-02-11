@@ -1,6 +1,0 @@
-
-load 'helper'
-
-import 'array'
-
-help(array.list())

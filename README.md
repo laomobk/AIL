@@ -1,5 +1,5 @@
-# AIL 1.2 Alpha 2
+# Go build for AIL
 
 
-AIL 是一门面向对象的编程语言。具有许多高级易用的数据结构以及语法简洁，功能强大的特点。
+由 Go 语言实现的 AIL ，不久 GoAIL 将会成为 AIL 的主要实现。
 

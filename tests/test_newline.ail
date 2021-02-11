@@ -1,8 +1,0 @@
-
-fun hello() 
-{
-    print 'hello Nezha'; print 'hello world'
-}
-
-hello()
-
