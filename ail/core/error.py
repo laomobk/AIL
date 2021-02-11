@@ -94,7 +94,7 @@ def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None)
             filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:
-        raise _AILRuntimeError(err_msg)
+        raise BuiltinAILRuntimeError(err_msg)
     else:
         sys.stderr.write(err_msg)
         sys.stderr.flush()
@@ -203,8 +203,8 @@ def raise_error_as_python(err: AILRuntimeError, where: str = ''):
     if where:
         w = 'in \'%s\' :\n\t' % where
 
-    raise _AILRuntimeError('%s%s : %s' % (w, t, msg))
+    raise BuiltinAILRuntimeError('%s%s : %s' % (w, t, msg))
 
 
-class _AILRuntimeError(Exception):
+class BuiltinAILRuntimeError(Exception):
     pass

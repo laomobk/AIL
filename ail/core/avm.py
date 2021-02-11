@@ -12,11 +12,9 @@ from functools import lru_cache
 from typing import List
 
 from . import (
-    aobjects as objs,
     abuiltins,
-    error,
     aopcode as opcs,
-    aloader
+    aloader,
 )
 
 from .aframe import (
@@ -24,9 +22,20 @@ from .aframe import (
 )
 
 from .agc import GC
-from .anamespace import Namespace
+
+from .aobjects import (
+    AILObject, convert_to_ail_object, unpack_ailobj,
+    AILCodeObject, ObjectCreater, convert_to_ail_number,
+    has_attr, create_object
+)
+
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
 from .astacktrace import StackTrace
+from .error import (
+    AILRuntimeError, print_stack_trace, print_global_error, print_exception_for_vm,
+    BuiltinAILRuntimeError
+)
+
 from . import shared
 
 from ..objects import (
@@ -71,8 +80,8 @@ shared.GLOBAL_SHARED_DATA.max_recursion_depth = _MAX_RECURSION_DEPTH
 sys.setrecursionlimit(_MAX_RECURSION_DEPTH * 3)  
 # three times of AIL recursion depth
 
-true = objs.convert_to_ail_object(True)
-false = objs.convert_to_ail_object(False)
+true = convert_to_ail_object(True)
+false = convert_to_ail_object(False)
 
 _obj_type_dict = {
     str: astr.STRING_TYPE,
@@ -178,7 +187,7 @@ class Interpreter:
         return MAIN_INTERPRETER_STATE.frame_stack[-1]
 
     @property
-    def __tos(self) -> objs.AILObject:
+    def __tos(self) -> AILObject:
         return self.__tof.stack[-1]
 
     @property
@@ -186,7 +195,7 @@ class Interpreter:
         return MAIN_INTERPRETER_STATE.frame_stack
 
     @property
-    def __stack(self) -> List[objs.AILObject]:
+    def __stack(self) -> List[AILObject]:
         return self.__tof.stack
 
     @property
@@ -233,10 +242,10 @@ class Interpreter:
     def __set_globals(self, globals: dict):
         self.__namespace_state.ns_global.ns_dict = globals
 
-    def __push_back(self, obj: objs.AILObject):
+    def __push_back(self, obj: AILObject):
         self.__stack.append(obj)
 
-    def pop_top(self) -> objs.AILObject:
+    def pop_top(self) -> AILObject:
         return self.__stack.pop() 
 
     def __push_block(self, b_type: int, b_handler: int, b_level: int = None):
@@ -247,7 +256,7 @@ class Interpreter:
     def __pop_block(self):
         return self.__tof.block_stack.pop()
 
-    def __push_new_frame(self, cobj: objs.AILCodeObject, frame: Frame = None):
+    def __push_new_frame(self, cobj: AILCodeObject, frame: Frame = None):
         if len(self.__frame_stack) + 1 > _MAX_RECURSION_DEPTH:
             self.raise_error('Maximum recursion depth exceeded', 'RecursionError')
 
@@ -262,15 +271,15 @@ class Interpreter:
 
         self.__frame_stack.append(f)
 
-    def check_object(self, aobj: objs.AILObject, not_convert=False) -> objs.AILObject:
+    def check_object(self, aobj: AILObject, not_convert=False) -> AILObject:
         if sig_check_continue(aobj):
             if not_convert:
-                return objs.unpack_ailobj(self.pop_top())
+                return unpack_ailobj(self.pop_top())
             return self.pop_top()
-        if isinstance(aobj, error.AILRuntimeError):
+        if isinstance(aobj, AILRuntimeError):
             self.raise_error(aobj.msg, aobj.err_type)
-        if not isinstance(aobj, objs.AILObject) and not not_convert:
-            return objs.convert_to_ail_object(aobj)
+        if not isinstance(aobj, AILObject) and not not_convert:
+            return convert_to_ail_object(aobj)
 
         return aobj
 
@@ -315,7 +324,7 @@ class Interpreter:
 
     def make_runtime_error_obj(self, msg: str, err_type: str):
         return make_err_struct_object(
-                error.AILRuntimeError(
+                AILRuntimeError(
                     msg, err_type, self.__tof, self.get_stack_trace()),
                 self.__tof.code.name, self.__tof.lineno)
 
@@ -330,7 +339,7 @@ class Interpreter:
 
     def raise_error(self, msg: str, err_type: str):
         errs = make_err_struct_object(
-            error.AILRuntimeError(
+            AILRuntimeError(
                 msg, err_type, self.__tof, self.get_stack_trace()),
             self.__tof.code.name, self.__tof.lineno)
 
@@ -339,7 +348,7 @@ class Interpreter:
         else:
             # force terminate.
             self.__now_state.handling_err_stack.extend(self.__now_state.err_stack)
-            error.print_exception_for_vm(
+            print_exception_for_vm(
                     self.__now_state.handling_err_stack, errs)
             raise VMInterrupt(MII_ERR_BREAK, handle_it=False)
 
@@ -377,13 +386,13 @@ class Interpreter:
         else:
             err = self.__now_state.err_stack.pop()
             self.__now_state.handling_err_stack.extend(self.__now_state.err_stack)
-            error.print_exception_for_vm(self.__now_state.handling_err_stack, err)
+            print_exception_for_vm(self.__now_state.handling_err_stack, err)
             self.__stack.clear()
             self.__frame_stack.pop()
             self.__interrupted = True
             self.__interrupt_signal = MII_ERR_BREAK
 
-    def __chref(self, ailobj: objs.AILObject, mode: int):
+    def __chref(self, ailobj: AILObject, mode: int):
         """
         :param mode: 0 -> increase  |  1 -> decrease
         """
@@ -404,7 +413,7 @@ class Interpreter:
 
         tos = self.__tos
 
-        if isinstance(tos, objs.AILObject):
+        if isinstance(tos, AILObject):
             if tos['__class__'] in (aint.INTEGER_TYPE, abool.BOOL_TYPE):
                 if why and tos['__value__'] or not why and not tos['__value__']:
                     if pop:
@@ -442,7 +451,7 @@ class Interpreter:
                         op, str(a), str(b)),
                     'TypeError')
 
-        if isinstance(a, objs.AILObject):
+        if isinstance(a, AILObject):
             a_cls = a['__class__']
             b_cls = b['__class__']
             
@@ -451,7 +460,7 @@ class Interpreter:
                 a_val = a['__value__']
                 b_val = b['__value__']
 
-                return objs.convert_to_ail_object(a_val + b_val)
+                return convert_to_ail_object(a_val + b_val)
 
             elif a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
                 try:
@@ -462,7 +471,7 @@ class Interpreter:
                     if op_method is not None:
                         res = op_method(b_val)
                         if res is not NotImplemented:
-                            return objs.convert_to_ail_number(res)
+                            return convert_to_ail_number(res)
 
                         # make __rxxx__
                         pymth = pymth[:2] + 'r' + pymth[2:]
@@ -479,7 +488,7 @@ class Interpreter:
                                 'Not support operator \'%s\' between %s and %s'
                                         % (op, a, b),
                                     'TypeError')
-                        return objs.convert_to_ail_number(res)
+                        return convert_to_ail_number(res)
                     else:
                         self.raise_error(
                             'Not support operator \'%s\' between %s and %s' % (
@@ -520,7 +529,7 @@ class Interpreter:
                 return
         return r
 
-    def __compare(self, a, b, cmp_opm: str, op: str) -> objs.AILObject:
+    def __compare(self, a, b, cmp_opm: str, op: str) -> AILObject:
         if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
             av = a._value
             bv = b._value
@@ -559,7 +568,7 @@ class Interpreter:
                 self.raise_error('Not support \'%s\' between %s and %s' % 
                                     (op, a, b),
                                  'TypeError')
-            res = objs.unpack_ailobj(opm(a, b))
+            res = unpack_ailobj(opm(a, b))
 
         return true if res else false
 
@@ -651,7 +660,7 @@ class Interpreter:
             jump_to = loop_block.handler - _BYTE_CODE_SIZE * 2
         return jump_to
 
-    def __load_name(self, index: int) -> objs.AILObject:
+    def __load_name(self, index: int) -> AILObject:
         n = self.__tof.varnames[index]
 
         v = self.__tof.variable.get(n)
@@ -674,9 +683,9 @@ class Interpreter:
     def call_function(self,
                       func, argc, argl,
                       ex: bool=False, frame=None):
-        if isinstance(func, objs.AILObject):  # it should be FUNCTION_TYPE
+        if isinstance(func, AILObject):  # it should be FUNCTION_TYPE
             if func['__class__'] == afunc.FUNCTION_TYPE:
-                c: objs.AILCodeObject = func['__code__']
+                c: AILCodeObject = func['__code__']
                 var_arg = c.var_arg
                 if var_arg is not None:
                     ex = True
@@ -772,7 +781,7 @@ class Interpreter:
                         'TypeError')
 
                 if inspect.isbuiltin(pyf):
-                    argl = [o['__value__'] if objs.has_attr(o, '__value__') \
+                    argl = [o['__value__'] if has_attr(o, '__value__') \
                                 else o for o in argl]
                     # unpack argl for builtin function
                 try:
@@ -785,7 +794,7 @@ class Interpreter:
                     )
                     return False
 
-                if not isinstance(rtn, objs.AILObject):
+                if not isinstance(rtn, AILObject):
                     target = {
                         str: astr.STRING_TYPE,
                         int: aint.INTEGER_TYPE,
@@ -797,7 +806,7 @@ class Interpreter:
                     if rtn is None:
                         rtn = null.null
                     else:
-                        rtn = objs.ObjectCreater.new_object(target, rtn)
+                        rtn = create_object(target, rtn)
 
                 self.__tof.stack.append(rtn)
                 return True
@@ -840,7 +849,7 @@ class Interpreter:
             stack.pop()
         raise VMInterrupt(MII_RETURN)
 
-    def __run_bytecode(self, cobj: objs.AILCodeObject, frame: Frame = None):
+    def __run_bytecode(self, cobj: AILCodeObject, frame: Frame = None):
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
 
@@ -887,7 +896,7 @@ class Interpreter:
                         vl = [self.pop_top() for _ in range(vc)][::-1]
                         tos = self.pop_top()
 
-                        if isinstance(tos, objs.AILObject):
+                        if isinstance(tos, AILObject):
                             msg = self.check_object(tos['__str__'](tos))
                         else:
                             msg = str(tos)
@@ -1077,7 +1086,7 @@ class Interpreter:
                         b = not self.__bool_test(o)
 
                         self.__tof.stack.append(
-                            objs.ObjectCreater.new_object(abool.BOOL_TYPE, b))
+                            create_object(abool.BOOL_TYPE, b))
 
                     elif op == compare_op:
                         cmp_opm = _binary_compare_op[argv]
@@ -1098,19 +1107,19 @@ class Interpreter:
 
                     elif op == call_func:
                         argl = [self.pop_top() for _ in range(argv)][::-1]
-                        func: objs.AILObject = self.pop_top()
+                        func: AILObject = self.pop_top()
 
                         self.call_function(func, argv, argl)
 
                     elif op == call_func_ex:
                         arg_array = self.pop_top()
                         func = self.pop_top()
-                        arr_list = objs.unpack_ailobj(arg_array)
+                        arr_list = unpack_ailobj(arg_array)
 
                         self.call_function(func, len(arr_list), arr_list, ex=True)
 
                     elif op == make_function:
-                        tos = copy.copy(self.pop_top())  # type: objs.AILCodeObject
+                        tos = copy.copy(self.pop_top())  # type: AILCodeObject
 
                         if tos.closure:
                             tos._closure_outer = []
@@ -1118,7 +1127,7 @@ class Interpreter:
                                 tos._closure_outer.extend(self.__tof.closure_outer.copy())
                             tos._closure_outer.insert(0, self.__tof.variable)
 
-                        tosf = objs.ObjectCreater.new_object(
+                        tosf = create_object(
                             afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
                         )
 
@@ -1132,7 +1141,7 @@ class Interpreter:
                     elif op == build_array:
                         l = [self.__stack.pop() for _ in range(argv)][::-1]
 
-                        o = objs.ObjectCreater.new_object(
+                        o = create_object(
                             array.ARRAY_TYPE, l)
 
                         self.__tof.stack.append(o)
@@ -1146,7 +1155,7 @@ class Interpreter:
                             
                             m[k] = v
 
-                        o = objs.ObjectCreater.new_object(
+                        o = create_object(
                             amap.MAP_TYPE, m)
 
                         self.__push_back(o)
@@ -1160,7 +1169,7 @@ class Interpreter:
                             value = self.pop_top()
                             m[keys[i]] = value
 
-                        o = objs.ObjectCreater.new_object(
+                        o = create_object(
                             amap.MAP_TYPE, m)
 
                         self.__push_back(o)
@@ -1187,7 +1196,7 @@ class Interpreter:
                         v = self.pop_top()
                         l = self.pop_top()
 
-                        if isinstance(l, objs.AILObject):
+                        if isinstance(l, AILObject):
                             if l['__getitem__'] is None:
                                 self.raise_error(
                                         '%s object is not subscriptable' %
@@ -1202,9 +1211,9 @@ class Interpreter:
 
                         if v['__class__'] in (
                                 aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
-                            vnum = -objs.unpack_ailobj(v)
+                            vnum = -unpack_ailobj(v)
                             self.__tof.stack.append(
-                                    objs.convert_to_ail_object(vnum))
+                                    convert_to_ail_object(vnum))
 
                             self.__decref(v)
                         else:
@@ -1216,9 +1225,9 @@ class Interpreter:
                         v = self.pop_top()
 
                         if v['__class__'] is aint.INTEGER_TYPE:
-                            vnum = ~objs.unpack_ailobj(v)
+                            vnum = ~unpack_ailobj(v)
                             self.__tof.stack.append(
-                                    objs.convert_to_ail_object(vnum))
+                                    convert_to_ail_object(vnum))
 
                             self.__decref(v)
                         else:
@@ -1311,7 +1320,7 @@ class Interpreter:
                         o = self.pop_top()
                         v = self.pop_top()
 
-                        if isinstance(o, objs.AILObject):
+                        if isinstance(o, AILObject):
                             if o['__setitem__'] is None:
                                 self.raise_error('%s object is not subscriptable' %
                                                  o['__class__'].name, 'TypeError')
@@ -1344,7 +1353,7 @@ class Interpreter:
                               if nl[i] == PROTECTED_SIGNAL]
                         nl = [x for x in nl if x != PROTECTED_SIGNAL]
 
-                        o = objs.ObjectCreater.new_object(
+                        o = create_object(
                             struct.STRUCT_TYPE, name, nl, pl)
 
                         self.__store_var(name, o)
@@ -1364,7 +1373,7 @@ class Interpreter:
                         self.__tof.stack.append(PROTECTED_SIGNAL)
 
                     elif op == throw_error:
-                        _err = objs.unpack_ailobj(self.pop_top())
+                        _err = unpack_ailobj(self.pop_top())
                         e_msg = ''
                         e_type = ''
                         if isinstance(_err, str):
@@ -1372,8 +1381,8 @@ class Interpreter:
                             e_type = 'Throw'
                         elif objs.compare_type(_err, struct.STRUCT_OBJ_TYPE):
                             if struct.struct_obj_isinstance(_err, get_err_struct()):
-                                e_msg = objs.unpack_ailobj(_err.members['err_msg'])
-                                e_type = objs.unpack_ailobj(_err.members['err_type'])
+                                e_msg = unpack_ailobj(_err.members['err_msg'])
+                                e_type = unpack_ailobj(_err.members['err_type'])
                             else:
                                 self.raise_error('needs Error object or string', 'TypeError')
                         elif _err is None:
@@ -1442,7 +1451,7 @@ class Interpreter:
                         if target_struct is None:
                             self.raise_error('can not find bound target', 'NameError')
                         else:
-                            func_name = objs.unpack_ailobj(self.pop_top())
+                            func_name = unpack_ailobj(self.pop_top())
                             bound_function = self.pop_top()
 
                             if not objs.compare_type(
@@ -1470,10 +1479,10 @@ class Interpreter:
                         self.raise_error('KeyboardInterrupt', 'Interrupt')
                     except VMInterrupt as interrupt:
                         if interrupt.signal != MII_ERR_BREAK:
-                            error.print_exception_for_vm(
+                            print_exception_for_vm(
                                     self.__now_state.handling_err_stack,
                                         make_err_struct_object(
-                                            error.AILRuntimeError(
+                                            AILRuntimeError(
                                                 'KeyboardInterrupt',
                                                 'Interrupt',
                                                 self.__tof,
@@ -1483,7 +1492,7 @@ class Interpreter:
                         self.__interrupted = True
                         self.__interrupt_signal = MII_ERR_BREAK
 
-                except error._AILRuntimeError as err:
+                except BuiltinAILRuntimeError as err:
                     try:
                         self.raise_error(str(err), 'AILRuntimeError')
                     except VMInterrupt as interrupt:
@@ -1568,7 +1577,7 @@ class Interpreter:
         f.lineno = cobj.firstlineno
 
         self.__namespace_state.ns_global.ns_dict['__main__'] = \
-            objs.convert_to_ail_object(cobj.is_main)
+            convert_to_ail_object(cobj.is_main)
 
         self.__global_frame = f
 

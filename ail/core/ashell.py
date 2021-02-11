@@ -194,7 +194,7 @@ class Shell:
                     else:
                         self.__run_single_line(line)
 
-            except error._AILRuntimeError as e:
+            except error.BuiltinAILRuntimeError as e:
                 in_more = False
                 print(str(e), end='')
                 self.__main_frame.stack = []

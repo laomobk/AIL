@@ -222,6 +222,9 @@ class ObjectCreater:
         return obj
 
 
+create_object = ObjectCreater.new_object
+
+
 # cache
 _STRING_TYPE = None
 _INTEGER_TYPE = None
