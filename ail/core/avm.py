@@ -559,7 +559,7 @@ class Interpreter:
                 self.raise_error('Not support \'%s\' between %s and %s' % 
                                     (op, a, b),
                                  'TypeError')
-            res = opm(a, b)
+            res = objs.unpack_ailobj(opm(a, b))
 
         return true if res else false
 
