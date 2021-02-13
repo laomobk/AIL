@@ -13,6 +13,12 @@ class NamespaceState:
 
 
 class InterpreterState:
+    __slots__ = (
+        'frame_stack', 'gc', 'handling_err_stack',
+        'err_stack', 'global_interpreter', 'prog_argv',
+        'namespace_state'
+    )
+
     def __init__(self):
         self.frame_stack: List[Frame] = []
         self.gc: agc.GC = None

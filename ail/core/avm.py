@@ -27,40 +27,42 @@ from .agc import GC
 from .aobjects import (
     AILObject, convert_to_ail_object, unpack_ailobj,
     AILCodeObject, ObjectCreater, convert_to_ail_number,
-    has_attr, create_object
+    has_attr, create_object, compare_type
 )
 
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
 from .astacktrace import StackTrace
 from .error import (
-    AILRuntimeError, print_stack_trace, print_global_error, 
+    AILRuntimeError,
     print_exception_for_vm,
     BuiltinAILRuntimeError,
 )
 
 from . import shared
 
-from ..objects import (
-    string    as astr,
-    integer   as aint,
-    bool      as abool,
-    wrapper   as awrapper,
-    float     as afloat,
-    complex   as acomplex,
-    array     as array,
-    map       as amap,
-    function  as afunc,
-    null      as null,
-    namespace,
-    module,
-    struct,
-    fastnum,
-    class_object,
+from ..objects.string import STRING_TYPE, convert_to_string
+from ..objects.integer import INTEGER_TYPE
+from ..objects.bool import BOOL_TYPE
+from ..objects.wrapper import WRAPPER_TYPE
+from ..objects.float import FLOAT_TYPE
+from ..objects.complex import COMPLEX_TYPE
+from ..objects.array import ARRAY_TYPE, convert_to_array
+from ..objects.map import MAP_TYPE
+from ..objects.function import PY_FUNCTION_TYPE, FUNCTION_TYPE, call
+from ..objects.null import null
+from ..objects.namespace import new_namespace
+from ..objects.module import new_module_object
+from ..objects.fastnum import FastNumber
+from ..objects.class_object import CLASS_TYPE, new_object, build_class
+
+from ..objects.struct import (
+    STRUCT_TYPE, STRUCT_OBJ_TYPE,
+    struct_obj_isinstance, 
 )
 
 from .modules._error import (
-    make_err_struct_object, throw_error, catch_error,
-    print_all_error, _err_to_string, get_err_struct)
+    make_err_struct_object, throw_error, get_err_struct
+)
 from .test_utils import get_opname
 from .version import AIL_VERSION
 
@@ -68,7 +70,7 @@ from .aopcode import *
 from .avmsig import *
 
 _BUILTINS = abuiltins.BUILTINS
-_new_namespace = namespace.new_namespace
+_new_namespace = new_namespace
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
@@ -85,17 +87,9 @@ sys.setrecursionlimit(_MAX_RECURSION_DEPTH * 3)
 true = convert_to_ail_object(True)
 false = convert_to_ail_object(False)
 
-_obj_type_dict = {
-    str: astr.STRING_TYPE,
-    int: aint.INTEGER_TYPE,
-    float: afloat.FLOAT_TYPE,
-    bool: abool.BOOL_TYPE,
-    list: array.ARRAY_TYPE,
-}
-
-_num_otypes = {aint.INTEGER_TYPE.otype, 
-               afloat.FLOAT_TYPE.otype, 
-               acomplex.COMPLEX_TYPE.otype}
+_num_otypes = {INTEGER_TYPE.otype, 
+               FLOAT_TYPE.otype, 
+               COMPLEX_TYPE.otype}
 
 _binary_op_dict = {
     binary_add: ('+', '__add__', '__add__'),
@@ -164,8 +158,6 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 class Interpreter:
     def __init__(self):
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
-        self.__gc = GC(REFERENCE_LIMIT)  # each interpreter has one GC
-        self.__now_state.gc = self.__gc
         self.__opcounter = 0
 
         self.__interrupted = False
@@ -423,7 +415,7 @@ class Interpreter:
         tos = self.__tos
 
         if isinstance(tos, AILObject):
-            if tos['__class__'] in (aint.INTEGER_TYPE, abool.BOOL_TYPE):
+            if tos['__class__'] in (INTEGER_TYPE, BOOL_TYPE):
                 if why and tos['__value__'] or not why and not tos['__value__']:
                     if pop:
                         self.pop_top()
@@ -449,97 +441,87 @@ class Interpreter:
     
     @lru_cache(None)
     def __binary_op(self, op: str, pymth: str, ailmth: str, a, b):
-        if isinstance(a, fastnum.FastNumber) and isinstance(b, fastnum.FastNumber):
+        if isinstance(a, FastNumber) and isinstance(b, FastNumber):
             op_method = getattr(a._value, pymth, None)
 
             if op_method:
-                return fastnum.FastNumber(op_method(b._value))
+                return FastNumber(op_method(b._value))
             else:
                 self.raise_error(
                     'Not support fast numbers \'%s\' between %s and %s' % (
                         op, str(a), str(b)),
                     'TypeError')
 
-        if isinstance(a, AILObject):
-            a_cls = a['__class__']
-            b_cls = b['__class__']
-            
-            if a_cls.otype == astr.STRING_TYPE.otype \
-                    and b_cls.otype == astr.STRING_TYPE.otype:
+        a_cls = a['__class__']
+        b_cls = b['__class__']
+
+        if a_cls.otype == STRING_TYPE.otype \
+                and b_cls.otype == STRING_TYPE.otype:
+            a_val = a['__value__']
+            b_val = b['__value__']
+
+            return convert_to_ail_object(a_val + b_val)
+
+        elif a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
+            try:
                 a_val = a['__value__']
                 b_val = b['__value__']
+                op_method = getattr(a_val, pymth, None)
 
-                return convert_to_ail_object(a_val + b_val)
-
-            elif a_cls.otype in _num_otypes and b_cls.otype in _num_otypes:
-                try:
-                    a_val = a['__value__']
-                    b_val = b['__value__']
-                    op_method = getattr(a_val, pymth, None)
-
-                    if op_method is not None:
-                        res = op_method(b_val)
-                        if res is not NotImplemented:
-                            return convert_to_ail_number(res)
-
-                        # make __rxxx__
-                        pymth = pymth[:2] + 'r' + pymth[2:]
-                        op_method = getattr(b_val, pymth, None)
-                        if op_method is None:
-                            self.raise_error(
-                                'Not support operator \'%s\' between %s and %s' % (
-                                    op, a, b),
-                                'TypeError')
-
-                        res = op_method(a_val)
-                        if res is NotImplemented:
-                            self.raise_error(
-                                'Not support operator \'%s\' between %s and %s'
-                                        % (op, a, b),
-                                    'TypeError')
+                if op_method is not None:
+                    res = op_method(b_val)
+                    if res is not NotImplemented:
                         return convert_to_ail_number(res)
-                    else:
+
+                    # make __rxxx__
+                    pymth = pymth[:2] + 'r' + pymth[2:]
+                    op_method = getattr(b_val, pymth, None)
+                    if op_method is None:
                         self.raise_error(
                             'Not support operator \'%s\' between %s and %s' % (
                                 op, a, b),
                             'TypeError')
-                except ZeroDivisionError as e:
+
+                    res = op_method(a_val)
+                    if res is NotImplemented:
+                        self.raise_error(
+                            'Not support operator \'%s\' between %s and %s'
+                                    % (op, a, b),
+                                'TypeError')
+                    return convert_to_ail_number(res)
+                else:
                     self.raise_error(
-                        str(e), 'ZeroDivisionError'
-                    )
-                except Exception as e:
-                    self.raise_error(
-                        str(e), 'PythonMathError'
-                    )
-            elif a_cls.otype == struct.STRUCT_OBJ_TYPE.otype:
-                m = a.members.get(ailmth)
-                if m is not None:
-                    self.call_function(m, 1, [b])
-                    r = self.pop_top()
-                    return r
-
-            m = a[ailmth]
-            mb = b[ailmth]
-
-            if m is None or mb is None:
+                        'Not support operator \'%s\' between %s and %s' % (
+                            op, a, b),
+                        'TypeError')
+            except ZeroDivisionError as e:
                 self.raise_error(
-                    'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
-                    'TypeError')
-                return
-
-            r = self.check_object(m(a, b))
-        else:
-            if hasattr(a, pymth):
-                r = getattr(a, pymth)(b)
-            else:
+                    str(e), 'ZeroDivisionError'
+                )
+            except Exception as e:
                 self.raise_error(
-                    'Not support \'%s\' with %s and %s' % (op, str(a), str(b)),
-                    'TypeError')
-                return
-        return r
+                    str(e), 'PythonMathError'
+                )
+        elif a_cls.otype == STRUCT_OBJ_TYPE.otype:
+            m = a.members.get(ailmth)
+            if m is not None:
+                self.call_function(m, 1, [b])
+                r = self.pop_top()
+                return r
+
+        m = a[ailmth]
+        mb = b[ailmth]
+
+        if m is None or mb is None:
+            self.raise_error(
+                'Not support \'%s\' between %s and %s' % (op, str(a), str(b)),
+                'TypeError')
+            return
+
+        r = self.check_object(m(a, b))
 
     def __compare(self, a, b, cmp_opm: str, op: str) -> AILObject:
-        if type(a) == fastnum.FastNumber and type(b) == fastnum.FastNumber:
+        if type(a) == FastNumber and type(b) == FastNumber:
             av = a._value
             bv = b._value
 
@@ -566,7 +548,7 @@ class Interpreter:
             if res is not NotImplemented:
                 return true if res else false
             self.raise_error('not support \'%s\' between 2 string' % op, 'TypeError')
-        elif a_cls.otype == struct.STRUCT_OBJ_TYPE.otype:
+        elif a_cls.otype == STRUCT_OBJ_TYPE.otype:
             m = a.members.get(cmp_opm)
             if m is not None:
                 self.call_function(m, 1, [b])
@@ -670,30 +652,33 @@ class Interpreter:
         return jump_to
 
     def __load_name(self, index: int) -> AILObject:
-        n = self.__tof.varnames[index]
+        tof = self.__tof
+        n = tof.varnames[index]
 
-        v = self.__tof.variable.get(n)
+        v = tof.variable.get(n)
         if v is not None:
             return v
         
-        if len(self.__tof.closure_outer) > 0:
+        if tof.closure_outer:
             for outer in self.__tof.closure_outer:
                 if n in outer:
                     return outer[n]
 
         ns_state = self.__namespace_state
-        for ns in (ns_state.ns_global, ns_state.ns_builtins):
-            v = ns.get(n)
-            if v is not None:
-                return v
 
-        return None
+        v = ns_state.ns_global.get(n)
+        if v is not None:
+            return v
+
+        v = ns_state.ns_builtins.get(n)
+
+        return v
 
     def call_function(self,
                       func, argc, argl,
                       ex: bool=False, frame=None):
         if isinstance(func, AILObject):  # it should be FUNCTION_TYPE
-            if func['__class__'] == afunc.FUNCTION_TYPE:
+            if func['__class__'] == FUNCTION_TYPE:
                 c: AILCodeObject = func['__code__']
                 var_arg = c.var_arg
                 if var_arg is not None:
@@ -727,7 +712,7 @@ class Interpreter:
                 
                 argd = {k: v for k, v in zip(c.varnames[:c.argcount], argl)}
                 if ex:
-                    argd[var_arg] = array.convert_to_array(argl[c.argcount:])
+                    argd[var_arg] = convert_to_array(argl[c.argcount:])
 
                 # init new frame
                 f = Frame() if frame is None else frame
@@ -765,7 +750,7 @@ class Interpreter:
 
                 except RecursionError as e:
                     self.raise_error(str(e), 'PythonError')
-            elif func['__class__'] == afunc.PY_FUNCTION_TYPE:
+            elif func['__class__'] == PY_FUNCTION_TYPE:
                 pyf = func['__pyfunction__']
                 has_this = False
 
@@ -805,22 +790,22 @@ class Interpreter:
 
                 if not isinstance(rtn, AILObject):
                     target = {
-                        str: astr.STRING_TYPE,
-                        int: aint.INTEGER_TYPE,
-                        float: afloat.FLOAT_TYPE,
-                        bool: abool.BOOL_TYPE,
-                        list: array.ARRAY_TYPE
-                    }.get(type(rtn), awrapper.WRAPPER_TYPE)
+                        str: STRING_TYPE,
+                        int: INTEGER_TYPE,
+                        float: FLOAT_TYPE,
+                        bool: BOOL_TYPE,
+                        list: ARRAY_TYPE
+                    }.get(type(rtn), WRAPPER_TYPE)
 
                     if rtn is None:
-                        rtn = null.null
+                        rtn = null
                     else:
                         rtn = create_object(target, rtn)
 
                 self.__tof.stack.append(rtn)
                 return True
 
-            elif func['__class__'] == struct.STRUCT_TYPE:
+            elif func['__class__'] == STRUCT_TYPE:
                 struct_obj = abuiltins.new_struct(func)
                 new_func = struct_obj.members.get('__init__')
 
@@ -834,9 +819,9 @@ class Interpreter:
 
                 return ok
 
-            elif func['__class__'] == class_object.CLASS_TYPE:
+            elif func['__class__'] == CLASS_TYPE:
                 cls = func
-                obj = self.check_object(class_object.new_object(cls, *argl))
+                obj = self.check_object(new_object(cls, *argl))
 
                 self.__push_back(obj)
 
@@ -911,13 +896,13 @@ class Interpreter:
                             msg = str(tos)
 
                         inp = input(msg)
-                        
+
                         if vc > 1:
-                            sip = [astr.convert_to_string(x)
+                            sip = [convert_to_string(x)
                                    for x in re.split(r'\s+', inp) if x]
                             # Remove empty string
                         else:
-                            sip = [astr.convert_to_string(inp)]
+                            sip = [convert_to_string(inp)]
 
                         if vl and len(vl) != len(sip):
                             self.raise_error(
@@ -1095,7 +1080,7 @@ class Interpreter:
                         b = not self.__bool_test(o)
 
                         self.__tof.stack.append(
-                            create_object(abool.BOOL_TYPE, b))
+                            create_object(BOOL_TYPE, b))
 
                     elif op == compare_op:
                         cmp_opm = _binary_compare_op[argv]
@@ -1137,7 +1122,7 @@ class Interpreter:
                             tos._closure_outer.insert(0, self.__tof.variable)
 
                         tosf = create_object(
-                            afunc.FUNCTION_TYPE, tos, self.__tof.variable, tos.name
+                            FUNCTION_TYPE, tos, self.__tof.variable, tos.name
                         )
 
                         if self.__exec_for_module:
@@ -1151,7 +1136,7 @@ class Interpreter:
                         l = [self.__stack.pop() for _ in range(argv)][::-1]
 
                         o = create_object(
-                            array.ARRAY_TYPE, l)
+                            ARRAY_TYPE, l)
 
                         self.__tof.stack.append(o)
 
@@ -1161,11 +1146,11 @@ class Interpreter:
                         for _ in range(argv):
                             v = self.pop_top()
                             k = self.pop_top()
-                            
+
                             m[k] = v
 
                         o = create_object(
-                            amap.MAP_TYPE, m)
+                            MAP_TYPE, m)
 
                         self.__push_back(o)
 
@@ -1179,7 +1164,7 @@ class Interpreter:
                             m[keys[i]] = value
 
                         o = create_object(
-                            amap.MAP_TYPE, m)
+                            MAP_TYPE, m)
 
                         self.__push_back(o)
 
@@ -1189,7 +1174,7 @@ class Interpreter:
                         result = []
 
                         for arr in arr_list:
-                            if not objs.compare_type(arr, array.ARRAY_TYPE):
+                            if not compare_type(arr, ARRAY_TYPE):
                                 self.raise_error(
                                     'argument after \'*\' must an array, but got %s'
                                         % arr['__class__'],
@@ -1199,7 +1184,7 @@ class Interpreter:
                             result.extend(temp_list)
 
                         self.__tof.stack.append(
-                                array.convert_to_array(result))
+                                convert_to_array(result))
 
                     elif op == binary_subscr:
                         v = self.pop_top()
@@ -1219,7 +1204,7 @@ class Interpreter:
                         v = self.pop_top()
 
                         if v['__class__'] in (
-                                aint.INTEGER_TYPE, afloat.FLOAT_TYPE):
+                                INTEGER_TYPE, FLOAT_TYPE):
                             vnum = -unpack_ailobj(v)
                             self.__tof.stack.append(
                                     convert_to_ail_object(vnum))
@@ -1227,13 +1212,13 @@ class Interpreter:
                             self.__decref(v)
                         else:
                             self.raise_error(
-                                'cannot do \'-\' for type: %s' % 
+                                'cannot do \'-\' for type: %s' %
                                 v['__class__'].name, 'TypeError')
 
                     elif op == unary_invert:
                         v = self.pop_top()
 
-                        if v['__class__'] is aint.INTEGER_TYPE:
+                        if v['__class__'] is INTEGER_TYPE:
                             vnum = ~unpack_ailobj(v)
                             self.__tof.stack.append(
                                     convert_to_ail_object(vnum))
@@ -1241,7 +1226,7 @@ class Interpreter:
                             self.__decref(v)
                         else:
                             self.raise_error(
-                                'cannot do \'~\' for type: %s' % 
+                                'cannot do \'~\' for type: %s' %
                                 v['__class__'].name, 'TypeError')
 
                     elif op == unary_inc or op == unary_dec:
@@ -1253,7 +1238,7 @@ class Interpreter:
                         method = v[target_method]
                         if method is None:
                             self.raise_error(
-                                    'Cannot \'%s\' to type %s' % 
+                                    'Cannot \'%s\' to type %s' %
                                         (op, v['__class__']),
                                     'TypeError')
                         else:
@@ -1306,7 +1291,7 @@ class Interpreter:
                             pass
 
                         else:
-                            module_object = module.new_module_object(
+                            module_object = new_module_object(
                                 name, module_path, namespace)
                             self.__push_back(module_object)
 
@@ -1321,7 +1306,7 @@ class Interpreter:
                         else:
                             self.raise_error(
                                     'Cannot import \'%s\' from \'%s\'' % (
-                                        name, m_name), 
+                                        name, m_name),
                                     'ImportError')
 
                     elif op == store_subscr:
@@ -1335,7 +1320,7 @@ class Interpreter:
                                                  o['__class__'].name, 'TypeError')
 
                             else:
-                                self.check_object(afunc.call(o['__setitem__'], o, i, v))
+                                self.check_object(call(o['__setitem__'], o, i, v))
                                 self.__tof.stack.append(v)
 
                     elif op == load_attr:
@@ -1363,7 +1348,7 @@ class Interpreter:
                         nl = [x for x in nl if x != PROTECTED_SIGNAL]
 
                         o = create_object(
-                            struct.STRUCT_TYPE, name, nl, pl)
+                            STRUCT_TYPE, name, nl, pl)
 
                         self.__store_var(name, o)
 
@@ -1373,7 +1358,7 @@ class Interpreter:
 
                         bases = bases[::-1]
 
-                        cls = class_object.build_class(
+                        cls = build_class(
                             class_func, class_name, bases)
 
                         self.__push_back(cls)
@@ -1388,8 +1373,8 @@ class Interpreter:
                         if isinstance(_err, str):
                             e_msg = _err
                             e_type = 'Throw'
-                        elif objs.compare_type(_err, struct.STRUCT_OBJ_TYPE):
-                            if struct.struct_obj_isinstance(_err, get_err_struct()):
+                        elif compare_type(_err, STRUCT_OBJ_TYPE):
+                            if struct_obj_isinstance(_err, get_err_struct()):
                                 e_msg = unpack_ailobj(_err.members['err_msg'])
                                 e_type = unpack_ailobj(_err.members['err_type'])
                             else:
@@ -1463,13 +1448,13 @@ class Interpreter:
                             func_name = unpack_ailobj(self.pop_top())
                             bound_function = self.pop_top()
 
-                            if not objs.compare_type(
+                            if not compare_type(
                                     bound_function,
-                                    afunc.FUNCTION_TYPE, afunc.PY_FUNCTION_TYPE):
+                                    FUNCTION_TYPE, PY_FUNCTION_TYPE):
                                 self.raise_error('require function', 'TypeError')
 
                             else:
-                                if not objs.compare_type(target_struct, struct.STRUCT_TYPE):
+                                if not compare_type(target_struct, STRUCT_TYPE):
                                     self.raise_error(
                                         'function must be bound to a struct type')
 
