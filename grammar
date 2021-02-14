@@ -63,4 +63,3 @@ class_def_stmt := [[decorator] class_def_stmt] |
 
 stmts := if_stmt | for_stmt | try_stmt | expr_stmt | continue_stmt | 
          break_stmt | return_stmt | func_def_stmt | class_def_stmt
-
