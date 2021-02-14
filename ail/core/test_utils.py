@@ -56,7 +56,8 @@ def make_ast_tree(a) -> dict:
             'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
     
     elif isinstance(a, ast.ArgItemAST):
-        return {'ArgItem': {'expr': a.expr, 'star': a.star}}
+        return {'ArgItem': {'expr': make_ast_tree(a.expr), 
+                            'star': a.star}}
 
     elif isinstance(a, ast.ArgListAST):
         return {'ArgList': unpack_list(a.exp_list)}
