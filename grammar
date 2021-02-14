@@ -1,0 +1,62 @@
+
+decorator := '@' expression
+
+param_list := param [',' param]*
+param := NAME ['=' expression] | ['*' NAME] | ['**' NAME]
+
+overload_operator := '+' | '-' | '*' | '/' | '%' | '==' | '!=' | 
+            '^' | '&' | '|' | '[]' | '<<' | '>>'
+            
+assi_operators := '=' | '+=' | '-=' | '/=' | '*=' |
+                 '%=' | '<<=' | '>>=' | '&=' | '^=' | '|='
+
+expression := assi_expr
+assi_expr := ternary_expr [assi_operators ternary_expr]*
+ternary_expr := or_expr ['if' or_expr 'else' or_expr]
+or_expr := and_expr ['or' and_expr]*
+and_expr := binor_expr ['and' binor_expr]*
+binor_expr := binxor_expr ['|' binxor_expr]*
+binxor_expr := binand_expr ['^' binand_expr]*
+binand_expr := eq_expr ['&' eq_expr]*
+eq_ueq_expr := gd_ld_ge_le_expr ['==' | '!=' gd_ld_ge_le_expr]*
+gd_ld_ge_le_expr := shift_expr ['<' | '<=' | '>' | '>=' shift_expr]*
+shift_expr := add_sub_expr ['<<' | '>>' add_sub_expr]*        
+add_sub_expr := mod_muit_div_expr ['+' | '-' mod_muit_div_expr]*
+muit_div_mod_expr := unary_expr ['*' | '/' | '%' unary_expr]*
+unary_expr := ['+' | '-' | 'not'] subscr_access_call_expr
+subscr_access_call_expr := subscr_expr | access_expr | call_expr | cell
+anonymous_func_expr := 'fun' '(' param_list ')' block
+cell := NUMBER | STRING | IDENTIFIER | '(' expression ')' | call_expr | 
+        anonymous_func_expr
+
+if_stmt := if_block [elif_block]* [else_block]
+if_block := 'if' expression block
+elif_block := 'elif' expression block
+else_block := 'else' block
+
+for_stmt := 'for' expression | expr_list [';' expression ';' expr_list] \
+            block ['else' block]?
+
+try_stmt := [try_block [catch_block]* [finally_block]] | 
+            [try_block finally_block]
+try_block := 'try' block
+catch_block := 'catch' expression block
+finally_block := 'finally' block
+
+expr_stmt := expression ';'
+
+continue_stmt := 'continue' ';'
+break_stmt := 'break' ';'
+
+return_stmt := 'return' ';'
+
+func_def_stmt := [[decorator] func_def_stmt] | 
+                 ['fun' NAME '(' param_list ')' block]
+
+
+class_def_stmt := [[decorator] class_def_stmt] | 
+                  ['class' NAME 'extends' [expression [',' expression]*]]
+
+stmts := if_stmt | for_stmt | try_stmt | expr_stmt | continue_stmt | 
+         break_stmt | return_stmt | func_def_stmt | class_def_stmt
+
