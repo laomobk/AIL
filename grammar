@@ -4,11 +4,15 @@ decorator := '@' expression
 param_list := param [',' param]*
 param := NAME ['=' expression] | ['*' NAME] | ['**' NAME]
 
-overload_operator := '+' | '-' | '*' | '/' | '%' | '==' | '!=' | 
-            '^' | '&' | '|' | '[]' | '<<' | '>>'
-            
+arg_list := argument [',' argument]*
+argument := expression ['=' expression]
+
 assi_operators := '=' | '+=' | '-=' | '/=' | '*=' |
                  '%=' | '<<=' | '>>=' | '&=' | '^=' | '|='
+
+call := '( arg_list )'
+subscript := '[' expression [':' expression [':' expression]] ']'
+access := '.' NAME
 
 expression := assi_expr
 assi_expr := ternary_expr [assi_operators ternary_expr]*
@@ -22,12 +26,12 @@ eq_ueq_expr := gd_ld_ge_le_expr ['==' | '!=' gd_ld_ge_le_expr]*
 gd_ld_ge_le_expr := shift_expr ['<' | '<=' | '>' | '>=' shift_expr]*
 shift_expr := add_sub_expr ['<<' | '>>' add_sub_expr]*        
 add_sub_expr := mod_muit_div_expr ['+' | '-' mod_muit_div_expr]*
-muit_div_mod_expr := unary_expr ['*' | '/' | '%' unary_expr]*
+muit_div_mod_expr := power_expr ['*' | '/' | '%' power_expr]*
+power_expr := unary_expr ['**' unary_expr]*
 unary_expr := ['+' | '-' | 'not'] subscr_access_call_expr
-subscr_access_call_expr := subscr_expr | access_expr | call_expr | cell
+subscr_access_call_expr := cell [call | subscript | access]*
 anonymous_func_expr := 'fun' '(' param_list ')' block
-cell := NUMBER | STRING | IDENTIFIER | '(' expression ')' | call_expr | 
-        anonymous_func_expr
+cell := NUMBER | STRING | IDENTIFIER | '(' expression ')' | anonymous_func_expr
 
 if_stmt := if_block [elif_block]* [else_block]
 if_block := 'if' expression block
