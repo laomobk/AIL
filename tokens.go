@@ -6,19 +6,14 @@ type numType = int
 type numBase = int
 
 type Token struct {
-	value   string
-	kind    token
-	op      operator
-	numType numType
-	numBase numBase
-	pos     Pos /* a pos copy */
+	value string
+	kind  token
+	op    operator
+	pos   Pos /* a pos copy */
 }
 
 const (
 	_EOF = iota
-	_INVALID
-	_COMMENT
-
 	_OPERATOR
 
 	_LPAREN
@@ -58,8 +53,8 @@ const (
 	_EXTENDS
 )
 
-var keywordStart = _IF
-var keywordEnd = _FOR
+var keywordStart = _ELSE
+var keywordEnd = _EXTENDS
 
 // Operators
 
@@ -70,8 +65,11 @@ const (
 	_XOR
 	_BAND
 	_BOR
-	_LSHR
-	_RSHR
+	_LSHIFT
+	_RSHIFT
+	_PLUS
+	_SUB
+	_POWER
 
 	_EQ
 	_UEQ
@@ -83,16 +81,25 @@ const (
 	_OR
 	_AND
 
-	_PLUS
-	_SUB
 	_BNG // ~
 	_NOT
 
-	_POWER
-
 	_ASSIGN
-	_ASSIGN_OP
+
+	_ASSI_MUIT
+	_ASSI_DIVI
+	_ASSI_MOD
+	_ASSI_XOR
+	_ASSI_BAND
+	_ASSI_BOR
+	_ASSI_LSHR
+	_ASSI_RSHR
+	_ASSI_PLUS
+	_ASSI_SUB
+	_ASSI_POWER
 )
+
+var assiInc = 22
 
 // Number
 const (
@@ -178,8 +185,8 @@ var operatorNames []string = []string{
 	"_XOR",
 	"_BAND",
 	"_BOR",
-	"_LSHR",
-	"_RSHR",
+	"_LSHIFT",
+	"_RSHIFT",
 
 	"_EQ",
 	"_UEQ",
@@ -230,27 +237,37 @@ func isKeyword(tokv string) bool {
 }
 
 var opPrecMap map[int]int = map[int]int{
-	_ASSIGN:    10,
-	_ASSIGN_OP: 10,
-	_OR:        30,
-	_AND:       40,
-	_BOR:       50,
-	_XOR:       60,
-	_BAND:      70,
-	_EQ:        80,
-	_UEQ:       80,
-	_LTH:       90,
-	_LEQ:       90,
-	_GTH:       90,
-	_GEQ:       90,
-	_LSHR:      100,
-	_RSHR:      100,
-	_PLUS:      110,
-	_SUB:       110,
-	_MUIT:      120,
-	_DIVI:      130,
-	_MOD:       140,
-	_POWER:     150,
+	_ASSIGN:     10,
+	_ASSI_MUIT:  10,
+	_ASSI_DIVI:  10,
+	_ASSI_MOD:   10,
+	_ASSI_XOR:   10,
+	_ASSI_BAND:  10,
+	_ASSI_BOR:   10,
+	_ASSI_LSHR:  10,
+	_ASSI_RSHR:  10,
+	_ASSI_PLUS:  10,
+	_ASSI_SUB:   10,
+	_ASSI_POWER: 10,
+	_OR:         30,
+	_AND:        40,
+	_BOR:        50,
+	_XOR:        60,
+	_BAND:       70,
+	_EQ:         80,
+	_UEQ:        80,
+	_LTH:        90,
+	_LEQ:        90,
+	_GTH:        90,
+	_GEQ:        90,
+	_LSHIFT:     100,
+	_RSHIFT:     100,
+	_PLUS:       110,
+	_SUB:        110,
+	_MUIT:       120,
+	_DIVI:       130,
+	_MOD:        140,
+	_POWER:      150,
 }
 
 func getOpPrec(op operator, tok token) int {

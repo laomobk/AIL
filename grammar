@@ -5,7 +5,7 @@ param_list := param [',' param]*
 param := NAME ['=' expression] | ['*' NAME] | ['**' NAME]
 
 arg_list := argument [',' argument]*
-argument := expression ['=' expression]
+argument := [['*' | '**'] expression] | [expression ['=' expression]]
 
 assi_operators := '=' | '+=' | '-=' | '/=' | '*=' |
                  '%=' | '<<=' | '>>=' | '&=' | '^=' | '|='
@@ -59,7 +59,7 @@ func_def_stmt := [[decorator] func_def_stmt] |
 
 
 class_def_stmt := [[decorator] class_def_stmt] | 
-                  ['class' NAME 'extends' [expression [',' expression]*]]
+                  ['class' NAME 'extends' [expression [',' expression]*] block]
 
 stmts := if_stmt | for_stmt | try_stmt | expr_stmt | continue_stmt | 
          break_stmt | return_stmt | func_def_stmt | class_def_stmt
