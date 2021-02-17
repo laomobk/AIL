@@ -10,6 +10,10 @@ type Token struct {
 	kind  token
 	op    operator
 	pos   Pos /* a pos copy */
+
+	numBase  int
+	numType  int
+	numPower int
 }
 
 const (
@@ -104,9 +108,8 @@ var assiInc = 22
 // Number
 const (
 	_FLOAT   = 102 // 0.8f
-	_DOUBLE  = 100 // 0.8
 	_INTEGER = 105 // 3
-	_LONG    = 108 // 50l
+	_SCIENCE = 108 // 50l
 )
 
 // Number bases

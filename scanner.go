@@ -1,6 +1,12 @@
 package ail
 
-import "unicode/utf8"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
 
 type Scanner struct {
 	source       []byte
@@ -34,6 +40,10 @@ func (s *Scanner) nextNChar(step int) (ch rune) {
 }
 
 func (s *Scanner) nextChar() rune {
+	if s.cp >= s.sourceLength {
+		s.isEOF = true
+		return -1
+	}
 	if s.isEOF {
 		return -1
 	}
@@ -83,7 +93,87 @@ func (s *Scanner) setToken(value string, kind token) {
 	}
 }
 
-func (s *Scanner) nextToken() {
+func (s *Scanner) parseNumber() error {
+	numBuf := new(strings.Builder)
+	numPow := new(strings.Builder)
+	numBase := 10
+	numType := _INTEGER
+
+	fprintf := fmt.Fprintf
+
+	canDot := true
+	validChar := "0123456789"
+	errMsg := ""
+
+	if s.nowChar() == '0' {
+		fprintf(numBuf, "0")
+		s.nextChar()
+
+		switch s.nowChar() {
+
+		case 'x':
+			validChar = "0123456789abcdefABCDEF"
+			numBase = 16
+			canDot = false
+		case 'o':
+			validChar = "01234567"
+			numBase = 8
+			canDot = false
+		case 'b':
+			validChar = "01"
+			numBase = 2
+			canDot = false
+		case '.':
+			numType = _FLOAT
+			canDot = false
+		case 'e':
+			canDot = false
+			validChar = "0123456789."
+			numBuf = numPow
+		default:
+			if !runeInString(s.nowChar(), validChar) {
+				goto setToken
+			}
+		}
+		s.nextChar()
+	}
+
+	for ch := s.nowChar(); ch != -1; ch = s.nowChar() {
+		fprintf(numBuf, string(ch))
+
+		if !runeInString(ch, validChar) {
+
+		}
+
+		if ch == '.' {
+			if !canDot {
+				return fmt.Errorf("invalid number")
+			}
+			ch = s.nextChar()
+			fprintf(numBuf, ".")
+			canDot = false
+			continue
+		}
+	}
+
+	return nil
+
+setToken:
+	s.NowToken.value = numBuf.String()
+	s.NowToken.kind = _NUMBER
+	s.NowToken.numBase = numBase
+	s.NowToken.numType = numType
+
+	if val, err := strconv.Atoi(numPow.String()); err == nil {
+		s.NowToken.numPower = val
+	} else {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scanner) NextToken() bool {
 again:
 	if s.isEOF {
 		s.NowToken.kind = _EOF
@@ -92,6 +182,10 @@ again:
 	tokKind := &s.NowToken.kind
 	tokOp := &s.NowToken.op
 	s.NowToken.pos = Pos{col: s.col, line: s.line}
+
+	if unicode.IsNumber(s.nowChar()) {
+
+	}
 
 	switch s.nowChar() {
 
@@ -128,7 +222,6 @@ again:
 	case '@':
 		*tokKind = _AT
 		goto singleChar
-	// operator
 	case '*':
 		*tokOp = _MUIT
 		if s.peek() == '*' {
@@ -211,7 +304,7 @@ again:
 		goto checkAssi
 	}
 
-	return
+	return true
 
 checkAssi:
 	*tokKind = _OPERATOR
@@ -220,9 +313,13 @@ checkAssi:
 		*tokOp += assiInc
 	}
 
+	return true
+
 singleChar:
 	s.NowToken.value = string(s.nowChar())
 	s.nextChar()
+
+	return true
 }
 
 func (s *Scanner) skipLineComment() {
@@ -241,9 +338,10 @@ func (s *Scanner) skipBlockComment() {
 	}
 }
 
-func (s *Scanner) getTokenList() []*Token {
+func (s *Scanner) GetTokenList() []*Token {
 	var tokList []*Token
 	for s.nowChar() != -1 {
+		s.NextToken()
 		tok := s.NowToken
 		tokList = append(tokList, tok)
 	}
