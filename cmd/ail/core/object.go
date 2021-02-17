@@ -1,4 +1,4 @@
-package ail
+package core
 
 type Object struct {
 	objType *TypeObject

@@ -1,4 +1,4 @@
-package ail
+package core
 
 // Abstracts
 
@@ -55,7 +55,7 @@ type Argument struct {
 	node
 
 	Expr    Expression
-	KwValue Expression // nil if no keyword value
+	KwValue Expression // nil if no keyword Value
 	Star    Expression // unpack sequence
 	KwStar  Expression // unpack map
 }

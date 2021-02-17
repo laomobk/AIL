@@ -1,8 +1,8 @@
-package ail
+package core
 
 import (
+	"ail/tools"
 	"fmt"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -16,11 +16,9 @@ type Scanner struct {
 	cp int
 	ch rune
 
-	isEOF bool
-
 	col, line int
 
-	NowToken *Token
+	nowToken *Token
 }
 
 func (s *Scanner) syntaxErrorWithMsg(msg string) {
@@ -32,26 +30,34 @@ func (s *Scanner) syntaxErrorNoMsg() {
 	s.syntaxErrorWithMsg("")
 }
 
+func (s *Scanner) error(err error) {
+	msg := err.Error()
+	errObj := ErrNewRuntimeErrorTMFL(
+		"ScannerError", msg, s.fileName, s.line)
+	ErrSetError(errObj)
+}
+
 func (s *Scanner) nextNChar(step int) (ch rune) {
-	for i := 0; i < step && !s.isEOF; i++ {
+	for i := 0; i < step && !s.isEOF(); i++ {
 		ch = s.nextChar()
 	}
 	return
 }
 
+func (s *Scanner) isEOF() bool {
+	return s.cp >= s.sourceLength
+}
+
 func (s *Scanner) nextChar() rune {
-	if s.cp >= s.sourceLength {
-		s.isEOF = true
+	if s.isEOF() {
 		return -1
 	}
-	if s.isEOF {
-		return -1
-	}
+
+	s.col += 1
 
 	ch, size := utf8.DecodeRune(s.source[s.cp:])
 	s.cp += size
-
-	s.col += 1
+	ch, _ = utf8.DecodeRune(s.source[s.cp:])
 
 	if ch == '\n' {
 		s.line += 1
@@ -62,7 +68,7 @@ func (s *Scanner) nextChar() rune {
 }
 
 func (s *Scanner) nowChar() rune {
-	if s.isEOF {
+	if s.isEOF() {
 		return -1
 	}
 
@@ -71,7 +77,7 @@ func (s *Scanner) nowChar() rune {
 }
 
 func (s *Scanner) peek() rune {
-	if s.isEOF {
+	if s.isEOF() {
 		return -1
 	}
 
@@ -85,11 +91,32 @@ func (s *Scanner) peek() rune {
 }
 
 func (s *Scanner) setToken(value string, kind token) {
-	s.NowToken = &Token{
-		value: value,
-		kind:  kind,
-		op:    0,
-		pos:   Pos{col: s.col, line: s.line},
+	s.nowToken = &Token{
+		Value: value,
+		Kind:  kind,
+		Op:    0,
+		Pos:   Pos{col: s.col, line: s.line},
+	}
+}
+
+func (s *Scanner) setNumberToken(
+	value string, tKind token, base, nKind int, power string) {
+	s.nowToken = &Token{
+		Value:    value,
+		Kind:     tKind,
+		NumBase:  base,
+		NumType:  nKind,
+		NumPower: power,
+		Pos:      Pos{col: s.col, line: s.line},
+	}
+}
+
+func (s *Scanner) setOperatorToken(value string, op operator) {
+	s.nowToken = &Token{
+		Value: value,
+		Kind:  _OPERATOR,
+		Op:    op,
+		Pos:   Pos{col: s.col, line: s.line},
 	}
 }
 
@@ -98,15 +125,13 @@ func (s *Scanner) parseNumber() error {
 	numPow := new(strings.Builder)
 	numBase := 10
 	numType := _INTEGER
-
-	fprintf := fmt.Fprintf
+	baseBuf := new(strings.Builder)
 
 	canDot := true
-	validChar := "0123456789"
-	errMsg := ""
+	validChar := "0123456789.eE"
 
 	if s.nowChar() == '0' {
-		fprintf(numBuf, "0")
+		numBuf.WriteRune('0')
 		s.nextChar()
 
 		switch s.nowChar() {
@@ -126,69 +151,165 @@ func (s *Scanner) parseNumber() error {
 		case '.':
 			numType = _FLOAT
 			canDot = false
-		case 'e':
+			numBuf.WriteRune('.')
+		case 'e', 'E':
 			canDot = false
 			validChar = "0123456789."
 			numBuf = numPow
 		default:
-			if !runeInString(s.nowChar(), validChar) {
+			if !tools.RuneInString(s.nowChar(), validChar) {
 				goto setToken
 			}
 		}
 		s.nextChar()
 	}
 
-	for ch := s.nowChar(); ch != -1; ch = s.nowChar() {
-		fprintf(numBuf, string(ch))
-
-		if !runeInString(ch, validChar) {
-
+	for ch := s.nowChar(); ch != -1; ch = s.nextChar() {
+		if !tools.RuneInString(ch, validChar) {
+			goto setToken
 		}
-
 		if ch == '.' {
 			if !canDot {
 				return fmt.Errorf("invalid number")
 			}
-			ch = s.nextChar()
-			fprintf(numBuf, ".")
 			canDot = false
-			continue
+			numBuf.WriteRune(ch)
+		} else if ch == 'e' || ch == 'E' {
+			baseBuf = numBuf
+			numBuf = numPow
+			numType = _SCIENCE
+			validChar = "-0123456789."
+			canDot = false
+		} else {
+			numBuf.WriteRune(ch)
 		}
 	}
 
-	return nil
-
 setToken:
-	s.NowToken.value = numBuf.String()
-	s.NowToken.kind = _NUMBER
-	s.NowToken.numBase = numBase
-	s.NowToken.numType = numType
-
-	if val, err := strconv.Atoi(numPow.String()); err == nil {
-		s.NowToken.numPower = val
-	} else {
-		return err
+	if numType == _SCIENCE {
+		numPow = numBuf
+		numBuf = baseBuf
 	}
+	s.setNumberToken(numBuf.String(), _NUMBER, numBase, numType, numPow.String())
+	return nil
+}
+
+func (s *Scanner) parseEscape() (ch rune, err error) {
+	switch s.nowChar() {
+
+	case '\'':
+		ch = '\''
+	case '"':
+		ch = '"'
+	case 'a':
+		ch = '\a'
+	case 'b':
+		ch = '\b'
+	case 'f':
+		ch = '\f'
+	case 'n':
+		ch = '\n'
+	case 'r':
+		ch = '\r'
+	case 't':
+		ch = '\t'
+	case 'v':
+		ch = '\v'
+	case '\\':
+		ch = '\\'
+	case '0':
+		ch = '0'
+	case 'x':
+		ch = 'x'
+	default:
+		return 0, fmt.Errorf("invaild escape character")
+	}
+
+	if ch == '0' || ch == 'x' {
+
+	}
+
+	return ch, nil
+}
+
+func (s *Scanner) parseString() error {
+	start := s.nowChar()
+	buf := new(strings.Builder)
+
+	s.nowToken.Pos = Pos{col: s.col, line: s.line}
+
+	for ch := s.nextChar(); ch != -1; ch = s.nextChar() {
+		if ch == start {
+			s.nextChar()
+			break
+		}
+		buf.WriteRune(ch)
+	}
+
+	s.nowToken.Kind = _STRING
+	s.nowToken.Value = buf.String()
+
+	return nil
+}
+
+func (s *Scanner) parseIdentifier() error {
+	buf := new(strings.Builder)
+
+	s.nowToken.Pos = Pos{s.line, s.col}
+
+	for ch := s.nowChar(); tools.IsIdentifier(ch) && ch != -1; ch = s.nextChar() {
+		buf.WriteRune(ch)
+	}
+
+	if buf.Len() == 0 {
+		return fmt.Errorf("invaild identifier")
+	}
+
+	s.nowToken.Value = buf.String()
+	s.nowToken.Kind = _IDENTIFIER
 
 	return nil
 }
 
 func (s *Scanner) NextToken() bool {
 again:
-	if s.isEOF {
-		s.NowToken.kind = _EOF
+	if s.isEOF() {
+		s.nowToken.Kind = _EOF
 	}
 
-	tokKind := &s.NowToken.kind
-	tokOp := &s.NowToken.op
-	s.NowToken.pos = Pos{col: s.col, line: s.line}
+	tokKind := &s.nowToken.Kind
+	tokOp := &s.nowToken.Op
+	s.nowToken.Pos = Pos{col: s.col, line: s.line}
+
+	if tools.IsWhite(s.nowChar()) {
+		s.nextChar()
+		goto again
+	}
 
 	if unicode.IsNumber(s.nowChar()) {
+		if err := s.parseNumber(); err != nil {
+			s.error(err)
+			return false
+		}
+		return true
+	}
 
+	if tools.IsIdentifier(s.nowChar()) {
+		if err := s.parseIdentifier(); err != nil {
+			s.error(err)
+			return false
+		}
+		return true
 	}
 
 	switch s.nowChar() {
-
+	case '\'', '"':
+		err := s.parseString()
+		if err != nil {
+			s.error(err)
+			return false
+		}
+		return true
 	case '(':
 		*tokKind = _LPAREN
 		goto singleChar
@@ -316,7 +437,7 @@ checkAssi:
 	return true
 
 singleChar:
-	s.NowToken.value = string(s.nowChar())
+	s.nowToken.Value = string(s.nowChar())
 	s.nextChar()
 
 	return true
@@ -338,11 +459,17 @@ func (s *Scanner) skipBlockComment() {
 	}
 }
 
-func (s *Scanner) GetTokenList() []*Token {
-	var tokList []*Token
+func (s *Scanner) NowToken() Token {
+	return *s.nowToken
+}
+
+func (s *Scanner) GetTokenList() []Token {
+	var tokList []Token
 	for s.nowChar() != -1 {
-		s.NextToken()
-		tok := s.NowToken
+		if !s.NextToken() {
+			return nil
+		}
+		tok := s.NowToken()
 		tokList = append(tokList, tok)
 	}
 	return tokList
@@ -353,13 +480,9 @@ func NewScanner(source []byte, fileName string) *Scanner {
 	scanner.source = source
 	scanner.sourceLength = len(source)
 	scanner.fileName = fileName
-	scanner.NowToken = new(Token)
+	scanner.nowToken = new(Token)
 
-	if len(source) == 0 {
-		scanner.isEOF = true
-	}
-
-	scanner.col, scanner.line, scanner.cp, scanner.ch = 0, 0, 0, 0
+	scanner.col, scanner.line, scanner.cp, scanner.ch = 1, 1, 0, 0
 
 	return scanner
 }

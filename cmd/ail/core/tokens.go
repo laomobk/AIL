@@ -1,19 +1,28 @@
-package ail
+package core
+
+import "fmt"
 
 type token = int
 type operator = int
-type numType = int
-type numBase = int
 
 type Token struct {
-	value string
-	kind  token
-	op    operator
-	pos   Pos /* a pos copy */
+	Value string
+	Kind  token
+	Op    operator
+	Pos   Pos /* a Pos copy */
 
-	numBase  int
-	numType  int
-	numPower int
+	NumBase  int
+	NumType  int
+	NumPower string // valid when NumType == _SCIENCE
+}
+
+func (t *Token) String() string {
+	if t.NumType == _SCIENCE {
+		return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s, power: %s>",
+			t.Value, t.Pos.line, t.Pos.col, tokenNames[t.Kind], t.NumPower)
+	}
+	return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s>",
+		t.Value, t.Pos.line, t.Pos.col, tokenNames[t.Kind])
 }
 
 const (
@@ -129,9 +138,6 @@ func getTokenName(tok token) string {
 
 var tokenNames []string = []string{
 	"_EOF",
-	"_INVALID",
-	"_COMMENT",
-
 	"_OPERATOR",
 
 	"_LPAREN",
@@ -147,9 +153,6 @@ var tokenNames []string = []string{
 	"_DOT",
 	"_COLON",
 	"_AT",
-
-	"_LARROW",
-	"_RARROW",
 
 	"_IDENTIFIER",
 	"_NUMBER",

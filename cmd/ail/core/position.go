@@ -1,4 +1,4 @@
-package ail
+package core
 
 import (
 	"fmt"
