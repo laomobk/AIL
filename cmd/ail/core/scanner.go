@@ -22,7 +22,8 @@ type Scanner struct {
 }
 
 func (s *Scanner) syntaxErrorWithMsg(msg string) {
-	err := ErrNewRuntimeErrorTM("SyntaxError", msg)
+	err := ErrNewRuntimeErrorTM(
+		fmt.Sprintf("SyntaxError: (%v, %v)", s.line, s.col), msg)
 	ErrSetError(err)
 }
 
@@ -274,7 +275,10 @@ func (s *Scanner) parseIdentifier() error {
 func (s *Scanner) NextToken() bool {
 again:
 	if s.isEOF() {
-		s.nowToken.Kind = _EOF
+		s.nowToken = &Token{
+			Kind: _EOF,
+		}
+		return true
 	}
 
 	tokKind := &s.nowToken.Kind
@@ -423,6 +427,18 @@ again:
 		*tokOp = _BNG
 		s.nextChar()
 		goto checkAssi
+	case '=':
+		*tokOp = _ASSIGN
+		*tokKind = _OPERATOR
+		s.nextChar()
+		if s.nowChar() == '=' {
+			*tokOp = _EQ
+		}
+		return true
+	default:
+		s.syntaxErrorWithMsg(
+			fmt.Sprintf("Unknown character: %v", int32(s.nowChar())))
+		return false
 	}
 
 	return true
@@ -465,7 +481,7 @@ func (s *Scanner) NowToken() Token {
 
 func (s *Scanner) GetTokenList() []Token {
 	var tokList []Token
-	for s.nowChar() != -1 {
+	for !s.isEOF() {
 		if !s.NextToken() {
 			return nil
 		}

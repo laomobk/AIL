@@ -20,6 +20,11 @@ func (t *Token) String() string {
 	if t.NumType == _SCIENCE {
 		return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s, power: %s>",
 			t.Value, t.Pos.line, t.Pos.col, tokenNames[t.Kind], t.NumPower)
+	} else if t.Kind == _OPERATOR {
+		return fmt.Sprintf("<token operator %s, line: %v, col: %v>",
+			getOperatorName(t.Op), t.Pos.line, t.Pos.col)
+	} else if t.Kind == _EOF {
+		return "<token EOF>"
 	}
 	return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s>",
 		t.Value, t.Pos.line, t.Pos.col, tokenNames[t.Kind])

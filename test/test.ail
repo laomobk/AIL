@@ -1,3 +1,2 @@
-"
-Nezha
-"
+a = "Nezha"
+b = a
