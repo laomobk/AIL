@@ -3,6 +3,7 @@ package core
 import (
 	"ail/tools"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -218,19 +219,87 @@ func (s *Scanner) parseEscape() (ch rune, err error) {
 		ch = '\v'
 	case '\\':
 		ch = '\\'
-	case '0':
-		ch = '0'
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		return s.parseOctEscape()
 	case 'x':
-		ch = 'x'
+		return s.parseHexEscape()
+	case 'u':
+		return s.parseUnicodeEscape(4)
+	case 'U':
+		return s.parseUnicodeEscape(8)
 	default:
 		return 0, fmt.Errorf("invaild escape character")
 	}
 
-	if ch == '0' || ch == 'x' {
+	return ch, nil
+}
 
+func (s *Scanner) parseOctEscape() (rune, error) {
+	buf := new(strings.Builder)
+	c := 0
+
+	for ch := s.nowChar(); c < 3; c++ {
+		if unicode.IsNumber(ch) {
+			buf.WriteRune(ch)
+		} else {
+			break
+		}
+		ch = s.nextChar()
+	}
+	tools.Assert(buf.Len() > 0, "'buf' cannot be empty")
+
+	num, err := strconv.ParseInt(buf.String(), 8, 32)
+	if err != nil {
+		return 0, err
+	}
+	return rune(num), nil
+}
+
+func (s *Scanner) parseHexEscape() (rune, error) {
+	buf := new(strings.Builder)
+	c := 0
+
+	tools.Assert(
+		s.nowChar() == 'x', "char != 'x' when parsing hex escape character")
+	s.nextChar() // eat 'x'
+
+	for ch := s.nowChar(); c < 2; c++ {
+		buf.WriteRune(ch)
+		ch = s.nextChar()
 	}
 
-	return ch, nil
+	tools.Assert(buf.Len() > 0, "'buf' cannot be empty")
+	num, err := strconv.ParseInt(buf.String(), 16, 32)
+	if err != nil {
+		return 0, fmt.Errorf(
+			"unicode escape cannot decode the position at (line: %v, col: %v)",
+			s.line, s.col)
+	}
+	return rune(num), nil
+}
+
+func (s *Scanner) parseUnicodeEscape(length int) (rune, error) {
+	buf := new(strings.Builder)
+	c := 0
+
+	tools.Assert(
+		s.nowChar() == 'u' || s.nowChar() == 'U',
+		"char != 'u' or 'U' when parsing hex escape character")
+	s.nextChar() // eat 'u' or 'U'
+
+	for ch := s.nowChar(); c < length; c++ {
+		buf.WriteRune(ch)
+		ch = s.nextChar()
+	}
+
+	uNum, err := strconv.ParseInt(buf.String(), 16, 32)
+	if err != nil {
+		return 0, fmt.Errorf(
+			"unicode escape cannot decode the position at (line: %v, col: %v)",
+			s.line, s.col)
+	}
+
+	return rune(uNum), err
 }
 
 func (s *Scanner) parseString() error {
@@ -239,12 +308,24 @@ func (s *Scanner) parseString() error {
 
 	s.nowToken.Pos = Pos{col: s.col, line: s.line}
 
-	for ch := s.nextChar(); ch != -1; ch = s.nextChar() {
+	for ch := s.nextChar(); ; ch = s.nowChar() {
 		if ch == start {
 			s.nextChar()
 			break
 		}
+		if ch == -1 {
+			return fmt.Errorf("EOF while scanning a string literal")
+		}
+		if ch == '\\' {
+			s.nextChar()
+			esc, err := s.parseEscape()
+			if err != nil {
+				return err
+			}
+			ch = esc
+		}
 		buf.WriteRune(ch)
+		s.nextChar()
 	}
 
 	s.nowToken.Kind = _STRING
@@ -355,17 +436,21 @@ again:
 		}
 		goto checkAssi
 	case '/':
-		*tokOp = _DIVI
 		s.nextChar()
-		if s.nextChar() == '/' {
+		if s.nowChar() == '/' {
 			s.nextChar()
 			s.skipLineComment()
 			goto again
 		} else if s.nowChar() == '*' {
 			s.nextChar()
-			s.skipBlockComment()
+			err := s.skipBlockComment()
+			if err != nil {
+				s.error(err)
+				return false
+			}
 			goto again
 		}
+		*tokOp = _DIVI
 		goto checkAssi
 	case '%':
 		*tokOp = _MOD
@@ -461,18 +546,21 @@ singleChar:
 
 func (s *Scanner) skipLineComment() {
 	s.nextChar()
-	for s.nowChar() != '\n' || s.nowChar() != -1 {
+	for s.nowChar() != '\n' && s.nowChar() != -1 {
 		s.nextChar()
 	}
+	s.nextChar()
 }
 
-func (s *Scanner) skipBlockComment() {
+func (s *Scanner) skipBlockComment() error {
 	s.nextChar()
 	for s.nowChar() != -1 {
 		if s.nextChar() == '*' && s.nextChar() == '/' {
-			return
+			s.nextChar() // eat '/'
+			return nil
 		}
 	}
+	return fmt.Errorf("EOF while scanning comment block")
 }
 
 func (s *Scanner) NowToken() Token {
@@ -481,14 +569,16 @@ func (s *Scanner) NowToken() Token {
 
 func (s *Scanner) GetTokenList() []Token {
 	var tokList []Token
-	for !s.isEOF() {
+	for {
 		if !s.NextToken() {
 			return nil
 		}
 		tok := s.NowToken()
+		if tok.Kind == _EOF {
+			return tokList
+		}
 		tokList = append(tokList, tok)
 	}
-	return tokList
 }
 
 func NewScanner(source []byte, fileName string) *Scanner {
