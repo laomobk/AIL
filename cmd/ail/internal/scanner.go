@@ -105,19 +105,19 @@ func (s *Scanner) setToken(value string, kind token) {
 func (s *Scanner) setNumberToken(
 	value string, tKind token, base, nKind int, power string) {
 	s.nowToken = &Token{
-		Value:    value,
-		Kind:     tKind,
-		NumBase:  base,
-		NumType:  nKind,
-		NumPower: power,
-		Pos:      Pos{col: s.col, line: s.line},
+		Value:        value,
+		Kind:         tKind,
+		NumBase:      base,
+		NumTypeFlags: nKind,
+		NumPower:     power,
+		Pos:          Pos{col: s.col, line: s.line},
 	}
 }
 
 func (s *Scanner) setOperatorToken(value string, op operator) {
 	s.nowToken = &Token{
 		Value: value,
-		Kind:  _OPERATOR,
+		Kind:  TokOperator,
 		Op:    op,
 		Pos:   Pos{col: s.col, line: s.line},
 	}
@@ -156,7 +156,7 @@ func (s *Scanner) parseDocString() error {
 		}
 	}
 
-	s.nowToken.Kind = _STRING
+	s.nowToken.Kind = TokString
 	s.nowToken.Value = buf.String()
 	return nil
 }
@@ -165,7 +165,7 @@ func (s *Scanner) parseNumber() error {
 	numBuf := new(strings.Builder)
 	numPow := new(strings.Builder)
 	numBase := 10
-	numType := _INTEGER
+	numTypeFlags := NumInteger
 	baseBuf := new(strings.Builder)
 
 	canDot := true
@@ -190,7 +190,7 @@ func (s *Scanner) parseNumber() error {
 			numBase = 2
 			canDot = false
 		case '.':
-			numType = _FLOAT
+			numTypeFlags ^= NumFloat | NumInteger
 			canDot = false
 			numBuf.WriteRune('0')
 			numBuf.WriteRune('.')
@@ -211,8 +211,9 @@ func (s *Scanner) parseNumber() error {
 		if !tools.RuneInString(ch, validChar) {
 			goto setToken
 		}
+
 		if ch == '-' {
-			if numType == _SCIENCE && canNg {
+			if numTypeFlags&NumScience != 0 && canNg {
 				canNg = false
 			}
 			if !canNg {
@@ -226,14 +227,14 @@ func (s *Scanner) parseNumber() error {
 			}
 			canDot = false
 			numBuf.WriteRune(ch)
+			numTypeFlags ^= NumFloat | NumInteger
 		} else if (ch == 'e' || ch == 'E') && numBase != 16 {
 			if numBase != 10 {
 				return fmt.Errorf("invalid number")
 			}
-
 			baseBuf = numBuf
 			numBuf = numPow
-			numType = _SCIENCE
+			numTypeFlags ^= NumScience | NumInteger
 			validChar = "-0123456789"
 			canDot = false
 		} else {
@@ -243,11 +244,11 @@ func (s *Scanner) parseNumber() error {
 	}
 
 setToken:
-	if numType == _SCIENCE {
+	if numTypeFlags&NumScience != 0 {
 		numPow = numBuf
 		numBuf = baseBuf
 	}
-	s.setNumberToken(numBuf.String(), _NUMBER, numBase, numType, numPow.String())
+	s.setNumberToken(numBuf.String(), TokNumber, numBase, numTypeFlags, numPow.String())
 	return nil
 }
 
@@ -383,7 +384,7 @@ func (s *Scanner) parseString() error {
 		s.nextChar()
 	}
 
-	s.nowToken.Kind = _STRING
+	s.nowToken.Kind = TokString
 	s.nowToken.Value = buf.String()
 
 	return nil
@@ -399,22 +400,22 @@ func (s *Scanner) parseIdentifier() error {
 	}
 
 	if buf.Len() == 0 {
-		return fmt.Errorf("invaild identifier")
+		return fmt.Errorf("invaild TokIdentifier")
 	}
 
 	s.nowToken.Value = buf.String()
-	s.nowToken.Kind = _IDENTIFIER
+	s.nowToken.Kind = TokIdentifier
 
 	return nil
 }
 
-func (s *Scanner) NextToken() bool {
+func (s *Scanner) NextToken() error {
 again:
 	if s.isEOF() {
 		s.nowToken = &Token{
-			Kind: _EOF,
+			Kind: TokEOF,
 		}
-		return true
+		return nil
 	}
 
 	tokKind := &s.nowToken.Kind
@@ -427,69 +428,63 @@ again:
 	}
 
 	if unicode.IsNumber(s.nowChar()) {
-		if err := s.parseNumber(); err != nil {
-			s.error(err)
-			return false
-		}
-		return true
+		return s.parseNumber()
 	}
 
 	if tools.IsIdentifier(s.nowChar()) {
 		if err := s.parseIdentifier(); err != nil {
-			s.error(err)
-			return false
+			return err
 		}
-		checkAndSetKeyword(s.nowToken)
-		return true
+		CheckAndSetKeyword(s.nowToken)
+		return nil
+
 	}
 
 	switch s.nowChar() {
 	case '\'', '"':
 		err := s.parseString()
 		if err != nil {
-			s.error(err)
-			return false
+			return err
 		}
-		return true
 	case '(':
-		*tokKind = _LPAREN
+		*tokKind = TokLparen
 		goto singleChar
 	case '[':
-		*tokKind = _LBRACK
+		*tokKind = TokLbracket
 		goto singleChar
 	case '{':
-		*tokKind = _LBRACE
+		*tokKind = TokLbrace
 		goto singleChar
 	case ')':
-		*tokKind = _RPAREN
+		*tokKind = TokRparen
 		goto singleChar
 	case ']':
-		*tokKind = _RBRACK
+		*tokKind = TokRbracket
 		goto singleChar
 	case '}':
-		*tokKind = _RBRACE
+		*tokKind = TokRbrace
 		goto singleChar
 	case ',':
-		*tokKind = _COMMA
+		*tokKind = TokComma
 		goto singleChar
 	case ';':
-		*tokKind = _SEMI
+		*tokKind = TokSemi
 		goto singleChar
 	case '.':
-		*tokKind = _DOT
+		*tokKind = TokDot
 		goto singleChar
 	case ':':
-		*tokKind = _COLON
+		*tokKind = TokColon
 		goto singleChar
 	case '@':
-		*tokKind = _AT
+		*tokKind = TokAt
 		goto singleChar
 	case '*':
-		*tokOp = _MUIT
+		*tokOp = OpMult
 		s.nextChar()
 		if s.nowChar() == '*' {
 			s.nextChar()
-			*tokOp = _POWER
+			*tokOp = OpPower
 		}
 		goto checkAssi
 	case '/':
@@ -502,113 +497,108 @@ again:
 			s.nextChar()
 			err := s.skipBlockComment()
 			if err != nil {
-				s.error(err)
-				return false
+				return err
 			}
 			goto again
 		}
-		*tokOp = _DIVI
+		*tokOp = OpDivi
 		goto checkAssi
 	case '#':
 		if err := s.parseDocString(); err != nil {
-			s.error(err)
-			return false
+			return err
 		}
-		return true
-
+		return nil
 	case '%':
-		*tokOp = _MOD
+		*tokOp = OpMod
 		s.nextChar()
 		goto checkAssi
 	case '^':
-		*tokOp = _XOR
+		*tokOp = OpXor
 		s.nextChar()
 		goto checkAssi
 	case '&':
-		*tokOp = _BAND
+		*tokOp = OpBand
 		s.nextChar()
 		goto checkAssi
 	case '|':
-		*tokOp = _BOR
+		*tokOp = OpBor
 		s.nextChar()
 		goto checkAssi
 	case '<':
-		*tokOp = _LTH
+		*tokOp = OpLth
 		s.nextChar()
 		if s.nowChar() == '<' {
 			s.nextChar()
-			*tokOp = _LSHIFT
+			*tokOp = OpLshift
 			goto checkAssi
 		} else if s.nowChar() == '=' {
 			s.nextChar()
-			*tokOp = _LEQ
-			*tokKind = _OPERATOR
+			*tokOp = OpLeq
+			*tokKind = TokOperator
 			break
 		}
 	case '>':
-		*tokOp = _GTH
+		*tokOp = OpGth
 		s.nextChar()
 		if s.nowChar() == '>' {
 			s.nextChar()
-			*tokOp = _RSHIFT
+			*tokOp = OpRshift
 			goto checkAssi
 		} else if s.nowChar() == '=' {
 			s.nextChar()
-			*tokOp = _GEQ
-			*tokKind = _OPERATOR
+			*tokOp = OpGeq
+			*tokKind = TokOperator
 			break
 		}
 	case '!':
 		s.nextChar()
 		if s.nowChar() == '=' {
 			s.nextChar()
-			*tokOp = _UEQ
-			*tokKind = _OPERATOR
+			*tokOp = OpUeq
+			*tokKind = TokOperator
 			break
 		}
 	case '+':
-		*tokOp = _PLUS
+		*tokOp = OpPlus
 		s.nextChar()
 		goto checkAssi
 	case '-':
-		*tokOp = _SUB
+		*tokOp = OpSub
 		s.nextChar()
 		goto checkAssi
 	case '~':
-		*tokOp = _BNG
+		*tokOp = OpBng
 		s.nextChar()
 		goto checkAssi
 	case '=':
-		*tokOp = _ASSIGN
-		*tokKind = _OPERATOR
+		*tokOp = OpAssign
+		*tokKind = TokOperator
 		s.nextChar()
 		if s.nowChar() == '=' {
-			*tokOp = _EQ
+			*tokOp = OpEq
 		}
-		return true
+		return nil
 	default:
-		s.syntaxErrorWithMsg(
-			fmt.Sprintf("Unknown character: %v ('%v')",
-				int32(s.nowChar()), s.nowChar()))
-		return false
+		return fmt.Errorf("Unknown character: %v ('%v')",
+			int32(s.nowChar()), s.nowChar())
 	}
 
-	return true
+	return nil
 
 checkAssi:
-	*tokKind = _OPERATOR
+	*tokKind = TokOperator
 	if s.nowChar() == '=' {
 		s.nextChar()
-		*tokOp += assiInc
+		*tokOp += AssiInc
 	}
 
-	return true
+	return nil
 
 singleChar:
 	s.nowToken.Value = string(s.nowChar())
 	s.nextChar()
 
-	return true
+	return nil
 }
 
 func (s *Scanner) skipLineComment() {
@@ -634,15 +624,15 @@ func (s *Scanner) NowToken() Token {
 	return *s.nowToken
 }
 
-func (s *Scanner) GetTokenList() []Token {
-	var tokList []Token
+func (s *Scanner) GetTokenList() ([]Token, error) {
+	tokList := make([]Token, 0)
 	for {
-		if !s.NextToken() {
-			return nil
+		if err := s.NextToken(); err != nil {
+			return nil, err
 		}
 		tok := s.NowToken()
-		if tok.Kind == _EOF {
-			return tokList
+		if tok.Kind == TokEOF {
+			return tokList, nil
 		}
 		tokList = append(tokList, tok)
 	}
