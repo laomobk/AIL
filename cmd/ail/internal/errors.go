@@ -1,6 +1,7 @@
-package core
+package internal
 
 import (
+	"ail/tools"
 	"fmt"
 	"io"
 )
@@ -49,14 +50,29 @@ func ErrGetCurrentRuntimeError() *RuntimeError {
 }
 
 func ErrFormatRuntimeError(rtErr *RuntimeError) string {
-	errFormat := "%s: %s"
+	errFormat := "%s: %s\n"
 	return fmt.Sprintf(errFormat, rtErr.ErrType, rtErr.ErrMsg)
 }
 
 func ErrPrintRuntimeError(writer io.Writer, err *RuntimeError) error {
 	_, e := writer.Write([]byte(ErrFormatRuntimeError(err)))
+	return e
+}
+
+func ErrPrintSyntaxError(writer io.Writer, err *RuntimeError, source []byte) error {
+	errFmt := "File \"%s\", line %v\n    %s\n%s\n"
+	msg := ""
+	line, e := tools.GetLineFromSource(err.Line, source)
 	if e != nil {
 		return e
 	}
-	return nil
+
+	if len(err.ErrMsg) > 0 {
+		msg = fmt.Sprintf("%s: %s", err.ErrType, err.ErrMsg)
+	} else {
+		msg = err.ErrType
+	}
+
+	_, e = writer.Write([]byte(fmt.Sprintf(errFmt, err.FileName, err.Line, line, msg)))
+	return e
 }

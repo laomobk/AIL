@@ -1,4 +1,4 @@
-package core
+package internal
 
 type Object struct {
 	objType *TypeObject

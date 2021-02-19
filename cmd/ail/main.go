@@ -1,8 +1,6 @@
 package main
 
 import (
-	"ail/test"
-	"flag"
 	"fmt"
 )
 
@@ -22,15 +20,5 @@ func (f *Flag) Set(s string) error {
 }
 
 func main() {
-	testFlag := new(Flag)
-
-	flag.Var(testFlag, "test", "test case")
-
-	flag.Parse()
-
-	if testFlag.Available {
-		test.CmdTestScanner(testFlag.Value)
-	} else {
-		fmt.Println("ail: building...")
-	}
+	fmt.Println("ail: building...")
 }

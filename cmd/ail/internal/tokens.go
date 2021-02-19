@@ -1,4 +1,4 @@
-package core
+package internal
 
 import "fmt"
 
@@ -17,9 +17,12 @@ type Token struct {
 }
 
 func (t *Token) String() string {
-	if t.NumType == _SCIENCE {
-		return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s, power: %s>",
-			t.Value, t.Pos.line, t.Pos.col, tokenNames[t.Kind], t.NumPower)
+	if t.Kind == _NUMBER && t.NumType == _SCIENCE {
+		return fmt.Sprintf("<token sci number '%s', line: %v, col: %v, e: %s>",
+			t.Value, t.Pos.line, t.Pos.col, t.NumPower)
+	} else if t.Kind == _NUMBER {
+		return fmt.Sprintf("<token number '%s', line: %v, col: %v, base: %v, type: %v>",
+			t.Value, t.Pos.line, t.Pos.col, t.NumBase, t.NumType)
 	} else if t.Kind == _OPERATOR {
 		return fmt.Sprintf("<token operator %s, line: %v, col: %v>",
 			getOperatorName(t.Op), t.Pos.line, t.Pos.col)
@@ -68,6 +71,8 @@ const (
 	_THROW
 	_ASSERT
 	_FOR
+	_PRINT
+	_INPUT
 	_EXTENDS
 )
 
@@ -179,6 +184,8 @@ var tokenNames []string = []string{
 	"_THROW",
 	"_ASSERT",
 	"_FOR",
+	"_PRINT",
+	"_INPUT",
 	"_EXTENDS",
 }
 
@@ -198,6 +205,9 @@ var operatorNames []string = []string{
 	"_BOR",
 	"_LSHIFT",
 	"_RSHIFT",
+	"_PLUS",
+	"_SUB",
+	"_POWER",
 
 	"_EQ",
 	"_UEQ",
@@ -209,15 +219,22 @@ var operatorNames []string = []string{
 	"_OR",
 	"_AND",
 
-	"_PLUS",
-	"_SUB",
-	"_BNG",
+	"_BNG", // ~
 	"_NOT",
 
-	"_POWER",
-
 	"_ASSIGN",
-	"_ASSIGN_OP",
+
+	"_ASSI_MUIT",
+	"_ASSI_DIVI",
+	"_ASSI_MOD",
+	"_ASSI_XOR",
+	"_ASSI_BAND",
+	"_ASSI_BOR",
+	"_ASSI_LSHR",
+	"_ASSI_RSHR",
+	"_ASSI_PLUS",
+	"_ASSI_SUB",
+	"_ASSI_POWER",
 }
 
 var keywordMap map[string]token = map[string]token{
@@ -238,13 +255,15 @@ var keywordMap map[string]token = map[string]token{
 	"continue": _CONTINUE,
 	"throw":    _THROW,
 	"assert":   _ASSERT,
+	"print":    _PRINT,
+	"input":    _INPUT,
 	"extends":  _EXTENDS,
 }
 
-func isKeyword(tokv string) bool {
-	_, ok := keywordMap[tokv]
-
-	return ok
+func checkAndSetKeyword(tok *Token) {
+	if val, ok := keywordMap[tok.Value]; ok {
+		tok.Kind = val
+	}
 }
 
 var opPrecMap map[int]int = map[int]int{

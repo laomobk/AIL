@@ -1,4 +1,4 @@
-package core
+package internal
 
 import (
 	"ail/tools"
@@ -35,7 +35,7 @@ func (s *Scanner) syntaxErrorNoMsg() {
 func (s *Scanner) error(err error) {
 	msg := err.Error()
 	errObj := ErrNewRuntimeErrorTMFL(
-		"ScannerError", msg, s.fileName, s.line)
+		"SyntaxError", msg, s.fileName, s.line)
 	ErrSetError(errObj)
 }
 
@@ -58,13 +58,14 @@ func (s *Scanner) nextChar() rune {
 	s.col += 1
 
 	ch, size := utf8.DecodeRune(s.source[s.cp:])
-	s.cp += size
-	ch, _ = utf8.DecodeRune(s.source[s.cp:])
 
 	if ch == '\n' {
 		s.line += 1
 		s.col = 0
 	}
+
+	s.cp += size
+	ch, _ = utf8.DecodeRune(s.source[s.cp:])
 
 	return ch
 }
@@ -122,6 +123,44 @@ func (s *Scanner) setOperatorToken(value string, op operator) {
 	}
 }
 
+func (s *Scanner) getPos() Pos {
+	return Pos{s.line, s.col}
+}
+
+func (s *Scanner) parseDocString() error {
+	s.nextChar() // eat '#'
+	buf := new(strings.Builder)
+
+	s.nowToken.Pos = s.getPos()
+
+	for {
+		if s.nowChar() == -1 {
+			break
+		}
+
+		if s.nowChar() == '\n' {
+			if _, err := buf.WriteRune(s.nowChar()); err != nil {
+				return err
+			}
+			if s.nextChar() == '#' {
+				s.nextChar()
+			} else {
+				break
+			}
+		} else {
+			_, err := buf.WriteRune(s.nowChar())
+			if err != nil {
+				return err
+			}
+			s.nextChar()
+		}
+	}
+
+	s.nowToken.Kind = _STRING
+	s.nowToken.Value = buf.String()
+	return nil
+}
+
 func (s *Scanner) parseNumber() error {
 	numBuf := new(strings.Builder)
 	numPow := new(strings.Builder)
@@ -130,10 +169,10 @@ func (s *Scanner) parseNumber() error {
 	baseBuf := new(strings.Builder)
 
 	canDot := true
+	canNg := false
 	validChar := "0123456789.eE"
 
 	if s.nowChar() == '0' {
-		numBuf.WriteRune('0')
 		s.nextChar()
 
 		switch s.nowChar() {
@@ -153,12 +192,14 @@ func (s *Scanner) parseNumber() error {
 		case '.':
 			numType = _FLOAT
 			canDot = false
+			numBuf.WriteRune('0')
 			numBuf.WriteRune('.')
 		case 'e', 'E':
 			canDot = false
 			validChar = "0123456789."
 			numBuf = numPow
 		default:
+			numBuf.WriteRune('0')
 			if !tools.RuneInString(s.nowChar(), validChar) {
 				goto setToken
 			}
@@ -166,25 +207,39 @@ func (s *Scanner) parseNumber() error {
 		s.nextChar()
 	}
 
-	for ch := s.nowChar(); ch != -1; ch = s.nextChar() {
+	for ch := s.nowChar(); ch != -1; ch = s.nowChar() {
 		if !tools.RuneInString(ch, validChar) {
 			goto setToken
 		}
+		if ch == '-' {
+			if numType == _SCIENCE && canNg {
+				canNg = false
+			}
+			if !canNg {
+				return fmt.Errorf("invalid number")
+			}
+		}
+
 		if ch == '.' {
 			if !canDot {
 				return fmt.Errorf("invalid number")
 			}
 			canDot = false
 			numBuf.WriteRune(ch)
-		} else if ch == 'e' || ch == 'E' {
+		} else if (ch == 'e' || ch == 'E') && numBase != 16 {
+			if numBase != 10 {
+				return fmt.Errorf("invalid number")
+			}
+
 			baseBuf = numBuf
 			numBuf = numPow
 			numType = _SCIENCE
-			validChar = "-0123456789."
+			validChar = "-0123456789"
 			canDot = false
 		} else {
 			numBuf.WriteRune(ch)
 		}
+		s.nextChar()
 	}
 
 setToken:
@@ -384,6 +439,7 @@ again:
 			s.error(err)
 			return false
 		}
+		checkAndSetKeyword(s.nowToken)
 		return true
 	}
 
@@ -430,8 +486,9 @@ again:
 		goto singleChar
 	case '*':
 		*tokOp = _MUIT
-		if s.peek() == '*' {
-			s.nextNChar(2)
+		s.nextChar()
+		if s.nowChar() == '*' {
+			s.nextChar()
 			*tokOp = _POWER
 		}
 		goto checkAssi
@@ -452,6 +509,13 @@ again:
 		}
 		*tokOp = _DIVI
 		goto checkAssi
+	case '#':
+		if err := s.parseDocString(); err != nil {
+			s.error(err)
+			return false
+		}
+		return true
+
 	case '%':
 		*tokOp = _MOD
 		s.nextChar()
@@ -470,24 +534,26 @@ again:
 		goto checkAssi
 	case '<':
 		*tokOp = _LTH
-		if s.peek() == '<' {
-			s.nextNChar(2)
+		s.nextChar()
+		if s.nowChar() == '<' {
+			s.nextChar()
 			*tokOp = _LSHIFT
 			goto checkAssi
-		} else if s.peek() == '=' {
-			s.nextNChar(2)
+		} else if s.nowChar() == '=' {
+			s.nextChar()
 			*tokOp = _LEQ
 			*tokKind = _OPERATOR
 			break
 		}
 	case '>':
 		*tokOp = _GTH
-		if s.peek() == '>' {
-			s.nextNChar(2)
+		s.nextChar()
+		if s.nowChar() == '>' {
+			s.nextChar()
 			*tokOp = _RSHIFT
 			goto checkAssi
-		} else if s.peek() == '=' {
-			s.nextNChar(2)
+		} else if s.nowChar() == '=' {
+			s.nextChar()
 			*tokOp = _GEQ
 			*tokKind = _OPERATOR
 			break
@@ -522,7 +588,8 @@ again:
 		return true
 	default:
 		s.syntaxErrorWithMsg(
-			fmt.Sprintf("Unknown character: %v", int32(s.nowChar())))
+			fmt.Sprintf("Unknown character: %v ('%v')",
+				int32(s.nowChar()), s.nowChar()))
 		return false
 	}
 
