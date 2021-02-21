@@ -8,9 +8,13 @@ import (
 
 func _RunScannerWithSource(source string) []internal.Token {
 	scanner := internal.NewScanner([]byte(source), "<test>")
-	if tokList, err := scanner.GetTokenList(); err == nil {
+	tokList, err := scanner.GetTokenList()
+
+	if err == nil {
 		return tokList
 	} else {
+		fmt.Printf(
+			"[ScannerWarning] scanner returns an Error: %s\n", err.Error())
 		return nil
 	}
 }
@@ -24,12 +28,41 @@ func _RunScannerAndCheck(source string, expectNil bool) bool {
 }
 
 func _CheckNumber(source string, checker func(*internal.Token) bool) bool {
+	return _CheckSingleToken(source, checker, internal.TokNumber)
+}
+
+func _CheckSingleToken(
+	source string, checker func(*internal.Token) bool, kind int) bool {
+
+	var tok *internal.Token
+
+	fmt.Printf("  [CheckSingleToken] check source: %s\n", source)
+
 	if tokList := _RunScannerWithSource(source); tokList != nil {
-		return len(tokList) == 1 && tokList[0].Kind == internal.TokNumber &&
-			checker(&tokList[0])
+		if len(tokList) != 1 {
+			fmt.Printf("    [CheckSingleToken][FAILED] len(tokList) != 1\n")
+			fmt.Printf("    [CheckSingleToken] tokList:\n")
+			if len(tokList) == 0 {
+				fmt.Println("        <empty>")
+				return false
+			}
+
+			for i, t := range tokList {
+				fmt.Printf("       %v: %s\n", i, t.String())
+			}
+
+			return false
+		}
+		tok = &tokList[0]
 	} else {
+		fmt.Printf("    [CheckSingleToken][FAILED] tokList == nil\n")
 		return false
 	}
+
+	res := tok.Kind == kind && checker(tok)
+
+	fmt.Printf("    [CheckSingleToken] result: %v\n", res)
+	return res
 }
 
 func TestEmptySource(test *testing.T) {
@@ -108,8 +141,38 @@ func TestNumber(test *testing.T) {
 			token.NumPower == "26"
 	}))
 	_FailIfNot(test, _CheckNumber("1.0e26", func(token *internal.Token) bool {
-		return token.NumTypeFlags|internal.NumFloat != 0 &&
+		return token.NumTypeFlags&internal.NumFloat != 0 &&
 			token.Value == "1.0" &&
 			token.NumPower == "26"
 	}))
+	_FailIf(test, _CheckNumber("1e3.2", func(token *internal.Token) bool {
+		// This test must be FALSE!!
+		return token.NumTypeFlags&internal.NumScience != 0 &&
+			token.Value == "1" &&
+			token.NumPower == "3.2"
+	}))
+}
+
+func TestKeywords(test *testing.T) {
+	for k, v := range internal.KeywordMap {
+		if k == "and" || k == "or" || k == "not" {
+			continue
+		}
+
+		_FailIfNot(test, _CheckSingleToken(k, func(token *internal.Token) bool {
+			res := token.Kind == v
+			fmt.Printf("  [CheckKeyword] %s -- %v\n", k, v)
+			return res
+		}, v))
+	}
+}
+
+func TestOperators(test *testing.T) {
+	for k, v := range internal.OpMap {
+		_FailIfNot(test, _CheckSingleToken(k, func(token *internal.Token) bool {
+			res := token.Op == v
+			fmt.Printf("  [CheckOperator] %s -- %v\n", k, v)
+			return res
+		}, internal.TokOperator))
+	}
 }

@@ -525,6 +525,7 @@ again:
 		s.nextChar()
 		goto checkAssi
 	case '<':
+		*tokKind = TokOperator
 		*tokOp = OpLth
 		s.nextChar()
 		if s.nowChar() == '<' {
@@ -537,9 +538,13 @@ again:
 			*tokKind = TokOperator
 			break
 		}
+		s.nowToken.Value = "<"
+		return nil
 	case '>':
+		*tokKind = TokOperator
 		*tokOp = OpGth
 		s.nextChar()
+
 		if s.nowChar() == '>' {
 			s.nextChar()
 			*tokOp = OpRshift
@@ -550,6 +555,8 @@ again:
 			*tokKind = TokOperator
 			break
 		}
+		s.nowToken.Value = ">"
+		return nil
 	case '!':
 		s.nextChar()
 		if s.nowChar() == '=' {
@@ -575,6 +582,7 @@ again:
 		*tokKind = TokOperator
 		s.nextChar()
 		if s.nowChar() == '=' {
+			s.nextChar()
 			*tokOp = OpEq
 		}
 		return nil

@@ -181,6 +181,42 @@ var TokenNames = []string{
 	"TokExtends",
 }
 
+var OpMap = map[string]int{
+	"*":   OpMult,
+	"/":   OpDivi,
+	"%":   OpMod,
+	"^":   OpXor,
+	"&":   OpBand,
+	"|":   OpBor,
+	"<<":  OpLshift,
+	">>":  OpRshift,
+	"+":   OpPlus,
+	"-":   OpSub,
+	"**":  OpPower,
+	"==":  OpEq,
+	"!=":  OpUeq,
+	">":   OpGth,
+	"<":   OpLth,
+	">=":  OpGeq,
+	"<=":  OpLeq,
+	"~":   OpBng,
+	"not": OpNot,
+	"and": OpAnd,
+	"or":  OpOr,
+	"=":   OpAssign,
+	"*=":  OpAssiMult,
+	"/=":  OpAssiDivi,
+	"%=":  OpAssiMod,
+	"^=":  OpAssiXor,
+	"&=":  OpAssiBand,
+	"|=":  OpAssiBor,
+	"<<=": OpAssiLshift,
+	">>=": OpAssiRshift,
+	"+=":  OpAssiPlus,
+	"-=":  OpAssiSub,
+	"**=": OpAssiPower,
+}
+
 func GetOperatorName(op operator) string {
 	if op >= 0 && op < len(operatorNames) {
 		return operatorNames[op]
@@ -253,6 +289,20 @@ var KeywordMap = map[string]token{
 }
 
 func CheckAndSetKeyword(tok *Token) {
+	if tok.Value == "and" {
+		tok.Kind = TokOperator
+		tok.Op = OpAnd
+		return
+	} else if tok.Value == "or" {
+		tok.Kind = TokOperator
+		tok.Op = OpOr
+		return
+	} else if tok.Value == "not" {
+		tok.Kind = TokOperator
+		tok.Op = OpNot
+		return
+	}
+
 	if val, ok := KeywordMap[tok.Value]; ok {
 		tok.Kind = val
 	}

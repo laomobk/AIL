@@ -59,12 +59,14 @@ func ErrPrintRuntimeError(writer io.Writer, err *RuntimeError) error {
 	return e
 }
 
-func ErrPrintSyntaxError(writer io.Writer, err *RuntimeError, source []byte) error {
+func ErrFormatSyntaxError(
+	writer io.Writer, err *RuntimeError, source []byte) (string, error) {
+
 	errFmt := "File \"%s\", line %v\n    %s\n%s\n"
 	msg := ""
 	line, e := tools.GetLineFromSource(err.Line, source)
 	if e != nil {
-		return e
+		return "", e
 	}
 
 	if len(err.ErrMsg) > 0 {
@@ -73,6 +75,5 @@ func ErrPrintSyntaxError(writer io.Writer, err *RuntimeError, source []byte) err
 		msg = err.ErrType
 	}
 
-	_, e = writer.Write([]byte(fmt.Sprintf(errFmt, err.FileName, err.Line, line, msg)))
-	return e
+	return fmt.Sprintf(errFmt, err.FileName, err.Line, line, msg), nil
 }
