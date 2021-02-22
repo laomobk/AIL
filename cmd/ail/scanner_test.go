@@ -6,11 +6,13 @@ import (
 	"testing"
 )
 
+var _TestScannerPrintInfo = true
+
 func _RunScannerWithSource(source string) []internal.Token {
 	scanner := internal.NewScanner([]byte(source), "<test>")
 	tokList, err := scanner.GetTokenList()
 
-	fmt.Printf("  [RunScannerWithSource] result: ")
+	fmt.Printf("   [RunScannerWithSource] result: ")
 
 	if err == nil {
 		fmt.Println("not nil")
@@ -18,12 +20,12 @@ func _RunScannerWithSource(source string) []internal.Token {
 	} else {
 		fmt.Println("nil")
 		fmt.Printf(
-			"[ScannerWarning] scanner returns an Error: %s\n", err.Error())
+			"    [ScannerWarning] scanner returns an Error: %s\n", err.Error())
 		return nil
 	}
 }
 
-func Checknumber(source string, checker func(*internal.Token) bool) bool {
+func _CheckNumber(source string, checker func(*internal.Token) bool) bool {
 	return _CheckSingleToken(source, checker, internal.TokNumber)
 }
 
@@ -116,47 +118,56 @@ func TestChineseCharacterString(test *testing.T) {
 }
 
 func TestNumber(test *testing.T) {
-	_FailIfNot(test, Checknumber("726", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("726", func(token *internal.Token) bool {
 		return token.NumBase == 10 && token.NumTypeFlags == internal.NumInteger &&
 			token.Value == "726"
 	}))
-	_FailIfNot(test, Checknumber("7.26", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("7.26", func(token *internal.Token) bool {
 		return token.NumBase == 10 && token.NumTypeFlags == internal.NumFloat &&
 			token.Value == "7.26"
 	}))
-	_FailIfNot(test, Checknumber("10e26", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("10e26", func(token *internal.Token) bool {
 		return token.NumTypeFlags == internal.NumScience && token.Value == "10" &&
 			token.NumPower == "26"
 	}))
-	_FailIfNot(test, Checknumber("10e26", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("10e26", func(token *internal.Token) bool {
 		return token.NumTypeFlags == internal.NumScience && token.Value == "10" &&
 			token.NumPower == "26"
 	}))
-	_FailIfNot(test, Checknumber("1.0e26", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("1.0e26", func(token *internal.Token) bool {
 		return token.NumTypeFlags&internal.NumFloat != 0 &&
 			token.Value == "1.0" &&
 			token.NumPower == "26"
 	}))
-	_FailIfNot(test, Checknumber("0xcafebabe", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("0xcafebabe", func(token *internal.Token) bool {
 		return token.Value == "cafebabe" && token.NumBase == 16
 	}))
-	_FailIfNot(test, Checknumber("0x726", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("0x726", func(token *internal.Token) bool {
 		return token.Value == "726" && token.NumBase == 16
 	}))
-	_FailIfNot(test, Checknumber("0xabc1026", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("0xabc1026", func(token *internal.Token) bool {
 		return token.Value == "abc1026" && token.NumBase == 16
 	}))
-	_FailIfNot(test, Checknumber("0o1326", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("0o1326", func(token *internal.Token) bool {
 		return token.Value == "1326" && token.NumBase == 8
 	}))
-	_FailIfNot(test, Checknumber("0b1011010110", func(token *internal.Token) bool {
+	_FailIfNot(test, _CheckNumber("0b1011010110", func(token *internal.Token) bool {
 		return token.Value == "1011010110" && token.NumBase == 2
 	}))
 }
 
 func TestBadFloatNumber(test *testing.T) {
-	_FailIfNotNil(test, _RunScannerWithSource("7.2.6"))
-	_FailIfNotNil(test, _RunScannerWithSource("7.26."))
+	_FailIfNot(test, len(_RunScannerWithSource("7.2.6")) == 0)
+	_FailIfNot(test, len(_RunScannerWithSource("7.26.")) == 0)
+}
+
+func TestBadHexNumber(test *testing.T) {
+	_FailIfNot(test, len(_RunScannerWithSource("0xabcdefg")) == 0)
+}
+
+func TestBadOctNumber(test *testing.T) {
+	_FailIfNot(test, len(_RunScannerWithSource("0o900")) == 0)
+	_FailIfNot(test, len(_RunScannerWithSource("0o70.0")) == 0)
 }
 
 func TestKeywords(test *testing.T) {

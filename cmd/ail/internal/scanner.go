@@ -208,6 +208,16 @@ func (s *Scanner) parseNumber() error {
 	}
 
 	for ch := s.nowChar(); ch != -1; ch = s.nowChar() {
+		if unicode.IsLetter(ch) &&
+			((ch >= 'G' && ch <= 'Z') || (ch >= 'g' && ch <= 'z')) &&
+			numBase == 16 {
+			return fmt.Errorf("invalid hex digital literal")
+		} else if (ch == '8' || ch == '9') && numBase == 8 {
+			return fmt.Errorf("invalid oct digital literal")
+		} else if (ch >= '2' && ch <= '9') && numBase == 2 {
+			return fmt.Errorf("invalid bin digital literal")
+		}
+
 		if !tools.RuneInString(ch, validChar) {
 			goto setToken
 		}
@@ -217,20 +227,20 @@ func (s *Scanner) parseNumber() error {
 				canNg = false
 			}
 			if !canNg {
-				return fmt.Errorf("invalid number")
+				return fmt.Errorf("invalid digital literal")
 			}
 		}
 
 		if ch == '.' {
 			if !canDot {
-				return fmt.Errorf("invalid number")
+				return fmt.Errorf("invalid digital literal")
 			}
 			canDot = false
 			numBuf.WriteRune(ch)
 			numTypeFlags ^= NumFloat | NumInteger
 		} else if (ch == 'e' || ch == 'E') && numBase != 16 {
 			if numBase != 10 {
-				return fmt.Errorf("invalid number")
+				return fmt.Errorf("invalid digital literal")
 			}
 			baseBuf = numBuf
 			numBuf = numPow
