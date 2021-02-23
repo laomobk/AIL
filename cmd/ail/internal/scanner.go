@@ -218,6 +218,10 @@ func (s *Scanner) parseNumber() error {
 			return fmt.Errorf("invalid bin digital literal")
 		}
 
+		if ch == '.' && !canDot {
+			return fmt.Errorf("invalid digital literal")
+		}
+
 		if !tools.RuneInString(ch, validChar) {
 			goto setToken
 		}
@@ -232,9 +236,6 @@ func (s *Scanner) parseNumber() error {
 		}
 
 		if ch == '.' {
-			if !canDot {
-				return fmt.Errorf("invalid digital literal")
-			}
 			canDot = false
 			numBuf.WriteRune(ch)
 			numTypeFlags ^= NumFloat | NumInteger

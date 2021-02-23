@@ -163,11 +163,18 @@ func TestBadFloatNumber(test *testing.T) {
 
 func TestBadHexNumber(test *testing.T) {
 	_FailIfNot(test, len(_RunScannerWithSource("0xabcdefg")) == 0)
+	_FailIfNot(test, len(_RunScannerWithSource("0xabcd.7")) == 0)
+	_FailIfNot(test, len(_RunScannerWithSource("0xabcd.ef")) == 0)
 }
 
 func TestBadOctNumber(test *testing.T) {
 	_FailIfNot(test, len(_RunScannerWithSource("0o900")) == 0)
 	_FailIfNot(test, len(_RunScannerWithSource("0o70.0")) == 0)
+}
+
+func TestBadBinNumber(test *testing.T) {
+	_FailIfNot(test, len(_RunScannerWithSource("0b900")) == 0)
+	_FailIfNot(test, len(_RunScannerWithSource("0b0.10")) == 0)
 }
 
 func TestKeywords(test *testing.T) {
