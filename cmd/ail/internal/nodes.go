@@ -1,11 +1,16 @@
 package internal
 
+import (
+	"ail/tools"
+)
+
 // Abstracts
 
 type Node interface {
 	vfyNode()
 
 	Pos() Pos
+	SetPos(Pos)
 }
 
 type node struct {
@@ -13,8 +18,13 @@ type node struct {
 }
 
 func (n *node) vfyNode() {}
+
 func (n *node) Pos() Pos {
 	return n.pos
+}
+
+func (n *node) SetPos(pos Pos) {
+	n.pos = pos
 }
 
 type Expression interface {
@@ -36,6 +46,10 @@ type Statement interface {
 type statement struct{ node }
 
 func (s *statement) vfyStmt() {}
+
+func (s *statement) Format(depth int) string {
+	return tools.FormatIndent(depth, "<Statement>")
+}
 
 // Nodes
 

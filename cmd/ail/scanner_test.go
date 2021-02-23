@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-var _TestScannerPrintInfo = true
-
 func _RunScannerWithSource(source string) []internal.Token {
 	scanner := internal.NewScanner([]byte(source), "<test>")
 	tokList, err := scanner.GetTokenList()
