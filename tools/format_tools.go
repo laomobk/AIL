@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var Indent = "    "
+var Indent = "  "
 
 func FormatIndent(depth int, s string) string {
 	return fmt.Sprintf("%s%s", strings.Repeat(Indent, depth), s)
@@ -20,7 +20,7 @@ func formatStruct(depth int, v reflect.Value) string {
 	fieldStrings = append(fieldStrings,
 		FormatIndent(depth,
 			fmt.Sprintf(
-				"%s %v:", t.Kind().String(), t.Name())))
+				"%s %v {", t.Kind().String(), t.Name())))
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -29,6 +29,8 @@ func formatStruct(depth int, v reflect.Value) string {
 		fieldStrings = append(fieldStrings, FormatIndent(depth+1, fieldName)+":")
 		fieldStrings = append(fieldStrings, formatValue(depth+2, fieldValue))
 	}
+
+	fieldStrings = append(fieldStrings, FormatIndent(depth, "}"))
 
 	return strings.Join(fieldStrings, "\n")
 }
@@ -63,7 +65,8 @@ func formatValue(depth int, v reflect.Value) string {
 	case reflect.Struct:
 		return formatStruct(depth, v)
 	case reflect.String:
-		return FormatIndent(depth, v.String())
+		return FormatIndent(depth,
+			fmt.Sprintf("\"%v\"", v.String()))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return FormatIndent(depth, fmt.Sprintf("%v", v.Int()))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:

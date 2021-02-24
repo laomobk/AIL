@@ -1,4 +1,4 @@
-package test_data
+package main
 
 import (
 	"ail/cmd/ail/internal"
