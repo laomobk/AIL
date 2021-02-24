@@ -16,6 +16,8 @@ type Token struct {
 	NumPower     string // valid when NumTypeFlags == NumScience
 }
 
+var EOFToken = new(Token)
+
 func (t *Token) String() string {
 	if t.Kind == TokNumber && t.NumTypeFlags&NumScience != 0 {
 		return fmt.Sprintf("<token sci number '%s', line: %v, col: %v, e: %s>",

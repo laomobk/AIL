@@ -177,8 +177,9 @@ type TernaryExpr struct {
 type CellExpr struct {
 	expression
 
-	Value string
-	Type  token
+	Value    string
+	Type     token
+	NumFlags int
 }
 
 type AnonymousFunctionExpr struct {

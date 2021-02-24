@@ -84,6 +84,8 @@ func formatValue(depth int, v reflect.Value) string {
 			"%s\n%s",
 			FormatIndent(depth, "(pointer)"),
 			formatValue(depth, v.Elem()))
+	case reflect.Invalid:
+		return "<nil>"
 
 	}
 	return FormatIndent(depth, fmt.Sprintf("<unsupported kind: %v>", v.Kind()))
