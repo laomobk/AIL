@@ -94,3 +94,7 @@ func formatValue(depth int, v reflect.Value) string {
 func FormatValue(t interface{}) string {
 	return formatValue(0, reflect.ValueOf(t))
 }
+
+func PrintFotmatValue(t interface{}) {
+	fmt.Println(FormatValue(t))
+}

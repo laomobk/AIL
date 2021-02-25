@@ -1,6 +1,8 @@
 package internal
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Parser struct {
 	tokList       []Token
@@ -36,17 +38,25 @@ func (p *Parser) ParseCell() (Expression, error) {
 
 	switch nt.Kind {
 
-	case TokIdentifier, TokString:
-		expr.Value = nt.Value
-		expr.Type = nt.Kind
-	case TokNumber:
-		expr.Value = nt.Value
-		expr.Type = TokNumber
-		expr.NumFlags = nt.NumTypeFlags
+	case TokIdentifier, TokString, TokNumber:
+		expr.Token = p.nowToken()
+	case TokLparen:
+		p.nextToken() // eat '('
+		e, err := p.ParseBinaryExpr()
+		if err != nil {
+			return nil, err
+		}
+		if p.nowToken().Kind != TokRparen {
+			return nil, fmt.Errorf("except ')'")
+		}
+		p.nextToken() // eat ')'
+		return e, nil
 	default:
 		return nil, fmt.Errorf("except identifier, number or string")
 
 	}
+
+	p.nextToken()
 
 	return expr, nil
 }
@@ -61,8 +71,11 @@ func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
 		nowPrec := GetOpPrec(opTok.Op, opTok.Kind)
 
 		if nowPrec < prec {
+			p.nextToken()
 			return left, nil
 		}
+
+		p.nextToken() // eat op
 
 		rhs, err := p.ParseUnaryExpr()
 		if err != nil {
@@ -71,7 +84,7 @@ func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
 
 		nextOpTok := p.nowToken()
 		nextOpPrec := GetOpPrec(nextOpTok.Op, nextOpTok.Kind)
-		if nextOpPrec > prec {
+		if nextOpPrec >= prec {
 			rhs, err = p.ParseBinaryRHS(rhs, nextOpPrec+1)
 			if err != nil {
 				return nil, err
@@ -79,9 +92,10 @@ func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
 		}
 
 		left = &BinaryExpr{
-			LHS: left,
-			RHS: rhs,
-			Op:  opTok.Op,
+			LHS:   left,
+			RHS:   rhs,
+			Op:    opTok.Op,
+			OpStr: GetOperatorName(opTok.Op),
 		}
 		left.SetPos(p.Pos())
 	}
@@ -92,7 +106,11 @@ func (p *Parser) ParseBinaryExpr() (Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ParseBinaryRHS(left, 0)
+	return p.ParseBinaryRHS(left, OpAssignPrec)
+}
+
+func (p *Parser) Parse() (Node, error) {
+	return nil, nil
 }
 
 func NewParser(source []byte, tokList []Token) *Parser {
