@@ -97,7 +97,7 @@ fun main():
         result_message = 'Unknown result!'
     endif
 
-    print 'healthy weight(kg):', std_weight, '(±10%)'
+    print 'healthy weight(kg):', std_weight, '(±10%), bmi:', result
 
     print 'Result is:', result_message
 end
