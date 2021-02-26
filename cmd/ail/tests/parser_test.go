@@ -96,9 +96,8 @@ func TestParseCell(test *testing.T) {
 	}()
 }
 
-func TestBinaryExpr(test *testing.T) {
-	source := "1 + (3 - 4)"
-	tmp, err := _NewParser(source).ParseBinaryExpr()
-	_, ok := _CheckRunFail(test, tmp, err, true).(*internal.BinaryExpr)
-	FailNowIfNot(test, ok)
+func TestParseExpr(test *testing.T) {
+	source := ReadTestFile()
+	tmp, err := _NewParser(source).ParseExpression()
+	_ = _CheckRunFail(test, tmp, err, true)
 }

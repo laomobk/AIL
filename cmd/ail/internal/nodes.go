@@ -68,10 +68,9 @@ type Param struct {
 type Argument struct {
 	node
 
-	Expr    Expression
-	KwValue Expression // nil if no keyword Value
-	Star    Expression // unpack sequence
-	KwStar  Expression // unpack map
+	Expr   Expression
+	Star   bool // unpack sequence
+	KwStar bool // unpack map
 }
 
 // Statements
@@ -191,7 +190,7 @@ type CallExpr struct {
 	expression
 
 	Left      Expression
-	Arguments []Argument
+	Arguments []*Argument
 }
 
 type SubScriptExpr struct {
@@ -204,6 +203,6 @@ type SubScriptExpr struct {
 type AccessExpr struct {
 	expression
 
-	Left Expression
-	Name string
+	Left  Expression
+	Names []string
 }

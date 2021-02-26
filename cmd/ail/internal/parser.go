@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	goDebug "runtime/debug"
 )
 
 type Parser struct {
@@ -10,6 +11,29 @@ type Parser struct {
 
 	source []byte
 	tp     int
+}
+
+const debug = true
+
+func syntaxErrorf(pos Pos, format string, a ...string) error {
+	if debug {
+		goDebug.PrintStack()
+	}
+	var msg string
+
+	if format == "" {
+		format = "invalid syntax"
+	}
+
+	if len(a) == 0 {
+		msg = format
+	} else {
+		msg = fmt.Sprintf(format, a)
+	}
+	return &SyntaxError{
+		ErrMsg: msg,
+		Pos:    pos,
+	}
 }
 
 func (p *Parser) nowToken() *Token {
@@ -25,6 +49,24 @@ func (p *Parser) nextToken() *Token {
 	}
 	p.tp += 1
 	return &p.tokList[p.tp]
+}
+
+func (p *Parser) checkArgList(args []*Argument) error {
+	canVar := true
+
+	for _, arg := range args {
+		if arg.Star {
+			if !canVar {
+				return syntaxErrorf(
+					p.Pos(),
+					"iterable argument unpacking follows keyword "+
+						"argument unpacking")
+			}
+		} else if arg.KwStar {
+			canVar = false
+		}
+	}
+	return nil
 }
 
 func (p *Parser) Pos() Pos {
@@ -47,12 +89,12 @@ func (p *Parser) ParseCell() (Expression, error) {
 			return nil, err
 		}
 		if p.nowToken().Kind != TokRparen {
-			return nil, fmt.Errorf("except ')'")
+			return nil, syntaxErrorf(p.Pos(), "except ')'")
 		}
 		p.nextToken() // eat ')'
 		return e, nil
 	default:
-		return nil, fmt.Errorf("except identifier, number or string")
+		return nil, syntaxErrorf(p.Pos(), "except identifier, number or string")
 
 	}
 
@@ -61,8 +103,149 @@ func (p *Parser) ParseCell() (Expression, error) {
 	return expr, nil
 }
 
+func (p *Parser) ParseArgList() ([]*Argument, error) {
+	var args []*Argument
+
+	for {
+		tPos := p.Pos()
+		isKw := tokIsOperator(p.nowToken(), OpPower)
+		isVarArg := tokIsOperator(p.nowToken(), OpMult)
+
+		if isKw || isVarArg {
+			p.nextToken() // eat '*' or '**'
+		}
+
+		expr, err := p.ParseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		arg := new(Argument)
+		arg.SetPos(tPos)
+		arg.KwStar = isKw
+		arg.Star = isVarArg
+		arg.Expr = expr
+
+		args = append(args, arg)
+
+		if p.nowToken().Kind != TokComma {
+			break
+		}
+		p.nextToken() // eat ','
+	}
+
+	err := p.checkArgList(args)
+	if err != nil {
+		return nil, err
+	}
+	return args, nil
+}
+
+func (p *Parser) ParseSubscrAccessCallExpr() (Expression, error) {
+	var left Expression
+
+	left, err := p.ParseCell()
+	for {
+		if err != nil {
+			return nil, err
+		}
+
+		pos := p.Pos()
+
+		switch p.nowToken().Kind {
+
+		case TokLparen: // call
+			p.nextToken() // eat '('
+
+			argList := make([]*Argument, 0)
+			if p.nowToken().Kind == TokRparen {
+				goto noArg
+			}
+
+			argList, err = p.ParseArgList()
+			if err != nil {
+				return nil, err
+			}
+			if p.nowToken().Kind != TokRparen {
+				return nil, syntaxErrorf(p.Pos(), "except ')'")
+			}
+		noArg:
+			p.nextToken() // eat ')'
+
+			callExpr := new(CallExpr)
+			callExpr.Arguments = argList
+			callExpr.SetPos(pos)
+			callExpr.Left = left
+
+			left = callExpr
+		case TokLbracket: // subscript
+			p.nextToken() // eat '['
+			subScr, err := p.ParseExpression()
+			if err != nil {
+				return nil, err
+			}
+			if p.nowToken().Kind != TokRbracket {
+				return nil, syntaxErrorf(p.Pos(), "except ']'")
+			}
+			p.nextToken() // eat ']'
+
+			subScrExpr := new(SubScriptExpr)
+			subScrExpr.SetPos(pos)
+			subScrExpr.Right = subScr
+			subScrExpr.Left = left
+
+			left = subScrExpr
+		case TokDot:
+			p.nextToken() // eat '.'
+			names := make([]string, 0)
+			for p.nowToken().Kind == TokIdentifier {
+				names = append(names, p.nowToken().Value)
+				p.nextToken() // eat NAME
+
+				if p.nowToken().Kind != TokDot {
+					break
+				}
+				p.nextToken() // eat '.'
+			}
+			accExpr := new(AccessExpr)
+			accExpr.Names = names
+			accExpr.Left = left
+			accExpr.SetPos(pos)
+
+			left = accExpr
+		default:
+			return left, nil
+		}
+	}
+}
+
 func (p *Parser) ParseUnaryExpr() (Expression, error) {
-	return p.ParseCell()
+	if p.nowToken().Kind != TokOperator {
+		return p.ParseSubscrAccessCallExpr()
+	}
+
+	expr := new(UnaryExpr)
+	expr.SetPos(p.Pos())
+
+	switch p.nowToken().Op {
+
+	case OpPlus, OpSub, OpNot:
+		expr.Op = p.nowToken().Op
+	default:
+		return nil, syntaxErrorf(p.Pos(), "")
+
+	}
+
+	p.nextToken() // eat op
+
+	rhs, err := p.ParseCell()
+	if err != nil {
+		return nil, err
+	}
+
+	expr.Expr = rhs
+
+	return expr, nil
 }
 
 func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
@@ -71,13 +254,12 @@ func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
 		nowPrec := GetOpPrec(opTok.Op, opTok.Kind)
 
 		if nowPrec < prec {
-			p.nextToken()
 			return left, nil
 		}
 
 		p.nextToken() // eat op
 
-		rhs, err := p.ParseUnaryExpr()
+		rhs, err := p.ParseTernaryExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -101,12 +283,73 @@ func (p *Parser) ParseBinaryRHS(left Expression, prec int) (Expression, error) {
 	}
 }
 
+func (p *Parser) ParseTernaryExpr() (Expression, error) {
+	expr, err := p.ParseUnaryExpr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	pos := p.Pos()
+
+	if p.nowToken().Kind != TokIf {
+		return expr, nil
+	}
+
+	p.nextToken() // eat 'if'
+	ifPart, err := p.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.nowToken().Kind != TokElse {
+		return nil, syntaxErrorf(p.Pos(), "except 'else'")
+	}
+	p.nextToken() // eat 'else'
+
+	elsePart, err := p.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	tExpr := new(TernaryExpr)
+	tExpr.SetPos(pos)
+	tExpr.A = expr
+	tExpr.B = elsePart
+	tExpr.Condition = ifPart
+
+	return tExpr, nil
+}
+
 func (p *Parser) ParseBinaryExpr() (Expression, error) {
-	left, err := p.ParseUnaryExpr()
+	left, err := p.ParseTernaryExpr()
 	if err != nil {
 		return nil, err
 	}
 	return p.ParseBinaryRHS(left, OpAssignPrec)
+}
+
+func (p *Parser) ParseExpression() (Expression, error) {
+	return p.ParseBinaryExpr()
+}
+
+func (p *Parser) ParseExprStmt() (*ExprStmt, error) {
+	pos := p.Pos()
+
+	expr, err := p.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if p.nowToken().Kind != TokSemi {
+		return nil, syntaxErrorf(p.Pos(), "except ';'")
+	}
+	p.nextToken() // eat ';'
+
+	exprStmt := new(ExprStmt)
+	exprStmt.SetPos(pos)
+	exprStmt.Expr = expr
+
+	return exprStmt, nil
 }
 
 func (p *Parser) Parse() (Node, error) {

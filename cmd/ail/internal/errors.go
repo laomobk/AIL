@@ -14,6 +14,19 @@ type RuntimeError struct {
 	Line     int
 }
 
+func (e *RuntimeError) Error() string {
+	return e.ErrMsg
+}
+
+type SyntaxError struct {
+	ErrMsg string
+	Pos    Pos
+}
+
+func (e *SyntaxError) Error() string {
+	return fmt.Sprintf("line %d, col: %d: %v", e.Pos.line, e.Pos.col, e.ErrMsg)
+}
+
 var errStack []*RuntimeError
 var errOccurred bool
 var currentError *RuntimeError

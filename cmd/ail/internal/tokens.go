@@ -133,6 +133,10 @@ const (
 	NumScience = 4 // 50l
 )
 
+func tokIsOperator(tok *Token, op operator) bool {
+	return tok.Kind == TokOperator && tok.Op == op
+}
+
 func TokGetTokenName(tok token) string {
 	if tok >= 0 && tok < len(TokenNames) {
 		return TokenNames[tok]
