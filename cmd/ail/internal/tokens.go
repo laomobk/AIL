@@ -20,18 +20,18 @@ var EOFToken = new(Token)
 
 func (t *Token) String() string {
 	if t.Kind == TokNumber && t.NumTypeFlags&NumScience != 0 {
-		return fmt.Sprintf("<token sci number '%s', line: %v, col: %v, e: %s>",
+		return fmt.Sprintf("<Token sci number '%s', line: %v, col: %v, e: %s>",
 			t.Value, t.Pos.line, t.Pos.col, t.NumPower)
 	} else if t.Kind == TokNumber {
-		return fmt.Sprintf("<token number '%s', line: %v, col: %v, base: %v, type: %v>",
+		return fmt.Sprintf("<Token number '%s', line: %v, col: %v, base: %v, type: %v>",
 			t.Value, t.Pos.line, t.Pos.col, t.NumBase, t.NumTypeFlags)
 	} else if t.Kind == TokOperator {
-		return fmt.Sprintf("<token operator %s, line: %v, col: %v>",
+		return fmt.Sprintf("<Token operator %s, line: %v, col: %v>",
 			GetOperatorName(t.Op), t.Pos.line, t.Pos.col)
 	} else if t.Kind == TokEOF {
-		return "<token EOF>"
+		return "<Token EOF>"
 	}
-	return fmt.Sprintf("<token '%s', line: %v, col: %v, type: %s>",
+	return fmt.Sprintf("<Token '%s', line: %v, col: %v, type: %s>",
 		t.Value, t.Pos.line, t.Pos.col, TokenNames[t.Kind])
 }
 
@@ -309,6 +309,8 @@ func CheckAndSetKeyword(tok *Token) {
 		tok.Kind = val
 	}
 }
+
+var OpAssignPrec = 10
 
 var OpPrecMap = map[int]int{
 	OpAssign:     10,

@@ -161,9 +161,10 @@ type UnaryExpr struct {
 type BinaryExpr struct {
 	expression
 
-	LHS Expression
-	RHS Expression
-	Op  operator
+	LHS   Expression
+	RHS   Expression
+	Op    operator
+	OpStr string
 }
 
 type TernaryExpr struct {
@@ -177,8 +178,7 @@ type TernaryExpr struct {
 type CellExpr struct {
 	expression
 
-	Value    string
-	Type     token
+	Token    *Token
 	NumFlags int
 }
 
