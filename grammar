@@ -61,5 +61,10 @@ func_def_stmt := [[decorator] func_def_stmt] |
 class_def_stmt := [[decorator] class_def_stmt] | 
                   ['class' NAME 'extends' [expression [',' expression]*] block]
 
+import_stmt := 'import' STRING ';'
+import_from_stmt := 'from' STRING 'import' ['*' | import_names] ';'
+import_names := NAME [',' NAME]*
+
 stmts := if_stmt | for_stmt | try_stmt | expr_stmt | continue_stmt | 
-         break_stmt | return_stmt | func_def_stmt | class_def_stmt
+         break_stmt | return_stmt | func_def_stmt | class_def_stmt |
+         import_stmt | import_from_stmt
