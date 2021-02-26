@@ -1,0 +1,163 @@
+=== RUN   TestParseFile
+--- PASS: TestParseFile (0.00s)
+    parser_test.go:39: (pointer)
+        struct Block {
+          node:
+            struct node {
+              pos:
+                struct Pos {
+                  line:
+                    1
+                  col:
+                    1
+                }
+            }
+          Stmts:
+            [
+            (index 0)
+              [interface Statement]
+              (pointer)
+              struct ExprStmt {
+                statement:
+                  struct statement {
+                    node:
+                      struct node {
+                        pos:
+                          struct Pos {
+                            line:
+                              1
+                            col:
+                              1
+                          }
+                      }
+                  }
+                Expr:
+                  [interface Expression]
+                  (pointer)
+                  struct CallExpr {
+                    expression:
+                      struct expression {
+                        node:
+                          struct node {
+                            pos:
+                              struct Pos {
+                                line:
+                                  1
+                                col:
+                                  6
+                              }
+                          }
+                      }
+                    Left:
+                      [interface Expression]
+                      (pointer)
+                      struct CellExpr {
+                        expression:
+                          struct expression {
+                            node:
+                              struct node {
+                                pos:
+                                  struct Pos {
+                                    line:
+                                      1
+                                    col:
+                                      1
+                                  }
+                              }
+                          }
+                        Token:
+                          (pointer)
+                          struct Token {
+                            Value:
+                              "print"
+                            Kind:
+                              13
+                            Op:
+                              0
+                            Pos:
+                              struct Pos {
+                                line:
+                                  1
+                                col:
+                                  1
+                              }
+                            NumBase:
+                              0
+                            NumTypeFlags:
+                              0
+                            NumPower:
+                              ""
+                          }
+                        NumFlags:
+                          0
+                      }
+                    Arguments:
+                      [
+                      (index 0)
+                        (pointer)
+                        struct Argument {
+                          node:
+                            struct node {
+                              pos:
+                                struct Pos {
+                                  line:
+                                    1
+                                  col:
+                                    7
+                                }
+                            }
+                          Expr:
+                            [interface Expression]
+                            (pointer)
+                            struct CellExpr {
+                              expression:
+                                struct expression {
+                                  node:
+                                    struct node {
+                                      pos:
+                                        struct Pos {
+                                          line:
+                                            1
+                                          col:
+                                            7
+                                        }
+                                    }
+                                }
+                              Token:
+                                (pointer)
+                                struct Token {
+                                  Value:
+                                    "Hello Nezha"
+                                  Kind:
+                                    15
+                                  Op:
+                                    0
+                                  Pos:
+                                    struct Pos {
+                                      line:
+                                        1
+                                      col:
+                                        7
+                                    }
+                                  NumBase:
+                                    0
+                                  NumTypeFlags:
+                                    0
+                                  NumPower:
+                                    ""
+                                }
+                              NumFlags:
+                                0
+                            }
+                          Star:
+                            false
+                          KwStar:
+                            false
+                        }
+                      ]
+                  }
+              }
+            ]
+        }
+PASS
+ok  	ail/cmd/ail/tests	0.045s

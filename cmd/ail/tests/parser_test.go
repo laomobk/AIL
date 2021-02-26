@@ -13,7 +13,7 @@ func _RunParserWithSource(source string) internal.Node {
 		return nil
 	}
 
-	parser := internal.NewParser([]byte(source), tokList)
+	parser := internal.NewParserWithSource([]byte(source), tokList)
 	node, err := parser.Parse()
 	if err != nil {
 		fmt.Printf(
@@ -53,7 +53,7 @@ func _NewParser(source string) *internal.Parser {
 		return nil
 	}
 
-	return internal.NewParser([]byte(source), tokList)
+	return internal.NewParserWithSource([]byte(source), tokList)
 }
 
 func TestParseCell(test *testing.T) {
@@ -99,5 +99,11 @@ func TestParseCell(test *testing.T) {
 func TestParseExpr(test *testing.T) {
 	source := ReadTestFile()
 	tmp, err := _NewParser(source).ParseExpression()
+	_ = _CheckRunFail(test, tmp, err, true)
+}
+
+func TestParseFile(test *testing.T) {
+	source := ReadTestFile()
+	tmp, err := _NewParser(source).Parse()
 	_ = _CheckRunFail(test, tmp, err, true)
 }

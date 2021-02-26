@@ -21,6 +21,8 @@ func (e *RuntimeError) Error() string {
 type SyntaxError struct {
 	ErrMsg string
 	Pos    Pos
+
+	expecting bool // true if MORE (usually available in interactive mode)
 }
 
 func (e *SyntaxError) Error() string {

@@ -73,8 +73,6 @@ const (
 	TokThrow
 	TokAssert
 	TokFor
-	TokPrint
-	TokInput
 	TokExtends
 )
 
@@ -182,8 +180,6 @@ var TokenNames = []string{
 	"TokThrow",
 	"TokAssert",
 	"TokFor",
-	"TokPrint",
-	"TokInput",
 	"TokExtends",
 }
 
@@ -289,8 +285,6 @@ var KeywordMap = map[string]token{
 	"continue": TokContinue,
 	"throw":    TokThrow,
 	"assert":   TokAssert,
-	"print":    TokPrint,
-	"input":    TokInput,
 	"extends":  TokExtends,
 }
 

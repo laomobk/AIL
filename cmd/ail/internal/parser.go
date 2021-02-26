@@ -15,7 +15,7 @@ type Parser struct {
 
 const debug = true
 
-func syntaxErrorf(pos Pos, format string, a ...string) error {
+func _SyntaxErrorf(pos Pos, format string, a ...string) error {
 	if debug {
 		goDebug.PrintStack()
 	}
@@ -36,6 +36,17 @@ func syntaxErrorf(pos Pos, format string, a ...string) error {
 	}
 }
 
+func _Expect(pos Pos, expected string) error {
+	if debug {
+		goDebug.PrintStack()
+	}
+	return &SyntaxError{
+		ErrMsg:    fmt.Sprintf("expect %v\n", expected),
+		Pos:       pos,
+		expecting: true,
+	}
+}
+
 func (p *Parser) nowToken() *Token {
 	if p.tp >= p.tokListLength {
 		return EOFToken
@@ -44,10 +55,10 @@ func (p *Parser) nowToken() *Token {
 }
 
 func (p *Parser) nextToken() *Token {
-	if p.tp+1 >= p.tokListLength {
+	p.tp += 1
+	if p.tp >= p.tokListLength {
 		return EOFToken
 	}
-	p.tp += 1
 	return &p.tokList[p.tp]
 }
 
@@ -57,7 +68,7 @@ func (p *Parser) checkArgList(args []*Argument) error {
 	for _, arg := range args {
 		if arg.Star {
 			if !canVar {
-				return syntaxErrorf(
+				return _SyntaxErrorf(
 					p.Pos(),
 					"iterable argument unpacking follows keyword "+
 						"argument unpacking")
@@ -89,12 +100,12 @@ func (p *Parser) ParseCell() (Expression, error) {
 			return nil, err
 		}
 		if p.nowToken().Kind != TokRparen {
-			return nil, syntaxErrorf(p.Pos(), "except ')'")
+			return nil, _Expect(p.Pos(), "')'")
 		}
 		p.nextToken() // eat ')'
 		return e, nil
 	default:
-		return nil, syntaxErrorf(p.Pos(), "except identifier, number or string")
+		return nil, _Expect(p.Pos(), "identifier, number or string")
 
 	}
 
@@ -167,7 +178,7 @@ func (p *Parser) ParseSubscrAccessCallExpr() (Expression, error) {
 				return nil, err
 			}
 			if p.nowToken().Kind != TokRparen {
-				return nil, syntaxErrorf(p.Pos(), "except ')'")
+				return nil, _Expect(p.Pos(), "')'")
 			}
 		noArg:
 			p.nextToken() // eat ')'
@@ -180,13 +191,20 @@ func (p *Parser) ParseSubscrAccessCallExpr() (Expression, error) {
 			left = callExpr
 		case TokLbracket: // subscript
 			p.nextToken() // eat '['
+
+			if p.nowToken().Kind == TokRbracket {
+				return nil, _Expect(p.Pos(), "expression")
+			}
+
 			subScr, err := p.ParseExpression()
 			if err != nil {
 				return nil, err
 			}
+
 			if p.nowToken().Kind != TokRbracket {
-				return nil, syntaxErrorf(p.Pos(), "except ']'")
+				return nil, _Expect(p.Pos(), "']'")
 			}
+
 			p.nextToken() // eat ']'
 
 			subScrExpr := new(SubScriptExpr)
@@ -232,7 +250,7 @@ func (p *Parser) ParseUnaryExpr() (Expression, error) {
 	case OpPlus, OpSub, OpNot:
 		expr.Op = p.nowToken().Op
 	default:
-		return nil, syntaxErrorf(p.Pos(), "")
+		return nil, _SyntaxErrorf(p.Pos(), "")
 
 	}
 
@@ -303,7 +321,7 @@ func (p *Parser) ParseTernaryExpr() (Expression, error) {
 	}
 
 	if p.nowToken().Kind != TokElse {
-		return nil, syntaxErrorf(p.Pos(), "except 'else'")
+		return nil, _Expect(p.Pos(), "'else'")
 	}
 	p.nextToken() // eat 'else'
 
@@ -341,7 +359,7 @@ func (p *Parser) ParseExprStmt() (*ExprStmt, error) {
 		return nil, err
 	}
 	if p.nowToken().Kind != TokSemi {
-		return nil, syntaxErrorf(p.Pos(), "except ';'")
+		return nil, _Expect(p.Pos(), "';'")
 	}
 	p.nextToken() // eat ';'
 
@@ -352,11 +370,66 @@ func (p *Parser) ParseExprStmt() (*ExprStmt, error) {
 	return exprStmt, nil
 }
 
-func (p *Parser) Parse() (Node, error) {
-	return nil, nil
+func (p *Parser) ParseStmt() (Statement, error) {
+	return p.ParseExprStmt()
 }
 
-func NewParser(source []byte, tokList []Token) *Parser {
+func (p *Parser) parseBlock(forFile bool) (*Block, error) {
+	if p.nowToken().Kind != TokLbrace && !forFile {
+		return nil, _Expect(p.Pos(), "'{'")
+	}
+
+	pos := p.Pos()
+
+	if !forFile {
+		p.nextToken() // eat '{'
+	}
+
+	stmts := make([]Statement, 0)
+
+	for p.nowToken().Kind != TokRbrace {
+		if p.nowToken() == EOFToken {
+			if forFile {
+				break
+			}
+
+			return nil, _Expect(p.Pos(), "'}'")
+		}
+		stmt, err := p.ParseStmt()
+		if err != nil {
+			return nil, err
+		}
+		stmts = append(stmts, stmt)
+	}
+	if !forFile {
+		p.nextToken() // eat '}'
+	}
+
+	block := new(Block)
+	block.SetPos(pos)
+	block.Stmts = stmts
+
+	return block, nil
+}
+
+func (p *Parser) ParseBlock() (*Block, error) {
+	return p.parseBlock(false)
+}
+
+func (p *Parser) Parse() (*Block, error) {
+	return p.parseBlock(true)
+}
+
+func (p *Parser) ParseWithSource(source []byte, tokList []Token) (Node, error) {
+	parser := new(Parser)
+	parser.source = source
+	parser.tokList = tokList
+	parser.tokListLength = len(tokList)
+
+	return parser.Parse()
+}
+
+func NewParserWithSource(source []byte, tokList []Token) *Parser {
 	p := new(Parser)
 	p.source = source
 	p.tokList = tokList
