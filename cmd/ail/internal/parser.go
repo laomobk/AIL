@@ -93,6 +93,7 @@ func (p *Parser) ParseCell() (Expression, error) {
 
 	case TokIdentifier, TokString, TokNumber:
 		expr.Token = p.nowToken()
+		expr.CellTypeStr = TokGetTokenName(nt.Kind)
 	case TokLparen:
 		p.nextToken() // eat '('
 		e, err := p.ParseBinaryExpr()
@@ -339,6 +340,200 @@ func (p *Parser) ParseTernaryExpr() (Expression, error) {
 	return tExpr, nil
 }
 
+//
+// elif x {...} -> else { if x {...} }
+func (p *Parser) _ComposeElifBlockIntoElseBlock(
+	elifBlock []*IfStmt, elseBlock *Block) *Block {
+
+	lenBlocks := len(elifBlock)
+
+	if lenBlocks == 0 {
+		return elseBlock
+	}
+
+	for i := range elifBlock {
+		eBlock := elifBlock[lenBlocks-(i+1)]
+		elifBlock[lenBlocks-(i+1)] = nil // free
+
+		eBlock.ElseBody = elseBlock
+		elseBlock = p._newBlockWithStmt(eBlock)
+	}
+
+	return elseBlock
+}
+
+func (p *Parser) ParseIfStmt() (*IfStmt, error) {
+	if p.nowToken().Kind != TokIf {
+		return nil, _Expect(p.Pos(), "'if'")
+	}
+	pos := p.Pos()
+
+	p.nextToken() // eat 'if'
+
+	ifCond, err := p.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	ifBody, err := p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	elifBlocks := make([]*IfStmt, 0)
+
+	for p.nowToken().Kind == TokElif {
+		ePos := p.Pos()
+
+		p.nextToken() // eat 'elif'
+
+		elifCond, err := p.ParseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		elifBody, err := p.ParseBlock()
+		if err != nil {
+			return nil, err
+		}
+
+		elifBlock := new(IfStmt)
+		elifBlock.SetPos(ePos)
+		elifBlock.Condition = elifCond
+		elifBlock.IfBody = elifBody
+
+		elifBlocks = append(elifBlocks, elifBlock)
+	}
+
+	var elseBody *Block
+
+	if p.nowToken().Kind != TokElse {
+		goto noElse
+	}
+
+	p.nextToken() // eat 'else'
+
+	elseBody, err = p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+noElse:
+	stmt := new(IfStmt)
+	stmt.SetPos(pos)
+	stmt.Condition = ifCond
+	stmt.IfBody = ifBody
+	stmt.ElseBody = p._ComposeElifBlockIntoElseBlock(
+		elifBlocks, elseBody)
+
+	return stmt, nil
+}
+
+func (p *Parser) ParseExprList() ([]Expression, error) {
+	exprList := make([]Expression, 0)
+
+	for {
+		expr, err := p.ParseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		exprList = append(exprList, expr)
+
+		if p.nowToken().Kind != TokComma {
+			return exprList, nil
+		}
+		p.nextToken() // eat ','
+	}
+}
+
+func (p *Parser) ParseForStmt() (*ForStmt, error) {
+	if p.nowToken().Kind != TokFor {
+		return nil, _Expect(p.Pos(), "'for'")
+	}
+
+	pos := p.Pos()
+
+	p.nextToken() // eat 'for'
+
+	var body *Block
+	var init []Expression
+	var condition Expression
+	var update []Expression
+
+	var err error
+
+	if p.nowToken().Kind == TokLbrace { // forever
+		_body, err := p.ParseBlock()
+		if err != nil {
+			return nil, err
+		}
+		body = _body // I DON'T KNOW HOW TO DEAL WITH IT...
+		goto finish
+	}
+
+	init, err = p.ParseExprList()
+	if err != nil {
+		return nil, err
+	}
+
+	// check single expression: for expr {...}
+
+	if len(init) == 1 && p.nowToken().Kind == TokLbrace {
+		// move expr to condition part
+		condition = init[0]
+		init = nil
+		_body, err := p.ParseBlock()
+		if err != nil {
+			return nil, err
+		}
+		body = _body
+		goto finish
+	}
+
+	// classical for stmt
+
+	if p.nowToken().Kind != TokSemi {
+		return nil, _Expect(p.Pos(), "';'")
+	}
+	p.nextToken()
+
+	if p.nowToken().Kind == TokSemi {
+		goto noCondition
+	}
+
+	condition, err = p.ParseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+noCondition:
+	if p.nowToken().Kind != TokSemi {
+		return nil, _Expect(p.Pos(), "';'")
+	}
+	p.nextToken()
+
+	update, err = p.ParseExprList()
+	if err != nil {
+		return nil, err
+	}
+
+	body, err = p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+finish:
+	stmt := new(ForStmt)
+	stmt.SetPos(pos)
+	stmt.Condition = condition
+	stmt.InitExprList = init
+	stmt.UpdateExprList = update
+	stmt.Body = body
+
+	return stmt, nil
+}
+
 func (p *Parser) ParseBinaryExpr() (Expression, error) {
 	left, err := p.ParseTernaryExpr()
 	if err != nil {
@@ -371,7 +566,23 @@ func (p *Parser) ParseExprStmt() (*ExprStmt, error) {
 }
 
 func (p *Parser) ParseStmt() (Statement, error) {
-	return p.ParseExprStmt()
+	switch p.nowToken().Kind {
+
+	case TokIf:
+		return p.ParseIfStmt()
+	case TokFor:
+		return p.ParseForStmt()
+	default:
+		return p.ParseExprStmt()
+	}
+}
+
+func (p *Parser) _newBlockWithStmt(s Statement) *Block {
+	block := new(Block)
+	block.SetPos(p.Pos())
+	block.Stmts = []Statement{s}
+
+	return block
 }
 
 func (p *Parser) parseBlock(forFile bool) (*Block, error) {
@@ -386,6 +597,10 @@ func (p *Parser) parseBlock(forFile bool) (*Block, error) {
 	}
 
 	stmts := make([]Statement, 0)
+
+	if p.nowToken().Kind == TokRbrace {
+		goto finish
+	}
 
 	for p.nowToken().Kind != TokRbrace {
 		if p.nowToken() == EOFToken {
@@ -405,6 +620,7 @@ func (p *Parser) parseBlock(forFile bool) (*Block, error) {
 		p.nextToken() // eat '}'
 	}
 
+finish:
 	block := new(Block)
 	block.SetPos(pos)
 	block.Stmts = stmts

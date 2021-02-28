@@ -78,10 +78,9 @@ type Argument struct {
 type IfStmt struct {
 	statement
 
-	IfBlock    *Block
-	Condition  Expression
-	ElifBlocks []IfStmt
-	ElseBlock  *Block
+	IfBody    *Block
+	Condition Expression
+	ElseBody  *Block
 }
 
 type ForStmt struct {
@@ -177,8 +176,9 @@ type TernaryExpr struct {
 type CellExpr struct {
 	expression
 
-	Token    *Token
-	NumFlags int
+	Token       *Token
+	NumFlags    int
+	CellTypeStr string
 }
 
 type AnonymousFunctionExpr struct {
