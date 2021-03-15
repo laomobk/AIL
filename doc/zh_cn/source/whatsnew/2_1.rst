@@ -1,0 +1,13 @@
+AIL 2.1 Leopard
+###############
+
+
+#. 使用 Go 语言重构，运行速度大幅度提高
+#. 去除 while 语句, for 语句具有新的语法
+
+    * for 语句将有 3 种形式: forever, condition-only, classic
+    * forever: :code:`for {...}`
+    * condition-only: :code:`for expr {...}`
+    * classic: :code:`for [init] ; [condition] ; [update] {...}`
+    * [注意] 不可以使用 :code:`for ;; {...}` 来实现"永久循环"
+      应使用 :code:`for {...}`
