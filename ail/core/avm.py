@@ -53,7 +53,9 @@ from ..objects.null import null
 from ..objects.namespace import new_namespace
 from ..objects.module import new_module_object
 from ..objects.fastnum import FastNumber
-from ..objects.class_object import CLASS_TYPE, new_object, build_class
+from ..objects.class_object import (
+    CLASS_TYPE, new_object, build_class as build_class_func
+)
 
 from ..objects.struct import (
     STRUCT_TYPE, STRUCT_OBJ_TYPE,
@@ -1357,8 +1359,7 @@ class Interpreter:
                         *bases, class_name, class_func = pops
 
                         bases = bases[::-1]
-
-                        cls = build_class(
+                        cls = build_class_func(
                             class_func, class_name, bases)
 
                         self.__push_back(cls)
