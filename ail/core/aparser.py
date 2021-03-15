@@ -15,6 +15,7 @@ _keywords_uc = (
     'END', 'WHILE', 'DO',
     'UNTIL', 'LOOP', 'WEND',
     'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT',
+    'FUNC',
     'STRUCT', 'MOD', 'FOR', 'PROTECTED',
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
     'XOR', 'MOD',
@@ -408,7 +409,7 @@ class Parser:
                 self.__syntax_error()
 
             return a
-        elif self.__now_tok == 'fun':
+        elif self.__now_tok == 'fun' or self.__now_tok == 'func':
             ph_lev = self.__parenthesis_level
             self.__parenthesis_level = 0
 
@@ -1127,7 +1128,7 @@ class Parser:
         nt = self.__now_tok
         if nt == 'class':
             return self.__parse_class_def_stmt(doc_string=doc_string)
-        elif nt == 'fun':
+        elif nt == 'fun' or nt == 'func':
             return self.__parse_func_def_stmt(doc_string=doc_string)
         elif nt == '@':
             return self.__parse_func_def_with_decorator_stmt(doc_string=doc_string)
@@ -1154,7 +1155,7 @@ class Parser:
 
         if self.__now_tok == '@':
             return self.__parse_func_def_with_decorator_stmt(parsed)
-        elif self.__now_tok == 'fun':
+        elif self.__now_tok == 'fun' or self.__now_tok == 'func':
             func = self.__parse_func_def_stmt(doc_string=doc_string)
             func.decorator.extend(parsed)
 
@@ -1594,7 +1595,7 @@ class Parser:
                 self.__syntax_error('return outside function')
             a = self.__parse_return_stmt()
 
-        elif nt == 'fun':
+        elif nt == 'fun' or nt == 'func':
             a = self.__parse_func_def_stmt()
 
         elif nt.ttype == AIL_DOC_STRING:
