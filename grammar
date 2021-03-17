@@ -2,7 +2,7 @@
 decorator := '@' expression
 
 param_list := param [',' param]*
-param := NAME ['=' expression] | ['*' NAME] | ['**' NAME]
+param := NAME | ['*' NAME] | ['**' NAME]
 
 arg_list := argument [',' argument]*
 argument := [['*' | '**'] expression] | [expression]

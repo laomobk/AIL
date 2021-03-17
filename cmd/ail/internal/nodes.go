@@ -62,7 +62,9 @@ type Block struct {
 type Param struct {
 	node
 
-	Name string
+	Name   string
+	Star   bool
+	KwStar bool
 }
 
 type Argument struct {
@@ -96,6 +98,7 @@ type CatchCase struct {
 	statement
 
 	CaseExpr Expression
+	Alias    string
 	Body     *Block
 }
 
@@ -132,9 +135,6 @@ type FuncDefStmt struct {
 	Decorators []Expression // nil if no decorators
 	Name       string
 	ParamList  []*Param
-	VarParam   string
-	KwParam    string
-	DefaultMap map[string]Expression
 	Body       *Block
 }
 

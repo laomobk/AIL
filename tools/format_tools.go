@@ -85,7 +85,7 @@ func formatValue(depth int, v reflect.Value) string {
 			FormatIndent(depth, "(pointer)"),
 			formatValue(depth, v.Elem()))
 	case reflect.Invalid:
-		return "<nil>"
+		return FormatIndent(depth, "<nil>")
 	case reflect.Bool:
 		return FormatIndent(depth, fmt.Sprintf("%v", v.Bool()))
 

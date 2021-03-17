@@ -63,10 +63,11 @@ const (
 	TokIf
 	TokImport
 	TokClass
-	TokFun
+	TokFunc
 	TokReturn
 	TokTry
 	TokCatch
+	TokAs
 	TokFinally
 	TokBreak
 	TokContinue
@@ -170,10 +171,11 @@ var TokenNames = []string{
 	"TokIf",
 	"TokImport",
 	"TokClass",
-	"TokFun",
+	"TokFunc",
 	"TokReturn",
 	"TokTry",
 	"TokCatch",
+	"TokAs",
 	"TokFinally",
 	"TokBreak",
 	"TokContinue",
@@ -273,9 +275,11 @@ var KeywordMap = map[string]token{
 	"elif":     TokElif,
 	"import":   TokImport,
 	"class":    TokClass,
+	"func":     TokFunc,
 	"return":   TokReturn,
 	"try":      TokTry,
 	"catch":    TokCatch,
+	"as":       TokAs,
 	"finally":  TokFinally,
 	"for":      TokFor,
 	"not":      OpNot,

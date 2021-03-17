@@ -80,6 +80,14 @@ func (p *Parser) checkArgList(args []*Argument) error {
 	return nil
 }
 
+func (p *Parser) expect(tok int) bool {
+	if p.nowToken().Kind == tok {
+		p.nextToken()
+		return true
+	}
+	return false
+}
+
 func (p *Parser) Pos() Pos {
 	return p.nowToken().Pos
 }
@@ -511,13 +519,19 @@ noCondition:
 	if p.nowToken().Kind != TokSemi {
 		return nil, _Expect(p.Pos(), "';'")
 	}
+
 	p.nextToken()
+
+	if p.nowToken().Kind == TokLbrace {
+		goto noUpdate
+	}
 
 	update, err = p.ParseExprList()
 	if err != nil {
 		return nil, err
 	}
 
+noUpdate:
 	body, err = p.ParseBlock()
 	if err != nil {
 		return nil, err
@@ -532,6 +546,194 @@ finish:
 	stmt.Body = body
 
 	return stmt, nil
+}
+
+func (p *Parser) _ParseCatchCases() ([]*CatchCase, error) {
+	cases := make([]*CatchCase, 0)
+
+	var err error
+	var expr Expression
+	var alias string
+
+	for p.nowToken().Kind == TokCatch {
+		p.nextToken() // eat 'catch'
+		pos := p.Pos()
+
+		if p.nowToken().Kind == TokLbrace {
+			goto noExpr
+		}
+
+		expr, err = p.ParseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		if p.nowToken().Kind == TokAs {
+			p.nextToken() // eat 'as'
+			if p.nowToken().Kind != TokIdentifier {
+				return nil, _Expect(p.Pos(), "name")
+			}
+
+			alias = p.nowToken().Value
+
+			p.nextToken() // eat name
+		}
+
+	noExpr:
+		body, err := p.ParseBlock()
+		if err != nil {
+			return nil, err
+		}
+
+		c := new(CatchCase)
+		c.SetPos(pos)
+		c.CaseExpr = expr
+		c.Body = body
+		c.Alias = alias
+
+		cases = append(cases, c)
+
+		alias = ""
+		expr = nil
+		err = nil
+	}
+
+	return cases, nil
+}
+
+func (p *Parser) ParseTryStmt() (*TryStmt, error) {
+	if p.nowToken().Kind != TokTry {
+		return nil, _Expect(p.Pos(), "'try'")
+	}
+
+	pos := p.Pos()
+
+	var err error
+
+	p.nextToken() // eat 'try'
+
+	var cases []*CatchCase
+
+	body, err := p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.nowToken().Kind != TokCatch {
+		if p.nowToken().Kind == TokFinally {
+			goto noCatch
+		} else {
+			return nil, _Expect(p.Pos(), "'catch' or 'finally'")
+		}
+	}
+
+	cases, err = p._ParseCatchCases()
+	if err != nil {
+		return nil, err
+	}
+
+noCatch:
+	var finallyBody *Block
+
+	if p.nowToken().Kind != TokFinally {
+		goto noFinally
+	}
+
+	p.nextToken() // eat 'finally'
+
+	finallyBody, err = p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+noFinally:
+	stmt := new(TryStmt)
+	stmt.SetPos(pos)
+	stmt.TryBlock = body
+	stmt.CatchCases = cases
+	stmt.FinallyBlock = finallyBody
+
+	return stmt, nil
+}
+
+func (p *Parser) ParseParamList() ([]*Param, error) {
+	params := make([]*Param, 0)
+
+	for {
+		pos := p.Pos()
+		nt := p.nowToken()
+
+		star := tokIsOperator(nt, nt.Op)
+		kwStar := tokIsOperator(nt, nt.Op)
+
+		if star || kwStar {
+			p.nextToken() // eat '*' or '**'
+		}
+
+		if p.nowToken().Kind == TokIdentifier {
+			return nil, _Expect(pos, "name")
+		}
+
+		name := p.nowToken().Value
+
+		param := new(Param)
+		param.SetPos(pos)
+		param.Name = name
+		param.Star = star
+		param.KwStar = kwStar
+
+		params = append(params, param)
+
+		if p.nextToken().Kind != TokComma {
+			break
+		}
+
+		p.nextToken() // eat ','
+	}
+}
+
+func (p *Parser) ParseFuncDef() (*FuncDefStmt, error) {
+	pos := p.Pos()
+
+	if !p.expect(TokFunc) {
+		return nil, _Expect(p.Pos(), "'func'")
+	}
+
+	if p.nowToken().Kind != TokIdentifier {
+		return nil, _Expect(p.Pos(), "name")
+	}
+
+	name := p.nowToken().Value
+
+	p.nextToken()
+
+	if !p.expect(TokLparen) {
+		return nil, _Expect(p.Pos(), "'('")
+	}
+
+	var params []*Param
+
+	if p.nowToken().Kind != TokRparen {
+		param, err := p.ParseParamList()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !p.expect(TokRparen) {
+		return nil, _Expect(p.Pos(), "')'")
+	}
+
+	body, err := p.ParseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	funcDef := new(FuncDefStmt)
+	funcDef.SetPos(pos)
+	funcDef.Name = name
+
+	return nil, nil
 }
 
 func (p *Parser) ParseBinaryExpr() (Expression, error) {
@@ -553,6 +755,7 @@ func (p *Parser) ParseExprStmt() (*ExprStmt, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if p.nowToken().Kind != TokSemi {
 		return nil, _Expect(p.Pos(), "';'")
 	}
@@ -572,6 +775,8 @@ func (p *Parser) ParseStmt() (Statement, error) {
 		return p.ParseIfStmt()
 	case TokFor:
 		return p.ParseForStmt()
+	case TokTry:
+		return p.ParseTryStmt()
 	default:
 		return p.ParseExprStmt()
 	}
@@ -599,6 +804,7 @@ func (p *Parser) parseBlock(forFile bool) (*Block, error) {
 	stmts := make([]Statement, 0)
 
 	if p.nowToken().Kind == TokRbrace {
+		p.nextToken() // eat '}'
 		goto finish
 	}
 
