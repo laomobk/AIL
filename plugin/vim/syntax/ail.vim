@@ -10,7 +10,7 @@ endif
 
 syn keyword ailStmt	if else elif
 syn keyword ailStmt	then end endif is begin wend
-syn keyword ailStmt	fun struct class extends
+syn keyword ailStmt	fun struct class extends func
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch finally
