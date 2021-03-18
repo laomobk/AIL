@@ -130,7 +130,6 @@ type ReturnStmt struct {
 
 type FuncDefStmt struct {
 	statement
-	expression
 
 	Decorators []Expression // nil if no decorators
 	Name       string

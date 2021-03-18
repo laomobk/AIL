@@ -1,0 +1,133 @@
+=== RUN   TestParseFile
+--- PASS: TestParseFile (0.00s)
+    parser_test.go:39: (pointer)
+        struct Block {
+          Stmts:
+            [
+            (index 0)
+              [interface Statement]
+              (pointer)
+              struct ForStmt {
+                InitExprList:
+                  [
+                  ]
+                Condition:
+                  [interface Expression]
+                  (pointer)
+                  struct CellExpr {
+                    Token:
+                      (pointer)
+                      struct Token {
+                        Value:
+                          "true"
+                        Kind:
+                          13
+                        Op:
+                          0
+                        Pos:
+                          struct Pos {
+                          }
+                        NumBase:
+                          0
+                        NumTypeFlags:
+                          0
+                        NumPower:
+                          ""
+                      }
+                    NumFlags:
+                      0
+                    CellTypeStr:
+                      "TokIdentifier"
+                  }
+                UpdateExprList:
+                  [
+                  ]
+                Body:
+                  (pointer)
+                  struct Block {
+                    Stmts:
+                      [
+                      (index 0)
+                        [interface Statement]
+                        (pointer)
+                        struct ExprStmt {
+                          Expr:
+                            [interface Expression]
+                            (pointer)
+                            struct CallExpr {
+                              Left:
+                                [interface Expression]
+                                (pointer)
+                                struct CellExpr {
+                                  Token:
+                                    (pointer)
+                                    struct Token {
+                                      Value:
+                                        "print"
+                                      Kind:
+                                        13
+                                      Op:
+                                        0
+                                      Pos:
+                                        struct Pos {
+                                        }
+                                      NumBase:
+                                        0
+                                      NumTypeFlags:
+                                        0
+                                      NumPower:
+                                        ""
+                                    }
+                                  NumFlags:
+                                    0
+                                  CellTypeStr:
+                                    "TokIdentifier"
+                                }
+                              Arguments:
+                                [
+                                (index 0)
+                                  (pointer)
+                                  struct Argument {
+                                    Expr:
+                                      [interface Expression]
+                                      (pointer)
+                                      struct CellExpr {
+                                        Token:
+                                          (pointer)
+                                          struct Token {
+                                            Value:
+                                              "Hello Nezha"
+                                            Kind:
+                                              15
+                                            Op:
+                                              0
+                                            Pos:
+                                              struct Pos {
+                                              }
+                                            NumBase:
+                                              0
+                                            NumTypeFlags:
+                                              0
+                                            NumPower:
+                                              ""
+                                          }
+                                        NumFlags:
+                                          0
+                                        CellTypeStr:
+                                          "TokString"
+                                      }
+                                    Star:
+                                      false
+                                    KwStar:
+                                      false
+                                  }
+                                ]
+                            }
+                        }
+                      ]
+                  }
+              }
+            ]
+        }
+PASS
+ok  	ail/cmd/ail/tests	0.048s

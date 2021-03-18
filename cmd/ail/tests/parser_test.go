@@ -97,7 +97,7 @@ func TestParseCell(test *testing.T) {
 }
 
 func TestParseExpr(test *testing.T) {
-	source := ReadTestFile()
+	source := ReadSource("test_source/test_expr.ail")
 	tmp, err := _NewParser(source).ParseExpression()
 	_ = _CheckRunFail(test, tmp, err, true)
 }

@@ -15,6 +15,14 @@ func ReadTestFile() string {
 	return string(b)
 }
 
+func ReadSource(path string) string {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 func FailIfNil(test *testing.T, target interface{}) bool {
 	if target == nil {
 		test.Fail()

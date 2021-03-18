@@ -656,6 +656,35 @@ noFinally:
 	return stmt, nil
 }
 
+func (p *Parser) checkParamList(params []*Param) error {
+	canStar := true
+	canKwStar := true
+	canNormal := true
+
+	for _, param := range params {
+		if param.Star {
+			if !canStar {
+				goto err
+			}
+			canStar = false
+			canNormal = false
+		} else if param.KwStar {
+			if !canKwStar {
+				goto err
+			}
+			canStar = false
+			canNormal = false
+		} else if !canNormal {
+			goto err
+		}
+	}
+
+	return nil
+
+err:
+	return _SyntaxErrorf(p.Pos(), "invalid param definition")
+}
+
 func (p *Parser) ParseParamList() ([]*Param, error) {
 	params := make([]*Param, 0)
 
@@ -663,14 +692,14 @@ func (p *Parser) ParseParamList() ([]*Param, error) {
 		pos := p.Pos()
 		nt := p.nowToken()
 
-		star := tokIsOperator(nt, nt.Op)
-		kwStar := tokIsOperator(nt, nt.Op)
+		star := tokIsOperator(nt, OpMult)
+		kwStar := tokIsOperator(nt, OpPower)
 
 		if star || kwStar {
 			p.nextToken() // eat '*' or '**'
 		}
 
-		if p.nowToken().Kind == TokIdentifier {
+		if p.nowToken().Kind != TokIdentifier {
 			return nil, _Expect(pos, "name")
 		}
 
@@ -690,6 +719,10 @@ func (p *Parser) ParseParamList() ([]*Param, error) {
 
 		p.nextToken() // eat ','
 	}
+	if err := p.checkParamList(params); err != nil {
+		return nil, err
+	}
+	return params, nil
 }
 
 func (p *Parser) ParseFuncDef() (*FuncDefStmt, error) {
@@ -718,6 +751,7 @@ func (p *Parser) ParseFuncDef() (*FuncDefStmt, error) {
 		if err != nil {
 			return nil, err
 		}
+		params = param
 	}
 
 	if !p.expect(TokRparen) {
@@ -732,8 +766,10 @@ func (p *Parser) ParseFuncDef() (*FuncDefStmt, error) {
 	funcDef := new(FuncDefStmt)
 	funcDef.SetPos(pos)
 	funcDef.Name = name
+	funcDef.Body = body
+	funcDef.ParamList = params
 
-	return nil, nil
+	return funcDef, nil
 }
 
 func (p *Parser) ParseBinaryExpr() (Expression, error) {
@@ -777,6 +813,8 @@ func (p *Parser) ParseStmt() (Statement, error) {
 		return p.ParseForStmt()
 	case TokTry:
 		return p.ParseTryStmt()
+	case TokFunc:
+		return p.ParseFuncDef()
 	default:
 		return p.ParseExprStmt()
 	}

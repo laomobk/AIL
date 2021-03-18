@@ -1,0 +1,14 @@
+// test Expression
+
+a + 1;
+a - (b + 6);
+x - 5;
+(5 - 2);
+(x) * (x);
+
+a = a(b, c);
+a = a(y)[b];
+a = a[b].c;
+a = a(e).v;
+
+a = b = c;

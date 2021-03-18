@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 var Indent = "  "
@@ -25,6 +26,11 @@ func formatStruct(depth int, v reflect.Value) string {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		fieldName := field.Name
+
+		if unicode.IsLower(([]rune(fieldName))[0]) {
+			continue
+		}
+
 		fieldValue := v.FieldByName(fieldName)
 		fieldStrings = append(fieldStrings, FormatIndent(depth+1, fieldName)+":")
 		fieldStrings = append(fieldStrings, formatValue(depth+2, fieldValue))
