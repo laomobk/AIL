@@ -141,6 +141,10 @@ class Parser:
             'SyntaxError%s' % ((': ' if msg else '') + (msg if msg else '')),
             self.__filename, source=self.__source)
 
+    def __expect_newline(self):
+        if self.__now_tok.ttype != AIL_ENTER:
+            self.__syntax_error('except NEWLINE')
+
     def __parse_arg_item(self) -> ast.ArgItemAST:
         star = False
 
@@ -650,6 +654,8 @@ class Parser:
 
             el.append(e)
 
+        self.__expect_newline()
+
         return ast.PrintExprAST(el, ln)
 
     def __parse_input_expr(self) -> ast.InputExprAST:
@@ -668,6 +674,8 @@ class Parser:
             vl = self.__parse_value_list()
         else:
             vl = ast.ValueListAST([], self.__now_ln)
+
+        self.__expect_newline()
 
         return ast.InputExprAST(msg, vl, self.__now_ln)
 
@@ -820,12 +828,16 @@ class Parser:
                                     else_block: ast.BlockExprAST, 
                                     ln: int) -> ast.IfExprAST:
         elif_list = []
+        
+        self.__skip_newlines()
 
         if self.__now_tok.value not in ('else', 'elif') :
             return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
 
         while self.__now_tok.ttype != AIL_EOF:
+            self.__skip_newlines()
             if self.__now_tok == 'else':
+                self.__skip_newlines()
                 self.__next_tok(ignore_newline=True)  # eat 'else'
                 else_block = self.__parse_block()
                 if else_block is None:
@@ -908,6 +920,7 @@ class Parser:
 
             elif self.__now_tok == 'endif':
                 self.__next_tok()  # eat 'endif'
+                self.__expect_newline()
                 return ast.IfExprAST(
                     if_test, if_block, elif_list, else_block, ln)
 
@@ -951,8 +964,8 @@ class Parser:
         if block is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error()
+        if not block.new:
+            self.__expect_newline()
 
         return ast.WhileExprAST(test, block, ln)
 
@@ -1019,6 +1032,8 @@ class Parser:
         initl, test, binl = mt
 
         forb = self.__parse_block()
+        if not forb.new:
+            self.__expect_newline()
 
         return ast.ForExprAST(initl, test, binl, forb, self.__now_ln)
 
@@ -1050,6 +1065,8 @@ class Parser:
         self.__next_tok()  # eat until
 
         test = self.__parse_test_expr()
+
+        self.__expect_newline()
 
         return ast.DoLoopExprAST(test, block, ln)
 
@@ -1269,6 +1286,8 @@ class Parser:
 
         self.__next_tok()  # eat 'continue'
 
+        self.__expect_newline()
+
         return ast.ContinueAST(self.__now_ln)
 
     def __parse_break_stmt(self) -> ast.BreakAST:
@@ -1276,6 +1295,8 @@ class Parser:
             self.__syntax_error()
 
         self.__next_tok()  # eat 'break'
+
+        self.__expect_newline()
 
         return ast.BreakAST(self.__now_ln)
 
@@ -1294,6 +1315,8 @@ class Parser:
 
         self.__next_tok()  # eat name
 
+        self.__expect_newline()
+
         return ast.GlobalStmtAST(name, ln)
 
     def __parse_nonlocal_stmt(self) -> ast.NonlocalStmtAST:
@@ -1311,6 +1334,8 @@ class Parser:
 
         self.__next_tok()  # eat name
 
+        self.__expect_newline()
+
         return ast.NonlocalStmtAST(name, ln)
 
     def __parse_return_stmt(self) -> ast.ReturnAST:
@@ -1323,6 +1348,8 @@ class Parser:
 
         if expr is None:
             self.__syntax_error()
+
+        self.__expect_newline()
 
         return ast.ReturnAST(expr, self.__now_ln)
 
@@ -1343,6 +1370,8 @@ class Parser:
                 self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
+        self.__expect_newline()
+
         return ast.ThrowExprAST(expr, ln)
 
     def __parse_assert_expr(self) -> ast.AssertExprAST:
@@ -1356,7 +1385,9 @@ class Parser:
         if expr is None or \
                 self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
-
+ 
+        self.__expect_newline()
+    
         return ast.AssertExprAST(expr, self.__now_ln)
 
     def __parse_import_stmt(self) -> ast.ImportAST:
@@ -1423,6 +1454,8 @@ class Parser:
 
         self.__next_tok()  # eat ')'
 
+        self.__expect_newline()
+
         return ast.ImportAST(path, name, ln, members)
 
     def __parse_load_stmt(self) -> ast.LoadAST:
@@ -1440,6 +1473,8 @@ class Parser:
 
         self.__next_tok()  # eat path
 
+        self.__expect_newline()
+
         return ast.LoadAST(name, ln)
 
     def __parse_new_catch_finally_body(self,
@@ -1447,13 +1482,14 @@ class Parser:
 
         has_catch_block = True
         ln = self.__now_ln
+
+        self.__skip_newlines()
         
         if self.__now_tok != 'catch':
             has_catch_block = False
             catch_block = ast.BlockExprAST([], self.__now_ln)
             cname = None
         else:
-            
             self.__next_tok()  # eat 'catch'
             
             if self.__now_tok.ttype != AIL_IDENTIFIER:
@@ -1466,6 +1502,8 @@ class Parser:
             catch_block = self.__parse_block()
             if catch_block is None:
                 self.__syntax_error()
+
+        self.__skip_newlines()
 
         if self.__now_tok != 'finally':
             if not has_catch_block:
@@ -1550,6 +1588,8 @@ class Parser:
         fnb = ast.BlockExprAST(finally_sl, self.__now_ln)
 
         self.__next_tok()  # eat 'end'
+
+        self.__expect_newline()
 
         return ast.TryCatchExprAST(try_b, cab, fnb, cname, self.__now_ln)
 
@@ -1639,10 +1679,11 @@ class Parser:
 
         else:
             self.__syntax_error()
-
-        if self.__now_tok.ttype != AIL_ENTER:
-            # a stmt should be end of ENTER
-            self.__syntax_error()
+        
+        # ** not use anymore (2021.3.21)
+        # if self.__now_tok.ttype != AIL_ENTER:
+        #     # a stmt should be end of ENTER
+        #     self.__syntax_error()
 
         self.__next_tok()  # eat enter
 
@@ -1673,7 +1714,7 @@ class Parser:
 
         self.__next_tok()  # eat '}'
 
-        return ast.BlockExprAST(stmt_list, ln)
+        return ast.BlockExprAST(stmt_list, ln, True)
 
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,

@@ -252,9 +252,10 @@ class BlockExprAST:
     BLOCK := stmt*
     """
 
-    def __init__(self, stmts: list, ln: int):
+    def __init__(self, stmts: list, ln: int, new: bool = False):
         self.stmts = stmts
         self.ln = ln
+        self.new = new
 
 
 class IfExprAST:
