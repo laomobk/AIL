@@ -1,0 +1,8 @@
+#! /usr/bin/sh
+
+if test -x /usr/bin/python3 ; then 
+    /usr/bin/python3 -m ail
+else
+    echo "[E] cannot find /usr/bin/python3"
+fi
+
