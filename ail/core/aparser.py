@@ -1665,6 +1665,9 @@ class Parser:
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
+        elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
+            self.__syntax_error()
+
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 (nt.value not in (_keywords + limit) or nt.value == 'not'):
             a = self.__parse_binary_expr()

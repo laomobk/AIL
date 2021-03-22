@@ -58,13 +58,13 @@ def get_line_from_source(lno: int, source: str, strip=True):
 
     try:
         for ln in source.split('\n'):
-            if tlno == lno:
-                if strip:
-                    return ln.strip()
-                return ln
-            tlno += 1
             if ln:
                 last_line = ln
+            if tlno == lno:
+                if strip:
+                    return last_line.strip()
+                return last_line
+            tlno += 1
         
         if strip:
             return last_line.strip()

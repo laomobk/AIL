@@ -1,6 +1,4 @@
-if false {
+else false {
     print 'Nezha'
 } 
-elif true {
-    print 'Aobing'
-}
+
