@@ -632,6 +632,7 @@ class Parser:
 
     def __parse_print_expr(self) -> ast.PrintExprAST:
         ln = self.__now_ln
+
         self.__next_tok()  # eat 'PRINT'
 
         exp = self.__parse_binary_expr()
@@ -999,12 +1000,60 @@ class Parser:
 
         return ast.BinaryExprListAST(el, self.__now_ln)
 
+    def __parse_new_for_stmt(self, from_classic=False) -> ast.ForExprAST:
+        if not from_classic and self.__now_tok != 'for':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        if not from_classic:
+            self.__next_tok()  # eat 'for'
+
+        init: ast.AssignExprListAST = ast.AssignExprListAST([], ln)
+        test = None
+        update: ast.BinaryExprListAST = ast.AssignExprListAST([], ln)
+
+        if self.__now_tok == '{' or self.__now_tok == 'then':
+            body = self.__parse_block()
+            return ast.WhileExprAST(ast.CellAST('1', AIL_NUMBER, ln), body, ln)
+
+        if self.__now_tok != ';':
+            init = self.__parse_binary_expr_list()
+            if len(init.expr_list) == 1 and \
+                    (self.__now_tok == '{' or self.__now_tok == 'then'):
+                body = self.__parse_block()
+                return ast.WhileExprAST(init.expr_list[0], body, ln)
+            # compatible with classic for.
+            init = ast.AssignExprListAST(init.expr_list, ln)
+
+            if self.__now_tok != ';':
+                self.__syntax_error()
+            self.__next_tok()   # eat ';'
+        else:
+            self.__next_tok()  # eat ';'
+
+        if self.__now_tok != ';':
+            test = self.__parse_test_expr()
+            if self.__now_tok != ';':
+                self.__syntax_error()
+
+            self.__next_tok()
+        else:
+            self.__next_tok()
+
+        if self.__now_tok != '{' and self.__now_tok != 'then':
+            update = self.__parse_binary_expr_list()
+        
+        body = self.__parse_block()
+
+        return ast.ForExprAST(init, test, update, body, ln)
+
     def __parse_for_expr(self) -> ast.ForExprAST:
         if self.__now_tok != 'for':
             self.__syntax_error()
 
         if self.__next_tok() != '(':
-            self.__syntax_error()
+            return self.__parse_new_for_stmt(True)
 
         self.__next_tok()  # eat '('
 
@@ -1671,6 +1720,7 @@ class Parser:
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 (nt.value not in (_keywords + limit) or nt.value == 'not'):
             a = self.__parse_binary_expr()
+            self.__expect_newline()
 
         elif nt.ttype == AIL_ENTER:
             self.__next_tok()
@@ -1687,8 +1737,8 @@ class Parser:
         # if self.__now_tok.ttype != AIL_ENTER:
         #     # a stmt should be end of ENTER
         #     self.__syntax_error()
-
-        self.__next_tok()  # eat enter
+        #
+        # self.__next_tok()  # eat enter
 
         return a
 
@@ -1703,7 +1753,6 @@ class Parser:
         stmt_list = []
 
         while self.__now_tok.ttype != AIL_LRBASKET:
-
             s = self.__parse_stmt()
 
             if s is None:

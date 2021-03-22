@@ -1,0 +1,4 @@
+
+for i = 0;; i += 1 {
+    print 'Hello Nezha, i =', i
+}
