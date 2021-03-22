@@ -102,6 +102,9 @@ class Parser:
         if self.__now_tok.ttype == AIL_ENTER and ignore_newline:
             self.__next_tok(ignore_newline, convert_semi)
 
+        if self.__parenthesis_level > 0:
+            self.__skip_newlines()
+
         return self.__tok_stream[self.__tc]
 
     def __skip_newlines(self):

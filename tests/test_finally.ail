@@ -253,7 +253,7 @@ fun test_main() {
         }
     }
     print ('\n-- %s case(s) testing finished, ' + 
-          'program output is above --').format(len(cases))
+            'program output is above --').format(len(cases))
 }
 
 
