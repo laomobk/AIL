@@ -1,5 +1,13 @@
 
-class C {}
+class C {
+    func __init__(self) {
+        self.__val = 0
+    }
+
+    func __hash0__(self) {
+        return hash(self.__val)
+    }
+}
 
 c = C()
 
@@ -8,4 +16,4 @@ m = {
     c: 'Zhaer'
 }
 
-print m[c]
+print hash(c)

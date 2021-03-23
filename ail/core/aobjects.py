@@ -85,6 +85,8 @@ class AILObject:
 
     def __init__(self, **ps):
         self.__hash_target = object()  # hash
+
+        self.hash_handler = None
         self.properties = ps
         self.reference = 0
 
@@ -136,7 +138,11 @@ class AILObject:
         return r
 
     def __hash__(self) -> int:
-        return hash(self.__hash_target)
+        if self.hash_handler is None:
+            return hash(self.__hash_target)
+        hash_val = check_object(self.hash_handler(self), not_convert=True)
+
+        return hash_val
     
     def set_hash_target(self, hash_target: object):
         self.__hash_target = hash_target

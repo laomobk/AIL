@@ -495,6 +495,10 @@ def func_super(_class, instance):
         return super_object.get_super(_class, instance)
 
 
+def func_hash(o):
+    return hash(o)
+
+
 true = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 1)
 false = objs.ObjectCreater.new_object(abool.BOOL_TYPE, 0)
 
@@ -543,6 +547,7 @@ def init_builtins():
         'map': objs.convert_to_ail_object(func_map),
         'super': objs.convert_to_ail_object(func_super),
         'doc': objs.convert_to_ail_object(func_doc),
+        'hash': objs.convert_to_ail_object(func_hash),
         'Object': class_object.CLASS_OBJECT,
         'FileIO': CLASS_FILEIO,
 

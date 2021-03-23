@@ -206,6 +206,7 @@ def object_getattr_with_default(self, name, default=None):
 
 def object_init(self):
     self._bound_methods = dict()
+    self.hash_handler = object_hash
     obj_dict = dict()
 
     self['__dict__'] = obj_dict
@@ -285,6 +286,17 @@ def object_repr(self):
 
     cls = self['__this_class__']
     return '<%s object at %s>' % (cls['__name__'], hex(id(self)))
+
+
+def object_hash(self):
+    cls = self['__this_class__']
+    hash_m = class_getattr_with_default(cls, '__hash__')
+
+    if hash_m is None:
+        return AILRuntimeError('unhashable object', 'TypeError')
+
+    call_object(hash_m, self)
+    return VMInterrupt(MII_CONTINUE)
 
 
 def object___str__(self):
