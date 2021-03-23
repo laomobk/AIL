@@ -137,6 +137,9 @@ class AILObject:
 
     def __hash__(self) -> int:
         return hash(self.__hash_target)
+    
+    def set_hash_target(self, hash_target: object):
+        self.__hash_target = hash_target
 
 
 class AILObjectType:

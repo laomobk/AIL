@@ -32,6 +32,8 @@ def float_init(self: AILObject, value: AILObject):
     else:
         return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
+    self.set_hash_target(self['__value__'])
+
 
 def float_add(self: AILObject, other: AILObject) -> AILObject:
     if type(other['__value__']) not in (int, float):  # do not have __value__ property

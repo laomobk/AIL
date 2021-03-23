@@ -52,6 +52,8 @@ def int_init(self: AILObject, value: AILObject):
     else:
         return AILRuntimeError('invalid number type \'%s\'' % type(value), 'TypeError')
 
+    self.set_hash_target(self['__value__'])
+
 
 def int_add(self: AILObject, other: AILObject) -> AILObject:
     if other['__class__'] not in (INTEGER_TYPE, FLOAT_TYPE):  # do not have __value__ property

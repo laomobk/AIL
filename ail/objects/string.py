@@ -42,6 +42,8 @@ def str_init(self, anystr: str):
     else:
         self['__value__'] = str(anystr)
 
+    self.set_hash_target(self['__value__'])
+
 
 def str_add(self, ostr: AILObject) -> AILObject:
     _make_cache()
