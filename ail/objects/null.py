@@ -5,6 +5,8 @@ from . import types
 def null_init(self):
     self['__value__'] = None
 
+    self.set_hash_target(None)
+
 
 def null_str(self):
     return 'null'
