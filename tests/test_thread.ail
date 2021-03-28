@@ -1,0 +1,13 @@
+import 'unsafe/thread'
+import 'time'
+
+
+func f() {
+    for i = 0; i < 10; i += 1 {
+        print 'f: i =', i;
+    }
+}
+
+
+thread.run(f);
+// time.sleep(1);

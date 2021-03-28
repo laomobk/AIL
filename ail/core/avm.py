@@ -9,6 +9,7 @@ import types
 import inspect
 
 from functools import lru_cache
+
 from typing import List
 
 from . import (
@@ -23,6 +24,8 @@ from .aframe import (
 )
 
 from .agc import GC
+
+from .alock import GLOBAL_INTERPRETER_LOCK
 
 from .aobjects import (
     AILObject, convert_to_ail_object, unpack_ailobj,
@@ -79,6 +82,7 @@ REFERENCE_LIMIT = 8192
 _BYTE_CODE_SIZE = 2
 _MAX_RECURSION_DEPTH = 888
 _MAX_BREAK_POINT_NUMBER = 50
+_INTERVAL = 10
 
 _AIL_VERSION = AIL_VERSION
 
@@ -158,7 +162,9 @@ PROTECTED_SIGNAL = _ProtectedSignal()
 
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self, name='<interpreter 0>'):
+        self.name = name
+
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
         self.__opcounter = 0
 
@@ -848,6 +854,7 @@ class Interpreter:
     def __run_bytecode(self, cobj: AILCodeObject, frame: Frame = None):
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
+        len_code = len(code)
 
         self.__opcounter = 0
         jump_to = 0
@@ -855,8 +862,11 @@ class Interpreter:
         why = WHY_NORMAL
 
         try:
-            while self.__opcounter < len(code) - 1:  # included argv index
+            while self.__opcounter < len_code - 1:  # included argv index
                 try:
+                    if GLOBAL_INTERPRETER_LOCK is not None:
+                        GLOBAL_INTERPRETER_LOCK.acquire()
+
                     op = code[self.__opcounter]
                     argv = code[self.__opcounter + 1]
 
@@ -866,12 +876,13 @@ class Interpreter:
                     # 虽然可能不太美观，但是能提高运行速度
                     # 如果有时间，我会写一个新的（动态获取attr）解释方法
                     # 速度可能会慢些
-
+                    
                     # print(self.__opcounter, get_opname(op),
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
                     # print(self.__opcounter, get_opname(op), self.__stack)
                     # print(self.__opcounter, get_opname(op), self.__frame_stack)
+                    # print(m_state.global_interpreter.name)
 
                     if op == pop_top:
                         tos = self.pop_top()
@@ -1493,6 +1504,9 @@ class Interpreter:
                     except VMInterrupt as interrupt:
                         self.__interrupted = True
                         self.__interrupt_signal = interrupt.signal
+                finally:
+                    if GLOBAL_INTERPRETER_LOCK is not None:
+                        GLOBAL_INTERPRETER_LOCK.release()
 
                 if self.__interrupted and \
                         self.__interrupt_signal == MII_ERR_POP_TO_TRY:
