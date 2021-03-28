@@ -25,7 +25,9 @@ from .aframe import (
 
 from .agc import GC
 
-from .alock import GLOBAL_INTERPRETER_LOCK
+from . import alock
+
+from .aconfig import _BYTE_CODE_SIZE
 
 from .aobjects import (
     AILObject, convert_to_ail_object, unpack_ailobj,
@@ -35,6 +37,9 @@ from .aobjects import (
 
 from .astate import MAIN_INTERPRETER_STATE, NamespaceState
 from .astacktrace import StackTrace
+
+from .athread import THREAD_SCHEDULER, ThreadState
+
 from .error import (
     AILRuntimeError,
     print_exception_for_vm,
@@ -79,10 +84,9 @@ _new_namespace = new_namespace
 
 # GLOBAL SETTINGS
 REFERENCE_LIMIT = 8192
-_BYTE_CODE_SIZE = 2
 _MAX_RECURSION_DEPTH = 888
 _MAX_BREAK_POINT_NUMBER = 50
-_INTERVAL = 10
+_INTERVAL = 100
 
 _AIL_VERSION = AIL_VERSION
 
@@ -166,7 +170,7 @@ class Interpreter:
         self.name = name
 
         self.__now_state = MAIN_INTERPRETER_STATE  # init state
-        self.__opcounter = 0
+        self.op_counter = 0
 
         self.__interrupted = False
         self.__interrupt_signal = 0
@@ -183,6 +187,8 @@ class Interpreter:
         self.__returning = False
 
         self.__raise_python_error = False
+
+        self.main_lock = None
     
     @property
     def __tof(self) -> Frame:
@@ -234,7 +240,7 @@ class Interpreter:
         ctx.exec_for_module = self.__exec_for_module
         ctx.global_frame = self.__global_frame
         ctx.now_state = self.__now_state
-        ctx.opcounter = self.__opcounter
+        ctx.opcounter = self.op_counter
         ctx.globals = self.__namespace_state.ns_global.ns_dict
 
         return ctx
@@ -245,7 +251,7 @@ class Interpreter:
         self.__exec_for_module = ctx.exec_for_module
         self.__global_frame = ctx.global_frame
         self.__now_state = ctx.now_state
-        self.__opcounter = ctx.opcounter
+        self.op_counter = ctx.opcounter
         self.__namespace_state.ns_global.ns_dict = ctx.globals
 
     def __set_globals(self, globals: dict):
@@ -378,7 +384,7 @@ class Interpreter:
             elif b.type == BLOCK_FINALLY:
                 # assert: if this condition is True, it means no try block.
                 self.__push_back(WHY_HANDLING_ERR)
-                self.__opcounter = b.handler
+                self.op_counter = b.handler
                 self.__interrupted = True
                 self.__interrupt_signal = MII_DO_JUMP
                 stack.append(b)  # push block again.
@@ -386,7 +392,7 @@ class Interpreter:
 
         if try_block is not None:
             to = try_block.handler
-            self.__opcounter = to
+            self.op_counter = to
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
         elif len(self.__frame_stack) > 1:
@@ -436,7 +442,7 @@ class Interpreter:
         return 0
 
     def __update_lineno(self):
-        ln_index = self.__opcounter // 2
+        ln_index = self.op_counter // 2
         lno_list = self.__tof.code.lineno_list
 
         if ln_index < 0 or ln_index >= len(lno_list):
@@ -573,7 +579,7 @@ class Interpreter:
 
     def __check_block(self, block: Block, for_return: bool = False) -> VMInterrupt:
         if block.type == BLOCK_FINALLY:
-            self.__opcounter = block.handler
+            self.op_counter = block.handler
             if for_return:
                 self.__push_back(self.__return_value)
                 self.__push_back(WHY_RETURN)
@@ -594,14 +600,14 @@ class Interpreter:
         catch_block = self.__pop_and_get_block(BLOCK_TRY)
         if catch_block is None:
             self.raise_error('no block to handle catch', 'VMError')
-        self.__opcounter = catch_block.handler
+        self.op_counter = catch_block.handler
 
         self.__interrupted = True
         self.__interrupt_signal = MII_DO_JUMP
 
     def interrupt(self, signal, argv):
         if signal == MII_DO_JUMP:
-            self.__opcounter = argv
+            self.op_counter = argv
             self.__interrupted = True
             self.__interrupt_signal = MII_DO_JUMP
     
@@ -623,7 +629,7 @@ class Interpreter:
                         break
                 self.__push_back(loop_b.handler)
                 self.__push_back(why)
-                self.__opcounter = b.handler
+                self.op_counter = b.handler
                 raise VMInterrupt(MII_DO_JUMP)
 
         stack.pop()
@@ -682,6 +688,12 @@ class Interpreter:
 
         return v
 
+    def call_function_async(self,
+                            thread_count: int,
+                            func, argc, argl, ex: bool=False, frame=None):
+        self.call_function(func, argc, argl, ex, frame)
+        THREAD_SCHEDULER.del_thread(thread_count)
+
     def call_function(self,
                       func, argc, argl,
                       ex: bool=False, frame=None):
@@ -734,7 +746,7 @@ class Interpreter:
                     f.closure_outer = c._closure_outer
 
                 try:
-                    self.__tof._latest_call_opcounter = self.__opcounter
+                    self.__tof._latest_call_opcounter = self.op_counter
 
                     # now_globals = self.__namespace_state.ns_global.ns_dict
                     
@@ -750,7 +762,7 @@ class Interpreter:
                     if why == WHY_HANDLING_ERR or why == WHY_ERROR:
                         ok = False
                     else:
-                        self.__opcounter = self.__tof._latest_call_opcounter
+                        self.op_counter = self.__tof._latest_call_opcounter
                         # 如无异常，则还原字节码计数器
 
                     self.__push_back(self.__return_value)
@@ -789,6 +801,7 @@ class Interpreter:
                 try:
                     rtn = self.check_object(pyf(*argl))
                 except Exception as e:
+                    raise
                     if self.__raise_python_error:
                         raise
                     self.raise_error(
@@ -851,24 +864,39 @@ class Interpreter:
             stack.pop()
         raise VMInterrupt(MII_RETURN)
 
-    def __run_bytecode(self, cobj: AILCodeObject, frame: Frame = None):
+    def __run_bytecode(
+            self, cobj: AILCodeObject, frame: Frame = None, t_state: ThreadState = None):
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
         len_code = len(code)
 
-        self.__opcounter = 0
+        self.op_counter = 0
         jump_to = 0
 
         why = WHY_NORMAL
 
-        try:
-            while self.__opcounter < len_code - 1:  # included argv index
-                try:
-                    if GLOBAL_INTERPRETER_LOCK is not None:
-                        GLOBAL_INTERPRETER_LOCK.acquire()
+        counter = 0
 
-                    op = code[self.__opcounter]
-                    argv = code[self.__opcounter + 1]
+        try:
+            while self.op_counter < len_code - 1:  # included argv index
+                try:
+                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                        alock.GLOBAL_INTERPRETER_LOCK.acquire()
+
+                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                        counter += 1
+
+                        if counter >= _INTERVAL:
+                            THREAD_SCHEDULER.schedule()
+                            if alock.GLOBAL_INTERPRETER_LOCK.locked():
+                                alock.GLOBAL_INTERPRETER_LOCK.release()
+                            counter = 0
+
+                    if self.main_lock is not None:
+                        self.main_lock.acquire()
+
+                    op = code[self.op_counter]
+                    argv = code[self.op_counter + 1]
 
                     self.__update_lineno()
 
@@ -877,11 +905,11 @@ class Interpreter:
                     # 如果有时间，我会写一个新的（动态获取attr）解释方法
                     # 速度可能会慢些
                     
-                    # print(self.__opcounter, get_opname(op),
+                    # print(self.op_counter, get_opname(op),
                     #       self.__tof, self.__stack, self.__tof.lineno)
 
-                    # print(self.__opcounter, get_opname(op), self.__stack)
-                    # print(self.__opcounter, get_opname(op), self.__frame_stack)
+                    # print(self.op_counter, get_opname(op), self.__stack)
+                    # print(self.op_counter, get_opname(op), self.__frame_stack)
                     # print(m_state.global_interpreter.name)
 
                     if op == pop_top:
@@ -1435,7 +1463,7 @@ class Interpreter:
                             goto -= _BYTE_CODE_SIZE * 2 * int(why == WHY_CONTINUE)
                             # if is continue, go back one bytecode
                             
-                            self.__opcounter = goto
+                            self.op_counter = goto
                             raise VMInterrupt(MII_DO_JUMP)
 
                     elif op == pop_catch:
@@ -1505,8 +1533,11 @@ class Interpreter:
                         self.__interrupted = True
                         self.__interrupt_signal = interrupt.signal
                 finally:
-                    if GLOBAL_INTERPRETER_LOCK is not None:
-                        GLOBAL_INTERPRETER_LOCK.release()
+                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                        if alock.GLOBAL_INTERPRETER_LOCK.locked():
+                            alock.GLOBAL_INTERPRETER_LOCK.release()
+                    if self.main_lock is not None and self.main_lock.locked():
+                        self.main_lock.release()
 
                 if self.__interrupted and \
                         self.__interrupt_signal == MII_ERR_POP_TO_TRY:
@@ -1518,13 +1549,17 @@ class Interpreter:
                         self.__can = 1
                     self.__interrupted = False
                     if self.__interrupt_signal == MII_DO_JUMP:
-                        jump_to = self.__opcounter
+                        jump_to = self.op_counter
                         continue
 
                     elif self.__interrupt_signal == MII_RETURN:
                         self.__frame_stack.pop()
                         why = WHY_NORMAL
                         break
+
+                    elif self.__interrupt_signal == MII_DO_JUMP_NEXT:
+                        jump_to = self.op_counter + _BYTE_CODE_SIZE
+                        continue
 
                     elif self.__interrupt_signal == MII_ERR_BREAK:
                         why = WHY_ERROR
@@ -1553,11 +1588,11 @@ class Interpreter:
                     self.__can = 1
                     break
 
-                if jump_to != self.__opcounter:
-                    self.__opcounter = jump_to
+                if jump_to != self.op_counter:
+                    self.op_counter = jump_to
                 else:
-                    self.__opcounter += _BYTE_CODE_SIZE
-                    jump_to = self.__opcounter
+                    self.op_counter += _BYTE_CODE_SIZE
+                    jump_to = self.op_counter
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')
         except Exception as e:
