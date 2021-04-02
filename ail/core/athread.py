@@ -10,6 +10,9 @@ from .aobjects import get_state
 from .avmsig import VMInterrupt, MII_DO_JUMP
 
 
+_SCH_LOCK = Lock()
+
+
 class ThreadState:
     """
     the AIL Thread State
@@ -67,6 +70,8 @@ class ThreadScheduler:
         return self.__threads[randint(0, len(self.__threads.keys()) - 1)]
 
     def schedule(self):
+        _SCH_LOCK.acquire()
+
         m_state = get_state()
         now_counter = m_state.global_interpreter.op_counter
         self.__now_running_op_counter = now_counter
@@ -81,6 +86,8 @@ class ThreadScheduler:
         m_state.frame_stack = winner.frame_stack
 
         self.now_running_thread = winner
+
+        _SCH_LOCK.release()
 
         raise VMInterrupt(MII_DO_JUMP)
 

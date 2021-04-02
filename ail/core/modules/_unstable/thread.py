@@ -36,6 +36,7 @@ def thread_run(func):
     t_state = ThreadState(m_state.frame_stack.copy(), thread)
     t_count = THREAD_SCHEDULER.add_thread(t_state)
     arg.insert(0, t_count)
+    arg.insert(1, t_state)
 
     # thread.setDaemon(True)
     thread.start()

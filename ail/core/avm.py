@@ -27,7 +27,7 @@ from .agc import GC
 
 from . import alock
 
-from .aconfig import _BYTE_CODE_SIZE
+from .aconfig import _BYTE_CODE_SIZE, _FUTURE_MULT_THREAD
 
 from .aobjects import (
     AILObject, convert_to_ail_object, unpack_ailobj,
@@ -689,14 +689,14 @@ class Interpreter:
         return v
 
     def call_function_async(self,
-                            thread_count: int,
+                            thread_count: int, t_state: ThreadState,
                             func, argc, argl, ex: bool=False, frame=None):
         self.call_function(func, argc, argl, ex, frame)
         THREAD_SCHEDULER.del_thread(thread_count)
 
     def call_function(self,
                       func, argc, argl,
-                      ex: bool=False, frame=None):
+                      ex: bool=False, frame=None, t_state: ThreadState = None):
         if isinstance(func, AILObject):  # it should be FUNCTION_TYPE
             if func['__class__'] == FUNCTION_TYPE:
                 c: AILCodeObject = func['__code__']
@@ -753,7 +753,7 @@ class Interpreter:
                     with self.get_context():
                         if func['__global_ns__'] is not None:
                             self.__set_globals(func['__global_ns__'])
-                        why = self.__run_bytecode(c, f)
+                        why = self.__run_bytecode(c, f, t_state=t_state)
 
                     ok = True
 
@@ -865,7 +865,8 @@ class Interpreter:
         raise VMInterrupt(MII_RETURN)
 
     def __run_bytecode(
-            self, cobj: AILCodeObject, frame: Frame = None, t_state: ThreadState = None):
+            self, cobj: AILCodeObject, frame: Frame = None, 
+            t_state: ThreadState = None):
         self.__push_new_frame(cobj, frame)
         code = cobj.bytecodes
         len_code = len(code)
@@ -880,20 +881,24 @@ class Interpreter:
         try:
             while self.op_counter < len_code - 1:  # included argv index
                 try:
-                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
-                        alock.GLOBAL_INTERPRETER_LOCK.acquire()
 
-                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
-                        counter += 1
+                    if _FUTURE_MULT_THREAD:
+                        if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                            alock.GLOBAL_INTERPRETER_LOCK.acquire()
 
-                        if counter >= _INTERVAL:
-                            THREAD_SCHEDULER.schedule()
-                            if alock.GLOBAL_INTERPRETER_LOCK.locked():
-                                alock.GLOBAL_INTERPRETER_LOCK.release()
-                            counter = 0
+                        if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                            counter += 1
 
-                    if self.main_lock is not None:
-                        self.main_lock.acquire()
+                            if counter >= _INTERVAL:
+                                THREAD_SCHEDULER.schedule()
+                                if alock.GLOBAL_INTERPRETER_LOCK.locked():
+                                    alock.GLOBAL_INTERPRETER_LOCK.release()
+                                counter = 0
+                        
+                        if t_state is not None:
+                            t_state.lock.acquire()
+                        elif self.main_lock is not None:
+                            self.main_lock.acquire()
 
                     op = code[self.op_counter]
                     argv = code[self.op_counter + 1]
@@ -1533,11 +1538,14 @@ class Interpreter:
                         self.__interrupted = True
                         self.__interrupt_signal = interrupt.signal
                 finally:
-                    if alock.GLOBAL_INTERPRETER_LOCK is not None:
-                        if alock.GLOBAL_INTERPRETER_LOCK.locked():
-                            alock.GLOBAL_INTERPRETER_LOCK.release()
-                    if self.main_lock is not None and self.main_lock.locked():
-                        self.main_lock.release()
+                    if _FUTURE_MULT_THREAD:
+                        if alock.GLOBAL_INTERPRETER_LOCK is not None:
+                            if alock.GLOBAL_INTERPRETER_LOCK.locked():
+                                alock.GLOBAL_INTERPRETER_LOCK.release()
+                            if self.main_lock is not None and self.main_lock.locked():
+                                self.main_lock.release()
+                            if t_state is not None and t_state.lock.locked():
+                                t_state.lock.release()
 
                 if self.__interrupted and \
                         self.__interrupt_signal == MII_ERR_POP_TO_TRY:
