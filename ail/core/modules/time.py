@@ -7,6 +7,8 @@ from time import (
 from ail.api.object import *
 from ail.api.error import AILRuntimeError
 
+_TIME_24H = 60*60*24
+
 
 def time_time():
     return time()
@@ -49,5 +51,6 @@ _AIL_NAMESPACE_ = {
     'currentTime': time_ctime,
     'sleep': time_sleep,
     'sleepMicro': time_sleep_micro,
+    'sec_24h': _TIME_24H,
 }
 

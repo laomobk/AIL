@@ -10,7 +10,8 @@ endif
 
 syn keyword ailStmt	if else elif
 syn keyword ailStmt	then end endif is begin wend
-syn keyword ailStmt	fun struct class extends func
+syn keyword ailStmt	extends
+syn keyword ailStmt func fun class nextgroup=ailFunction skipwhite
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch finally
@@ -19,7 +20,7 @@ syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt mod
 
-syn keyword ailConst false true
+syn keyword ailConst false true __main__
 
 syn keyword ailRepeat while for do loop until
 
@@ -68,6 +69,8 @@ hi def link ailComment		Comment
 hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
 hi def link ailRepeat       Repeat
+
+syn match ailFunction "\h\w*" display contained
 
 let b:current_syntax = "ail"
 
