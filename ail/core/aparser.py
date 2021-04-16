@@ -1396,7 +1396,10 @@ class Parser:
 
         self.__next_tok()  # eat 'return'
 
-        expr = self.__parse_binary_expr()
+        if self.__now_tok.ttype == AIL_ENTER:
+            expr = ast.CellAST('null', AIL_IDENTIFIER, self.__now_ln)
+        else:
+            expr = self.__parse_binary_expr()
 
         if expr is None:
             self.__syntax_error()

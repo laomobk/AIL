@@ -1,0 +1,75 @@
+
+
+class Interpreter {
+    func __init__(self, mem_size) {
+        self.__mem = array(mem_size, 0)
+        self._ptr = 0
+        self._source_ptr = 0
+        self.__loop_stack = []
+    }
+
+    func exec(self, source) {
+        for self._source_ptr < len(source) {
+            ch = source[self._source_ptr]
+
+            if ch == '+' {
+                self.__mem[self._ptr] += 1
+            } elif ch == '-' {
+                self.__mem[self._ptr] -= 1
+            } elif ch == '<' {
+                self._ptr -= 1
+            } elif ch == '>' {
+                self._ptr += 1
+            } elif ch == '.' {
+                console.write(chr(self.__mem[self._ptr]))
+            } elif ch == '[' {
+                jump_to = self.__get_end_brick(source)
+                if jump_to == -1 {
+                    print '[E] no match \']\''
+                    return
+                }
+
+                if self.__mem[self._ptr] == 0 {
+                    self._source_ptr = jump_to
+                    continue
+                }
+                
+                self.__loop_stack.append(self._source_ptr)
+
+            } elif ch == ']' {
+                jump_back = self.__loop_stack.pop()
+                self._source_ptr = jump_back
+                continue
+            }
+
+            self._source_ptr += 1
+        }
+    }
+
+    func __get_end_brick(self, source) {
+        ptr = self._source_ptr
+        level = 0
+        while ptr < len(source) {
+            ch = source[ptr]
+            if ch == '[' {
+                level += 1
+            } elif ch == ']' {
+                level -= 1
+                if level == 0 {
+                    return ptr + 1
+                }
+            }
+            ptr += 1
+        }
+        return -1
+    }
+}
+
+
+source = '>+++++++++[<++++++++>-]<.>+++++++[<++++>-]<+.+++++++..+++.[-]>++++++++[<++++>-]<.>+++++++++++[<+++++>-]<.>++++++++[<+++>-]<.+++.------.--------.[-]>++++++++[<++++>-]<+.[-]++++++++++.'
+
+
+if __main__ {
+    interpreter = Interpreter(128)
+    interpreter.exec(source)
+}
