@@ -191,14 +191,18 @@ class Parser:
     def __parse_arg_list(self) -> ast.ArgListAST:
         alist = []
 
-        while self.__now_tok.ttype != AIL_SRBASKET:
+        if self.__now_tok.ttype != AIL_SRBASKET:
             a = self.__parse_arg_item()
             alist.append(a)
+        else:
+            return ast.ArgListAST(alist, self.__now_ln)
 
-            if self.__now_tok.ttype == AIL_COMMA:
-                self.__next_tok()  # eat ','
+        while self.__now_tok.ttype == AIL_COMMA:
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                break
 
-        self.__next_tok()  # eat ')'
+            a = self.__parse_arg_item()
+            alist.append(a)
 
         return ast.ArgListAST(alist, self.__now_ln)
 
@@ -392,9 +396,10 @@ class Parser:
                 self.__next_tok()  # eat '('
                 if self.__now_tok == ')':
                     argl = ast.ArgListAST([], ln)
-                    self.__next_tok()  # eat ')'
                 else:
                     argl = self.__parse_arg_list()
+
+                self.__next_tok()  # eat ')'
 
                 left = ast.CallExprAST(left, argl, ln)
         return left
@@ -428,16 +433,37 @@ class Parser:
 
         if self.__now_tok == '(':
             self.__next_tok()
-            e = self.__parse_binary_expr()
-
-            if e is None:
-                self.__syntax_error()
+            expr_or_param = self.__parse_arg_list()
 
             if self.__now_tok != ')':
                 self.__syntax_error()
 
             self.__next_tok()  # eat ')'
-            return e
+
+            exp_list = expr_or_param.exp_list
+            
+            if self.__now_tok.ttype != AIL_RARROW:
+                if len(exp_list) != 1 or exp_list[0].star:
+                    self.__syntax_error()
+
+                return expr_or_param.exp_list[0].expr
+
+            # now it is lambda expression
+
+            for item in exp_list:
+                if not isinstance(item.expr, ast.CellAST) or \
+                    item.expr.type != AIL_IDENTIFIER:
+                    
+                    self.__syntax_error()
+            
+            self.__next_tok()  # eat '->'
+
+            expr = self.__parse_binary_expr()
+            return_stmt = ast.ReturnAST(expr, expr.ln)
+            block = ast.BlockExprAST([return_stmt], return_stmt.ln, True)
+
+            return ast.FunctionDefineAST(
+                    '<lambda>', expr_or_param, block, None, expr.ln)
 
         nt = self.__now_tok
 

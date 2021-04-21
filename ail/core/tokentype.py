@@ -33,6 +33,7 @@ AIL_WELL            = 311   #   #
 AIL_ESCAPE          = 312   #   \
 AIL_COLON           = 313   #   :
 AIL_WAVE            = 314   #   ~
+AIL_RARROW          = 315   #   ->
 
 AIL_EQ              = 40    #   ==
 AIL_UEQ             = 41    #   !=

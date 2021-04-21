@@ -1,0 +1,8 @@
+
+func say(output_func) {
+    output_func('Hello Nezha')
+}
+
+
+say((x) -> console.writeln(x))
+

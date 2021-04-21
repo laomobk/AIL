@@ -618,16 +618,23 @@ class Lex:
                             self.__ln
                         ))
                         self.__movchr(2)
+                elif c == '-' and self.__nextch() == '>':
+                    self.__stream.append(Token(
+                        '->',
+                        AIL_RARROW,
+                        self.__ln,
+                    ))
+                    self.__movchr(2)
                 else:
                     self.__stream.append(Token(c,
                                                {
                                                    '+': AIL_PLUS,
                                                    '*': AIL_MULT,
+                                                   '-': AIL_SUB,
                                                    '%': AIL_MOD,
                                                    '^': AIL_XOR,
                                                    '|': AIL_BIN_OR,
                                                    '&': AIL_BIN_AND,
-                                                   '-': AIL_SUB
                                                }[c],
                                                self.__ln))
                     self.__movchr(1)
