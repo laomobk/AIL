@@ -176,8 +176,13 @@ class Parser:
 
             self.__skip_newlines()
 
-            if self.__now_tok.ttype == AIL_COMMA:
-                self.__next_tok()  # eat ','
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                break
+
+            if self.__now_tok.ttype != AIL_COMMA:
+                self.__syntax_error()
+
+            self.__next_tok()  # eat ','
 
             self.__skip_newlines()
 
@@ -198,6 +203,8 @@ class Parser:
             return ast.ArgListAST(alist, self.__now_ln)
 
         while self.__now_tok.ttype == AIL_COMMA:
+            self.__next_tok()
+
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
 
