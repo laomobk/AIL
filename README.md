@@ -51,10 +51,20 @@ class Hello {
 Hello().helloWorld()
 ```
 
-## 构建 / 安装
+## 安装 AIL
 
 运行 AIL 事先准备好的 **setup.py** 可以非常快速地在您的电脑上配置好 AIL。
 
 ```sh
 python setup.py install
 ```
+
+在终端中输入:
+```
+ail
+```
+
+***Windows下应确保 {PYTHON_HOME}/Script/ 已添加到 PATH 中***
+***Linux/Mac OS 下应确保当前用户的 bin 目录已添加到 PATH 中***
+
+若进入 AIL 的交互环境，则安装成功。
