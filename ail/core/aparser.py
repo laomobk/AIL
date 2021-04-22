@@ -165,6 +165,8 @@ class Parser:
 
         alist = []
 
+        has_star = False
+
         while self.__now_tok.ttype != AIL_SRBASKET:
             self.__skip_newlines()
 
@@ -173,6 +175,9 @@ class Parser:
                     a.expr.type != AIL_IDENTIFIER:
                 self.__syntax_error(ln=a.ln)
             alist.append(a)
+
+            if has_star:
+                self.__syntax_error()
 
             self.__skip_newlines()
 
@@ -186,8 +191,7 @@ class Parser:
 
             self.__skip_newlines()
 
-            if a.star:
-                break
+            has_star = a.star
 
         self.__next_tok()  # eat ')' 
 
@@ -457,11 +461,15 @@ class Parser:
 
             # now it is lambda expression
 
+            has_star = False
+
             for item in exp_list:
                 if not isinstance(item.expr, ast.CellAST) or \
-                    item.expr.type != AIL_IDENTIFIER:
-                    
+                        item.expr.type != AIL_IDENTIFIER:
                     self.__syntax_error()
+                if has_star:
+                    self.__syntax_error()
+                has_star = item.star
             
             self.__next_tok()  # eat '->'
 
