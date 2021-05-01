@@ -1,5 +1,20 @@
+from os.path import exists
+from time import time
+
 from setuptools import setup, find_packages
 from ail.core.version import AIL_MAIN_VERSION, AIL_SUB_VERSION
+
+
+INSTALL_TIME_PATH = './ail/core/INSTALL_TIME'
+
+if exists(INSTALL_TIME_PATH):
+    try:
+        with open(INSTALL_TIME_PATH, 'w') as f:
+            install_time = time()
+            f.write(str(int(install_time * 1000)))
+    except:
+        pass
+
 
 setup(
     name='ail',
@@ -14,6 +29,6 @@ setup(
     },
 
     package_data={
-        'ail': ['lib/*.ail']
+        'ail': ['lib/*.ail', 'core/INSTALL_TIME']
     }
 )

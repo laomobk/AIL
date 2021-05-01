@@ -1,12 +1,14 @@
 import sys
 
+from time import ctime
+
 from .acompiler import Compiler
 from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser
 from .astate import MAIN_INTERPRETER_STATE
 from .avm import Interpreter, Frame
-from .version import AIL_VERSION, AIL_COPYRIGHT
+from .version import AIL_VERSION, AIL_COPYRIGHT, AIL_INSTALL_TIME
 
 from ..objects import function
 from ..objects import string
@@ -29,9 +31,9 @@ _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
 _VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
 _WELCOME_STR = \
-'''AIL %s
+'''AIL %s (%s)
 Type 'help(...)', '$help', 'copyright()' to get more information, 'exit()' to exit.
-''' % _VER_STR
+''' % (_VER_STR, ctime(AIL_INSTALL_TIME / 1000) if isinstance(AIL_INSTALL_TIME, int) else '')
 _SH_HELP_STR = \
 '''AIL shell commands:
     $help   get commands help
