@@ -7,13 +7,13 @@ from ail.core.version import AIL_MAIN_VERSION, AIL_SUB_VERSION
 
 INSTALL_TIME_PATH = './ail/core/INSTALL_TIME'
 
-if exists(INSTALL_TIME_PATH):
-    try:
-        with open(INSTALL_TIME_PATH, 'w') as f:
-            install_time = time()
-            f.write(str(int(install_time * 1000)))
-    except:
-        pass
+try:
+    with open(INSTALL_TIME_PATH, 'w') as f:
+        install_time = time()
+        print('[INFO] Install time: %s' % install_time)
+        f.write(str(int(install_time * 1000)))
+except:
+    pass
 
 
 setup(
