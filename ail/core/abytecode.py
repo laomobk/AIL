@@ -1,4 +1,6 @@
 import pickle
+
+from types import CodeType
 from typing import List, Set
 
 from . import aobjects as obj

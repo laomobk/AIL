@@ -1,36 +1,40 @@
+
+from dis import opmap as m
+
+
 # NAME            VALUE
-load_const      = 0x01
-load_local      = 0x02
-load_global     = 0x03
+load_const = 0x01
+load_local = 0x02
+load_global = 0x03
 
-call_func       = 0x04
-setup_while     = 0x05
-setup_doloop    = 0x06
+call_func = 0x04
+setup_while = 0x05
+setup_doloop = 0x06
 
-store_var       = 0x07
+store_var = 0x07
 
-compare_op      = 0x08
+compare_op = 0x08
 
-binary_add      = 0x09
-binary_sub      = 0x0a
-binary_mult     = 0x0b
-binary_div      = 0x0c
-binary_mod      = 0x0d
-binary_pow      = 0x0e
+binary_add = 0x09
+binary_sub = 0x0a
+binary_mult = 0x0b
+binary_div = 0x0c
+binary_mod = 0x0d
+binary_pow = 0x0e
 
-return_value    = 0x0f
-continue_loop   = 0x10
-break_loop      = 0x11
-logic_and       = 0x12
-logic_or        = 0x13
+return_value = 0x0f
+continue_loop = 0x10
+break_loop = 0x11
+logic_and = 0x12
+logic_or = 0x13
 
-print_value     = 0x14
-input_value     = 0x15
+print_value = 0x14
+input_value = 0x15
 
-jump_if_false_or_pop   = 0x16
+jump_if_false_or_pop = 0x16
 jump_if_true_or_pop = 0x18
 jump_if_false = 0x19
-jump_absolute   = 0x17
+jump_absolute = 0x17
 
 store_function = 0x1a
 
@@ -53,7 +57,7 @@ store_struct = 0x24
 
 binary_not = 0x25
 
-init_for  = 0x28
+init_for = 0x28
 setup_for = 0x26
 pop_for = 0x27
 
@@ -130,13 +134,12 @@ jump_forward_if_false = 0x58
 pop_jump_forward_if_true_or_pop = 0x59
 pop_jump_forward_if_false_or_pop = 0x5a
 
-
-COMP_EQ     = 0
-COMP_LEQ    = 1
-COMP_SEQ    = 2
-COMP_ET     = 3
-COMP_ST     = 4
-COMP_UEQ    = 5
+COMP_EQ = 0
+COMP_LEQ = 1
+COMP_SEQ = 2
+COMP_ET = 3
+COMP_ST = 4
+COMP_UEQ = 5
 COMPARE_OPERATORS = (
     '==',
     '>=',
@@ -159,3 +162,99 @@ BINARY_OPS = (
     binary_or,
     binary_xor,
 )
+
+
+"""
+_ = [
+    load_const,
+    load_local,
+    load_global,
+    call_func,
+    setup_while,
+    setup_doloop,
+    store_var,
+    compare_op,
+    binary_add,
+    binary_sub,
+    binary_mult,
+    binary_div,
+    binary_mod,
+    binary_pow,
+    return_value,
+    continue_loop,
+    break_loop,
+    logic_and,
+    logic_or,
+    print_value,
+    input_value,
+    jump_if_false_or_pop,
+    jump_if_true_or_pop,
+    jump_if_false,
+    jump_absolute,
+    store_function,
+    load_varname,
+    pop_top,
+    binary_subscr,
+    build_array,
+    load_module,
+    store_subscr,
+    store_attr,
+    load_attr,
+    call_method,
+    store_struct,
+    binary_not,
+    init_for,
+    setup_for,
+    pop_for,
+    pop_loop,
+    set_protected,
+    throw_error,
+    setup_try,
+    setup_catch,
+    pop_catch,
+    pop_try,
+    pop_jump_if_false_or_pop,
+    pop_jump_if_true_or_pop,
+    unary_negative,
+    bind_function,
+    import_name,
+    load_variable,
+    binary_lshift,
+    binary_rshift,
+    binary_and,
+    binary_or,
+    binary_xor,
+    unary_invert,
+    make_function,
+    call_func_ex,
+    join_array,
+    delete_var,
+    unary_inc,
+    unary_dec,
+    store_exc,
+    jump_forward,
+    setup_finally,
+    pop_finally,
+    import_from,
+    push_none,
+    end_finally,
+    build_map,
+    build_const_key_map,
+    build_class,
+    inplace_add,
+    inplace_sub,
+    inplace_mult,
+    inplace_div,
+    inplace_mod,
+    inplace_xor,
+    inplace_bin_or,
+    inplace_lshift,
+    inplace_rshift,
+    inplace_bin_and,
+    jump_forward_if_false_or_pop,
+    jump_forward_true_or_pop,
+    jump_forward_if_false,
+    pop_jump_forward_if_true_or_pop,
+    pop_jump_forward_if_false_or_pop,
+]
+"""
