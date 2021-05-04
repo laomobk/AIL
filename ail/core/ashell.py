@@ -31,9 +31,14 @@ _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
 _VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
 _WELCOME_STR = \
-'''AIL %s (%s)
+'''AIL %s (%s) Python %s
 Type 'help(...)', '$help', 'copyright()' to get more information, 'exit()' to exit.
-''' % (_VER_STR, ctime(AIL_INSTALL_TIME / 1000) if isinstance(AIL_INSTALL_TIME, int) else '')
+''' % (
+        _VER_STR, 
+        ctime(AIL_INSTALL_TIME / 1000) if isinstance(AIL_INSTALL_TIME, int) else '', 
+        sys.version
+)
+
 _SH_HELP_STR = \
 '''AIL shell commands:
     $help   get commands help
