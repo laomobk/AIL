@@ -115,14 +115,8 @@ if PY_3:
     BUILD_MAP_UNPACK_WITH_CALL = _get_opcode('BUILD_MAP_UNPACK_WITH_CALL')
     BUILD_TUPLE_UNPACK = _get_opcode('BUILD_TUPLE_UNPACK')
     BUILD_SET_UNPACK = _get_opcode('BUILD_SET_UNPACK')
-    SETUP_ASYNC_WITH = _get_opcode('SETUP_ASYNC_WITH')
-    FORMAT_VALUE = _get_opcode('FORMAT_VALUE')
     BUILD_CONST_KEY_MAP = _get_opcode('BUILD_CONST_KEY_MAP')
     BUILD_STRING = _get_opcode('BUILD_STRING')
     BUILD_TUPLE_UNPACK_WITH_CALL = _get_opcode('BUILD_TUPLE_UNPACK_WITH_CALL')
     LOAD_METHOD = _get_opcode('LOAD_METHOD')
     CALL_METHOD = _get_opcode('CALL_METHOD')
-
-
-if _unsupported_codes and _AUTO_PRINT_SELF_CHECK_MESSAGE:
-    print('[Warning] Python Compatible is not available')
