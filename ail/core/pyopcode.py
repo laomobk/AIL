@@ -4,7 +4,7 @@ from sys import version_info
 
 PY_3 = version_info.major == 3
 PY_COMPATIBLE_MODE_AVAILABLE = False
-_AUTO_PRINT_SELF_CHECK_MESSAGE = True
+_AUTO_PRINT_SELF_CHECK_MESSAGE = False
 
 
 _unsupported_codes = []
