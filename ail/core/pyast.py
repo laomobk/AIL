@@ -23,6 +23,10 @@ pow_op = _ast.Pow
 rshift_op = _ast.RShift
 sub_op = _ast.Sub
 
+invert_uop = _ast.Invert
+not_uop = _ast.Not
+uadd_uop = _ast.UAdd
+usub_uop = _ast.USub
 
 break_stmt = _ast.Break
 continue_stmt = _ast.Continue
@@ -65,7 +69,7 @@ def bool_op_expr(op: _ast.boolop, values: List[_ast.expr]) -> _ast.BoolOp:
 
 
 def call_expr(func: _ast.expr, args: List[_ast.expr]) -> _ast.Call:
-    return _ast.Call(func=func, args=args)
+    return _ast.Call(func=func, args=args, keywords=[])
 
 
 def class_def_stmt(
@@ -82,7 +86,7 @@ def compare_stmt(
 
 
 def constant_expr(value: object) -> _ast.Constant:
-    return _ast.Constant(value=value)
+    return _ast.Constant(value=value, kind=None)
 
 
 def dict_expr(keys: List[_ast.expr], values: List[_ast.expr]) -> _ast.Dict:
@@ -104,3 +108,57 @@ def function_def_stmt(
     return _ast.FunctionDef(
         name=name, args=args, body=body, decorator_list=decorator_list,
         returns=None, type_comment=None)
+
+
+def global_stmt(names: List[str]) -> _ast.Global:
+    return _ast.FunctionDef(names=names)
+
+
+def if_stmt(
+        test: _ast.expr, body: List[_ast.stmt], 
+        orelse: List[_ast.If]) -> _ast.If:
+    return _ast.If(test=test, body=body, orelse=orelse)
+
+
+def lambda_expr(args: List[_ast.expr], body: _ast.stmt) -> _ast.Lambda:
+    return _ast.Lambda(args=args, body=body)
+
+
+def list_stmt(elts: List[_ast.expr], ctx: _ast.expr_context) -> _ast.List:
+    return _ast.List(elts=elts, ctx=ctx)
+
+
+def module(body: List[_ast.stmt]) -> _ast.Module:
+    return _ast.Module(body=body)
+
+
+def name_expr(id: str, ctx: _ast.expr_context) -> _ast.Name:
+    return _ast.Name(id=id, ctx=ctx)
+
+
+def nonlocal_stmt(names: List[str]) -> _ast.Nonlocal:
+    return _ast.Nonlocal(names=names)
+
+
+def raise_stmt(exc: _ast.expr) -> _ast.Raise:
+    return _ast.Raise(exc=exc, cause=None)
+
+
+def return_stmt(value: _ast.expr) -> _ast.Return:
+    return _ast.Return(value=value)
+
+
+def starred_expr(value: _ast.expr, ctx: _ast.expr_context) -> _ast.Starred:
+    return _ast.Starred(value=value, ctx=ctx)
+
+
+def try_stmt(
+        body: List[_ast.stmt], handlers: List[_ast.ExceptHandler],
+        finalbody: List[_ast.stmt]) -> _ast.Try:
+    return _ast.Try(body=body, handlers=handlers, 
+                    orelse=[], finalbody=finalbody)
+
+
+def while_stmt(test: _ast.expr, body: List[_ast.stmt]) -> _ast.While:
+    return _ast.While(test=test, body=body, orelse=[])
+
