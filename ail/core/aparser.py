@@ -8,6 +8,7 @@ from . import aconfig
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
 from .error import error_msg
+from .pyast import *
 from .tokentype import *
 
 __author__ = 'LaomoBK'
@@ -1917,7 +1918,18 @@ class Parser:
 class ASTConverter:
     def _do_cell(self, cell: ast.CellAST) -> pyast.Name:
         if cell.value == 'null':
-            return 
+            return constant_expr(None)
+        elif cell.value == 'true':
+            return constant_expr(True)
+        elif cell.value == 'false':
+            return constant_expr(True)
+        elif cell.type == AIL_NUMBER:
+            return constant_expr(eval(cell.value))
+        elif cell.type == AIL_STRING:
+            return constant_expr(cell.value)
+        elif cell.type == AIL_IDENTIFIER:
+            return name_expr(cell.value, load_ctx)
+
     def convert(self, a) -> pyast.AST:
         if isinstance(a, ast.CellAST):
             return {'Cell': {'value': a.value, 'type': a.type}}
@@ -2021,92 +2033,92 @@ class ASTConverter:
                     'func': make_ast_tree(a.func),
                 }}
 
-    elif isinstance(a, ast.ReturnAST):
-        return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
+        elif isinstance(a, ast.ReturnAST):
+            return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
 
-    elif isinstance(a, ast.BreakAST):
-        return 'BreakAST'
+        elif isinstance(a, ast.BreakAST):
+            return 'BreakAST'
 
-    elif isinstance(a, ast.ContinueAST):
-        return 'ContinueAST'
+        elif isinstance(a, ast.ContinueAST):
+            return 'ContinueAST'
 
-    elif isinstance(a, ast.GlobalStmtAST):
-        return {'GlobalAST': {'name': a.name}}
+        elif isinstance(a, ast.GlobalStmtAST):
+            return {'GlobalAST': {'name': a.name}}
 
-    elif isinstance(a, ast.NonlocalStmtAST):
-        return {'NonlocalAST': {'name': a.name}}
+        elif isinstance(a, ast.NonlocalStmtAST):
+            return {'NonlocalAST': {'name': a.name}}
 
-    elif isinstance(a, ast.ArrayAST):
-        return {'ArrayAST': {'items': make_ast_tree(a.items)}}
+        elif isinstance(a, ast.ArrayAST):
+            return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 
-    elif isinstance(a, ast.MapAST):
-        return {'MapAST': {'keys': make_ast_tree(a.keys), 
-                           'values': make_ast_tree(a.values)}}
+        elif isinstance(a, ast.MapAST):
+            return {'MapAST': {'keys': make_ast_tree(a.keys), 
+                               'values': make_ast_tree(a.values)}}
 
-    elif isinstance(a, ast.ItemListAST):
-        return unpack_list(a.item_list)
+        elif isinstance(a, ast.ItemListAST):
+            return unpack_list(a.item_list)
 
-    elif isinstance(a, ast.SubscriptExprAST):
-        return {'SubscriptExprAST':
-                    {'expr': make_ast_tree(a.expr),
-                     'left': make_ast_tree(a.left)}}
+        elif isinstance(a, ast.SubscriptExprAST):
+            return {'SubscriptExprAST':
+                        {'expr': make_ast_tree(a.expr),
+                         'left': make_ast_tree(a.left)}}
 
-    elif isinstance(a, ast.LoadAST):
-        return {'LoadAST': {'name': a.path}}
+        elif isinstance(a, ast.LoadAST):
+            return {'LoadAST': {'name': a.path}}
 
-    elif isinstance(a, ast.ImportAST):
-        return {'ImportAST': {
-            'path': a.path, 'name': a.name, 'members': a.members}}
+        elif isinstance(a, ast.ImportAST):
+            return {'ImportAST': {
+                'path': a.path, 'name': a.name, 'members': a.members}}
 
-    elif isinstance(a, ast.MemberAccessAST):
-        return {'MemberAccessAST': {
-            'left': make_ast_tree(a.left),
-            'members': make_ast_tree(a.members)}}
+        elif isinstance(a, ast.MemberAccessAST):
+            return {'MemberAccessAST': {
+                'left': make_ast_tree(a.left),
+                'members': make_ast_tree(a.members)}}
 
-    elif isinstance(a, ast.AssignExprAST):
-        return {'AssignExprAST': {
-            'left': make_ast_tree(a.left),
-            'right': make_ast_tree(a.right)}}
+        elif isinstance(a, ast.AssignExprAST):
+            return {'AssignExprAST': {
+                'left': make_ast_tree(a.left),
+                'right': make_ast_tree(a.right)}}
 
-    elif isinstance(a, ast.StructDefineAST):
-        return {'StructDefineAST': {
-            'name': make_ast_tree(a.name),
-            'name_list': make_ast_tree(a.name_list),
-            'protected': make_ast_tree(a.protected_list)}}
+        elif isinstance(a, ast.StructDefineAST):
+            return {'StructDefineAST': {
+                'name': make_ast_tree(a.name),
+                'name_list': make_ast_tree(a.name_list),
+                'protected': make_ast_tree(a.protected_list)}}
 
-    elif isinstance(a, ast.NotTestAST):
-        return {'NotTestAST': {'expr': make_ast_tree(a.expr)}}
+        elif isinstance(a, ast.NotTestAST):
+            return {'NotTestAST': {'expr': make_ast_tree(a.expr)}}
 
-    elif isinstance(a, ast.ForExprAST):
-        return {'ForExprAST': {
-            'init': make_ast_tree(a.init_list),
-            'test': make_ast_tree(a.test),
-            'update': make_ast_tree(a.update_list),
-            'block': make_ast_tree(a.block)}}
+        elif isinstance(a, ast.ForExprAST):
+            return {'ForExprAST': {
+                'init': make_ast_tree(a.init_list),
+                'test': make_ast_tree(a.test),
+                'update': make_ast_tree(a.update_list),
+                'block': make_ast_tree(a.block)}}
 
-    elif isinstance(a, ast.BinaryExprListAST):
-        return {'BinExprListAST': make_ast_tree(a.expr_list)}
+        elif isinstance(a, ast.BinaryExprListAST):
+            return {'BinExprListAST': make_ast_tree(a.expr_list)}
 
-    elif isinstance(a, ast.AssignExprListAST):
-        return {'AssignListAST': make_ast_tree(a.expr_list)}
+        elif isinstance(a, ast.AssignExprListAST):
+            return {'AssignListAST': make_ast_tree(a.expr_list)}
 
-    elif isinstance(a, ast.AssertExprAST):
-        return {'AssertExprAST': make_ast_tree(a.expr)}
+        elif isinstance(a, ast.AssertExprAST):
+            return {'AssertExprAST': make_ast_tree(a.expr)}
 
-    elif isinstance(a, ast.ThrowExprAST):
-        return {'ThrowExprAST': make_ast_tree(a.expr)}
+        elif isinstance(a, ast.ThrowExprAST):
+            return {'ThrowExprAST': make_ast_tree(a.expr)}
 
-    elif isinstance(a, ast.TryCatchExprAST):
-        return {'TryCatchExprAST':
-                    {'try_block': make_ast_tree(a.try_block),
-                     'catch_block': make_ast_tree(a.catch_block),
-                     'finally_block': make_ast_tree(a.finally_block),
-                     'error_name': make_ast_tree(a.name)}}
+        elif isinstance(a, ast.TryCatchExprAST):
+            return {'TryCatchExprAST':
+                        {'try_block': make_ast_tree(a.try_block),
+                         'catch_block': make_ast_tree(a.catch_block),
+                         'finally_block': make_ast_tree(a.finally_block),
+                         'error_name': make_ast_tree(a.name)}}
 
-    elif isinstance(a, list):
-        return unpack_list(a)
+        elif isinstance(a, list):
+            return unpack_list(a)
 
-    return a
+        return a
 
 
 def test_parse():
