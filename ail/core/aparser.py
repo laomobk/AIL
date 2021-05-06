@@ -1912,51 +1912,88 @@ class Parser:
                                   for_program=True)
 
     def test(self, ts, source):
-        return self.parse(ts, source, '<test>')
+        self.__init__()
+        self.__tok_stream = ts
+        self.__filename = '<test>'
+        self.__source = source
+        self.__tok_list = ts.token_list
+        self.__tc = 0
+        self.__level = 0  # level 0
+
+        return self.__parse_binary_expr()
+
+
+def _set_lineno(pynode, lineno: int) -> pyast.AST:
+    node = pyast.fix_missing_locations(pynode)
+    if hasattr(node, 'lineno'):
+        node.lineno = lineno
+    return node
 
 
 class ASTConverter:
-    def _do_cell(self, cell: ast.CellAST) -> pyast.Name:
+    def _convert_cell(self, cell: ast.CellAST) -> pyast.Name:
         if cell.value == 'null':
-            return constant_expr(None)
+            return _set_lineno(constant_expr(None), cell.ln)
         elif cell.value == 'true':
-            return constant_expr(True)
+            return _set_lineno(constant_expr(True), cell.ln)
         elif cell.value == 'false':
-            return constant_expr(True)
+            return _set_lineno(constant_expr(True), cell.ln)
         elif cell.type == AIL_NUMBER:
-            return constant_expr(eval(cell.value))
+            return _set_lineno(constant_expr(eval(cell.value)), cell.ln)
         elif cell.type == AIL_STRING:
-            return constant_expr(cell.value)
+            return _set_lineno(constant_expr(cell.value), cell.ln)
         elif cell.type == AIL_IDENTIFIER:
-            return name_expr(cell.value, load_ctx)
+            return _set_lineno(name_expr(cell.value, load_ctx()), cell.ln)
+
+    def _convert_unary_expr(self, expr: ast.UnaryExprAST) -> pyast.UnaryOp:
+        op = {
+            '+': pyast.UAdd(),
+            '-': pyast.USub(),
+            '~': pyast.Invert()
+        }[expr.op]
+
+        operand = self.convert(expr.right_expr)
+
+        return _set_lineno(unary_op_expr(op, operand), expr.ln)
+
+    def _convert_bin_op_expr(self, left, rights, ln: int) -> pyast.BinOp:
+        r_op = rights[0][0]  # right: [[op, right_expr], ...]
+
+        op = {
+            '**': pyast.Pow(),
+            '+': pyast.Add(),
+            '-': pyast.Sub(),
+            '*': pyast.Mult(),
+            '/': pyast.Div(),
+            'mod': pyast.Mod(),
+            '<<': pyast.LShift(),
+            '>>': pyast.RShift(),
+            '|': pyast.BitOr(),
+            '&': pyast.BitAnd(),
+            '^': pyast.BitXor(),
+        }[r_op]
+
+        o_left = left
+
+        left = self.convert(left)
+
+        if len(rights) == 1:
+            right = self.convert(rights[0][1])
+            return _set_lineno(bin_op_expr(left, op, right), ln)
+
+        new_left = ast.GenericBinaryExprAST(o_left, rights[:1], ln)
+        right = self._convert_bin_op_expr(new_left, rights[1:], ln)
+        return right
 
     def convert(self, a) -> pyast.AST:
         if isinstance(a, ast.CellAST):
-            return {'Cell': {'value': a.value, 'type': a.type}}
+            return self._convert_cell(a)
 
         elif isinstance(a, ast.UnaryExprAST):
-            return {'UnaryAST': {'op': a.op, 'right': make_ast_tree(a.right_expr)}}
+            return self._convert_unary_expr(a)
 
-        elif isinstance(a, ast.PowerExprAST):
-            return {'PowerAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.ModExprAST):
-            return {'ModAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.MuitDivExprAST):
-            return {'MDAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.AddSubExprAST):
-            return {'BinAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.BitOpExprAST):
-            return {'BitOpAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.BinXorExprAST):
-            return {'XorAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
-
-        elif isinstance(a, ast.BitShiftExprAST):
-            return {'BitShiftAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+        elif type(a) in ast.BIN_OP_AST:
+            return self._convert_bin_op_expr(a.left, a.right, a.ln)
 
         elif isinstance(a, ast.CallExprAST):
             return {'CallAST': {
@@ -2120,6 +2157,15 @@ class ASTConverter:
 
         return a
 
+    def test(self, tree):
+        t = self.convert(tree)
+        m = pyast.fix_missing_locations(module([expr_stmt(t)]))
+
+        return m
+
+
+TEST_CONVERT_PYAST = True
+
 
 def test_parse():
     import pprint
@@ -2130,8 +2176,15 @@ def test_parse():
 
     p = Parser()
     t = p.test(ts, source)
-    pt = test_utils.make_ast_tree(t)
-    pprint.pprint(pt)
+
+    if not TEST_CONVERT_PYAST:
+        pt = test_utils.make_ast_tree(t)
+        pprint.pprint(pt)
+    else:
+        import ast
+        converter = ASTConverter()
+
+        test_utils.print_pyast(converter.test(t))
 
 
 if __name__ == '__main__':

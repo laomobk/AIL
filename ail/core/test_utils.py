@@ -1,9 +1,23 @@
+
 from .abytecode import (
     ByteCodeFileBuffer,
     LineNumberTableGenerator
 )
 from . import aobjects as obj, asts as ast, aopcode as opcs
 
+
+def print_pyast(tree):
+    dump_func = None
+    
+    try:
+        import astunparse
+        dump_func = astunparse.dump
+    except ModuleNotFoundError:
+        import ast
+        dump_func = ast.dump
+
+    print(dump_func(tree))
+    
 
 def unpack_list(l: list):
     rl = []

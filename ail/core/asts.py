@@ -108,6 +108,13 @@ class AddSubExprAST:
         self.ln = ln
 
 
+class GenericBinaryExprAST:
+    def __init__(self, left, right: list, ln: int):
+        self.left = left
+        self.right = right
+        self.ln = ln
+
+
 class BitShiftExprAST:
     def __init__(self, op: str,
                  left: AddSubExprAST,
@@ -509,3 +516,15 @@ BINARY_AST_TYPES = (
     BitOpExprAST,
     TestExprAST,
 )
+
+BIN_OP_AST = (
+    PowerExprAST,
+    ModExprAST,
+    MuitDivExprAST,
+    AddSubExprAST,
+    BitShiftExprAST,
+    BitOpExprAST,
+    BinXorExprAST,
+    GenericBinaryExprAST,
+)
+

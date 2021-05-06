@@ -159,6 +159,10 @@ def try_stmt(
                     orelse=[], finalbody=finalbody)
 
 
+def unary_op_expr(op: _ast.operator, operand: _ast.expr) -> _ast.UnaryOp:
+    return _ast.UnaryOp(op=op, operand=operand)
+
+
 def while_stmt(test: _ast.expr, body: List[_ast.stmt]) -> _ast.While:
     return _ast.While(test=test, body=body, orelse=[])
 
