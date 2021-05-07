@@ -517,6 +517,8 @@ class Parser:
         return self.__parse_member_access_expr()
 
     def __parse_power_expr(self) -> ast.PowerExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_unary_expr()
 
         if left is None:
@@ -533,9 +535,11 @@ class Parser:
             if r is None:
                 self.__syntax_error()
             rl.append(('**', r))
-        return ast.PowerExprAST(left, rl, self.__now_ln)
+        return ast.PowerExprAST(left, rl, ln)
 
     def __parse_mod_expr(self) -> ast.ModExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_power_expr()
 
         if left is None:
@@ -552,9 +556,11 @@ class Parser:
             if r is None:
                 self.__syntax_error()
             rl.append(('mod', r))
-        return ast.ModExprAST(left, rl, self.__now_ln)
+        return ast.ModExprAST(left, rl, ln)
 
     def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_mod_expr()
 
         if left is None:
@@ -577,9 +583,11 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.MuitDivExprAST(left_op, left, rl, self.__now_ln)
+        return ast.MuitDivExprAST(left_op, left, rl, ln)
 
     def __parse_bin_xor_expr(self) -> ast.BinXorExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_bit_shift_expr()
 
         if left is None:
@@ -596,7 +604,7 @@ class Parser:
             if r is None:
                 self.__syntax_error()
             rl.append(('^', r))
-        return ast.BinXorExprAST(left, rl, self.__now_ln)
+        return ast.BinXorExprAST(left, rl, ln)
 
     def __parse_binary_expr(self) -> ast.BitOpExprAST:
         expr = self.__parse_test_expr()
@@ -604,6 +612,8 @@ class Parser:
         return expr
 
     def __parse_bin_op_expr(self) -> ast.BitOpExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_bin_xor_expr()
 
         if left is None:
@@ -626,9 +636,11 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.BitOpExprAST(left_op, left, rl, self.__now_ln)
+        return ast.BitOpExprAST(left_op, left, rl, ln)
 
     def __parse_bit_shift_expr(self) -> ast.BitShiftExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_add_sub_expr()
 
         if left is None:
@@ -651,9 +663,11 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.BitShiftExprAST(left_op, left, rl, self.__now_ln)
+        return ast.BitShiftExprAST(left_op, left, rl, ln)
 
     def __parse_add_sub_expr(self) -> ast.AddSubExprAST:
+        ln = self.__now_ln
+
         left = self.__parse_muit_div_expr()
 
         if left is None:
@@ -676,7 +690,7 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.AddSubExprAST(left_op, left, rl, self.__now_ln)
+        return ast.AddSubExprAST(left_op, left, rl, ln)
 
     def __parse_print_expr(self) -> ast.PrintExprAST:
         ln = self.__now_ln
@@ -2006,6 +2020,15 @@ class ASTConverter:
 
         return _set_lineno(call_expr(func, args), stmt.ln)
 
+    def _convert_block(self, block: ast.BlockExprAST) -> List[pyast.stmt]:
+        stmts = []
+        for stmt in block.stmts:
+            s = self.convert(stmt)
+            if isinstance(s, pyast.expr):
+                s = _set_lineno(expr_stmt(s), stmt.ln)
+            stmts.append(s)
+        return stmts
+
     def convert(self, a) -> pyast.AST:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
@@ -2052,7 +2075,7 @@ class ASTConverter:
             return {'TestAST': make_ast_tree(a.test)}
 
         elif isinstance(a, ast.BlockExprAST):
-            return {'BlockAST': unpack_list(a.stmts)}
+            return self._convert_block(a)
 
         elif isinstance(a, ast.IfExprAST):
             return {'IfAST':
@@ -2176,6 +2199,10 @@ class ASTConverter:
 
         return a
 
+    def convert_module(self, block: ast.BlockExprAST) -> pyast.Module:
+        body = self.convert(block)
+        return _set_lineno(module(body), block.ln)
+
     def test(self, tree):
         t = self.convert(tree)
         m = pyast.fix_missing_locations(module([expr_stmt(t)]))
@@ -2194,17 +2221,16 @@ def test_parse():
     ts = l.lex(source)
 
     p = Parser()
+    t = p.parse(ts, source, '<test>')
 
     if not TEST_CONVERT_PYAST:
-        t = p.parse(ts, source, '<test>')
         pt = test_utils.make_ast_tree(t)
         pprint.pprint(pt)
     else:
         import ast
         converter = ASTConverter()
 
-        t = p.test(ts, source)
-        test_utils.print_pyast(converter.test(t))
+        test_utils.print_pyast(converter.convert_module(t))
 
 
 if __name__ == '__main__':

@@ -129,7 +129,7 @@ def list_stmt(elts: List[_ast.expr], ctx: _ast.expr_context) -> _ast.List:
 
 
 def module(body: List[_ast.stmt]) -> _ast.Module:
-    return _ast.Module(body=body)
+    return _ast.Module(body=body, type_ignores=[])
 
 
 def name_expr(id: str, ctx: _ast.expr_context) -> _ast.Name:
