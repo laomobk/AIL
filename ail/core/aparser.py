@@ -1920,7 +1920,7 @@ class Parser:
         self.__tc = 0
         self.__level = 0  # level 0
 
-        return self.__parse_binary_expr()
+        return self.__parse_print_expr()
 
 
 def _set_lineno(pynode, lineno: int) -> pyast.AST:
@@ -1985,6 +1985,27 @@ class ASTConverter:
         right = self._convert_bin_op_expr(new_left, rights[1:], ln)
         return right
 
+    def _convert_call_expr(self, expr: ast.CallExprAST) -> pyast.Call:
+        func = self.convert(expr.left)
+
+        o_args: ast.ArgListAST = expr.arg_list
+
+        args = []
+
+        for arg in o_args.exp_list:
+            value = self.convert(arg.expr)
+            if arg.star:
+                value = _set_lineno(starred_expr(value, load_ctx()), arg.ln)
+            args.append(value)
+
+        return _set_lineno(call_expr(func, args), expr.ln)
+
+    def _convert_print_stmt(self, stmt: ast.PrintExprAST) -> pyast.Call:
+        func = _set_lineno(name_expr('print', load_ctx()), stmt.ln)
+        args = [self.convert(expr) for expr in stmt.value_list]
+
+        return _set_lineno(call_expr(func, args), stmt.ln)
+
     def convert(self, a) -> pyast.AST:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
@@ -1996,12 +2017,10 @@ class ASTConverter:
             return self._convert_bin_op_expr(a.left, a.right, a.ln)
 
         elif isinstance(a, ast.CallExprAST):
-            return {'CallAST': {
-                        'left': make_ast_tree(a.left),
-                        'arg_list': make_ast_tree(a.arg_list)}}
+            return self._convert_call_expr(a)
 
         elif isinstance(a, ast.PrintExprAST):
-            return {'PrintAST': {'value': unpack_list(a.value_list)}}
+            return self._convert_print_stmt(a)
 
         elif isinstance(a, ast.InputExprAST):
             return {'InputAST': {
@@ -2175,15 +2194,16 @@ def test_parse():
     ts = l.lex(source)
 
     p = Parser()
-    t = p.test(ts, source)
 
     if not TEST_CONVERT_PYAST:
+        t = p.parse(ts, source, '<test>')
         pt = test_utils.make_ast_tree(t)
         pprint.pprint(pt)
     else:
         import ast
         converter = ASTConverter()
 
+        t = p.test(ts, source)
         test_utils.print_pyast(converter.test(t))
 
 
