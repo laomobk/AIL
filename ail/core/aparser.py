@@ -2020,16 +2020,18 @@ class ASTConverter:
 
         return _set_lineno(call_expr(func, args), stmt.ln)
 
-    def _convert_block(self, block: ast.BlockExprAST) -> List[pyast.stmt]:
+    def _convert_block(
+            self, block: ast.BlockExprAST, 
+            for_module: bool = False) -> List[pyast.stmt]:
         stmts = []
         for stmt in block.stmts:
-            s = self.convert(stmt)
+            s = self.convert(stmt, for_module)
             if isinstance(s, pyast.expr):
                 s = _set_lineno(expr_stmt(s), stmt.ln)
             stmts.append(s)
         return stmts
 
-    def convert(self, a) -> pyast.AST:
+    def convert(self, a, for_module: bool = False) -> pyast.AST:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
 
@@ -2200,7 +2202,7 @@ class ASTConverter:
         return a
 
     def convert_module(self, block: ast.BlockExprAST) -> pyast.Module:
-        body = self.convert(block)
+        body = self.convert(block, True)
         return _set_lineno(module(body), block.ln)
 
     def test(self, tree):
