@@ -1951,7 +1951,9 @@ def _set_lineno(pynode: _PyTreeT, lineno: int) -> _PyTreeT:
 
 
 class PyTreeConvertException(Exception):
-    pass
+    def __init__(self, msg: str, ln: int):
+        super().__init__(msg)
+        self.ln = ln
 
 
 class ASTConverter:
@@ -2093,16 +2095,31 @@ class ASTConverter:
 
         return _set_lineno(bool_op_expr(op, values), expr.ln)
 
+    def _convert_member_access_expr(self, left, right, ln: int) -> pyast.Attribute:
+        o_left = left
+
+        left = self.convert(left)
+
+        if len(rights) == 1:
+            right = self.convert(rights[0])
+            if isinstance(op, pyast.cmpop):
+                return _set_lineno(compare_expr(left, [op], [right]), ln)
+            return _set_lineno(bin_op_expr(left, op, right), ln)
+
+        new_left = ast.MemberAccessAST(o_left, rights[:1], ln)
+        right = self._convert_member_access_expr(new_left, rights[1:], ln)
+        return right
+
     def _convert_assign_expr(self,
             expr: ast.AssignExprAST, as_stmt: bool) -> pyast.Assign:
         if not as_stmt:
-            raise PyTreeConvertException('not support assign expression')
+            raise PyTreeConvertException('not support assign expression', expr.ln)
 
         right = self.convert(expr.right)
         left = self.convert(expr.left)
 
         if type(left) not in (pyast.Attribute, pyast.Name, pyast.Subscript):
-            raise PyTreeConvertException('illegal assign target')
+            raise PyTreeConvertException('illegal assign target', expr.ln)
 
         left.ctx = store_ctx()
 
@@ -2231,14 +2248,10 @@ class ASTConverter:
                 'path': a.path, 'name': a.name, 'members': a.members}}
 
         elif isinstance(a, ast.MemberAccessAST):
-            return {'MemberAccessAST': {
-                'left': make_ast_tree(a.left),
-                'members': make_ast_tree(a.members)}}
+            return self._convert_member_access_expr(a.left, a.right, a.ln)
 
         elif isinstance(a, ast.AssignExprAST):
-            return {'AssignExprAST': {
-                'left': make_ast_tree(a.left),
-                'right': make_ast_tree(a.right)}}
+            return self._convert_assign_expr(a, as_stmt)
 
         elif isinstance(a, ast.StructDefineAST):
             return {'StructDefineAST': {
@@ -2291,7 +2304,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = not True
+TEST_CONVERT_PYAST = True
 
 
 def test_parse():
