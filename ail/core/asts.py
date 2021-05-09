@@ -190,7 +190,7 @@ class DefineExprAST(ExprAST):
         self.ln = ln
 
 
-class PrintExprAST(ExprAST):
+class PrintStmtAST(ExprAST):
     """
     print_expr := 'PRINT' expr [';' expr]* NEWLINE
     """
@@ -200,7 +200,7 @@ class PrintExprAST(ExprAST):
         self.ln = ln
 
 
-class InputExprAST(ExprAST):
+class InputStmtAST(ExprAST):
     """
     input_expr := 'INPUT' expr ';' val_list NEWLINE
     """
@@ -254,7 +254,7 @@ class TestExprAST:
         self.ln = ln
 
 
-class BlockExprAST:
+class BlockAST:
     """
     BLOCK := stmt*
     """
@@ -265,7 +265,7 @@ class BlockExprAST:
         self.new = new
 
 
-class IfExprAST:
+class IfStmtAST:
     """
     if_else_expr := 'if' test 'then' NEWLINE
                 BLOK
@@ -277,7 +277,7 @@ class IfExprAST:
     """
 
     def __init__(self, test: TestExprAST,
-                 block: BlockExprAST, elif_list: list, else_block: BlockExprAST, ln: int):
+                 block: BlockAST, elif_list: list, else_block: BlockAST, ln: int):
         self.test = test
         self.block = block
         self.elif_list = elif_list
@@ -285,27 +285,27 @@ class IfExprAST:
         self.ln = ln
 
 
-class WhileExprAST:
+class WhileStmtAST:
     """
     while_expr := 'while' test 'then'
         BLOCK
         'wend' NEWLINE'
     """
 
-    def __init__(self, test: TestExprAST, block: BlockExprAST, ln: int):
+    def __init__(self, test: TestExprAST, block: BlockAST, ln: int):
         self.test = test
         self.block = block
         self.ln = ln
 
 
-class DoLoopExprAST:
+class DoLoopStmtAST:
     """
     do_loop_expr := 'do' 'NEWLINE
                 BLOCK
                 'loop' 'until' test NEWLINE
     """
 
-    def __init__(self, test: TestExprAST, block: BlockExprAST, ln: int):
+    def __init__(self, test: TestExprAST, block: BlockAST, ln: int):
         self.test = test
         self.block = block
         self.ln = ln
@@ -319,7 +319,7 @@ class FunctionDefineAST:
     """
 
     def __init__(self, name: str, arg_list: ArgListAST,
-                 block: BlockExprAST, bindto: str, ln: int,
+                 block: BlockAST, bindto: str, ln: int,
                  doc_str=''):
         self.name = name
         self.arg_list = arg_list
@@ -342,7 +342,7 @@ class ClassDefineAST:
         self.doc_str = doc_str
 
 
-class ReturnAST:
+class ReturnStmtAST:
     """
     return_stmt := 'return' expr
     """
@@ -364,7 +364,7 @@ class NonlocalStmtAST:
         self.ln = ln
 
 
-class ContinueAST:
+class ContinueStmtAST:
     """
     continue_stmt := 'continue'
     """
@@ -373,7 +373,7 @@ class ContinueAST:
         self.ln = ln
 
 
-class BreakAST:
+class BreakStmtAST:
     """
     break_stmt := 'break'
     """
@@ -422,13 +422,13 @@ class SubscriptExprAST:
         self.ln = ln
 
 
-class LoadAST:
+class LoadStmtAST:
     def __init__(self, path: str, ln: int):
         self.path = path
         self.ln = ln
 
 
-class ImportAST:
+class ImportStmtAST:
     def __init__(self, path: str, name: str, ln: int, members: List[str] = None):
         self.path = path
         self.name = name
@@ -462,10 +462,10 @@ class BinaryExprListAST:
         self.ln = ln
 
 
-class ForExprAST:
+class ForStmtAST:
     def __init__(self, init_list: AssignExprListAST,
                  test: TestExprAST, update_list: BinaryExprListAST,
-                 block: BlockExprAST, ln):
+                 block: BlockAST, ln):
         self.init_list = init_list
         self.test = test
         self.update_list = update_list
@@ -473,22 +473,22 @@ class ForExprAST:
         self.ln = ln
 
 
-class ThrowExprAST:
+class ThrowStmtAST:
     def __init__(self, expr: AddSubExprAST, ln: int):
         self.expr = expr
         self.ln = ln
 
 
-class AssertExprAST:
+class AssertStmtAST:
     def __init__(self, expr: TestExprAST, ln: int):
         self.expr = expr
         self.ln = ln
 
 
-class TryCatchExprAST:
-    def __init__(self, try_block: BlockExprAST,
-                 catch_block: BlockExprAST,
-                 finally_block: BlockExprAST,
+class TryCatchStmtAST:
+    def __init__(self, try_block: BlockAST,
+                 catch_block: BlockAST,
+                 finally_block: BlockAST,
                  name: str, ln: int):
         self.try_block = try_block
         self.catch_block = catch_block

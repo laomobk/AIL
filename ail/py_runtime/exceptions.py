@@ -1,0 +1,3 @@
+
+class AILAssignException(Exception):
+    pass

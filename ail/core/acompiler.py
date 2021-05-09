@@ -464,7 +464,7 @@ class Compiler:
 
         return bc
 
-    def __compile_print_expr(self, tree: ast.PrintExprAST) -> ByteCode:
+    def __compile_print_expr(self, tree: ast.PrintStmtAST) -> ByteCode:
         bc = ByteCode()
 
         expl = tree.value_list
@@ -477,7 +477,7 @@ class Compiler:
 
         return bc
 
-    def __compile_input_expr(self, tree: ast.InputExprAST) -> ByteCode:
+    def __compile_input_expr(self, tree: ast.InputStmtAST) -> ByteCode:
         bc = ByteCode()
 
         expc = self.__compile_binary_expr(tree.msg)
@@ -493,7 +493,7 @@ class Compiler:
 
         return bc
 
-    def __compile_try_catch_expr(self, tree: ast.TryCatchExprAST, extofs: int = 0):     
+    def __compile_try_catch_expr(self, tree: ast.TryCatchStmtAST, extofs: int = 0):
         # structure of try-catch-finally block:
         # ? setup_finally:  $finally block  (has finally)   +
         # ? setup_try:      $catch block    (has catch)     +
@@ -594,7 +594,7 @@ class Compiler:
         return bc
 
     def __compile_try_catch_expr0(self,
-            tree: ast.TryCatchExprAST, extofs: int = 0):
+                                  tree: ast.TryCatchStmtAST, extofs: int = 0):
         bc = ByteCode()
         clbc = ByteCode()  # clean err variable
 
@@ -796,7 +796,7 @@ class Compiler:
         else:
             return self.__compile_or_expr(test, extofs)
 
-    def __compile_while_stmt(self, tree: ast.WhileExprAST, extofs: int):
+    def __compile_while_stmt(self, tree: ast.WhileStmtAST, extofs: int):
         bc = ByteCode()
         extofs += _BYTE_CODE_SIZE
 
@@ -830,7 +830,7 @@ class Compiler:
 
         return bc
 
-    def __compile_do_loop_stmt(self, tree: ast.DoLoopExprAST, extofs: int):
+    def __compile_do_loop_stmt(self, tree: ast.DoLoopStmtAST, extofs: int):
         bc = ByteCode()
 
         tc = self.__compile_test_expr(tree.test, 0)  # first compile
@@ -858,7 +858,7 @@ class Compiler:
 
         return bc
 
-    def __compile_for_stmt(self, tree: ast.ForExprAST, extofs: int):
+    def __compile_for_stmt(self, tree: ast.ForStmtAST, extofs: int):
         bc = ByteCode()
 
         extofs += _BYTE_CODE_SIZE  # for init_for
@@ -906,7 +906,7 @@ class Compiler:
 
         return bc
 
-    def __compile_if_else_stmt(self, tree: ast.IfExprAST, extofs: int):
+    def __compile_if_else_stmt(self, tree: ast.IfStmtAST, extofs: int):
         bc = ByteCode()
 
         has_else = len(tree.else_block.stmts) > 0
@@ -949,7 +949,7 @@ class Compiler:
 
         return bc
 
-    def __compile_return_expr(self, tree: ast.ReturnAST) -> ByteCode:
+    def __compile_return_expr(self, tree: ast.ReturnStmtAST) -> ByteCode:
         bc = ByteCode()
         bce = self.__compile_binary_expr(tree.expr)
 
@@ -958,13 +958,13 @@ class Compiler:
 
         return bc
 
-    def __compile_break_expr(self, tree: ast.BreakAST) -> ByteCode:
+    def __compile_break_expr(self, tree: ast.BreakStmtAST) -> ByteCode:
         bc = ByteCode()
         bc.add_bytecode(break_loop, 0, tree.ln)
 
         return bc
 
-    def __compile_continue_expr(self, tree: ast.ContinueAST) -> ByteCode:
+    def __compile_continue_expr(self, tree: ast.ContinueStmtAST) -> ByteCode:
         bc = ByteCode()
         bc.add_bytecode(continue_loop, 0, tree.ln)
 
@@ -978,7 +978,7 @@ class Compiler:
         self.__buffer.nonlocal_names.add(tree.name)
         return ByteCode()  # empty
 
-    def __compile_assert_expr(self, tree: ast.AssertExprAST, extofs: int) -> ByteCode:
+    def __compile_assert_expr(self, tree: ast.AssertStmtAST, extofs: int) -> ByteCode:
         bc = ByteCode()
 
         ec = self.__compile_test_expr(tree.expr, extofs)
@@ -994,7 +994,7 @@ class Compiler:
 
         return bc
 
-    def __compile_throw_expr(self, tree: ast.ThrowExprAST) -> ByteCode:
+    def __compile_throw_expr(self, tree: ast.ThrowStmtAST) -> ByteCode:
         bc = ByteCode()
 
         if tree.expr is None:
@@ -1008,7 +1008,7 @@ class Compiler:
 
         return bc
 
-    def __compile_load_stmt(self, tree: ast.LoadAST) -> ByteCode:
+    def __compile_load_stmt(self, tree: ast.LoadStmtAST) -> ByteCode:
         bc = ByteCode()
 
         ni = self.__buffer.add_const(tree.path)
@@ -1017,7 +1017,7 @@ class Compiler:
 
         return bc
 
-    def __compile_import_stmt(self, tree: ast.ImportAST) -> ByteCode:
+    def __compile_import_stmt(self, tree: ast.ImportStmtAST) -> ByteCode:
         bc = ByteCode()
         ln = tree.ln
 
@@ -1202,7 +1202,7 @@ class Compiler:
 
         return bc
 
-    def __compile_block(self, tree: ast.BlockExprAST, firstoffset=0) -> ByteCode:
+    def __compile_block(self, tree: ast.BlockAST, firstoffset=0) -> ByteCode:
         bc = self.__general_bytecode = ByteCode()
         last_ln = 0
         total_offset = firstoffset
@@ -1213,40 +1213,40 @@ class Compiler:
 
             # self.__lnotab.mark(et.ln, total_offset)
 
-            if isinstance(et, ast.InputExprAST):
+            if isinstance(et, ast.InputStmtAST):
                 tbc = self.__compile_input_expr(et)
 
-            elif isinstance(et, ast.PrintExprAST):
+            elif isinstance(et, ast.PrintStmtAST):
                 tbc = self.__compile_print_expr(et)
 
             elif isinstance(et, ast.DefineExprAST):
                 tbc = self.__compile_assign_expr(et, single=True)
 
-            elif isinstance(et, ast.IfExprAST):
+            elif isinstance(et, ast.IfStmtAST):
                 tbc = self.__compile_if_else_stmt(et, total_offset)
 
-            elif isinstance(et, ast.WhileExprAST):
+            elif isinstance(et, ast.WhileStmtAST):
                 tbc = self.__compile_while_stmt(et, total_offset)
 
-            elif isinstance(et, ast.DoLoopExprAST):
+            elif isinstance(et, ast.DoLoopStmtAST):
                 tbc = self.__compile_do_loop_stmt(et, total_offset)
 
             elif isinstance(et, ast.FunctionDefineAST):
                 tbc = self.__compile_function(et)
 
-            elif isinstance(et, ast.ReturnAST):
+            elif isinstance(et, ast.ReturnStmtAST):
                 tbc = self.__compile_return_expr(et)
 
-            elif isinstance(et, ast.BreakAST):
+            elif isinstance(et, ast.BreakStmtAST):
                 tbc = self.__compile_break_expr(et)
 
-            elif isinstance(et, ast.ContinueAST):
+            elif isinstance(et, ast.ContinueStmtAST):
                 tbc = self.__compile_continue_expr(et)
 
             elif isinstance(et, ast.CallExprAST):
                 tbc = self.__compile_call_expr(et, plain_call=True)
 
-            elif isinstance(et, ast.LoadAST):
+            elif isinstance(et, ast.LoadStmtAST):
                 tbc = self.__compile_load_stmt(et)
 
             elif isinstance(et, ast.AssignExprAST):
@@ -1258,19 +1258,19 @@ class Compiler:
             elif isinstance(et, ast.ClassDefineAST):
                 tbc = self.__compile_class(et)
 
-            elif isinstance(et, ast.ForExprAST):
+            elif isinstance(et, ast.ForStmtAST):
                 tbc = self.__compile_for_stmt(et, total_offset)
 
-            elif isinstance(et, ast.AssertExprAST):
+            elif isinstance(et, ast.AssertStmtAST):
                 tbc = self.__compile_assert_expr(et, total_offset)
 
-            elif isinstance(et, ast.ThrowExprAST):
+            elif isinstance(et, ast.ThrowStmtAST):
                 tbc = self.__compile_throw_expr(et)
 
-            elif isinstance(et, ast.TryCatchExprAST):
+            elif isinstance(et, ast.TryCatchStmtAST):
                 tbc = self.__compile_try_catch_expr(et, total_offset)
 
-            elif isinstance(et, ast.ImportAST):
+            elif isinstance(et, ast.ImportStmtAST):
                 tbc = self.__compile_import_stmt(et)
 
             elif isinstance(et, ast.GlobalStmtAST):
@@ -1318,12 +1318,12 @@ class Compiler:
 
         return bc
 
-    def compile(self, astree: ast.BlockExprAST, single_line=False) -> ByteCodeFileBuffer:
+    def compile(self, astree: ast.BlockAST, single_line=False) -> ByteCodeFileBuffer:
         self.__init__(self.__mode, self.__filename, self.__ext_varname, self.__name)
         self.__is_single_line = single_line
 
         self.__lnotab.firstlineno = astree.stmts[0].ln \
-            if isinstance(astree, ast.BlockExprAST) and astree.stmts \
+            if isinstance(astree, ast.BlockAST) and astree.stmts \
             else 1
 
         tbc = self.__compile_block(astree)

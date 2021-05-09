@@ -1,6 +1,6 @@
 import _ast
 
-from typing import List
+from typing import List, TypeVar
 
 
 aug_load_ctx = _ast.AugLoad
@@ -47,8 +47,8 @@ def assert_stmt(test: _ast.expr, msg: _ast.expr) -> _ast.Assert:
     return _ast.Assert(test=test, msg=msg)
 
 
-def assign_stmt(targets: List[_ast.expr], value: _ast.expr) -> _ast.Assign:
-    return _ast.Assign(targets=targets, value=value)
+def assign_stmt(targets: List[_ast.AST], value: _ast.expr) -> _ast.Assign:
+    return _ast.Assign(targets=targets, value=value, type_comment=None)
 
 
 def attribute_expr(value: _ast.expr, attr: str, ctx: _ast.expr_context) -> _ast.Attribute:
@@ -120,6 +120,10 @@ def if_stmt(
     return _ast.If(test=test, body=body, orelse=orelse)
 
 
+def index_slice(value: _ast.expr) -> _ast.Index:
+    return _ast.Index(value=value)
+
+
 def lambda_expr(args: List[_ast.expr], body: _ast.stmt) -> _ast.Lambda:
     return _ast.Lambda(args=args, body=body)
 
@@ -152,6 +156,11 @@ def starred_expr(value: _ast.expr, ctx: _ast.expr_context) -> _ast.Starred:
     return _ast.Starred(value=value, ctx=ctx)
 
 
+def subscript_expr(
+        value: _ast.expr, slice: _ast.slice, ctx: _ast.expr_context) -> _ast.Subscript:
+    return _ast.Subscript(value=value, slice=slice, ctx=ctx)
+
+
 def try_stmt(
         body: List[_ast.stmt], handlers: List[_ast.ExceptHandler],
         finalbody: List[_ast.stmt]) -> _ast.Try:
@@ -159,8 +168,8 @@ def try_stmt(
                     orelse=[], finalbody=finalbody)
 
 
-def tuple_expr(elts: _ast.expr, cxt: _ast.expr_context) -> _ast.Tuple:
-    return _ast.Tuple(elts=elts, ctx=ctx, type_commit=None)
+def tuple_expr(elts: List[_ast.expr], ctx: _ast.expr_context) -> _ast.Tuple:
+    return _ast.Tuple(elts=elts, ctx=ctx)
 
 
 def unary_op_expr(op: _ast.operator, operand: _ast.expr) -> _ast.UnaryOp:

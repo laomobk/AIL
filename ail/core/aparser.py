@@ -479,8 +479,8 @@ class Parser:
             self.__next_tok()  # eat '->'
 
             expr = self.__parse_binary_expr()
-            return_stmt = ast.ReturnAST(expr, expr.ln)
-            block = ast.BlockExprAST([return_stmt], return_stmt.ln, True)
+            return_stmt = ast.ReturnStmtAST(expr, expr.ln)
+            block = ast.BlockAST([return_stmt], return_stmt.ln, True)
 
             return ast.FunctionDefineAST(
                     '<lambda>', expr_or_param, block, None, expr.ln)
@@ -693,7 +693,7 @@ class Parser:
 
         return ast.AddSubExprAST(left_op, left, rl, ln)
 
-    def __parse_print_expr(self) -> ast.PrintExprAST:
+    def __parse_print_expr(self) -> ast.PrintStmtAST:
         ln = self.__now_ln
 
         self.__next_tok()  # eat 'PRINT'
@@ -720,9 +720,9 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.PrintExprAST(el, ln)
+        return ast.PrintStmtAST(el, ln)
 
-    def __parse_input_expr(self) -> ast.InputExprAST:
+    def __parse_input_expr(self) -> ast.InputStmtAST:
         self.__next_tok()  # eat 'INPUT'
 
         msg = self.__parse_binary_expr()
@@ -731,7 +731,7 @@ class Parser:
             self.__syntax_error()
 
         if self.__now_tok != ';':
-            return ast.InputExprAST(
+            return ast.InputStmtAST(
                 msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
         if self.__next_tok().ttype == AIL_IDENTIFIER:
@@ -741,7 +741,7 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.InputExprAST(msg, vl, self.__now_ln)
+        return ast.InputStmtAST(msg, vl, self.__now_ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
         left = self.__parse_bin_op_expr()
@@ -890,15 +890,15 @@ class Parser:
         return ast.TestExprAST(t, self.__now_ln)
 
     def __parse_new_else_elif_block(self, test: ast.TestExprAST,
-                                    if_block: ast.BlockExprAST,
-                                    else_block: ast.BlockExprAST, 
-                                    ln: int) -> ast.IfExprAST:
+                                    if_block: ast.BlockAST,
+                                    else_block: ast.BlockAST,
+                                    ln: int) -> ast.IfStmtAST:
         elif_list = []
         
         self.__skip_newlines()
 
         if self.__now_tok.value not in ('else', 'elif') :
-            return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
+            return ast.IfStmtAST(test, if_block, elif_list, else_block, ln)
 
         while self.__now_tok.ttype != AIL_EOF:
             self.__skip_newlines()
@@ -923,14 +923,14 @@ class Parser:
                     self.__syntax_error()
 
                 elif_list.append(
-                    ast.IfExprAST(elif_test, elif_block, [], None, ln))
+                    ast.IfStmtAST(elif_test, elif_block, [], None, ln))
 
             else:
                 break
             
-        return ast.IfExprAST(test, if_block, elif_list, else_block, ln)
+        return ast.IfStmtAST(test, if_block, elif_list, else_block, ln)
 
-    def __parse_if_else_expr0(self) -> ast.IfExprAST:
+    def __parse_if_else_expr0(self) -> ast.IfStmtAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'if'
 
@@ -948,7 +948,7 @@ class Parser:
             self.__next_tok()  # eat 'then'
 
         if_block = self.__parse_block(for_if_else=True)
-        else_block = ast.BlockExprAST([], self.__now_ln)
+        else_block = ast.BlockAST([], self.__now_ln)
         elif_list = []
 
         if is_new_block:
@@ -964,7 +964,7 @@ class Parser:
 
                 if self.__now_tok == 'endif':
                     self.__next_tok()  # eat 'endif'
-                    return ast.IfExprAST(
+                    return ast.IfStmtAST(
                         if_test, if_block, elif_list, else_block, ln)
                 else:
                     self.__syntax_error()
@@ -982,18 +982,18 @@ class Parser:
                     self.__syntax_error()
 
                 elif_list.append(
-                    ast.IfExprAST(elif_test, elif_block, [], None, ln))
+                    ast.IfStmtAST(elif_test, elif_block, [], None, ln))
 
             elif self.__now_tok == 'endif':
                 self.__next_tok()  # eat 'endif'
                 self.__expect_newline()
-                return ast.IfExprAST(
+                return ast.IfStmtAST(
                     if_test, if_block, elif_list, else_block, ln)
 
             else:
                 self.__syntax_error()
 
-    def __parse_if_else_expr(self) -> ast.IfExprAST:
+    def __parse_if_else_expr(self) -> ast.IfStmtAST:
         base_tree = self.__parse_if_else_expr0()
 
         if len(base_tree.elif_list) == 0:
@@ -1006,15 +1006,15 @@ class Parser:
         base_tree.else_block = None
 
         for elif_block in elif_list[::-1]:
-            elif_block.else_block = ast.BlockExprAST([last_if_else_block], self.__now_ln)
+            elif_block.else_block = ast.BlockAST([last_if_else_block], self.__now_ln)
             last_if_else_block = elif_block
 
-        base_tree.else_block = ast.BlockExprAST([last_if_else_block], self.__now_ln)
+        base_tree.else_block = ast.BlockAST([last_if_else_block], self.__now_ln)
         base_tree.elif_list = []
 
         return base_tree
 
-    def __parse_while_expr(self) -> ast.WhileExprAST:
+    def __parse_while_expr(self) -> ast.WhileStmtAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'while'
 
@@ -1033,7 +1033,7 @@ class Parser:
         if not block.new:
             self.__expect_newline()
 
-        return ast.WhileExprAST(test, block, ln)
+        return ast.WhileStmtAST(test, block, ln)
 
     def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
         f = self.__parse_assign_expr()
@@ -1065,7 +1065,7 @@ class Parser:
 
         return ast.BinaryExprListAST(el, self.__now_ln)
 
-    def __parse_new_for_stmt(self, from_classic=False) -> ast.ForExprAST:
+    def __parse_new_for_stmt(self, from_classic=False) -> ast.ForStmtAST:
         if not from_classic and self.__now_tok != 'for':
             self.__syntax_error()
 
@@ -1080,14 +1080,14 @@ class Parser:
 
         if self.__now_tok == '{' or self.__now_tok == 'then':
             body = self.__parse_block()
-            return ast.WhileExprAST(ast.CellAST('1', AIL_NUMBER, ln), body, ln)
+            return ast.WhileStmtAST(ast.CellAST('1', AIL_NUMBER, ln), body, ln)
 
         if self.__now_tok != ';':
             init = self.__parse_binary_expr_list()
             if len(init.expr_list) == 1 and \
                     (self.__now_tok == '{' or self.__now_tok == 'then'):
                 body = self.__parse_block()
-                return ast.WhileExprAST(init.expr_list[0], body, ln)
+                return ast.WhileStmtAST(init.expr_list[0], body, ln)
             # compatible with classic for.
             init = ast.AssignExprListAST(init.expr_list, ln)
 
@@ -1111,9 +1111,9 @@ class Parser:
         
         body = self.__parse_block()
 
-        return ast.ForExprAST(init, test, update, body, ln)
+        return ast.ForStmtAST(init, test, update, body, ln)
 
-    def __parse_for_expr(self) -> ast.ForExprAST:
+    def __parse_for_expr(self) -> ast.ForStmtAST:
         if self.__now_tok != 'for':
             self.__syntax_error()
 
@@ -1149,9 +1149,9 @@ class Parser:
         if not forb.new:
             self.__expect_newline()
 
-        return ast.ForExprAST(initl, test, binl, forb, self.__now_ln)
+        return ast.ForStmtAST(initl, test, binl, forb, self.__now_ln)
 
-    def __parse_do_loop_expr(self) -> ast.DoLoopExprAST:
+    def __parse_do_loop_expr(self) -> ast.DoLoopStmtAST:
         ln = self.__now_ln
 
         new_block_style = False
@@ -1182,7 +1182,7 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.DoLoopExprAST(test, block, ln)
+        return ast.DoLoopStmtAST(test, block, ln)
 
     def __parse_struct_def_stmt(self) -> ast.StructDefineAST:
         if self.__now_tok != 'struct':
@@ -1394,7 +1394,7 @@ class Parser:
 
         return ast.FunctionDefineAST(name, arg_list, block, bindto, ln, doc_string)
 
-    def __parse_continue_stmt(self) -> ast.ContinueAST:
+    def __parse_continue_stmt(self) -> ast.ContinueStmtAST:
         if self.__now_tok != 'continue':
             self.__syntax_error()
 
@@ -1402,9 +1402,9 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.ContinueAST(self.__now_ln)
+        return ast.ContinueStmtAST(self.__now_ln)
 
-    def __parse_break_stmt(self) -> ast.BreakAST:
+    def __parse_break_stmt(self) -> ast.BreakStmtAST:
         if self.__now_tok != 'break':
             self.__syntax_error()
 
@@ -1412,7 +1412,7 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.BreakAST(self.__now_ln)
+        return ast.BreakStmtAST(self.__now_ln)
 
     def __parse_global_stmt(self) -> ast.GlobalStmtAST:
         if self.__now_tok != 'global':
@@ -1452,7 +1452,7 @@ class Parser:
 
         return ast.NonlocalStmtAST(name, ln)
 
-    def __parse_return_stmt(self) -> ast.ReturnAST:
+    def __parse_return_stmt(self) -> ast.ReturnStmtAST:
         if self.__now_tok != 'return':
             self.__syntax_error()
 
@@ -1468,9 +1468,9 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.ReturnAST(expr, self.__now_ln)
+        return ast.ReturnStmtAST(expr, self.__now_ln)
 
-    def __parse_throw_expr(self) -> ast.ThrowExprAST:
+    def __parse_throw_expr(self) -> ast.ThrowStmtAST:
         if self.__now_tok != 'throw':
             self.__syntax_error()
 
@@ -1479,7 +1479,7 @@ class Parser:
         self.__next_tok()  # eat 'throw'
 
         if self.__now_tok.ttype == AIL_ENTER:
-            return ast.ThrowExprAST(None, ln)
+            return ast.ThrowStmtAST(None, ln)
 
         expr = self.__parse_binary_expr()
 
@@ -1489,9 +1489,9 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.ThrowExprAST(expr, ln)
+        return ast.ThrowStmtAST(expr, ln)
 
-    def __parse_assert_expr(self) -> ast.AssertExprAST:
+    def __parse_assert_expr(self) -> ast.AssertStmtAST:
         if self.__now_tok != 'assert':
             self.__syntax_error()
 
@@ -1505,9 +1505,9 @@ class Parser:
  
         self.__expect_newline()
     
-        return ast.AssertExprAST(expr, self.__now_ln)
+        return ast.AssertStmtAST(expr, self.__now_ln)
 
-    def __parse_import_stmt(self) -> ast.ImportAST:
+    def __parse_import_stmt(self) -> ast.ImportStmtAST:
         if self.__now_tok != 'import':
             self.__syntax_error()
 
@@ -1550,7 +1550,7 @@ class Parser:
         self.__next_tok()  # eat path
 
         if self.__now_tok.ttype != AIL_SLBASKET:
-            return ast.ImportAST(path, name, ln)
+            return ast.ImportStmtAST(path, name, ln)
 
         self.__next_tok()  # eat '('
 
@@ -1573,9 +1573,9 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.ImportAST(path, name, ln, members)
+        return ast.ImportStmtAST(path, name, ln, members)
 
-    def __parse_load_stmt(self) -> ast.LoadAST:
+    def __parse_load_stmt(self) -> ast.LoadStmtAST:
         if self.__now_tok != 'load':
             self.__syntax_error()
 
@@ -1592,10 +1592,10 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.LoadAST(name, ln)
+        return ast.LoadStmtAST(name, ln)
 
     def __parse_new_catch_finally_body(self,
-            try_block: ast.BlockExprAST) -> ast.TryCatchExprAST:
+                                       try_block: ast.BlockAST) -> ast.TryCatchStmtAST:
 
         has_catch_block = True
         ln = self.__now_ln
@@ -1604,7 +1604,7 @@ class Parser:
         
         if self.__now_tok != 'catch':
             has_catch_block = False
-            catch_block = ast.BlockExprAST([], self.__now_ln)
+            catch_block = ast.BlockAST([], self.__now_ln)
             cname = None
         else:
             self.__next_tok()  # eat 'catch'
@@ -1626,18 +1626,18 @@ class Parser:
             if not has_catch_block:
                 self.__syntax_error()
 
-            return ast.TryCatchExprAST(
+            return ast.TryCatchStmtAST(
                     try_block, catch_block, 
-                    ast.BlockExprAST([], self.__now_ln), cname, ln)
+                    ast.BlockAST([], self.__now_ln), cname, ln)
 
         self.__next_tok()  # eat 'finally'
 
         finally_block = self.__parse_block()
 
-        return ast.TryCatchExprAST(
+        return ast.TryCatchStmtAST(
                 try_block, catch_block, finally_block, cname, ln)
 
-    def __parse_try_catch_expr(self) -> ast.TryCatchExprAST:
+    def __parse_try_catch_expr(self) -> ast.TryCatchStmtAST:
         if self.__now_tok != 'try':
             self.__syntax_error()
 
@@ -1701,14 +1701,14 @@ class Parser:
             else:
                 now.append(s)
 
-        cab = ast.BlockExprAST(catch_sl, self.__now_ln)
-        fnb = ast.BlockExprAST(finally_sl, self.__now_ln)
+        cab = ast.BlockAST(catch_sl, self.__now_ln)
+        fnb = ast.BlockAST(finally_sl, self.__now_ln)
 
         self.__next_tok()  # eat 'end'
 
         self.__expect_newline()
 
-        return ast.TryCatchExprAST(try_b, cab, fnb, cname, self.__now_ln)
+        return ast.TryCatchStmtAST(try_b, cab, fnb, cname, self.__now_ln)
 
     def __parse_stmt(self, limit: tuple = ()) -> ast.ExprAST:
         nt = self.__now_tok
@@ -1810,7 +1810,7 @@ class Parser:
 
         return a
 
-    def __parse_new_block(self) -> ast.BlockExprAST:
+    def __parse_new_block(self) -> ast.BlockAST:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
@@ -1834,12 +1834,12 @@ class Parser:
 
         self.__next_tok()  # eat '}'
 
-        return ast.BlockExprAST(stmt_list, ln, True)
+        return ast.BlockAST(stmt_list, ln, True)
 
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,
                       start_enter=True, for_if_else: bool = False, 
-                      for_program: bool = False) -> ast.BlockExprAST:
+                      for_program: bool = False) -> ast.BlockAST:
         if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
             return self.__parse_new_block()
 
@@ -1853,7 +1853,7 @@ class Parser:
 
             if self.__now_tok in ('else', 'elif', 'endif'):
                 # not eat, leave to if_else parse
-                return ast.BlockExprAST([], ln)
+                return ast.BlockAST([], ln)
 
         elif for_program:
             if self.__now_tok == start:
@@ -1869,7 +1869,7 @@ class Parser:
 
             if self.__now_tok == end:  # empty block
                 self.__next_tok()
-                return ast.BlockExprAST([], ln)
+                return ast.BlockAST([], ln)
 
         first = self.__parse_stmt((start, end))
 
@@ -1887,7 +1887,7 @@ class Parser:
         while self.__now_tok != end:
             if for_if_else and self.__now_tok.value in (
                     'elif', 'else', 'endif'):
-                return ast.BlockExprAST(stmtl, ln)
+                return ast.BlockAST(stmtl, ln)
 
             s = self.__parse_stmt((start, end))
 
@@ -1904,10 +1904,10 @@ class Parser:
 
         self.__next_tok()  # eat end
 
-        return ast.BlockExprAST(stmtl, ln)
+        return ast.BlockAST(stmtl, ln)
 
     def parse(self, ts: TokenStream, 
-              source: str, filename: str) -> ast.BlockExprAST:
+              source: str, filename: str) -> ast.BlockAST:
         self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
@@ -1918,7 +1918,7 @@ class Parser:
         self.__level = 0  # level 0
 
         if len(ts.token_list) == 0:
-            return ast.BlockExprAST([], 0)
+            return ast.BlockAST([], 0)
 
         while self.__now_tok.ttype == AIL_ENTER:  # skip enter at beginning
             self.__next_tok()
@@ -1940,14 +1940,28 @@ class Parser:
         return self.__parse_print_expr()
 
 
-def _set_lineno(pynode, lineno: int) -> pyast.AST:
+_PyTreeT = TypeVar('_PyTreeT')
+
+
+def _set_lineno(pynode: _PyTreeT, lineno: int) -> _PyTreeT:
     node = pyast.fix_missing_locations(pynode)
     if hasattr(node, 'lineno'):
         node.lineno = lineno
     return node
 
 
+class PyTreeConvertException(Exception):
+    pass
+
+
 class ASTConverter:
+    def __init__(self):
+        self.__block_stmt_append_func_stack = []
+
+    def __append_stmt_to_top_block(self, stmt: pyast.stmt):
+        if self.__block_stmt_append_func_stack:
+            self.__block_stmt_append_func_stack[-1](stmt)
+
     def _new_name(self, 
             id: str, ln: int, ctx: pyast.expr_context = load_ctx()) -> pyast.Name:
         return _set_lineno(name_expr(id, ctx), ln)
@@ -1960,7 +1974,7 @@ class ASTConverter:
             self._new_name(id, ln), args
         ), ln)
 
-    def _convert_cell(self, cell: ast.CellAST) -> pyast.Name:
+    def _convert_cell(self, cell: ast.CellAST) -> Union[pyast.Name, pyast.Constant]:
         if cell.value == 'null':
             return _set_lineno(constant_expr(None), cell.ln)
         elif cell.value == 'true':
@@ -2035,25 +2049,35 @@ class ASTConverter:
 
         return _set_lineno(call_expr(func, args), expr.ln)
 
-    def _convert_print_stmt(self, stmt: ast.PrintExprAST) -> pyast.Call:
+    def _convert_print_stmt(self, stmt: ast.PrintStmtAST) -> pyast.Call:
         func = _set_lineno(name_expr('print', load_ctx()), stmt.ln)
         args = [self.convert(expr) for expr in stmt.value_list]
 
         return _set_lineno(call_expr(func, args), stmt.ln)
 
-    def _convert_input_stmt(self, stmt: ast.InputExprAST) -> Union[pyast.Assign, pyast.Call]:
+    def _convert_input_stmt(self, stmt: ast.InputStmtAST) -> Union[pyast.Assign, pyast.Call]:
         # input EXPR, [NAME [',' NAME]*]  ->  __ail_input__(EXPR, name_count)
-        expr = self.convert(stmt)
+        expr = self.convert(stmt.msg)
         vals = stmt.value_list.value_list
 
-        input_call = self._new_call_name('__ail_input__', [expr, ])
-        
-        targets = _set_lineno(
-            tuple_expr([self._new_name(name, store_ctx()) for name in vals], store_ctx()),
-            stmt.ln
+        input_call = self._new_call_name(
+            '__ail_input__', [expr, self._new_constant(len(vals), stmt.ln)],
+            stmt.ln,
         )
 
-        return assign_stmt(targets, )
+        if len(vals) > 1:
+            targets = _set_lineno(
+                tuple_expr([self._new_name(name, stmt.ln, store_ctx()) for name in vals],
+                           store_ctx()),
+                stmt.ln
+            )
+            return assign_stmt([targets], input_call)
+        elif len(vals) == 1:
+            return _set_lineno(assign_stmt(
+                [_set_lineno(name_expr(vals[0], store_ctx()), stmt.ln)], input_call
+            ), stmt.ln)
+
+        return input_call
 
     def _convert_bool_expr(self, 
             expr: Union[ast.AndTestAST, ast.OrTestAST], 
@@ -2069,18 +2093,41 @@ class ASTConverter:
 
         return _set_lineno(bool_op_expr(op, values), expr.ln)
 
+    def _convert_assign_expr(self,
+            expr: ast.AssignExprAST, as_stmt: bool) -> pyast.Assign:
+        if not as_stmt:
+            raise PyTreeConvertException('not support assign expression')
+
+        right = self.convert(expr.right)
+        left = self.convert(expr.left)
+
+        if type(left) not in (pyast.Attribute, pyast.Name, pyast.Subscript):
+            raise PyTreeConvertException('illegal assign target')
+
+        left.ctx = store_ctx()
+
+        return _set_lineno(assign_stmt([left], right), expr.ln)
+
     def _convert_block(
-            self, block: ast.BlockExprAST, 
+            self, block: ast.BlockAST,
             for_module: bool = False) -> List[pyast.stmt]:
         stmts = []
-        for stmt in block.stmts:
-            s = self.convert(stmt, for_module)
-            if isinstance(s, pyast.expr):
-                s = _set_lineno(expr_stmt(s), stmt.ln)
-            stmts.append(s)
-        return stmts
 
-    def convert(self, a, for_module: bool = False) -> pyast.AST:
+        try:
+            self.__block_stmt_append_func_stack.append(stmts)
+            for stmt in block.stmts:
+                s = self.convert(stmt, for_module)
+                if isinstance(s, pyast.expr):
+                    s = _set_lineno(expr_stmt(s), stmt.ln)
+                elif isinstance(s, list):
+                    stmts.extend(s)
+                    continue
+                stmts.append(s)
+            return stmts
+        finally:
+            self.__block_stmt_append_func_stack.pop()
+
+    def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
 
@@ -2093,12 +2140,11 @@ class ASTConverter:
         elif isinstance(a, ast.CallExprAST):
             return self._convert_call_expr(a)
 
-        elif isinstance(a, ast.PrintExprAST):
+        elif isinstance(a, ast.PrintStmtAST):
             return self._convert_print_stmt(a)
 
-        elif isinstance(a, ast.InputExprAST):
-            return {'InputAST': {
-                'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
+        elif isinstance(a, ast.InputStmtAST):
+            return self._convert_input_stmt(a)
 
         elif isinstance(a, ast.AndTestAST):
             return self._convert_bool_expr(a, pyast.And())
@@ -2107,24 +2153,24 @@ class ASTConverter:
             return self._convert_bool_expr(a, pyast.Or())
 
         elif isinstance(a, ast.TestExprAST):
-            return self.convert(a.test, for_module)
+            return self.convert(a.test, as_stmt)
 
-        elif isinstance(a, ast.BlockExprAST):
+        elif isinstance(a, ast.BlockAST):
             return self._convert_block(a)
 
-        elif isinstance(a, ast.IfExprAST):
+        elif isinstance(a, ast.IfStmtAST):
             return {'IfAST':
                         {'test': make_ast_tree(a.test),
                          'body': make_ast_tree(a.block),
                          'elif_block': make_ast_tree(a.elif_list),
                          'else_block': make_ast_tree(a.else_block)}}
 
-        elif isinstance(a, ast.WhileExprAST):
+        elif isinstance(a, ast.WhileStmtAST):
             return {'WhileAST':
                         {'test': make_ast_tree(a.test),
                          'body': make_ast_tree(a.block)}}
 
-        elif isinstance(a, ast.DoLoopExprAST):
+        elif isinstance(a, ast.DoLoopStmtAST):
             return {'DoLoopAST':
                         {'test': make_ast_tree(a.test),
                          'body': make_ast_tree(a.block)}}
@@ -2147,13 +2193,13 @@ class ASTConverter:
                     'func': make_ast_tree(a.func),
                 }}
 
-        elif isinstance(a, ast.ReturnAST):
+        elif isinstance(a, ast.ReturnStmtAST):
             return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
 
-        elif isinstance(a, ast.BreakAST):
+        elif isinstance(a, ast.BreakStmtAST):
             return 'BreakAST'
 
-        elif isinstance(a, ast.ContinueAST):
+        elif isinstance(a, ast.ContinueStmtAST):
             return 'ContinueAST'
 
         elif isinstance(a, ast.GlobalStmtAST):
@@ -2177,10 +2223,10 @@ class ASTConverter:
                         {'expr': make_ast_tree(a.expr),
                          'left': make_ast_tree(a.left)}}
 
-        elif isinstance(a, ast.LoadAST):
+        elif isinstance(a, ast.LoadStmtAST):
             return {'LoadAST': {'name': a.path}}
 
-        elif isinstance(a, ast.ImportAST):
+        elif isinstance(a, ast.ImportStmtAST):
             return {'ImportAST': {
                 'path': a.path, 'name': a.name, 'members': a.members}}
 
@@ -2203,7 +2249,7 @@ class ASTConverter:
         elif isinstance(a, ast.NotTestAST):
             return {'NotTestAST': {'expr': make_ast_tree(a.expr)}}
 
-        elif isinstance(a, ast.ForExprAST):
+        elif isinstance(a, ast.ForStmtAST):
             return {'ForExprAST': {
                 'init': make_ast_tree(a.init_list),
                 'test': make_ast_tree(a.test),
@@ -2216,13 +2262,13 @@ class ASTConverter:
         elif isinstance(a, ast.AssignExprListAST):
             return {'AssignListAST': make_ast_tree(a.expr_list)}
 
-        elif isinstance(a, ast.AssertExprAST):
+        elif isinstance(a, ast.AssertStmtAST):
             return {'AssertExprAST': make_ast_tree(a.expr)}
 
-        elif isinstance(a, ast.ThrowExprAST):
+        elif isinstance(a, ast.ThrowStmtAST):
             return {'ThrowExprAST': make_ast_tree(a.expr)}
 
-        elif isinstance(a, ast.TryCatchExprAST):
+        elif isinstance(a, ast.TryCatchStmtAST):
             return {'TryCatchExprAST':
                         {'try_block': make_ast_tree(a.try_block),
                          'catch_block': make_ast_tree(a.catch_block),
@@ -2234,7 +2280,7 @@ class ASTConverter:
 
         return a
 
-    def convert_module(self, block: ast.BlockExprAST) -> pyast.Module:
+    def convert_module(self, block: ast.BlockAST) -> pyast.Module:
         body = self.convert(block, True)
         return _set_lineno(module(body), block.ln)
 
@@ -2245,7 +2291,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True
+TEST_CONVERT_PYAST = not True
 
 
 def test_parse():
@@ -2265,7 +2311,10 @@ def test_parse():
         import ast
         converter = ASTConverter()
 
-        test_utils.print_pyast(converter.convert_module(t))
+        tree = converter.convert_module(t)
+
+        test_utils.print_pyast(tree)
+        test_utils.unparse_pyast(tree)
 
 
 if __name__ == '__main__':

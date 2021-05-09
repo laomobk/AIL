@@ -17,6 +17,14 @@ def print_pyast(tree):
         dump_func = ast.dump
 
     print(dump_func(tree))
+
+
+def unparse_pyast(tree):
+    try:
+        import astunparse
+        print(astunparse.unparse(tree))
+    except ModuleNotFoundError:
+        print('unparse_pyast: module \'astunparse\' not found.')
     
 
 def unpack_list(l: list):
@@ -62,10 +70,10 @@ def make_ast_tree(a) -> dict:
                     'left': make_ast_tree(a.left),
                     'arg_list': make_ast_tree(a.arg_list)}}
 
-    elif isinstance(a, ast.PrintExprAST):
+    elif isinstance(a, ast.PrintStmtAST):
         return {'PrintAST': {'value': unpack_list(a.value_list)}}
 
-    elif isinstance(a, ast.InputExprAST):
+    elif isinstance(a, ast.InputStmtAST):
         return {'InputAST': {
             'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
     
@@ -94,22 +102,22 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.TestExprAST):
         return {'TestAST': make_ast_tree(a.test)}
 
-    elif isinstance(a, ast.BlockExprAST):
+    elif isinstance(a, ast.BlockAST):
         return {'BlockAST': unpack_list(a.stmts)}
 
-    elif isinstance(a, ast.IfExprAST):
+    elif isinstance(a, ast.IfStmtAST):
         return {'IfAST':
                     {'test': make_ast_tree(a.test),
                      'body': make_ast_tree(a.block),
                      'elif_block': make_ast_tree(a.elif_list),
                      'else_block': make_ast_tree(a.else_block)}}
 
-    elif isinstance(a, ast.WhileExprAST):
+    elif isinstance(a, ast.WhileStmtAST):
         return {'WhileAST':
                     {'test': make_ast_tree(a.test),
                      'body': make_ast_tree(a.block)}}
 
-    elif isinstance(a, ast.DoLoopExprAST):
+    elif isinstance(a, ast.DoLoopStmtAST):
         return {'DoLoopAST':
                     {'test': make_ast_tree(a.test),
                      'body': make_ast_tree(a.block)}}
@@ -132,13 +140,13 @@ def make_ast_tree(a) -> dict:
                     'func': make_ast_tree(a.func),
                 }}
 
-    elif isinstance(a, ast.ReturnAST):
+    elif isinstance(a, ast.ReturnStmtAST):
         return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
 
-    elif isinstance(a, ast.BreakAST):
+    elif isinstance(a, ast.BreakStmtAST):
         return 'BreakAST'
 
-    elif isinstance(a, ast.ContinueAST):
+    elif isinstance(a, ast.ContinueStmtAST):
         return 'ContinueAST'
 
     elif isinstance(a, ast.GlobalStmtAST):
@@ -162,10 +170,10 @@ def make_ast_tree(a) -> dict:
                     {'expr': make_ast_tree(a.expr),
                      'left': make_ast_tree(a.left)}}
 
-    elif isinstance(a, ast.LoadAST):
+    elif isinstance(a, ast.LoadStmtAST):
         return {'LoadAST': {'name': a.path}}
 
-    elif isinstance(a, ast.ImportAST):
+    elif isinstance(a, ast.ImportStmtAST):
         return {'ImportAST': {
             'path': a.path, 'name': a.name, 'members': a.members}}
 
@@ -188,7 +196,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.NotTestAST):
         return {'NotTestAST': {'expr': make_ast_tree(a.expr)}}
 
-    elif isinstance(a, ast.ForExprAST):
+    elif isinstance(a, ast.ForStmtAST):
         return {'ForExprAST': {
             'init': make_ast_tree(a.init_list),
             'test': make_ast_tree(a.test),
@@ -201,13 +209,13 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.AssignExprListAST):
         return {'AssignListAST': make_ast_tree(a.expr_list)}
 
-    elif isinstance(a, ast.AssertExprAST):
+    elif isinstance(a, ast.AssertStmtAST):
         return {'AssertExprAST': make_ast_tree(a.expr)}
 
-    elif isinstance(a, ast.ThrowExprAST):
+    elif isinstance(a, ast.ThrowStmtAST):
         return {'ThrowExprAST': make_ast_tree(a.expr)}
 
-    elif isinstance(a, ast.TryCatchExprAST):
+    elif isinstance(a, ast.TryCatchStmtAST):
         return {'TryCatchExprAST':
                     {'try_block': make_ast_tree(a.try_block),
                      'catch_block': make_ast_tree(a.catch_block),
