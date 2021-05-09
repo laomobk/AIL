@@ -2,6 +2,7 @@
 import ast as pyast
 
 from os.path import split
+from typing import Union
 
 from . import aconfig
 
@@ -800,6 +801,8 @@ class Parser:
         return ast.DefineExprAST(n, v, self.__now_ln)
 
     def __parse_comp_test_expr(self) -> ast.CmpTestAST:
+        ln = self.__now_ln
+
         left = self.__parse_assign_expr()
 
         if left is None:
@@ -820,7 +823,7 @@ class Parser:
 
             rl.append((now_op, r))
 
-        return ast.CmpTestAST(left, rl, self.__now_ln)
+        return ast.CmpTestAST(left, rl, ln)
 
     def __parse_not_test_expr(self) -> ast.NotTestAST:
         if self.__now_tok == 'not':
@@ -1945,6 +1948,18 @@ def _set_lineno(pynode, lineno: int) -> pyast.AST:
 
 
 class ASTConverter:
+    def _new_name(self, 
+            id: str, ln: int, ctx: pyast.expr_context = load_ctx()) -> pyast.Name:
+        return _set_lineno(name_expr(id, ctx), ln)
+
+    def _new_constant(self, value: Union[int, float, str], ln: int) -> pyast.Constant:
+        return _set_lineno(constant_expr(value), ln)
+
+    def _new_call_name(self, id: str, args: List[pyast.expr], ln: int) -> pyast.Call:
+        return _set_lineno(call_expr(
+            self._new_name(id, ln), args
+        ), ln)
+
     def _convert_cell(self, cell: ast.CellAST) -> pyast.Name:
         if cell.value == 'null':
             return _set_lineno(constant_expr(None), cell.ln)
@@ -1985,6 +2000,10 @@ class ASTConverter:
             '|': pyast.BitOr(),
             '&': pyast.BitAnd(),
             '^': pyast.BitXor(),
+            '<': pyast.Lt(),
+            '>': pyast.Gt(),
+            '<=': pyast.LtE(),
+            '>=': pyast.GtE(),
         }[r_op]
 
         o_left = left
@@ -1993,6 +2012,8 @@ class ASTConverter:
 
         if len(rights) == 1:
             right = self.convert(rights[0][1])
+            if isinstance(op, pyast.cmpop):
+                return _set_lineno(compare_expr(left, [op], [right]), ln)
             return _set_lineno(bin_op_expr(left, op, right), ln)
 
         new_left = ast.GenericBinaryExprAST(o_left, rights[:1], ln)
@@ -2019,6 +2040,34 @@ class ASTConverter:
         args = [self.convert(expr) for expr in stmt.value_list]
 
         return _set_lineno(call_expr(func, args), stmt.ln)
+
+    def _convert_input_stmt(self, stmt: ast.InputExprAST) -> Union[pyast.Assign, pyast.Call]:
+        # input EXPR, [NAME [',' NAME]*]  ->  __ail_input__(EXPR, name_count)
+        expr = self.convert(stmt)
+        vals = stmt.value_list.value_list
+
+        input_call = self._new_call_name('__ail_input__', [expr, ])
+        
+        targets = _set_lineno(
+            tuple_expr([self._new_name(name, store_ctx()) for name in vals], store_ctx()),
+            stmt.ln
+        )
+
+        return assign_stmt(targets, )
+
+    def _convert_bool_expr(self, 
+            expr: Union[ast.AndTestAST, ast.OrTestAST], 
+            op: pyast.boolop) -> pyast.BoolOp:
+        o_values = expr.right.copy()
+        o_values.insert(0, expr.left)
+
+        values = []
+
+        for value in o_values:
+            e = self.convert(value)
+            values.append(e)
+
+        return _set_lineno(bool_op_expr(op, values), expr.ln)
 
     def _convert_block(
             self, block: ast.BlockExprAST, 
@@ -2050,31 +2099,15 @@ class ASTConverter:
         elif isinstance(a, ast.InputExprAST):
             return {'InputAST': {
                 'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
-        
-        elif isinstance(a, ast.ArgItemAST):
-            return {'ArgItem': {'expr': make_ast_tree(a.expr), 
-                                'star': a.star}}
-
-        elif isinstance(a, ast.ArgListAST):
-            return {'ArgList': unpack_list(a.exp_list)}
-
-        elif isinstance(a, ast.ValueListAST):
-            return {'ValueList': unpack_list(a.value_list)}
-
-        elif isinstance(a, ast.DefineExprAST):
-            return {'DefAST': {'name': a.name, 'value': make_ast_tree(a.value)}}
-
-        elif isinstance(a, ast.CmpTestAST):
-            return {'CmpAST': {'left': make_ast_tree(a.left), 'right': unpack_list(a.right)}}
 
         elif isinstance(a, ast.AndTestAST):
-            return {'AndAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+            return self._convert_bool_expr(a, pyast.And())
 
         elif isinstance(a, ast.OrTestAST):
-            return {'OrAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
+            return self._convert_bool_expr(a, pyast.Or())
 
         elif isinstance(a, ast.TestExprAST):
-            return {'TestAST': make_ast_tree(a.test)}
+            return self.convert(a.test, for_module)
 
         elif isinstance(a, ast.BlockExprAST):
             return self._convert_block(a)

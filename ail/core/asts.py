@@ -526,5 +526,6 @@ BIN_OP_AST = (
     BitOpExprAST,
     BinXorExprAST,
     GenericBinaryExprAST,
+    CmpTestAST,
 )
 

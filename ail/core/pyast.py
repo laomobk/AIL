@@ -79,7 +79,7 @@ def class_def_stmt(
         name=name, bases=bases, keywords=keywords, body=body, decorator_list=decorator_list)
 
 
-def compare_stmt(
+def compare_expr(
         left: _ast.expr, ops: List[_ast.cmpop],
         comparators: List[_ast.expr]) -> _ast.Compare:
     return _ast.Compare(left=left, ops=ops, comparators=comparators)
@@ -157,6 +157,10 @@ def try_stmt(
         finalbody: List[_ast.stmt]) -> _ast.Try:
     return _ast.Try(body=body, handlers=handlers, 
                     orelse=[], finalbody=finalbody)
+
+
+def tuple_expr(elts: _ast.expr, cxt: _ast.expr_context) -> _ast.Tuple:
+    return _ast.Tuple(elts=elts, ctx=ctx, type_commit=None)
 
 
 def unary_op_expr(op: _ast.operator, operand: _ast.expr) -> _ast.UnaryOp:
