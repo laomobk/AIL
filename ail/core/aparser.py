@@ -2095,16 +2095,20 @@ class ASTConverter:
 
         return _set_lineno(bool_op_expr(op, values), expr.ln)
 
-    def _convert_member_access_expr(self, left, right, ln: int) -> pyast.Attribute:
+    def _convert_subscript_expr(self, expr: ast.SubscriptExprAST):
+        # TODO: complete it
+
+    def _convert_member_access_expr(self, left, rights, ln: int) -> pyast.Attribute:
         o_left = left
 
         left = self.convert(left)
 
         if len(rights) == 1:
             right = self.convert(rights[0])
-            if isinstance(op, pyast.cmpop):
-                return _set_lineno(compare_expr(left, [op], [right]), ln)
-            return _set_lineno(bin_op_expr(left, op, right), ln)
+            if isinstance(right, pyast.Call):
+                right.func = _set_lineno(attribute_expr(left, right.func.id, load_ctx()), ln)
+                return right
+            return _set_lineno(attribute_expr(left, right.id, load_ctx()), ln)
 
         new_left = ast.MemberAccessAST(o_left, rights[:1], ln)
         right = self._convert_member_access_expr(new_left, rights[1:], ln)
@@ -2173,7 +2177,7 @@ class ASTConverter:
             return self.convert(a.test, as_stmt)
 
         elif isinstance(a, ast.BlockAST):
-            return self._convert_block(a)
+            return self._convert_block(a, as_stmt)
 
         elif isinstance(a, ast.IfStmtAST):
             return {'IfAST':
@@ -2248,7 +2252,7 @@ class ASTConverter:
                 'path': a.path, 'name': a.name, 'members': a.members}}
 
         elif isinstance(a, ast.MemberAccessAST):
-            return self._convert_member_access_expr(a.left, a.right, a.ln)
+            return self._convert_member_access_expr(a.left, a.members, a.ln)
 
         elif isinstance(a, ast.AssignExprAST):
             return self._convert_assign_expr(a, as_stmt)
