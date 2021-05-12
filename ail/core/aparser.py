@@ -1990,17 +1990,6 @@ class ASTConverter:
         elif cell.type == AIL_IDENTIFIER:
             return _set_lineno(name_expr(cell.value, load_ctx()), cell.ln)
 
-    def _convert_unary_expr(self, expr: ast.UnaryExprAST) -> pyast.UnaryOp:
-        op = {
-            '+': pyast.UAdd(),
-            '-': pyast.USub(),
-            '~': pyast.Invert()
-        }[expr.op]
-
-        operand = self.convert(expr.right_expr)
-
-        return _set_lineno(unary_op_expr(op, operand), expr.ln)
-
     def _convert_bin_op_expr(self, left, rights, ln: int) -> pyast.BinOp:
         r_op = rights[0][0]  # right: [[op, right_expr], ...]
 
@@ -2095,8 +2084,13 @@ class ASTConverter:
 
         return _set_lineno(bool_op_expr(op, values), expr.ln)
 
-    def _convert_subscript_expr(self, expr: ast.SubscriptExprAST):
-        # TODO: complete it
+    def _convert_subscript_expr(self, expr: ast.SubscriptExprAST) -> pyast.Subscript:
+        left = self.convert(expr.left)
+        value = self.convert(expr.expr)
+
+        return _set_lineno(subscript_expr(
+            left, _set_lineno(index_slice(value), expr.ln), load_ctx()
+        ), expr.ln)
 
     def _convert_member_access_expr(self, left, rights, ln: int) -> pyast.Attribute:
         o_left = left
@@ -2106,13 +2100,30 @@ class ASTConverter:
         if len(rights) == 1:
             right = self.convert(rights[0])
             if isinstance(right, pyast.Call):
-                right.func = _set_lineno(attribute_expr(left, right.func.id, load_ctx()), ln)
+                right.func = _set_lineno(
+                    attribute_expr(left, right.func.id, load_ctx()), ln)
+                return right
+            elif isinstance(right, pyast.Subscript):
+                right.value = _set_lineno(
+                    attribute_expr(left, right.value.id, load_ctx()), ln)
                 return right
             return _set_lineno(attribute_expr(left, right.id, load_ctx()), ln)
 
         new_left = ast.MemberAccessAST(o_left, rights[:1], ln)
         right = self._convert_member_access_expr(new_left, rights[1:], ln)
         return right
+
+    def _convert_unary_expr(self, expr: ast.UnaryExprAST) -> pyast.UnaryOp:
+        op = {
+            '+': uadd_uop,
+            '-': usub_uop,
+            '~': invert_uop, 
+            '!': not_uop,
+        }[expr.op]()
+
+        operand = self.convert(expr.right_expr)
+
+        return _set_lineno(unary_op_expr(op, operand), expr.ln)
 
     def _convert_assign_expr(self,
             expr: ast.AssignExprAST, as_stmt: bool) -> pyast.Assign:
@@ -2128,6 +2139,12 @@ class ASTConverter:
         left.ctx = store_ctx()
 
         return _set_lineno(assign_stmt([left], right), expr.ln)
+
+    def _convert_while_stmt(self, stmt: ast.WhileStmtAST):
+        test = self.convert(stmt.test)
+        block = self._convert_block(stmt.block, True)
+
+        return _set_lineno(while_stmt(test, block), stmt.ln)
 
     def _convert_block(
             self, block: ast.BlockAST,
@@ -2148,7 +2165,7 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
-    def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
+    def convert(self, a, as_stmt: bool = False) -> pyast.AST:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
 
@@ -2187,9 +2204,7 @@ class ASTConverter:
                          'else_block': make_ast_tree(a.else_block)}}
 
         elif isinstance(a, ast.WhileStmtAST):
-            return {'WhileAST':
-                        {'test': make_ast_tree(a.test),
-                         'body': make_ast_tree(a.block)}}
+            return self._convert_while_stmt(a)
 
         elif isinstance(a, ast.DoLoopStmtAST):
             return {'DoLoopAST':
@@ -2240,9 +2255,7 @@ class ASTConverter:
             return unpack_list(a.item_list)
 
         elif isinstance(a, ast.SubscriptExprAST):
-            return {'SubscriptExprAST':
-                        {'expr': make_ast_tree(a.expr),
-                         'left': make_ast_tree(a.left)}}
+            return self._convert_subscript_expr(a)
 
         elif isinstance(a, ast.LoadStmtAST):
             return {'LoadAST': {'name': a.path}}
@@ -2264,7 +2277,9 @@ class ASTConverter:
                 'protected': make_ast_tree(a.protected_list)}}
 
         elif isinstance(a, ast.NotTestAST):
-            return {'NotTestAST': {'expr': make_ast_tree(a.expr)}}
+            return self._convert_unary_expr(
+                ast.UnaryExprAST('!', a.expr, a.ln)
+            )
 
         elif isinstance(a, ast.ForStmtAST):
             return {'ForExprAST': {
@@ -2308,7 +2323,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True
+TEST_CONVERT_PYAST = True # and False
 
 
 def test_parse():
