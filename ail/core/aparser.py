@@ -2184,8 +2184,8 @@ class ASTConverter:
 
     def _convert_if_stmt(self, stmt: ast.IfStmtAST) -> pyast.If:
         test = self.convert(stmt.test.test)
-        body = self._convert_block(stmt.block)
-        else_body = self._convert_block(stmt.else_block)
+        body = self._convert_block(stmt.block, True)
+        else_body = self._convert_block(stmt.else_block, True)
         
         return _set_lineno(if_stmt(test, body, else_body), stmt.ln)
 
@@ -2203,7 +2203,7 @@ class ASTConverter:
 
     def _convert_block(
             self, block: ast.BlockAST,
-            for_module: bool = False) -> List[pyast.stmt]:
+            for_module: bool = True) -> List[pyast.stmt]:
         stmts = []
 
         try:
