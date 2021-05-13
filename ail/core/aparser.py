@@ -2009,6 +2009,8 @@ class ASTConverter:
             '>': pyast.Gt(),
             '<=': pyast.LtE(),
             '>=': pyast.GtE(),
+            '==': pyast.Eq(),
+            '!=': pyast.NotEq(),
         }[r_op]
 
         o_left = left
@@ -2046,7 +2048,8 @@ class ASTConverter:
 
         return _set_lineno(call_expr(func, args), stmt.ln)
 
-    def _convert_input_stmt(self, stmt: ast.InputStmtAST) -> Union[pyast.Assign, pyast.Call]:
+    def _convert_input_stmt(
+            self, stmt: ast.InputStmtAST) -> Union[pyast.Assign, pyast.Call]:
         # input EXPR, [NAME [',' NAME]*]  ->  __ail_input__(EXPR, name_count)
         expr = self.convert(stmt.msg)
         vals = stmt.value_list.value_list
@@ -2140,11 +2143,63 @@ class ASTConverter:
 
         return _set_lineno(assign_stmt([left], right), expr.ln)
 
-    def _convert_while_stmt(self, stmt: ast.WhileStmtAST):
+    def _convert_while_stmt(self, stmt: ast.WhileStmtAST) -> pyast.While:
         test = self.convert(stmt.test)
         block = self._convert_block(stmt.block, True)
 
         return _set_lineno(while_stmt(test, block), stmt.ln)
+
+    def _convert_do_loop_stmt(self, stmt: ast.DoLoopStmtAST) -> pyast.While:
+        body = self._convert_block(stmt.block, True)
+        test = self.convert(stmt.test)
+        true_test = _set_lineno(constant_expr(True), stmt.ln)
+
+        break_if = _set_lineno(
+            if_stmt(test, [_set_lineno(break_stmt(), stmt.ln)], []),
+            stmt.test.ln
+        )
+
+        body.append(break_if)
+
+        return _set_lineno(while_stmt(true_test, body), stmt.ln)
+
+    def _convert_for_stmt(self, stmt: ast.ForStmtAST) -> List[pyast.stmt]:
+        for_stmt = []
+
+        init_block = ast.BlockAST(stmt.init_list.expr_list, stmt.init_list.ln)
+        for_stmt.extend(self._convert_block(init_block, True))
+
+        test = self.convert(stmt.test.test)
+
+        update_block = ast.BlockAST(stmt.update_list.expr_list, stmt.update_list.ln)
+
+        body = self._convert_block(stmt.block)
+        body_with_try = [_set_lineno(
+            try_stmt(body, [], self._convert_block(update_block, True)), stmt.block.ln)]
+
+        while_stmt_ = _set_lineno(while_stmt(test, body_with_try), stmt.ln)
+        for_stmt.append(while_stmt_)
+
+        return for_stmt
+
+    def _convert_if_stmt(self, stmt: ast.IfStmtAST) -> pyast.If:
+        test = self.convert(stmt.test.test)
+        body = self._convert_block(stmt.block)
+        else_body = self._convert_block(stmt.else_block)
+        
+        return _set_lineno(if_stmt(test, body, else_body), stmt.ln)
+
+    def _convert_try_stmt(self, stmt: ast.TryCatchStmtAST) -> pyast.Try:
+        try_body = self._convert_block(stmt.try_block, True)
+        finally_body = self._convert_block(stmt.finally_block, True)
+        handler = _set_lineno(
+            _set_lineno(
+                except_handler(
+                    self._new_name('Exception', stmt.catch_block.ln), stmt.name,
+                    self._convert_block(stmt.catch_block, True)), 
+                stmt.catch_block.ln),
+            stmt.catch_block.ln)
+        return _set_lineno(try_stmt(try_body, [handler], finally_body), stmt.ln)
 
     def _convert_block(
             self, block: ast.BlockAST,
@@ -2165,7 +2220,7 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
-    def convert(self, a, as_stmt: bool = False) -> pyast.AST:
+    def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
 
@@ -2197,19 +2252,13 @@ class ASTConverter:
             return self._convert_block(a, as_stmt)
 
         elif isinstance(a, ast.IfStmtAST):
-            return {'IfAST':
-                        {'test': make_ast_tree(a.test),
-                         'body': make_ast_tree(a.block),
-                         'elif_block': make_ast_tree(a.elif_list),
-                         'else_block': make_ast_tree(a.else_block)}}
+            return self._convert_if_stmt(a)
 
         elif isinstance(a, ast.WhileStmtAST):
             return self._convert_while_stmt(a)
 
         elif isinstance(a, ast.DoLoopStmtAST):
-            return {'DoLoopAST':
-                        {'test': make_ast_tree(a.test),
-                         'body': make_ast_tree(a.block)}}
+            return self._convert_do_loop_stmt(a)
 
         elif isinstance(a, ast.FunctionDefineAST):
             return {
@@ -2233,16 +2282,16 @@ class ASTConverter:
             return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
 
         elif isinstance(a, ast.BreakStmtAST):
-            return 'BreakAST'
+            return _set_lineno(break_stmt(), a.ln)
 
         elif isinstance(a, ast.ContinueStmtAST):
-            return 'ContinueAST'
+            return _set_lineno(continue_stmt(), a.ln)
 
         elif isinstance(a, ast.GlobalStmtAST):
-            return {'GlobalAST': {'name': a.name}}
+            return _set_lineno(global_stmt([a.name]), a.ln)
 
         elif isinstance(a, ast.NonlocalStmtAST):
-            return {'NonlocalAST': {'name': a.name}}
+            return _set_lineno(nonlocal_stmt([a.name]), a.ln)
 
         elif isinstance(a, ast.ArrayAST):
             return {'ArrayAST': {'items': make_ast_tree(a.items)}}
@@ -2282,30 +2331,19 @@ class ASTConverter:
             )
 
         elif isinstance(a, ast.ForStmtAST):
-            return {'ForExprAST': {
-                'init': make_ast_tree(a.init_list),
-                'test': make_ast_tree(a.test),
-                'update': make_ast_tree(a.update_list),
-                'block': make_ast_tree(a.block)}}
+            return self._convert_for_stmt(a)
 
         elif isinstance(a, ast.BinaryExprListAST):
             return {'BinExprListAST': make_ast_tree(a.expr_list)}
 
-        elif isinstance(a, ast.AssignExprListAST):
-            return {'AssignListAST': make_ast_tree(a.expr_list)}
-
         elif isinstance(a, ast.AssertStmtAST):
-            return {'AssertExprAST': make_ast_tree(a.expr)}
+            return _set_lineno(assert_stmt(self.convert(a.test), None), a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
-            return {'ThrowExprAST': make_ast_tree(a.expr)}
+            return _set_lineno(return_stmt(a.expr), a.ln)
 
         elif isinstance(a, ast.TryCatchStmtAST):
-            return {'TryCatchExprAST':
-                        {'try_block': make_ast_tree(a.try_block),
-                         'catch_block': make_ast_tree(a.catch_block),
-                         'finally_block': make_ast_tree(a.finally_block),
-                         'error_name': make_ast_tree(a.name)}}
+            return self._convert_try_stmt(a)
 
         elif isinstance(a, list):
             return unpack_list(a)
