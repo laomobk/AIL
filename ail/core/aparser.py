@@ -2179,7 +2179,7 @@ class ASTConverter:
         init_block = ast.BlockAST(stmt.init_list.expr_list, stmt.init_list.ln)
         for_stmt.extend(self._convert_block(init_block, True))
 
-        test = self.convert(stmt.test.test)
+        test = self.convert(stmt.test)
 
         update_block = ast.BlockAST(stmt.update_list.expr_list, stmt.update_list.ln)
 
@@ -2193,7 +2193,7 @@ class ASTConverter:
         return for_stmt
 
     def _convert_if_stmt(self, stmt: ast.IfStmtAST) -> pyast.If:
-        test = self.convert(stmt.test.test)
+        test = self.convert(stmt.test)
         body = self._convert_block(stmt.block, True)
         else_body = self._convert_block(stmt.else_block, True)
         
@@ -2202,6 +2202,7 @@ class ASTConverter:
     def _convert_try_stmt(self, stmt: ast.TryCatchStmtAST) -> pyast.Try:
         try_body = self._convert_block(stmt.try_block, True)
         finally_body = self._convert_block(stmt.finally_block, True)
+
         handler = _set_lineno(
             _set_lineno(
                 except_handler(
@@ -2209,7 +2210,50 @@ class ASTConverter:
                     self._convert_block(stmt.catch_block, True)), 
                 stmt.catch_block.ln),
             stmt.catch_block.ln)
+
         return _set_lineno(try_stmt(try_body, [handler], finally_body), stmt.ln)
+
+    def _convert_function_def_stmt(
+            self, func: ast.FunctionDefineAST) -> pyast.FunctionDef:
+        name = func.name
+        args = self._convert_arguments(func.arg_list)
+        body = self._convert_block(func.block, True)
+        decorators = [self.convert(expr) for expr in func.decorator]
+        
+        return _set_lineno(function_def_stmt(name, args, body, decorators), func.ln)
+
+    def _convert_function_def(
+            self, 
+            func: ast.FunctionDefineAST, 
+            as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name]:
+        if not as_stmt:
+            func.name = '<anonymous>'
+            
+        func_stmt = self._convert_function_def_stmt(func)
+
+        if as_stmt:
+            return func_stmt
+
+        self.__append_stmt_to_top_block(func_stmt)
+        return self._new_name('<anonymous>', func.arg_list.ln)
+
+    def _convert_arguments(self, args: ast.ArgListAST) -> pyast.arguments:
+        argl = []
+        var_arg = None
+
+        for arg in args.exp_list:
+            assert isinstance(arg.expr, ast.CellAST) and \
+                arg.expr.type == AIL_IDENTIFIER
+            name = arg.expr.value
+            a = _set_lineno(argument(name), arg.ln)
+
+            if arg.star:
+                var_arg = a
+                continue
+
+            argl.append(a)
+
+        return _set_lineno(arguments(argl, var_arg), args.ln)
 
     def _convert_block(
             self, block: ast.BlockAST,
@@ -2217,7 +2261,7 @@ class ASTConverter:
         stmts = []
 
         try:
-            self.__block_stmt_append_func_stack.append(stmts)
+            self.__block_stmt_append_func_stack.append(stmts.append)
             for stmt in block.stmts:
                 s = self.convert(stmt, for_module)
                 if isinstance(s, pyast.expr):
@@ -2273,14 +2317,7 @@ class ASTConverter:
             return self._convert_do_loop_stmt(a)
 
         elif isinstance(a, ast.FunctionDefineAST):
-            return {
-                'FunctionDefAST':
-                    {
-                        'name': a.name,
-                        'arg_list': make_ast_tree(a.arg_list),
-                        'block': make_ast_tree(a.block),
-                        'bindto': make_ast_tree(a.bindto),
-                        'decorator': make_ast_tree(a.decorator)}}
+            return self._convert_function_def(a, as_stmt)
 
         elif isinstance(a, ast.ClassDefineAST):
             return {'ClassDefAST': 
@@ -2319,7 +2356,7 @@ class ASTConverter:
             return self._convert_subscript_expr(a)
 
         elif isinstance(a, ast.LoadStmtAST):
-            return {'LoadAST': {'name': a.path}}
+            pass
 
         elif isinstance(a, ast.ImportStmtAST):
             return {'ImportAST': {

@@ -43,6 +43,22 @@ not_eq_cmp = _ast.NotEq
 not_in_cmp = _ast.NotIn
 
 
+def arguments(args: List[_ast.arg], vararg: _ast.arg) -> _ast.arguments:
+    return _ast.arguments(
+        args=args, 
+        posonlyargs=[], 
+        vararg=vararg, 
+        kwonlyargs=[],
+        kw_defaults=[],
+        kwarg=None,
+        defaults=[],
+    )
+
+
+def argument(arg: str) -> _ast.arg:
+    return _ast.arg(arg=arg, annotation=None, type_comment=None)
+
+
 def assert_stmt(test: _ast.expr, msg: _ast.expr) -> _ast.Assert:
     return _ast.Assert(test=test, msg=msg)
 

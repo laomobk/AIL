@@ -1,3 +1,8 @@
 
-for i = 0; i < 1000000; i += 1 {}
+func add(a, b, continuation) {
+    continuation(a + b)
+}
+
+
+add(1, 2, func (arg) { print arg; })
 
