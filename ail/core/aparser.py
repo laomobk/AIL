@@ -78,6 +78,8 @@ class Parser:
         self.__level = 0  # level 0
         self.__parenthesis_level = 0
 
+        self.__pyc_mode = False
+
     def __mov_tp(self, step=1):
         self.__tc += step
 
@@ -129,7 +131,8 @@ class Parser:
         if len(_class_name_stack) > 0 and tok.ttype == AIL_IDENTIFIER \
                 and tok.value not in _keywords:
             val = tok.value
-            if val[:2] == '__' and val[-2:] != '__' and len(_class_name_stack) > 0:
+            if not self.__pyc_mode and \
+                    val[:2] == '__' and val[-2:] != '__' and len(_class_name_stack) > 0:
                 tok.value = '%s$%s' % (_make_private_name(val), val)
         return tok
 
@@ -502,8 +505,12 @@ class Parser:
         return ast.CellAST(name, nt.ttype, ln)
 
     def __parse_unary_expr(self) -> ast.UnaryExprAST:
+        # AIL 1.2a3: not support '++' and '--' anymore.
+        if self.__now_tok.ttype in (AIL_PLUS_PLUS, AIL_SUB_SUB):
+            self.__syntax_error('not support \'++\' and \'--\' anymore')
+
         if self.__now_tok.ttype in (
-                AIL_SUB, AIL_WAVE, AIL_PLUS_PLUS, AIL_SUB_SUB):
+                AIL_SUB, AIL_WAVE):
             ln = self.__now_ln
             op = self.__now_tok.value
             self.__next_tok()  # eat op
@@ -1907,7 +1914,8 @@ class Parser:
         return ast.BlockAST(stmtl, ln)
 
     def parse(self, ts: TokenStream, 
-              source: str, filename: str) -> ast.BlockAST:
+              source: str, filename: str,
+              pyc_mode: bool = False) -> ast.BlockAST:
         self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
@@ -1916,6 +1924,8 @@ class Parser:
 
         self.__tc = 0
         self.__level = 0  # level 0
+
+        self.__pyc_mode = pyc_mode
 
         if len(ts.token_list) == 0:
             return ast.BlockAST([], 0)
@@ -2216,6 +2226,8 @@ class ASTConverter:
                     stmts.extend(s)
                     continue
                 stmts.append(s)
+            if len(stmts) == 0:
+                stmts.append(pass_stmt())
             return stmts
         finally:
             self.__block_stmt_append_func_stack.pop()

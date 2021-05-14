@@ -144,6 +144,10 @@ def nonlocal_stmt(names: List[str]) -> _ast.Nonlocal:
     return _ast.Nonlocal(names=names)
 
 
+def pass_stmt() -> _ast.Pass:
+    return _ast.Pass()
+
+
 def raise_stmt(exc: _ast.expr) -> _ast.Raise:
     return _ast.Raise(exc=exc, cause=None)
 
