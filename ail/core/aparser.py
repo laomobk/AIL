@@ -358,6 +358,7 @@ class Parser:
     def __parse_member_access_expr(self, 
                                    set_attr=False, 
                                    try_=False) -> ast.MemberAccessAST:
+        ln = self.__now_ln
         left = self.__parse_cell_or_call_expr()
 
         if left is None:
@@ -386,7 +387,7 @@ class Parser:
                 return None
             self.__syntax_error()
 
-        return ast.MemberAccessAST(left, rl, self.__now_ln)
+        return ast.MemberAccessAST(left, rl, ln)
 
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
@@ -751,6 +752,7 @@ class Parser:
         return ast.InputStmtAST(msg, vl, self.__now_ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
+        ln = self.__now_ln
         left = self.__parse_bin_op_expr()
 
         if left is None:
@@ -785,7 +787,7 @@ class Parser:
             r = self.__convert_inplace_assign_expr_for_right(
                     left, r, ttype, self.__now_ln)
 
-        return ast.AssignExprAST(left, r, self.__now_ln)
+        return ast.AssignExprAST(left, r, ln)
 
     def __convert_inplace_assign_expr_for_right(
             self, left, right, ttype, ln) -> ast.ExprAST:
@@ -2282,6 +2284,29 @@ class ASTConverter:
 
         return _set_lineno(arguments(argl, var_arg), args.ln)
 
+    def _convert_class_def_stmt(self, cls: ast.ClassDefineAST) -> pyast.ClassDef:
+        bases = [self.convert(b) for b in cls.bases]
+        name = cls.name
+        decorators = [self.convert(d) for d in cls.func.decorator]
+        body = self._convert_block(cls.func.block, True)
+
+        return _set_lineno(class_def_stmt(name, bases, [], body, decorators), cls.ln)
+
+    def _convert_load_stmt(self, load: ast.LoadStmtAST) -> pyast.Call:
+        ln = load.ln
+
+        path = load.path
+        call = self._new_call_name(
+            '__ail_load__',
+            [
+                self._new_constant(path, ln),
+                self._new_call_name('locals', [], ln)
+            ],
+            ln
+        )
+
+        return call
+
     def _convert_block(
             self, block: ast.BlockAST,
             for_module: bool = True) -> List[pyast.stmt]:
@@ -2347,12 +2372,7 @@ class ASTConverter:
             return self._convert_function_def(a, as_stmt)
 
         elif isinstance(a, ast.ClassDefineAST):
-            return {'ClassDefAST': 
-                    {
-                        'name': a.name,
-                    'bases': make_ast_tree(a.bases),
-                    'func': make_ast_tree(a.func),
-                }}
+            return self._convert_class_def_stmt(a)
 
         elif isinstance(a, ast.ReturnStmtAST):
             return _set_lineno(return_stmt(self.convert(a.expr)), a.ln)
@@ -2382,7 +2402,7 @@ class ASTConverter:
             return self._convert_subscript_expr(a)
 
         elif isinstance(a, ast.LoadStmtAST):
-            pass
+            return self._convert_load_stmt(a)
 
         elif isinstance(a, ast.ImportStmtAST):
             return {'ImportAST': {
@@ -2422,8 +2442,15 @@ class ASTConverter:
 
         return a
 
-    def convert_module(self, block: ast.BlockAST) -> pyast.Module:
+    def convert_module(
+            self, block: ast.BlockAST, add_import: bool = True) -> pyast.Module:
         body = self.convert(block, True)
+        if add_import:
+            body.insert(0, _set_lineno(import_from_stmt(
+                'ail.py_runtime',
+                [import_alias('*', None)],
+                0
+            ), -1))
         return _set_lineno(module(body), block.ln)
 
     def test(self, tree):

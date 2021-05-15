@@ -43,6 +43,10 @@ not_eq_cmp = _ast.NotEq
 not_in_cmp = _ast.NotIn
 
 
+def import_alias(name: str, asname: str) -> _ast.alias:
+    return _ast.alias(name=name, asname=asname)
+
+
 def arguments(args: List[_ast.arg], vararg: _ast.arg) -> _ast.arguments:
     return _ast.arguments(
         args=args, 
@@ -134,6 +138,11 @@ def if_stmt(
         test: _ast.expr, body: List[_ast.stmt], 
         orelse: List[_ast.If]) -> _ast.If:
     return _ast.If(test=test, body=body, orelse=orelse)
+
+
+def import_from_stmt(
+        module: str, names: List[_ast.alias], level: int) -> _ast.ImportFrom:
+    return _ast.ImportFrom(module=module, names=names, level=level)
 
 
 def index_slice(value: _ast.expr) -> _ast.Index:

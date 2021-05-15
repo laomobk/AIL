@@ -1,12 +1,37 @@
 
-func fib(n) {
-    if n == 1 or n == 2 {
-        return 1;
-    } else {
-        return fib(n - 2) + fib(n - 1)
+
+load 'nz'
+
+
+class Sexual {
+    fun __init__(self, sex) {
+        self.__sex = sex
+    }
+
+    @property
+    fun sex(self) {
+        return self.__sex
     }
 }
 
 
-print fib(5)
+class Person extends Sexual {
+    __init__ = fun (self, name) {
+        super().__init__('male')
+        self.__name = name
+    }
+
+    fun say_hi(self) {
+        print 'My name is', self.__name
+    }
+    
+    @property
+    fun name(self) {
+        return self.__name
+    }
+}
+
+
+p = Person('Nezha')
+print p.name, p.sex
 
