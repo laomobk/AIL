@@ -14,7 +14,7 @@ def test_run():
 
     converter = ASTConverter()
     code = compile(converter.convert_module(t), './tests/test.ail', 'exec')
-    exec(code)
+    exec(code, {})
 
 
 if __name__ == '__main__':

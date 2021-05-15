@@ -2222,12 +2222,23 @@ class ASTConverter:
         
         return _set_lineno(function_def_stmt(name, args, body, decorators), func.ln)
 
+    def _convert_array_expr(self, array: ast.ArrayAST) -> pyast.List:
+        items = [self.convert(item) for item in array.items.item_list]
+
+        return _set_lineno(list_stmt(items, load_ctx()), array.ln)
+
+    def _convert_map_expr(self, m: ast.MapAST) -> pyast.Dict:
+        keys = [self.convert(k) for k in m.keys]
+        values = [self.convert(v) for v in m.values]
+
+        return _set_lineno(dict_expr(keys, values), m.ln)
+
     def _convert_function_def(
             self, 
             func: ast.FunctionDefineAST, 
             as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name]:
         if not as_stmt:
-            func.name = '<anonymous>'
+            func.name = '<anonymous %s>' % hash(func)
             
         func_stmt = self._convert_function_def_stmt(func)
 
@@ -2235,7 +2246,23 @@ class ASTConverter:
             return func_stmt
 
         self.__append_stmt_to_top_block(func_stmt)
-        return self._new_name('<anonymous>', func.arg_list.ln)
+        return self._new_name(func.name, func.arg_list.ln)
+
+    def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Call:
+        return assign_stmt([self._new_name(struct.name, struct.ln)], 
+            self._new_call_name(
+            '__ail_make_struct__', 
+            [
+                self._new_constant(struct.name, struct.ln),
+                _set_lineno(list_stmt(
+                    [self._new_constant(n, struct.ln) for n in struct.name_list],
+                    load_ctx(),
+                ), struct.ln),
+                _set_lineno(list_stmt(
+                    [self._new_constant(n, struct.ln) for n in struct.protected_list],
+                    load_ctx(),
+                ), struct.ln),
+            ], struct.ln))
 
     def _convert_arguments(self, args: ast.ArgListAST) -> pyast.arguments:
         argl = []
@@ -2328,7 +2355,7 @@ class ASTConverter:
                 }}
 
         elif isinstance(a, ast.ReturnStmtAST):
-            return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
+            return _set_lineno(return_stmt(self.convert(a.expr)), a.ln)
 
         elif isinstance(a, ast.BreakStmtAST):
             return _set_lineno(break_stmt(), a.ln)
@@ -2343,11 +2370,10 @@ class ASTConverter:
             return _set_lineno(nonlocal_stmt([a.name]), a.ln)
 
         elif isinstance(a, ast.ArrayAST):
-            return {'ArrayAST': {'items': make_ast_tree(a.items)}}
+            return self._convert_array_expr(a)
 
         elif isinstance(a, ast.MapAST):
-            return {'MapAST': {'keys': make_ast_tree(a.keys), 
-                               'values': make_ast_tree(a.values)}}
+            return self._convert_map_expr(a)
 
         elif isinstance(a, ast.ItemListAST):
             return unpack_list(a.item_list)
@@ -2369,10 +2395,7 @@ class ASTConverter:
             return self._convert_assign_expr(a, as_stmt)
 
         elif isinstance(a, ast.StructDefineAST):
-            return {'StructDefineAST': {
-                'name': make_ast_tree(a.name),
-                'name_list': make_ast_tree(a.name_list),
-                'protected': make_ast_tree(a.protected_list)}}
+            return self._convert_struct_def(a)
 
         elif isinstance(a, ast.NotTestAST):
             return self._convert_unary_expr(
