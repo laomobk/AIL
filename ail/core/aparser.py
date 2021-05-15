@@ -2446,11 +2446,14 @@ class ASTConverter:
             self, block: ast.BlockAST, add_import: bool = True) -> pyast.Module:
         body = self.convert(block, True)
         if add_import:
+            # insert 'from ail.py_runtime import *' to first line
+
             body.insert(0, _set_lineno(import_from_stmt(
                 'ail.py_runtime',
                 [import_alias('*', None)],
                 0
             ), -1))
+
         return _set_lineno(module(body), block.ln)
 
     def test(self, tree):
