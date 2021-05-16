@@ -1,4 +1,9 @@
 
-input 'what is your name: '; name
+#import requests
 
-print 'hello {}'.format(name)
+resp = requests.get('https://m.weibo.cn/u/6217939256?uid=6217939256&t')
+
+if resp.status_code == 200 {
+    print '200 OK'
+}
+

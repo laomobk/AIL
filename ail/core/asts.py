@@ -497,6 +497,12 @@ class TryCatchStmtAST:
         self.ln = ln
 
 
+class PyCodeBlock:
+    def __init__(self, code: str, ln: int):
+        self.code = code
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

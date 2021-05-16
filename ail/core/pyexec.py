@@ -12,7 +12,7 @@ def test_run():
     ts = l.lex(source)
 
     p = Parser()
-    t = p.parse(ts, source, '<test>')
+    t = p.parse(ts, source, '<test>', True)
 
     converter = ASTConverter()
     code = compile(converter.convert_module(t), './tests/test.ail', 'exec')

@@ -1265,7 +1265,12 @@ class Parser:
             self.__syntax_error()
         doc_string = self.__now_tok.value
 
+        ln = self.__now_ln
+
         self.__next_tok(convert_semi=False)  # eat DOC STRING
+
+        if self.__pyc_mode:
+            return ast.PyCodeBlock(doc_string, ln)
 
         nt = self.__now_tok
         if nt == 'class':
@@ -2355,6 +2360,10 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
+    def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
+        module_node = pyast.parse(code.code)
+        return module_node.body
+
     def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
@@ -2462,6 +2471,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.TryCatchStmtAST):
             return self._convert_try_stmt(a)
+
+        elif isinstance(a, ast.PyCodeBlock):
+            return self._convert_py_code_block(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)
