@@ -2250,7 +2250,7 @@ class ASTConverter:
         self.__append_stmt_to_top_block(func_stmt)
         return self._new_name(func.name, func.arg_list.ln)
 
-    def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Call:
+    def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
         return assign_stmt([self._new_name(struct.name, struct.ln)], 
             self._new_call_name(
             '__ail_make_struct__', 
@@ -2297,10 +2297,35 @@ class ASTConverter:
 
         path = load.path
         call = self._new_call_name(
-            '__ail_load__',
+            '__ail_import__',
             [
+                self._new_constant(0, ln),
                 self._new_constant(path, ln),
                 self._new_call_name('locals', [], ln)
+            ],
+            ln
+        )
+
+        return call
+
+    def _convert_import_stmt(self, imp: ast.ImportStmtAST) -> pyast.Call:
+        ln = imp.ln
+
+        path = imp.path
+        members = imp.members
+        if imp.members is None:
+            members = []
+
+        call = self._new_call_name(
+            '__ail_import__',
+            [
+                self._new_constant(1, ln),
+                self._new_constant(path, ln),
+                self._new_call_name('locals', [], ln),
+                self._new_name(imp.name, ln),
+                _set_lineno(
+                    list_stmt(
+                        [self._new_constant(m, ln) for m in members], load_ctx()), ln),
             ],
             ln
         )
@@ -2396,7 +2421,7 @@ class ASTConverter:
             return self._convert_map_expr(a)
 
         elif isinstance(a, ast.ItemListAST):
-            return unpack_list(a.item_list)
+            raise PyTreeConvertException('ItemListAST cannot be converted', a.ln)
 
         elif isinstance(a, ast.SubscriptExprAST):
             return self._convert_subscript_expr(a)
@@ -2405,8 +2430,7 @@ class ASTConverter:
             return self._convert_load_stmt(a)
 
         elif isinstance(a, ast.ImportStmtAST):
-            return {'ImportAST': {
-                'path': a.path, 'name': a.name, 'members': a.members}}
+            return self._convert_import_stmt(a)
 
         elif isinstance(a, ast.MemberAccessAST):
             return self._convert_member_access_expr(a.left, a.members, a.ln)
@@ -2426,7 +2450,7 @@ class ASTConverter:
             return self._convert_for_stmt(a)
 
         elif isinstance(a, ast.BinaryExprListAST):
-            return {'BinExprListAST': make_ast_tree(a.expr_list)}
+            raise PyTreeConvertException('BinaryExprListAST cannot be converted', a.ln)
 
         elif isinstance(a, ast.AssertStmtAST):
             return _set_lineno(assert_stmt(self.convert(a.test), None), a.ln)
@@ -2438,7 +2462,7 @@ class ASTConverter:
             return self._convert_try_stmt(a)
 
         elif isinstance(a, list):
-            return unpack_list(a)
+            raise PyTreeConvertException('list cannot be converted', a.ln)
 
         return a
 
@@ -2474,7 +2498,7 @@ def test_parse():
     ts = l.lex(source)
 
     p = Parser()
-    t = p.parse(ts, source, '<test>')
+    t = p.parse(ts, source, '<test>', TEST_CONVERT_PYAST)
 
     if not TEST_CONVERT_PYAST:
         pt = test_utils.make_ast_tree(t)

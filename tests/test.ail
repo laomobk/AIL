@@ -31,7 +31,6 @@ class Person extends Sexual {
     }
 }
 
-
 p = Person('Nezha')
 print p.name, p.sex
 
