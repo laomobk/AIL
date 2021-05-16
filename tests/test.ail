@@ -1,9 +1,37 @@
 
 #import requests
+#import json
 
-resp = requests.get('https://m.weibo.cn/u/6217939256?uid=6217939256&t')
+url = 'https://m.weibo.cn/api/container/getIndex?uid=6217939256&t=0&luicode=10000011&lfid=100103type%3D3%26q%3D%E5%93%AA%E5%90%92%26t%3D0&type=uid&value=6217939256&containerid=1005056217939256'
 
-if resp.status_code == 200 {
-    print '200 OK'
+headers = {
+    'user-agent': 'Mozilla/5.0 (X11; CrOS armv7l 13597.84.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.187 Safari/537.36'
 }
+
+
+func get_info() {
+    #resp = requests.get(url, headers=headers);
+
+    if resp.status_code == 200 {
+        print '200 OK';
+    } else {
+        return;
+    }
+
+    json_dict = json.loads(resp.text);
+    user_info = json_dict['data']['userInfo'];
+    return tuple([user_info['screen_name'], user_info['description']]);
+}
+
+func main() {
+    result = get_info();
+
+    name = result[0];
+    description = result[1];
+    
+    print 'name: {} | description: {}'.format(name, description);
+}
+
+
+main()
 

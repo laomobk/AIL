@@ -1969,6 +1969,30 @@ def _set_lineno(pynode: _PyTreeT, lineno: int) -> _PyTreeT:
     return node
 
 
+def _increase_all_lineno(start_lineno: int, node: _PyTreeT) -> _PyTreeT:
+    if isinstance(node, list):
+        return [_increase_all_lineno(start_lineno, n) for n in node]
+
+    if not isinstance(node, pyast.AST):
+        return node
+
+    fields = node._fields
+    lineno = _get_lineno(node)
+
+    if lineno is not None:
+        _set_lineno(node, lineno + start_lineno)
+
+    for field in fields:
+        f = _increase_all_lineno(start_lineno, getattr(node, field))
+        setattr(node, field, f)
+
+    return node
+
+
+def _get_lineno(pynode: pyast.AST) -> int:
+    return getattr(pynode, 'lineno', None)
+
+
 class PyTreeConvertException(Exception):
     def __init__(self, msg: str, ln: int):
         super().__init__(msg)
@@ -2362,7 +2386,7 @@ class ASTConverter:
 
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
-        return module_node.body
+        return _increase_all_lineno(code.ln - 1, module_node.body)
 
     def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
         if isinstance(a, ast.CellAST):
