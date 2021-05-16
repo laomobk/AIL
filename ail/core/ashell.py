@@ -1,11 +1,12 @@
 import sys
+import traceback
 
 from time import ctime
 
 from .acompiler import Compiler
 from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
-from .aparser import Parser
+from .aparser import Parser, ASTConverter
 from .astate import MAIN_INTERPRETER_STATE
 from .avm import Interpreter, Frame
 from .version import AIL_VERSION, AIL_COPYRIGHT, AIL_INSTALL_TIME
@@ -76,8 +77,10 @@ class Shell:
         self.__lexer = Lex()
         self.__parser = Parser()
         self.__compiler = Compiler(filename='<shell>', name='<string>')
+        self.__converter = ASTConverter()
         
         self.__globals = _SHELL_NAMESPACE
+        self.__pyc_globals = {'__pyc_mode__': True}
 
     def __get_more_line_state(self, line: str) -> int:
         """
@@ -104,7 +107,27 @@ class Shell:
     def __print_welcome_text():
         print(_WELCOME_STR)
 
-    def __run_single_line(self, line: str, block=False):
+    def __print_py_traceback(self):
+        tb_type, tb_value, tb_traceback = sys.exc_info()
+        
+        sys.last_traceback = tb_traceback
+        sys.last_type = tb_type
+        sys.last_value = tb_value
+
+        traceback.print_exception(tb_type, tb_value, tb_traceback.tb_next)
+
+    def __run_single_line_pyc(self, line: str, block: bool=False):
+        t = self.__lexer.lex(line, '<shell>')
+        t = self.__parser.parse(t, line, '<shell>', True)
+        n = self.__converter.convert_single(t)
+        c = compile(n, '<shell>', 'single')
+
+        try:
+            exec(c, self.__pyc_globals)
+        except:
+            self.__print_py_traceback()
+
+    def __run_single_line_ail(self, line: str, block=False):
         single_line = not block
 
         t = self.__lexer.lex(line, '<shell>')
@@ -125,6 +148,8 @@ class Shell:
                 print(repr(tof))
 
         MAIN_INTERPRETER_STATE.frame_stack.clear()
+
+    __run_single_line = __run_single_line_pyc
 
     def __run_block(self):
         self.__run_single_line('\n'.join(self.__buffer), True)
@@ -177,6 +202,16 @@ class Shell:
 
                 elif line == '$help':
                     print(_SH_HELP_STR)
+                    continue
+
+                elif line == '$ail':
+                    self.__run_single_line = self.__run_single_line_ail
+                    print('(swiched to AIL native mode)')
+                    continue
+
+                elif line == '$pyc':
+                    self.__run_single_line = self.__run_single_line_pyc
+                    print('(switched to Python Compatible mode)')
                     continue
 
                 elif more == 1:

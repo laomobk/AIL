@@ -2504,11 +2504,15 @@ class ASTConverter:
 
         return a
 
-    def convert_module(
-            self, block: ast.BlockAST, add_import: bool = True) -> pyast.Module:
+    def convert_module(self, block: ast.BlockAST) -> pyast.Module:
         body = self.convert(block, True)
 
         return _set_lineno(module(body), block.ln)
+    
+    def convert_single(self, block: ast.BlockAST) -> pyast.Interactive:
+        body = self.convert(block, True)
+
+        return _set_lineno(interactive(body), block.ln)
 
     def test(self, tree):
         t = self.convert(tree)

@@ -1,11 +1,12 @@
 # python compatible
 
+from .alex import Lex
+from .aparser import ASTConverter, Parser
+
 from ..py_runtime import AIL_PY_GLOBAL
 
 
-def test_run():
-    from .alex import Lex
-    from .aparser import ASTConverter, Parser
+def _test_run():
 
     source = open('./tests/test.ail').read()
     l = Lex()
@@ -20,6 +21,21 @@ def test_run():
     exec(code, AIL_PY_GLOBAL)
 
 
+def exec_as_python(source: str, filename: str, globals: dict, locals: dict):
+    l = Lex()
+    ts = l.lex(source, filename)
+
+    p = Parser()
+    node = p.parse(ts, source, filename, True)
+
+    converter = ASTConverter()
+    code = compile(converter.convert_module(node), filename, 'exec')
+
+    globals.update(AIL_PY_GLOBAL)
+
+    exec(code, globals, locals)
+
+
 if __name__ == '__main__':
-    test_run()
+    _test_run()
 

@@ -149,6 +149,10 @@ def index_slice(value: _ast.expr) -> _ast.Index:
     return _ast.Index(value=value)
 
 
+def interactive(body: List[_ast.stmt]) -> _ast.Interactive:
+    return _ast.Interactive(body=body)
+
+
 def lambda_expr(args: List[_ast.expr], body: _ast.stmt) -> _ast.Lambda:
     return _ast.Lambda(args=args, body=body)
 
