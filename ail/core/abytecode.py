@@ -5,7 +5,7 @@ from typing import List, Set
 
 from . import aobjects as obj
 
-from .aconfig import _BYTE_CODE_SIZE
+from .aconfig import BYTE_CODE_SIZE
 
 from ..objects import (
     string  as astr,
@@ -49,7 +49,7 @@ class LineNumberTableGenerator:
             return
 
         self.__sum_line = lno - self.__last_line
-        self.__sum_ofs += _BYTE_CODE_SIZE
+        self.__sum_ofs += BYTE_CODE_SIZE
 
     def mark(self, lno: int, offset: int):
         self.__last_line = lno

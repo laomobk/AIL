@@ -27,7 +27,7 @@ from .agc import GC
 
 from . import alock
 
-from .aconfig import _BYTE_CODE_SIZE, _FUTURE_MULT_THREAD
+from .aconfig import BYTE_CODE_SIZE, FUTURE_MULT_THREAD
 
 from .aobjects import (
     AILObject, convert_to_ail_object, unpack_ailobj,
@@ -662,7 +662,7 @@ class Interpreter:
             self.raise_error('no block to handle continue', 'VMError')
 
         if loop_block is not None:
-            jump_to = loop_block.handler - _BYTE_CODE_SIZE * 2
+            jump_to = loop_block.handler - BYTE_CODE_SIZE * 2
         return jump_to
 
     def __load_name(self, index: int) -> AILObject:
@@ -881,7 +881,7 @@ class Interpreter:
             while self.op_counter < len_code - 1:  # included argv index
                 try:
 
-                    if _FUTURE_MULT_THREAD:
+                    if FUTURE_MULT_THREAD:
                         if alock.GLOBAL_INTERPRETER_LOCK is not None:
                             alock.GLOBAL_INTERPRETER_LOCK.acquire()
 
@@ -1464,7 +1464,7 @@ class Interpreter:
 
                         elif why == WHY_CONTINUE or why == WHY_BREAK:
                             goto = self.pop_top()
-                            goto -= _BYTE_CODE_SIZE * 2 * int(why == WHY_CONTINUE)
+                            goto -= BYTE_CODE_SIZE * 2 * int(why == WHY_CONTINUE)
                             # if is continue, go back one bytecode
                             
                             self.op_counter = goto
@@ -1537,7 +1537,7 @@ class Interpreter:
                         self.__interrupted = True
                         self.__interrupt_signal = interrupt.signal
                 finally:
-                    if _FUTURE_MULT_THREAD:
+                    if FUTURE_MULT_THREAD:
                         if alock.GLOBAL_INTERPRETER_LOCK is not None:
                             if alock.GLOBAL_INTERPRETER_LOCK.locked():
                                 alock.GLOBAL_INTERPRETER_LOCK.release()
@@ -1565,7 +1565,7 @@ class Interpreter:
                         break
 
                     elif self.__interrupt_signal == MII_DO_JUMP_NEXT:
-                        jump_to = self.op_counter + _BYTE_CODE_SIZE
+                        jump_to = self.op_counter + BYTE_CODE_SIZE
                         continue
 
                     elif self.__interrupt_signal == MII_ERR_BREAK:
@@ -1598,7 +1598,7 @@ class Interpreter:
                 if jump_to != self.op_counter:
                     self.op_counter = jump_to
                 else:
-                    self.op_counter += _BYTE_CODE_SIZE
+                    self.op_counter += BYTE_CODE_SIZE
                     jump_to = self.op_counter
         except EOFError as e:
             self.raise_error(str(type(e).__name__), 'RuntimeError')

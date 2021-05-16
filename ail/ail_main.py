@@ -60,7 +60,7 @@ class ArgParser:
     def _do_debug(self, opt: _Option):
         n = self.__next_arg()
         if n == 'show_syntax_error_frame':
-            aconfig._DEBUG_SHOW_FRAME = True
+            aconfig.DEBUG_SHOW_FRAME = True
         else:
             print('--debug: invalid debug setting')
             self.__ok = False
@@ -70,7 +70,7 @@ class ArgParser:
     _do_d = _do_debug
 
     def _do_old(self, _):
-        aconfig._OLD_PRINT = True
+        aconfig.OLD_PRINT = True
         self.__ok = True
 
     def parse(self, arg_list: list) -> _Option:

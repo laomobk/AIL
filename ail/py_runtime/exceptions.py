@@ -1,3 +1,3 @@
 
-class AILAssignException(Exception):
+class AILInputException(Exception):
     pass

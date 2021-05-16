@@ -3,7 +3,7 @@ from random import randint
 from threading import Thread, Lock
 from typing import Dict, List
 
-from .aconfig import _BYTE_CODE_SIZE
+from .aconfig import BYTE_CODE_SIZE
 from .aframe import Frame
 from .aobjects import get_state
 
@@ -20,7 +20,7 @@ class ThreadState:
     def __init__(self,
                  frame_stack: List[Frame], py_thread: Thread, lock: Lock = None):
         self.frame_stack = frame_stack
-        self.op_counter: int = -_BYTE_CODE_SIZE
+        self.op_counter: int = -BYTE_CODE_SIZE
         self.py_thread = py_thread
         self.lock = Lock() if lock is None else lock
 
@@ -81,7 +81,7 @@ class ThreadScheduler:
         winner.release_lock()
 
         m_state.global_interpreter.op_counter = \
-            winner.op_counter + _BYTE_CODE_SIZE  # next opcode
+            winner.op_counter + BYTE_CODE_SIZE  # next opcode
 
         m_state.frame_stack = winner.frame_stack
 

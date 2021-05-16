@@ -18,7 +18,7 @@ from .abytecode import (
     LineNumberTableGenerator,
 )
 
-from .aconfig import _BYTE_CODE_SIZE
+from .aconfig import BYTE_CODE_SIZE
 
 from . import (
     aobjects as obj,
@@ -526,7 +526,7 @@ class Compiler:
             assert has_catch  # otherwise, this try block is meaningless.
 
         head_extofs = extofs + \
-                _BYTE_CODE_SIZE * (int(has_finally) + int(has_catch))
+                      BYTE_CODE_SIZE * (int(has_finally) + int(has_catch))
 
         try_block_extofs = head_extofs
 
@@ -538,37 +538,37 @@ class Compiler:
 
         catch_block_extofs = head_extofs + \
                              len(try_bc.blist) + \
-                             _BYTE_CODE_SIZE * (
+                             BYTE_CODE_SIZE * (
                                 int(has_catch)    # jump_absolute $over catch
                              ) * 2 + \
-                             _BYTE_CODE_SIZE  # setup_catch
+                             BYTE_CODE_SIZE  # setup_catch
 
         if has_catch:
             catch_bc = self.__compile_block(tree.catch_block, catch_block_extofs)
         else:
-            catch_block_extofs -= _BYTE_CODE_SIZE  # -setup_catch
+            catch_block_extofs -= BYTE_CODE_SIZE  # -setup_catch
 
         finally_block_extofs = catch_block_extofs + (
-                               _BYTE_CODE_SIZE * 2 if has_finally else 0) 
+            BYTE_CODE_SIZE * 2 if has_finally else 0)
         # push_none and pop_finally
         if has_catch:
             finally_block_extofs += len(catch_bc.blist) + \
-                                    _BYTE_CODE_SIZE  # pop_catch
+                                    BYTE_CODE_SIZE  # pop_catch
 
         if has_finally:
             finally_bc = self.__compile_block(
                     tree.finally_block, finally_block_extofs)
         
         whole_extofs = finally_block_extofs + len(finally_bc.blist) + \
-                       _BYTE_CODE_SIZE  # pop_finally
+                       BYTE_CODE_SIZE  # pop_finally
 
         # build block bytecode
         
-        to_finally = finally_block_extofs - _BYTE_CODE_SIZE  # -pop_finally
+        to_finally = finally_block_extofs - BYTE_CODE_SIZE  # -pop_finally
         jump_to_finally = finally_block_extofs - (
-                          (_BYTE_CODE_SIZE * 2) if has_finally else 0 )
+                          (BYTE_CODE_SIZE * 2) if has_finally else 0 )
                           # push_none and pop_finally
-        to_catch = catch_block_extofs - _BYTE_CODE_SIZE  # setup_catch
+        to_catch = catch_block_extofs - BYTE_CODE_SIZE  # setup_catch
         
         if has_finally:
             bc.add_bytecode(setup_finally, to_finally, -1)
@@ -600,7 +600,7 @@ class Compiler:
 
         has_finally = len(tree.finally_block.stmts) > 0
         has_catch = len(tree.catch_block.stmts) > 0
-        extofs += _BYTE_CODE_SIZE * (2 if has_finally else 1)  # for setup_try
+        extofs += BYTE_CODE_SIZE * (2 if has_finally else 1)  # for setup_try
 
         ni = self.__buffer.get_or_add_varname_index(tree.name)
 
@@ -611,13 +611,13 @@ class Compiler:
         clbc.add_bytecode(store_var, ni, -1)
         clbc.add_bytecode(delete_var, ni, -1)
 
-        cat_ext = extofs + len(tbc.blist) + len(clbc.blist) + _BYTE_CODE_SIZE * 3
+        cat_ext = extofs + len(tbc.blist) + len(clbc.blist) + BYTE_CODE_SIZE * 3
         # for setup_catch and jump_absolute
         cabc = self.__compile_block(tree.catch_block, cat_ext)
 
-        jump_over = cat_ext + len(cabc.blist) + _BYTE_CODE_SIZE * 3
+        jump_over = cat_ext + len(cabc.blist) + BYTE_CODE_SIZE * 3
         # for pop_catch load_const, and pop_finally (if it has)
-        to_catch = extofs + len(tbc.blist) + _BYTE_CODE_SIZE * (
+        to_catch = extofs + len(tbc.blist) + BYTE_CODE_SIZE * (
                 3 if has_finally else 2) 
         # for load_const (if necessary), jump_absolute and setup_try
 
@@ -720,7 +720,7 @@ class Compiler:
 
         rbcl = []
 
-        r_ext = len(lbc.blist) + _BYTE_CODE_SIZE
+        r_ext = len(lbc.blist) + BYTE_CODE_SIZE
 
         for rt in tree.right:
             tbc = self.__compile_and_expr(rt, r_ext)
@@ -731,7 +731,7 @@ class Compiler:
         for jopc in range(1, len(rbcl) + 1):
             rbc = rbcl.pop(0)
             last_ofs = sum([len(x.blist) for x in rbcl]) + len(rbc.blist) + \
-                    _BYTE_CODE_SIZE * (len(rbcl) + 1)
+                       BYTE_CODE_SIZE * (len(rbcl) + 1)
             bc.add_bytecode(jump_forward_true_or_pop, last_ofs, -1)
             bc += rbc
 
@@ -766,7 +766,7 @@ class Compiler:
 
         rbcl = []
 
-        r_ext = len(lbc.blist) +  _BYTE_CODE_SIZE
+        r_ext = len(lbc.blist) + BYTE_CODE_SIZE
 
         for rt in tree.right:
             tbc = self.__compile_not_test_expr(rt, r_ext)
@@ -777,7 +777,7 @@ class Compiler:
         for jopc in range(1, len(rbcl) + 1):
             rbc = rbcl.pop(0)
             last_ofs = sum([len(x.blist) for x in rbcl]) + len(rbc.blist) + \
-                    _BYTE_CODE_SIZE * (len(rbcl) + 1)
+                       BYTE_CODE_SIZE * (len(rbcl) + 1)
             bc.add_bytecode(jump_forward_if_false_or_pop, last_ofs, -1)
             bc += rbc
 
@@ -798,16 +798,16 @@ class Compiler:
 
     def __compile_while_stmt(self, tree: ast.WhileStmtAST, extofs: int):
         bc = ByteCode()
-        extofs += _BYTE_CODE_SIZE
+        extofs += BYTE_CODE_SIZE
 
         b = tree.block
 
         tc = self.__compile_test_expr(tree.test, extofs)
 
-        bcc = self.__compile_block(b, len(tc.blist) + extofs + _BYTE_CODE_SIZE)
+        bcc = self.__compile_block(b, len(tc.blist) + extofs + BYTE_CODE_SIZE)
         # _byte_code_size for 'setup_while'
 
-        jump_over = extofs + len(bcc.blist) + _BYTE_CODE_SIZE * 2
+        jump_over = extofs + len(bcc.blist) + BYTE_CODE_SIZE * 2
         # three times of _byte_code_size means (
         #   jump over setup_while, jump over block, jump over jump_absolute)
 
@@ -816,10 +816,10 @@ class Compiler:
         # second time for jump offset
 
         back = extofs  # move to first opcode in block
-        to = len(bcc.blist) + extofs + len(tc.blist) + _BYTE_CODE_SIZE * 2
+        to = len(bcc.blist) + extofs + len(tc.blist) + BYTE_CODE_SIZE * 2
         # including setup_while and jump over block
 
-        bc.add_bytecode(setup_while, to + _BYTE_CODE_SIZE, -1) 
+        bc.add_bytecode(setup_while, to + BYTE_CODE_SIZE, -1)
         # jump over clean_loop
         bc += tc
         bc.add_bytecode(pop_jump_if_false_or_pop, to, -1)
@@ -835,20 +835,20 @@ class Compiler:
 
         tc = self.__compile_test_expr(tree.test, 0)  # first compile
 
-        loopb_ext = extofs + _BYTE_CODE_SIZE  # setup_do_loop
+        loopb_ext = extofs + BYTE_CODE_SIZE  # setup_do_loop
 
         bcc = self.__compile_block(tree.block, loopb_ext)
 
-        jump_over = len(bcc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE * 4
+        jump_over = len(bcc.blist) + len(tc.blist) + extofs + BYTE_CODE_SIZE * 4
 
-        bc.add_bytecode(setup_doloop, jump_over + _BYTE_CODE_SIZE, -1)  # jump over clean_loop
+        bc.add_bytecode(setup_doloop, jump_over + BYTE_CODE_SIZE, -1)  # jump over clean_loop
 
         test_jump = extofs + len(bcc.blist)
 
         tc = self.__compile_test_expr(tree.test, test_jump)
  
-        jump_back = extofs + _BYTE_CODE_SIZE * 2  # over setup_doloop and jump_forward
-        bc.add_bytecode(jump_forward, len(tc.blist) + _BYTE_CODE_SIZE * 2, -1)
+        jump_back = extofs + BYTE_CODE_SIZE * 2  # over setup_doloop and jump_forward
+        bc.add_bytecode(jump_forward, len(tc.blist) + BYTE_CODE_SIZE * 2, -1)
         bc += tc
         bc.add_bytecode(pop_jump_if_true_or_pop, jump_over, -1)
         bc += bcc
@@ -861,7 +861,7 @@ class Compiler:
     def __compile_for_stmt(self, tree: ast.ForStmtAST, extofs: int):
         bc = ByteCode()
 
-        extofs += _BYTE_CODE_SIZE  # for init_for
+        extofs += BYTE_CODE_SIZE  # for init_for
 
         initbc = ByteCode()
 
@@ -873,7 +873,7 @@ class Compiler:
         for et in tree.update_list.expr_list:
             updbc += self.__compile_binary_expr(et, is_single=True)
 
-        test_ext = extofs + len(initbc.blist) + len(updbc.blist) + _BYTE_CODE_SIZE
+        test_ext = extofs + len(initbc.blist) + len(updbc.blist) + BYTE_CODE_SIZE
         # _byte_code_size for jump_forward
 
         jump_back = test_ext - len(updbc.blist)
@@ -885,18 +885,18 @@ class Compiler:
             tbc.add_bytecode(load_const, self.__buffer.add_const(True), tree.ln)
 
         block_ext = extofs + len(tbc.blist) + \
-                             len(initbc.blist) + \
-                             len(updbc.blist) + _BYTE_CODE_SIZE * 2
+                    len(initbc.blist) + \
+                    len(updbc.blist) + BYTE_CODE_SIZE * 2
         # _byte_code_size is for jump_if_false_or_pop, setup_for and jump_forward
 
         blc = self.__compile_block(tree.block, block_ext)
 
-        jump_over = block_ext + len(blc.blist) + _BYTE_CODE_SIZE
+        jump_over = block_ext + len(blc.blist) + BYTE_CODE_SIZE
 
-        bc.add_bytecode(setup_for, jump_over + _BYTE_CODE_SIZE, -1)
+        bc.add_bytecode(setup_for, jump_over + BYTE_CODE_SIZE, -1)
         # jump over clean_loop
         bc += initbc
-        bc.add_bytecode(jump_forward, len(updbc.blist) + _BYTE_CODE_SIZE, -1)
+        bc.add_bytecode(jump_forward, len(updbc.blist) + BYTE_CODE_SIZE, -1)
         bc += updbc
         bc += tbc
         bc.add_bytecode(pop_jump_if_false_or_pop, jump_over, -1)
@@ -913,12 +913,12 @@ class Compiler:
 
         tc = self.__compile_test_expr(tree.test, extofs)
 
-        ifbc_ext = extofs + len(tc.blist) + _BYTE_CODE_SIZE  # jump_if_false_or_pop
+        ifbc_ext = extofs + len(tc.blist) + BYTE_CODE_SIZE  # jump_if_false_or_pop
 
         ifbc = self.__compile_block(tree.block, ifbc_ext)
 
-        jump_over_ifb = len(ifbc.blist) + len(tc.blist) + extofs + _BYTE_CODE_SIZE + \
-                        (_BYTE_CODE_SIZE if has_else else 0)  # jump_absolute if has else
+        jump_over_ifb = len(ifbc.blist) + len(tc.blist) + extofs + BYTE_CODE_SIZE + \
+                        (BYTE_CODE_SIZE if has_else else 0)  # jump_absolute if has else
 
         if has_else:
             elbc = self.__compile_block(tree.else_block, jump_over_ifb)
@@ -928,7 +928,7 @@ class Compiler:
         # 如果拥有 if 则条件为false时跳到else块
 
         jump_over = extofs + len(tc.blist) + len(ifbc.blist) \
-                    + len(elbc.blist) + _BYTE_CODE_SIZE * (2
+                    + len(elbc.blist) + BYTE_CODE_SIZE * (2
                                                            if has_else
                                                            else 1)  # + _BYTE_CODE_SIZE
         # include 'jump_absolute' at the end of ifbc
@@ -937,7 +937,7 @@ class Compiler:
         if has_else:
             ifbc.add_bytecode(jump_absolute, jump_over, -1)
 
-        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + _BYTE_CODE_SIZE
+        test_jump = len(tc.blist) + len(ifbc.blist) + extofs + BYTE_CODE_SIZE
         # 不需要加elbc的长度
 
         # tc = self.__compile_test_expr(tree.test, test_jump)
@@ -984,7 +984,7 @@ class Compiler:
         ec = self.__compile_test_expr(tree.expr, extofs)
         ci = self.__buffer.add_const('AssertionError')
 
-        jump = len(ec.blist) + _BYTE_CODE_SIZE * 3
+        jump = len(ec.blist) + BYTE_CODE_SIZE * 3
 
         bc += ec
 

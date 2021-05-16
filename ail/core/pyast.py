@@ -153,7 +153,7 @@ def lambda_expr(args: List[_ast.expr], body: _ast.stmt) -> _ast.Lambda:
     return _ast.Lambda(args=args, body=body)
 
 
-def list_stmt(elts: List[_ast.expr], ctx: _ast.expr_context) -> _ast.List:
+def list_expr(elts: List[_ast.expr], ctx: _ast.expr_context) -> _ast.List:
     return _ast.List(elts=elts, ctx=ctx)
 
 

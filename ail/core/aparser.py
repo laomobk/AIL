@@ -487,7 +487,7 @@ class Parser:
             block = ast.BlockAST([return_stmt], return_stmt.ln, True)
 
             return ast.FunctionDefineAST(
-                    '<lambda>', expr_or_param, block, None, expr.ln)
+                    aconfig.LAMBDA_FUNC_NAME, expr_or_param, block, None, expr.ln)
 
         nt = self.__now_tok
 
@@ -714,7 +714,7 @@ class Parser:
         el = [exp]
         
         sep = ','
-        if aconfig._OLD_PRINT:
+        if aconfig.OLD_PRINT:
             sep = ';'
 
         while self.__now_tok == sep:
@@ -731,6 +731,8 @@ class Parser:
         return ast.PrintStmtAST(el, ln)
 
     def __parse_input_expr(self) -> ast.InputStmtAST:
+        ln = self.__now_ln
+
         self.__next_tok()  # eat 'INPUT'
 
         msg = self.__parse_binary_expr()
@@ -749,7 +751,7 @@ class Parser:
 
         self.__expect_newline()
 
-        return ast.InputStmtAST(msg, vl, self.__now_ln)
+        return ast.InputStmtAST(msg, vl, ln)
 
     def __parse_assign_expr(self) -> ast.AssignExprAST:
         ln = self.__now_ln
@@ -1365,7 +1367,7 @@ class Parser:
             self.__next_tok()
         
         if anonymous_function:
-            name = '<anonymous function>'
+            name = aconfig.ANONYMOUS_FUNC_NAME
         else:
             if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
@@ -1548,7 +1550,7 @@ class Parser:
             if directory == '':
                 directory = '.'
 
-            path = '/'.join((directory, target, aconfig._PACKAGE_INIT_FILENAME))
+            path = '/'.join((directory, target, aconfig.PACKAGE_INIT_FILENAME))
             alias = target
 
         if alias is None:
@@ -2227,7 +2229,7 @@ class ASTConverter:
     def _convert_array_expr(self, array: ast.ArrayAST) -> pyast.List:
         items = [self.convert(item) for item in array.items.item_list]
 
-        return _set_lineno(list_stmt(items, load_ctx()), array.ln)
+        return _set_lineno(list_expr(items, load_ctx()), array.ln)
 
     def _convert_map_expr(self, m: ast.MapAST) -> pyast.Dict:
         keys = [self.convert(k) for k in m.keys]
@@ -2253,14 +2255,14 @@ class ASTConverter:
     def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
         return assign_stmt([self._new_name(struct.name, struct.ln)], 
             self._new_call_name(
-            '__ail_make_struct__', 
+            '__ail_make_struct__',
             [
                 self._new_constant(struct.name, struct.ln),
-                _set_lineno(list_stmt(
+                _set_lineno(list_expr(
                     [self._new_constant(n, struct.ln) for n in struct.name_list],
                     load_ctx(),
                 ), struct.ln),
-                _set_lineno(list_stmt(
+                _set_lineno(list_expr(
                     [self._new_constant(n, struct.ln) for n in struct.protected_list],
                     load_ctx(),
                 ), struct.ln),
@@ -2324,7 +2326,7 @@ class ASTConverter:
                 self._new_call_name('locals', [], ln),
                 self._new_name(imp.name, ln),
                 _set_lineno(
-                    list_stmt(
+                    list_expr(
                         [self._new_constant(m, ln) for m in members], load_ctx()), ln),
             ],
             ln
@@ -2469,14 +2471,6 @@ class ASTConverter:
     def convert_module(
             self, block: ast.BlockAST, add_import: bool = True) -> pyast.Module:
         body = self.convert(block, True)
-        if add_import:
-            # insert 'from ail.py_runtime import *' to first line
-
-            body.insert(0, _set_lineno(import_from_stmt(
-                'ail.py_runtime',
-                [import_alias('*', None)],
-                0
-            ), -1))
 
         return _set_lineno(module(body), block.ln)
 

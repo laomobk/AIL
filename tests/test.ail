@@ -1,36 +1,4 @@
 
+input 'what is your name: '; name
 
-load 'nz'
-
-
-class Sexual {
-    fun __init__(self, sex) {
-        self.__sex = sex
-    }
-
-    @property
-    fun sex(self) {
-        return self.__sex
-    }
-}
-
-
-class Person extends Sexual {
-    __init__ = fun (self, name) {
-        super().__init__('male')
-        self.__name = name
-    }
-
-    fun say_hi(self) {
-        print 'My name is', self.__name
-    }
-    
-    @property
-    fun name(self) {
-        return self.__name
-    }
-}
-
-p = Person('Nezha')
-print p.name, p.sex
-
+print 'hello {}'.format(name)

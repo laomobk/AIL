@@ -1,12 +1,18 @@
 
-_BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
+BYTE_CODE_SIZE = 2  # each bytecode & arg size = 8 * 2
 
-_PACKAGE_INIT_FILENAME = '_package'
+PACKAGE_INIT_FILENAME = '_package'
 
-_DEBUG_SHOW_FRAME = False
+DEBUG_SHOW_FRAME = False
 
-_OLD_PRINT = False
+OLD_PRINT = False
 
-_LOAD_BUILTINS = True
+LOAD_BUILTINS = True
 
-_FUTURE_MULT_THREAD = False
+FUTURE_MULT_THREAD = False
+
+ANONYMOUS_FUNC_NAME = '<anonymous function>'
+
+LAMBDA_FUNC_NAME = '<lambda>'
+
+PY_RUNTIME_IMPORT_NAME = 'ail.py_runtime'
