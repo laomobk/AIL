@@ -61,6 +61,11 @@ _SHELL_NAMESPACE = {
     'copyright': objs.convert_to_ail_object(_sh_copyright),
 }
 
+_SHELL_PYC_NAMESPACE = {
+    'copyright': _sh_copyright,
+    'python_copyright': copyright,
+}
+
 
 class Shell:
     def __init__(self):
@@ -81,6 +86,7 @@ class Shell:
         
         self.__globals = _SHELL_NAMESPACE
         self.__pyc_globals = {'__pyc_mode__': True}
+        self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
 
     def __get_more_line_state(self, line: str) -> int:
         """
