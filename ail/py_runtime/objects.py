@@ -35,6 +35,8 @@ class AILModule:
             getattr(self, '_$_name'), getattr(self, '_$_path')
         )
 
+    __repr__ = __str__
+
 
 class AILImporter:
     def __init__(self):
