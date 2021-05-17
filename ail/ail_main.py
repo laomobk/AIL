@@ -8,6 +8,12 @@ from .core import aconfig
 from .core.astate import MAIN_INTERPRETER_STATE
 from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 from .core.abuiltins import init_builtins
+from .core.pyexec import exec_as_python
+from .core.alex import Lex
+from .core.aparser import Parser
+from .core.acompiler import Compiler
+from .core.avm import Interpreter
+
 
 from ._config import (
     AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
@@ -131,7 +137,7 @@ def launch_py_test(test_name):
         print('No test named \'%s\'' % test_name)
 
 
-def launch_main(argv: list) -> int:
+def launch_main(argv: list, pyc_mode: bool = True) -> int:
     init_builtins()
 
     option = ArgParser().parse(argv)
@@ -152,15 +158,14 @@ def launch_main(argv: list) -> int:
     shared.GLOBAL_SHARED_DATA.find_path.append(file_dir)
 
     try:
-        from .core.alex import Lex
-        from .core.aparser import Parser
-        from .core.acompiler import Compiler
-        from .core.avm import Interpreter
 
         if not os.path.exists(file_path):
             raise FileNotFoundError('file \'%s\' not found' % file_path)
 
         source = open(file_path, encoding='UTF-8').read()
+
+        if pyc_mode:
+            return exec_as_python(source, file_path, dict())
 
         ast = Parser().parse(Lex().lex(source), source, file_path)
         code_object = Compiler(

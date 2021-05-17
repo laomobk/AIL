@@ -15,6 +15,9 @@ from ..objects import function
 from ..objects import string
 from ..objects import null
 
+from ..py_runtime.namespace import fill_namespace
+from ..py_runtime.exceptions import print_py_traceback
+
 from . import aobjects as objs, error, tokentype as tokent
 
 import os
@@ -66,6 +69,8 @@ _SHELL_PYC_NAMESPACE = {
     'python_copyright': copyright,
 }
 
+fill_namespace(_SHELL_PYC_NAMESPACE)
+
 
 class Shell:
     def __init__(self):
@@ -85,7 +90,7 @@ class Shell:
         self.__converter = ASTConverter()
         
         self.__globals = _SHELL_NAMESPACE
-        self.__pyc_globals = {'__pyc_mode__': True}
+        self.__pyc_globals = {}
         self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
 
     def __get_more_line_state(self, line: str) -> int:
@@ -113,15 +118,6 @@ class Shell:
     def __print_welcome_text():
         print(_WELCOME_STR)
 
-    def __print_py_traceback(self):
-        tb_type, tb_value, tb_traceback = sys.exc_info()
-        
-        sys.last_traceback = tb_traceback
-        sys.last_type = tb_type
-        sys.last_value = tb_value
-
-        traceback.print_exception(tb_type, tb_value, tb_traceback.tb_next)
-
     def __run_single_line_pyc(self, line: str, block: bool=False):
         t = self.__lexer.lex(line, '<shell>')
         t = self.__parser.parse(t, line, '<shell>', True)
@@ -131,7 +127,7 @@ class Shell:
         try:
             exec(c, self.__pyc_globals)
         except:
-            self.__print_py_traceback()
+            print_py_traceback()
 
     def __run_single_line_ail(self, line: str, block=False):
         single_line = not block
