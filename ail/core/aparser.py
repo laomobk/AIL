@@ -2353,7 +2353,7 @@ class ASTConverter:
                 self._new_constant(1, ln),
                 self._new_constant(path, ln),
                 self._new_call_name('locals', [], ln),
-                self._new_name(imp.name, ln),
+                self._new_constant(imp.name, ln),
                 _set_lineno(
                     list_expr(
                         [self._new_constant(m, ln) for m in members], load_ctx()), ln),

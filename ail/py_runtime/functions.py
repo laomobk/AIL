@@ -1,4 +1,12 @@
+
+from typing import List
+
+from .objects import AILImporter as _AILImporter
+
 from . import exceptions as _exceptions
+
+
+_IMPORTER = _AILImporter()
 
 
 def ail_input(prompt: str, value_count: int):
@@ -13,3 +21,9 @@ def ail_input(prompt: str, value_count: int):
         raise _exceptions.AILInputException('')
 
     return vals
+
+
+def ail_import(
+        mode: int, name: str, namespace: dict, alias: str, members: List[str]):
+    return _IMPORTER.import_module(mode, name, namespace, alias, members)
+

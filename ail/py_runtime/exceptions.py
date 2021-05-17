@@ -7,6 +7,14 @@ class AILInputException(Exception):
     pass
 
 
+class AILImportError(Exception):
+    pass
+
+
+class AILModuleNotFoundError(AILImportError):
+    pass
+
+
 def print_py_traceback():
     tb_type, tb_value, tb_traceback = _sys.exc_info()
 

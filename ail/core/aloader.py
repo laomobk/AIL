@@ -61,7 +61,9 @@ class ModuleLoader:
 
         return None
 
-    def __load_py_namespace(self, pypath):
+    search_module = __search_module
+
+    def __load_py_namespace(self, pypath, convert: bool = True):
         v = {}
 
         try:
@@ -83,6 +85,9 @@ class ModuleLoader:
         if '_AIL_NAMESPACE_' in v:
             nsp = v['_AIL_NAMESPACE_']
 
+            if not convert:
+                return nsp
+
             # convert all objects to AILObject
             for k, v in nsp.items():
                 nsp[k] = objs.convert_to_ail_object(v)
@@ -91,12 +96,16 @@ class ModuleLoader:
 
         return {}
 
+    get_py_namespace = __load_py_namespace
+
     def __get_type(self, fp: str):
         fn = os.path.split(fp)[-1]
         fns = fn.split('.')
 
         if len(fns) > 1 and fns[-1] in _ALLOW_FILE_TYPE:
             return fns[-1]
+
+    get_type = __get_type
 
     def __add_to_loaded(self, module_path: str, namespace: dict):
         self.__check_and_delete_meta(namespace)
