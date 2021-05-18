@@ -24,6 +24,8 @@ def ail_input(prompt: str, value_count: int):
 
 
 def ail_import(
-        mode: int, name: str, namespace: dict, alias: str, members: List[str]):
+        mode: int, name: str, namespace: dict, alias: str=None, members: List[str]=[]):
+    if alias is None:
+        alias = name
     return _IMPORTER.import_module(mode, name, namespace, alias, members)
 
