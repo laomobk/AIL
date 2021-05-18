@@ -2,6 +2,7 @@
 
 import os.path
 
+from inspect import isfunction
 from os import chdir, getcwd
 from traceback import format_exc
 from typing import Tuple, Union
@@ -85,12 +86,15 @@ class ModuleLoader:
         if '_AIL_NAMESPACE_' in v:
             nsp = v['_AIL_NAMESPACE_']
 
-            if not convert:
-                return nsp
-
             # convert all objects to AILObject
             for k, v in nsp.items():
-                nsp[k] = objs.convert_to_ail_object(v)
+                if not convert:
+                    if isfunction(v):
+                        nsp[k] = objs.convert_to_ail_object(v)
+                    else:
+                        nsp[k] = v
+                else:
+                    nsp[k] = objs.convert_to_ail_object(v)
 
             return nsp
 

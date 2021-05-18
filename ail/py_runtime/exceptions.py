@@ -3,6 +3,10 @@ import sys as _sys
 import traceback as _traceback
 
 
+class AILRuntimeError(Exception):
+    pass
+
+
 class AILInputException(Exception):
     pass
 

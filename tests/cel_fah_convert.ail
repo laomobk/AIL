@@ -12,9 +12,9 @@ fun main() {
     deg = float(console.readln('degree: '))
 
     if mode == 1 {
-        print 'result:' ; fahToCel(deg)
+        print 'result:', fahToCel(deg)
     } elif mode == 2 {
-        print 'result:' ; celToFah(deg)
+        print 'result:', celToFah(deg)
     } else {
         print 'wrong input'
     }

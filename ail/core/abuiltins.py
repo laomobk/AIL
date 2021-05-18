@@ -241,6 +241,8 @@ def func_len(o: objs.AILObject):
             return o['__len__'](o)
         return AILRuntimeError('\'%s\' object has no len()' %
                                o['__class__'].name, 'TypeError')
+    else:
+        return len(o)
 
 
 def func_type(o: objs.AILObject):

@@ -2491,7 +2491,7 @@ class ASTConverter:
             return _set_lineno(assert_stmt(self.convert(a.test), None), a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
-            return _set_lineno(return_stmt(a.expr), a.ln)
+            return _set_lineno(raise_stmt(a.expr), a.ln)
 
         elif isinstance(a, ast.TryCatchStmtAST):
             return self._convert_try_stmt(a)
