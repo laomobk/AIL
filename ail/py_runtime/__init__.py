@@ -9,9 +9,15 @@ from ..core.modules.console import get_console_object as _get_console_object
 _builtins.init_builtins()
 
 
+_PY_BUILTINS = {
+    'globals', 'locals'
+}
+
+
 AIL_PY_GLOBAL = {
     k: convert_object(v)
     for k, v in _builtins.BUILTINS.items()
+    if k not in _PY_BUILTINS
 }
 
 

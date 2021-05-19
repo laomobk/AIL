@@ -105,7 +105,8 @@ class AILImporter:
         from ..core.pyexec import exec_as_python as _exec
 
         try:
-            module_globals = dict()
+            from . import AIL_PY_GLOBAL
+            module_globals = AIL_PY_GLOBAL
             source = open(path, encoding='UTF-8').read()
 
             _exec(source, path, module_globals)
