@@ -63,8 +63,8 @@ class AILModule:
 
 
 class AILImporter:
-    def __init__(self):
-        pass
+    def __init__(self): 
+        self.__loading_modules = []
 
     def import_module(self,
             mode: int, name: str, namespace: dict, 
@@ -75,30 +75,43 @@ class AILImporter:
             raise _exceptions.AILModuleNotFoundError(
                     'cannot find module \'%s\'' % name)
 
-        ns = self.get_namespace(path)
+        if path in self.__loading_modules:
+            raise ImportError('Cannot import module \'%s\' ' % name +
+                    '(may caused circular import)')
 
-        if mode == 0:  # load
-            namespace.update(ns)
-        elif mode == 1:
-            if len(members) > 0:
-                for member in members:
-                    v = ns.get(member, None)
-                    if v is None:
-                        raise _exceptions.AILImportError(
-                            'cannot import member \'%s\' from \'%s\'' % 
-                            (member, name))
-                    namespace[member] = v
-                    return
+        self.__loading_modules.append(path)
 
-            module_obj = AILModule(name, path, ns)
-            namespace[alias] = module_obj
+        try:
+            ns = self.get_namespace(path)
+
+            if mode == 0:  # load
+                namespace.update(ns)
+            elif mode == 1:
+                if len(members) > 0:
+                    for member in members:
+                        v = ns.get(member, None)
+                        if v is None:
+                            raise _exceptions.AILImportError(
+                                'cannot import member \'%s\' from \'%s\'' % 
+                                (member, name))
+                        namespace[member] = v
+                        return
+
+                module_obj = AILModule(name, path, ns)
+                namespace[alias] = module_obj
+        finally:
+            self.__loading_modules.remove(path)
 
     def get_namespace(self, path: str) -> dict:
         if _LOADER.get_type(path) in ('py', 'ailp'):
+            ns = _LOADER.get_py_namespace(path, False)
+            if isinstance(ns, _RTError):
+                raise ImportError(ns.msg)
+
             return {
                 k: (convert_object(v) if isinstance(v, AILObject) else v)
                 for k, v in 
-                _LOADER.get_py_namespace(path, False).items()
+                ns.items()
             }
 
         # exec and get namespace
@@ -127,6 +140,9 @@ class AILObjectWrapper:
     def __getattr__(self, name):
         if name[:2] == '_$':
             return super().__getattribute__(name[2:])
+        elif name[:2] == name[-2:] == '__':
+            return super().__getattribute__(name)
+
         o = getattr(self, '_$ail_object')
         v = o['__getattr__']
 
@@ -140,6 +156,8 @@ class AILObjectWrapper:
     def __setattr__(self, name, value):
         if name[:2] == '_$':
             return super().__setattr__(name[2:], value)
+        elif name[:2] == name[-2:] == '__':
+            return super().__setattr__(name, value)
 
         o = getattr(self, '_$ail_object')
         v = o['__setattr__']
@@ -149,6 +167,24 @@ class AILObjectWrapper:
                     'cannot set attribute to \'%s\'' % o['__class__'])
 
         return check_object(v(o, name, convert_to_ail_object(value)))
+
+    def __str__(self):
+        o = getattr(self, '_$ail_object')
+        v = o['__str__']
+
+        if v is None:
+            return '<AILObject Wrapper at %s>' % (hex(id(self)))
+
+        return check_object(v(o))
+
+    def __repr__(self):
+        o = getattr(self, '_$ail_object')
+        v = o['__repr__']
+
+        if v is None:
+            return '<AILObject Wrapper at %s>' % (hex(id(self)))
+
+        return check_object(v(o))
 
     def __call__(self, *args):
         o = getattr(self, '_$ail_object')

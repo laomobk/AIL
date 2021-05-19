@@ -77,9 +77,11 @@ class ModuleLoader:
                 '%s' % excs, 'LoadError')
 
         is_mod = v.get('_IS_AIL_MODULE_', False)
+        is_mod = v.get('_AIL_MODULE_', False) if not is_mod else True
+        is_pyc_module = v.get('_AIL_PYC_MODULE_', False)
         has_namespace = '_AIL_NAMESPACE_' in v
 
-        if not is_mod or not has_namespace:
+        if not (is_mod or is_pyc_module) or not has_namespace:
             return error.AILRuntimeError(
                 '%s is not an AIL MODULE!' % pypath, 'LoadError')
 
@@ -88,6 +90,9 @@ class ModuleLoader:
 
             # convert all objects to AILObject
             for k, v in nsp.items():
+                if is_pyc_module:
+                    break
+
                 if not convert:
                     if isfunction(v):
                         nsp[k] = objs.convert_to_ail_object(v)

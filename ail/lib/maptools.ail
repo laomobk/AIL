@@ -1,0 +1,9 @@
+
+func mapto(keys, v_func) {
+    d = {}
+    for i = 0; i < len(keys); i += 1 {
+        d[keys[i]] = v_func(keys[i])
+    }
+    return d
+}
+

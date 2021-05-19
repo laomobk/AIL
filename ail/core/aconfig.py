@@ -16,3 +16,6 @@ ANONYMOUS_FUNC_NAME = '<anonymous function>'
 LAMBDA_FUNC_NAME = '<lambda>'
 
 PY_RUNTIME_IMPORT_NAME = 'ail.py_runtime'
+
+RENAME_PY_RUNTIME = True
+

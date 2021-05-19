@@ -784,12 +784,15 @@ class Parser:
         if r is None:
             self.__syntax_error()
 
+        aug_assign = False
+
         if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1) or \
                 ttype == AIL_INP_POW:
             r = self.__convert_inplace_assign_expr_for_right(
                     left, r, ttype, self.__now_ln)
+            aug_assign = True
 
-        return ast.AssignExprAST(left, r, ln)
+        return ast.AssignExprAST(left, r, ln, aug_assign)
 
     def __convert_inplace_assign_expr_for_right(
             self, left, right, ttype, ln) -> ast.ExprAST:
@@ -2176,13 +2179,39 @@ class ASTConverter:
         if not as_stmt:
             raise PyTreeConvertException('not support assign expression', expr.ln)
 
+        aug_assign = False
+        aug_op_map = {
+            '**': pyast.Pow(),
+            '+': pyast.Add(),
+            '-': pyast.Sub(),
+            '*': pyast.Mult(),
+            '/': pyast.Div(),
+            'mod': pyast.Mod(),
+            '<<': pyast.LShift(),
+            '>>': pyast.RShift(),
+            '|': pyast.BitOr(),
+            '&': pyast.BitAnd(),
+            '^': pyast.BitXor(),
+        }
+        aug_op = None
+
         right = self.convert(expr.right)
+
+        if expr.aug_assign:
+            aug_assign = True
+            rop, right = expr.right.right[0]
+            right = self.convert(right)
+            aug_op = aug_op_map[rop]
+
         left = self.convert(expr.left)
 
         if type(left) not in (pyast.Attribute, pyast.Name, pyast.Subscript):
             raise PyTreeConvertException('illegal assign target', expr.ln)
 
         left.ctx = store_ctx()
+
+        if aug_assign:
+            return _set_lineno(aug_assign_stmt(left, aug_op, right), expr.ln)
 
         return _set_lineno(assign_stmt([left], right), expr.ln)
 
