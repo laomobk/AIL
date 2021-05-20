@@ -2311,7 +2311,7 @@ class ASTConverter:
         return self._new_name(func.name, func.arg_list.ln)
 
     def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
-        return assign_stmt([self._new_name(struct.name, struct.ln)], 
+        return assign_stmt([self._new_name(struct.name, struct.ln, store_ctx())], 
             self._new_call_name(
             '__ail_make_struct__',
             [

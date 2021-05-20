@@ -1,4 +1,7 @@
 
+from copy import copy
+from inspect import isfunction, isbuiltin
+from types import MethodType
 from typing import List
 
 from . import exceptions as _exceptions
@@ -119,7 +122,7 @@ class AILImporter:
 
         try:
             from . import AIL_PY_GLOBAL
-            module_globals = AIL_PY_GLOBAL
+            module_globals = AIL_PY_GLOBAL.copy()
             source = open(path, encoding='UTF-8').read()
 
             _exec(source, path, module_globals)
@@ -199,4 +202,69 @@ class AILObjectWrapper:
         if o['__this__'] is not None:
             return check_object(v(o, *args))
         return check_object(v(*args))
+
+
+class AILStruct:
+    def __init__(self, name: str, members: List[str], protected: List[str]):
+        self.__ail_protected__ = tuple(protected)
+        self.__ail_members__ = tuple(members)
+        self.__ail_as_instance__ = False
+        self.__ail_struct_name__ = name
+        self.__ail_as_object__ = False
+        self.__ail_dict__ = dict()
+
+        self.__init_members__()
+
+    def __ail_check_bound__(self, target, try_bound: bool = False):
+        is_func = isfunction(target) or isbuiltin(target)
+        if not is_func:
+            if try_bound:
+                return target
+            raise TypeError('bound target must be a function')
+        c_self = copy(self)
+        c_self.__ail_as_instance__ = True
+        method = MethodType(target, c_self)
+        return method
+
+    def __init_members__(self):
+        try:
+            self.__ail_as_instance__ = True
+            for m in self.__ail_members__:
+                setattr(self, m, None)
+        finally:
+            self.__ail_as_instance__ = False
+
+    def __getattr__(self, name: str):
+        if name[:2] == name[-2:] == '__':
+            return super().__getattribute__(name)
+        elif name[:2] == '__':
+            if not self.__ail_as_instance__:
+                raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                                     (self.__ail_struct_name__, name))
+        if name not in self.__ail_dict__:
+            raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                                 (self.__ail_struct_name__, name))
+        return self.__ail_dict__[name]
+
+    def __setattr__(self, name: str, value):
+        if name[:2] == name[-2:] == '__':
+            return super().__setattr__(name, value)
+        elif name[:2] == '__':
+            if not self.__ail_as_instance__:
+                raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                                     (self.__ail_struct_name__, name))
+        elif name in self.__ail_protected__ and not self.__ail_as_instance__:
+            raise AttributeError('readonly attribute')
+        elif name not in self.__ail_members__:
+            raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                                 (self.__ail_struct_name__, name))
+        self.__ail_dict__[name] = self.__ail_check_bound__(value, True)
+
+    def __str__(self) -> str:
+        if self.__ail_as_object__:
+            return '<struct \'%s\' at %s>' % \
+                   (self.__ail_struct_name__, hex(id(self)))
+        return '<struct \'%s\'>' % self.__ail_struct_name__
+
+    __repr__ = __str__
 

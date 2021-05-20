@@ -1,4 +1,5 @@
-from .functions import *
+from . import functions as _func
+
 from .objects import convert_object
 
 from ..core import abuiltins as _builtins
@@ -28,8 +29,11 @@ AIL_PY_GLOBAL = {
 
 
 AIL_PY_GLOBAL.update({
-    '__ail_input__': ail_input,
-    '__ail_import__': ail_import,
+    '__ail_input__': _func.ail_input,
+    '__ail_import__': _func.ail_import,
+    '__ail_make_struct__': _func.make_struct,
+    'new': _func.new_struct_object,
+    'contains': _func.contains,
     'console': convert_object(_get_console_object()),
 })
 
