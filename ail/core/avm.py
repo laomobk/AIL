@@ -70,6 +70,8 @@ from ..objects.struct import (
     struct_obj_isinstance, 
 )
 
+from ..py_runtime.objects import convert_object as convert_to_py_object
+
 from .modules._error import (
     make_err_struct_object, throw_error, get_err_struct
 )
@@ -1644,6 +1646,33 @@ class Interpreter:
              exec_for_module=False, globals: dict = None):
         with self.get_context():
             return self.__exec(cobj, frame, exec_for_module, globals)
+
+
+class InterpreterWrapper(Interpreter):
+    def __init__(self):
+        self.__top = None
+
+    def pop_top(self):
+        return self.__top
+
+    def set_context(self, *_): 
+        raise BuiltinAILRuntimeError(
+                'Interpreter.set_context() cannot use in pyc mode')
+
+    def exec(self, *_):
+        raise BuiltinAILRuntimeError('Interpreter.exec() cannot use in pyc mode')
+
+    def exec_for_import(self, *_):
+        self.exec()
+
+    def get_stack_trace(self, *_):
+        raise BuiltinAILRuntimeError(
+                'Interpreter.get_stack_trace() cannot use in pyc mode')
+
+    def call_function(self, func, argc, argl, ex=False, frame=None, t_state=None):
+        rtn = convert_to_py_object(func)(*argl)
+        self.__top = rtn
+        return True  # ok
 
 
 def test_vm():

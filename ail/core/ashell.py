@@ -8,7 +8,7 @@ from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser, ASTConverter
 from .astate import MAIN_INTERPRETER_STATE
-from .avm import Interpreter, Frame
+from .avm import Interpreter, Frame, InterpreterWrapper
 from .version import AIL_VERSION, AIL_COPYRIGHT, AIL_INSTALL_TIME
 
 from ..objects import function
@@ -123,10 +123,13 @@ class Shell:
         t = self.__parser.parse(t, line, '<shell>', True)
         n = self.__converter.convert_single(t)
         c = compile(n, '<shell>', 'single')
-
+        
         try:
+            interpreter = MAIN_INTERPRETER_STATE.global_interpreter
+            MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
             exec(c, self.__pyc_globals)
         except:
+            MAIN_INTERPRETER_STATE.global_interpreter = interpreter
             print_py_traceback()
 
     def __run_single_line_ail(self, line: str, block=False):

@@ -12,7 +12,7 @@ from .core.pyexec import exec_as_python
 from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
 from .core.acompiler import Compiler
-from .core.avm import Interpreter
+from .core.avm import Interpreter, InterpreterWrapper
 
 
 from ._config import (
@@ -172,6 +172,7 @@ def launch_main(argv: list, pyc_mode: bool = True) -> int:
         source = open(file_path, encoding='UTF-8').read()
 
         if pyc_mode and not source_mode:
+            MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
             return exec_as_python(source, file_path, dict())
 
         ast = Parser().parse(Lex().lex(source), source, file_path, source_mode)
