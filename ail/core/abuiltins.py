@@ -550,6 +550,7 @@ def init_builtins():
         'super': objs.convert_to_ail_object(func_super),
         'doc': objs.convert_to_ail_object(func_doc),
         'hash': objs.convert_to_ail_object(func_hash),
+        'show_struct': objs.convert_to_ail_object(func_show_struct),
         'Object': class_object.CLASS_OBJECT,
         'FileIO': CLASS_FILEIO,
 

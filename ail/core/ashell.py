@@ -128,9 +128,10 @@ class Shell:
             interpreter = MAIN_INTERPRETER_STATE.global_interpreter
             MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
             exec(c, self.__pyc_globals)
-        except:
-            MAIN_INTERPRETER_STATE.global_interpreter = interpreter
+        except Exception:
             print_py_traceback()
+        finally:
+            MAIN_INTERPRETER_STATE.global_interpreter = interpreter
 
     def __run_single_line_ail(self, line: str, block=False):
         single_line = not block

@@ -142,7 +142,7 @@ def launch_py_test(test_name):
         print('No test named \'%s\'' % test_name)
 
 
-def launch_main(argv: list, pyc_mode: bool = True) -> int:
+def _launch_main(argv: list, pyc_mode: bool = True) -> int:
     init_builtins()
 
     option = ArgParser().parse(argv)
@@ -165,7 +165,6 @@ def launch_main(argv: list, pyc_mode: bool = True) -> int:
     shared.GLOBAL_SHARED_DATA.find_path.append(file_dir)
 
     try:
-
         if not os.path.exists(file_path):
             raise FileNotFoundError('file \'%s\' not found' % file_path)
 
@@ -206,6 +205,13 @@ def launch_main(argv: list, pyc_mode: bool = True) -> int:
     except FileNotFoundError as e:
         print('AIL: can\'t open file \'%s\': %s' % (file_path, str(e)))
         return 1
+
+
+def launch_main(argv: list, pyc_mode: bool = True):
+    try:
+        return _launch_main(argv, pyc_mode)
+    except SystemExit:
+        return 0
 
 
 if __name__ == '__main__':

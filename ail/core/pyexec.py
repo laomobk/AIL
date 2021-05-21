@@ -22,7 +22,10 @@ def _test_run():
     exec(code, AIL_PY_GLOBAL)
 
 
-def exec_as_python(source: str, filename: str, globals: dict):
+def exec_as_python(source: str, filename: str, globals: dict) -> int:
+    """
+    :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
+    """
     l = Lex()
     ts = l.lex(source, filename)
 
@@ -37,7 +40,9 @@ def exec_as_python(source: str, filename: str, globals: dict):
     try:
         exec(code, globals)
         return 0
-    except:
+    except SystemExit:
+        return 2
+    except Exception:
         print_py_traceback()
         return 1
 

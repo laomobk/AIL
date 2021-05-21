@@ -18,6 +18,7 @@ _PY_BUILTINS = {
     'len', 'type', 'isinstance',
     'isimplement', 'str', 'repr',
     'int', 'float', 'super',
+    'Object', 'FileIO',
 }
 
 
@@ -35,6 +36,8 @@ AIL_PY_GLOBAL.update({
     'new': _func.new_struct_object,
     'contains': _func.contains,
     'console': convert_object(_get_console_object()),
+    'true': True,
+    'false': False,
 })
 
 

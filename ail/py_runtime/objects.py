@@ -22,6 +22,12 @@ def check_object(obj):
     return convert_object(obj)
 
 
+def convert_to_ail_object_pyc(obj):
+    if isinstance(obj, AILObjectWrapper):
+        return getattr(obj, '_$ail_object')
+    return convert_to_ail_object(obj)
+
+
 def convert_object(obj):
     if isinstance(obj, AILObject):
         v = obj['__value__']
@@ -127,6 +133,24 @@ class AILImporter:
 
             _exec(source, path, module_globals)
 
+            pyc_module = module_globals.get('_AIL_PYC_MODULE_', False)
+            ail_module = module_globals.get('_IS_AIL_MODULE_', False)
+            ail_module = ail_module if ail_module else module_globals(
+                         '_AIL_MODULE_', True)
+
+            if not (pyc_module and ail_module):
+                raise ImportError('%s is not an AIL module' % path)
+
+            ns = module_globals.get('_AIL_NAMESPACE_', dict())
+
+            if not isinstance(ns, dict):
+                raise ImportError('_AIL_NAMESPACE_ must be a dict')
+
+            if pyc_module:
+                return ns
+            elif ail_module:
+                return {k: convert_object(v) for k, v in ns.items()}
+
             return module_globals
         except FileNotFoundError as e:
             raise _exceptions.AILModuleNotFoundError(
@@ -197,7 +221,7 @@ class AILObjectWrapper:
             raise AttributeError(
                     '\'%s\' object is not callable' % o['__class__'])
 
-        args = [convert_to_ail_object(o) for o in args]
+        args = [convert_to_ail_object_pyc(o) for o in args]
 
         if o['__this__'] is not None:
             return check_object(v(o, *args))
