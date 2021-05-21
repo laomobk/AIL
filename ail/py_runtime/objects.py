@@ -211,7 +211,9 @@ class AILStruct:
         self.__ail_as_instance__ = False
         self.__ail_struct_name__ = name
         self.__ail_as_object__ = False
-        self.__ail_dict__ = dict()
+
+        self.__instance__ = copy(self)
+        self.__instance__.__ail_as_instance__ = True
 
         self.__init_members__()
 
@@ -221,9 +223,7 @@ class AILStruct:
             if try_bound:
                 return target
             raise TypeError('bound target must be a function')
-        c_self = copy(self)
-        c_self.__ail_as_instance__ = True
-        method = MethodType(target, c_self)
+        method = MethodType(target, self.__instance__)
         return method
 
     def __init_members__(self):
@@ -244,7 +244,7 @@ class AILStruct:
         if name not in self.__ail_dict__:
             raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                  (self.__ail_struct_name__, name))
-        return self.__ail_dict__[name]
+        return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value):
         if name[:2] == name[-2:] == '__':
@@ -258,7 +258,7 @@ class AILStruct:
         elif name not in self.__ail_members__:
             raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                  (self.__ail_struct_name__, name))
-        self.__ail_dict__[name] = self.__ail_check_bound__(value, True)
+        super().__setattr__(name, value)
 
     def __str__(self) -> str:
         if self.__ail_as_object__:
