@@ -486,8 +486,11 @@ class Parser:
             return_stmt = ast.ReturnStmtAST(expr, expr.ln)
             block = ast.BlockAST([return_stmt], return_stmt.ln, True)
 
-            return ast.FunctionDefineAST(
-                    aconfig.LAMBDA_FUNC_NAME, expr_or_param, block, None, expr.ln)
+            a = ast.FunctionDefineAST(
+                aconfig.LAMBDA_FUNC_NAME, expr_or_param, block, None, expr.ln)
+            a.is_lambda = True
+            a.lambda_return = expr
+            return a
 
         nt = self.__now_tok
 
@@ -2295,11 +2298,18 @@ class ASTConverter:
 
         return _set_lineno(dict_expr(keys, values), m.ln)
 
+    def _convert_lambda_expr(self, func: ast.FunctionDefineAST) -> pyast.Lambda:
+        expr = self.convert(func.lambda_return)
+        args = self._convert_arguments(func.arg_list)
+        return _set_lineno(lambda_expr(args, expr), func.ln)
+
     def _convert_function_def(
             self, 
             func: ast.FunctionDefineAST, 
-            as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name]:
+            as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
         if not as_stmt:
+            if func.is_lambda:
+                return self._convert_lambda_expr(func)
             func.name = '<anonymous %s>' % hash(func)
             
         func_stmt = self._convert_function_def_stmt(func)

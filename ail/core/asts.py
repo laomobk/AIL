@@ -330,6 +330,8 @@ class FunctionDefineAST:
         self.decorator = list()
         self.ln = ln
         self.doc_str=  doc_str
+        self.is_lambda = False
+        self.lambda_return = None
 
 
 class ClassDefineAST:
