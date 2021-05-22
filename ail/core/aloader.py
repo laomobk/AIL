@@ -64,7 +64,7 @@ class ModuleLoader:
 
     search_module = __search_module
 
-    def __load_py_namespace(self, pypath, convert: bool = True):
+    def __load_py_namespace(self, pypath, convert: bool = True, pyc_mode=False):
         v = {}
 
         try:
@@ -80,6 +80,10 @@ class ModuleLoader:
         is_mod = v.get('_AIL_MODULE_', False) if not is_mod else True
         is_pyc_module = v.get('_AIL_PYC_MODULE_', False)
         has_namespace = '_AIL_NAMESPACE_' in v
+
+        if not pyc_mode and is_pyc_module:
+            return error.AILRuntimeError(
+                'module \'%s\' must load in Python Compatible mode')
 
         if not (is_mod or is_pyc_module) or not has_namespace:
             return error.AILRuntimeError(

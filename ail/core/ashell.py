@@ -36,7 +36,7 @@ _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 _VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
 _WELCOME_STR = \
 '''AIL %s (Python %s)
-Type 'help(...)', '$help', 'copyright()' to get more information, 'exit()' to exit.
+Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
         _VER_STR, 
         sys.version
@@ -59,9 +59,14 @@ def _sh_copyright():
     return AIL_COPYRIGHT
 
 
+def _py_copyright():
+    return copyright()
+
+
 _SHELL_NAMESPACE = {
     'exit': objs.convert_to_ail_object(_sh_exit),
     'copyright': objs.convert_to_ail_object(_sh_copyright),
+    'python_copyright': objs.convert_to_ail_object(_py_copyright),
 }
 
 _SHELL_PYC_NAMESPACE = {
