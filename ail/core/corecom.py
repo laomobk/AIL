@@ -73,7 +73,7 @@ def _get_cc_object(_):
         '_refresh': convert_to_func_wrapper(_get_cc_object),
         # 'get_err_stack' : convert_to_func_wrapper(_get_err_stack_object)
         'exit': convert_to_func_wrapper(_sys_exit),
-        'argv': convert_to_ail_object(MAIN_INTERPRETER_STATE.prog_argv),
+        'argv': convert_to_ail_object(shared.GLOBAL_SHARED_DATA.prog_argv),
         'setPythonErrorRaise': convert_to_ail_object(_set_raise_python_error)
     }
 

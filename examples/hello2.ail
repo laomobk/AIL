@@ -1,0 +1,9 @@
+begin
+
+input "what is your name: " ; name
+
+while true then
+    console.write(name + ' ')
+wend
+
+end

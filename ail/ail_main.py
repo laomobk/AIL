@@ -25,7 +25,7 @@ _HELP = r''' ail [filename] [--help | -h]'''
 class _Option:
     def __init__(self):
         self.shell_mode = True
-        self.filename = None
+        self.filename = ''
         self.rest_args = []
         self.source = False
 
@@ -146,6 +146,9 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
     init_builtins()
 
     option = ArgParser().parse(argv)
+    option.rest_args.insert(0, option.filename)
+    shared.GLOBAL_SHARED_DATA.prog_argv = option.rest_args
+    sys.argv = option.rest_args
 
     if option is None:
         return 1

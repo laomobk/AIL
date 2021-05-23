@@ -7,3 +7,11 @@ func mapto(keys, v_func) {
     return d
 }
 
+func mapwith(function, arr) {
+    new_arr = []
+    for i = 0; i < len(arr); i += 1 {
+        new_arr.append(function(arr[i]))
+    }
+    return new_arr
+}
+

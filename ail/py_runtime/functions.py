@@ -1,5 +1,7 @@
 
 from copy import copy
+from functools import wraps
+from inspect import isfunction, isbuiltin
 from typing import List, Dict, Union
 
 from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct
@@ -25,11 +27,24 @@ def ail_input(prompt: str, value_count: int):
 
 
 def ail_import(
-        mode: int, name: str, namespace: dict, alias: str=None, members: List[str]=[]):
+        mode: int, name: str, namespace: dict, 
+        alias: str=None, members: List[str]=[]):
     if alias is None:
         alias = name
 
     return _IMPORTER.import_module(mode, name, namespace, alias, members)
+
+
+def bind_function(name: str, struct: _AILStruct):
+    def outer_wrapper(func):
+        if not isinstance(struct, _AILStruct) or (
+                struct.__ail_as_instance__ or struct.__ail_as_object__):
+            raise TypeError('function must bind on a struct')
+        elif not (isfunction(func) or isbuiltin(func)):
+            raise TypeError('only function can be bound')
+        struct.__bound_functions__[name] = func
+        return func
+    return outer_wrapper
 
 
 def contains(o, iterable):
@@ -49,10 +64,8 @@ def new_struct_object(struct: _AILStruct, attrs: Union[Dict, List] = None):
         raise TypeError('new() requires a struct')
 
     obj = copy(struct)
+    obj.__ail_dict__ = dict()
     obj.__ail_as_object__ = True
-
-    if attrs is None:
-        return obj
 
     members_len = len(obj.__ail_members__)
 
@@ -74,9 +87,17 @@ def new_struct_object(struct: _AILStruct, attrs: Union[Dict, List] = None):
                 setattr(obj, k, v)
         finally:
             obj.__ail_as_instance__ = False
-    else:
-        raise ValueError('struct \'%s\' initializing needs a list' % 
-                         obj.__ail_struct_name__)
+
+    instance = copy(obj)
+    instance.__ail_as_instance__ = True
+
+    for name, func in struct.__bound_functions__.items():
+        v = struct.__ail_check_bound__(instance, func, True)
+        setattr(instance, name, v)
 
     return obj
+
+
+def func_fnum(x):
+    return x
 

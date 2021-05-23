@@ -11,7 +11,7 @@ endif
 syn keyword ailStmt	if else elif
 syn keyword ailStmt	then end endif is begin wend
 syn keyword ailStmt	extends
-syn keyword ailStmt func fun class nextgroup=ailFunction skipwhite
+syn keyword ailStmt struct func fun class nextgroup=ailFunction skipwhite
 syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch finally

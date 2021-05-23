@@ -299,8 +299,10 @@ class Parser:
 
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
-
-        self.__next_tok(ignore_newline=True)  # eat '{' and NEWLINES
+        
+        self.__skip_newlines()
+        self.__next_tok()  # eat '{' and NEWLINES
+        self.__skip_newlines()
 
         keys = []
         values = []
@@ -315,7 +317,7 @@ class Parser:
         if self.__now_tok.ttype != AIL_COLON:
             self.__syntax_error()
         
-        self.__next_tok()  # eat ':'
+        self.__next_tok(ignore_newline=True)  # eat ':'
         self.__skip_newlines()
 
         value = self.__parse_binary_expr()
@@ -2082,14 +2084,18 @@ class ASTConverter:
         o_args: ast.ArgListAST = expr.arg_list
 
         args = []
+        keywords = []
 
         for arg in o_args.exp_list:
             value = self.convert(arg.expr)
             if arg.star:
+                if isinstance(value, pyast.Dict):
+                    keywords.append(_set_lineno(keyword_expr(value), arg.ln))
+                    continue
                 value = _set_lineno(starred_expr(value, load_ctx()), arg.ln)
             args.append(value)
 
-        return _set_lineno(call_expr(func, args), expr.ln)
+        return _set_lineno(call_expr(func, args, keywords), expr.ln)
 
     def _convert_print_stmt(self, stmt: ast.PrintStmtAST) -> pyast.Call:
         func = _set_lineno(name_expr('print', load_ctx()), stmt.ln)
@@ -2284,6 +2290,17 @@ class ASTConverter:
         args = self._convert_arguments(func.arg_list)
         body = self._convert_block(func.block, True)
         decorators = [self.convert(expr) for expr in func.decorator]
+
+        if func.bindto:
+            decorators.insert(0,
+                self._new_call_name(
+                    '__ail_bind_function__',
+                    [
+                        self._new_constant(name, func.ln),
+                        self._new_name(func.bindto, func.ln)
+                    ],
+                func.ln)
+            )
         
         return _set_lineno(function_def_stmt(name, args, body, decorators), func.ln)
 

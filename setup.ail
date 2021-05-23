@@ -1,0 +1,27 @@
+import 'maptools' (mapwith)
+
+#from os.path import exists
+
+#from setuptools import setup, find_packages
+#from ail.core.version import AIL_MAIN_VERSION, AIL_SUB_VERSION
+
+
+setup(
+    *{
+        'name': 'ail',
+        'packages': find_packages(),
+        'version': '{}.{}'.format(AIL_MAIN_VERSION,
+                    '.'.join(mapwith((x) -> str(x), AIL_SUB_VERSION))),
+
+        'entry_points': {
+            'console_scripts': [
+                'ail = ail.__main__:main',
+            ]
+        },
+
+        'package_data': {
+            'ail': ['lib/*.ail',]
+        }
+    }
+)
+

@@ -88,8 +88,11 @@ def bool_op_expr(op: _ast.boolop, values: List[_ast.expr]) -> _ast.BoolOp:
     return _ast.BoolOp(op=op, values=values)
 
 
-def call_expr(func: _ast.expr, args: List[_ast.expr]) -> _ast.Call:
-    return _ast.Call(func=func, args=args, keywords=[])
+def call_expr(func: _ast.expr, args: List[_ast.expr], 
+              keywords: List[_ast.expr] = None) -> _ast.Call:
+    if keywords is None:
+        keywords = list()
+    return _ast.Call(func=func, args=args, keywords=keywords)
 
 
 def class_def_stmt(
@@ -132,6 +135,10 @@ def function_def_stmt(
 
 def global_stmt(names: List[str]) -> _ast.Global:
     return _ast.FunctionDef(names=names)
+
+
+def keyword_expr(value: _ast.expr) -> _ast.keyword:
+    return _ast.keyword(value=value, arg=None)
 
 
 def if_stmt(

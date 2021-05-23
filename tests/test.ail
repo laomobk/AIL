@@ -1,10 +1,5 @@
 
-struct Person {
-    name
-    sex
-    protected age
-}
+argv = _get_ccom().argv
 
-
-print new(Person, {'name': 'nezha'}).name
+print argv
 

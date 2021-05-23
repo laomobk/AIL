@@ -5,7 +5,7 @@ struct Candy {
 }
 
 fun (Candy) toString(self) {
-    return '<Candy %s  %s$>'.format(
+    return '<Candy {} {}$>'.format(
             self.candyType, self.candyPrice)
 }
 

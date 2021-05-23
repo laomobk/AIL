@@ -1,8 +1,8 @@
 begin
 
 
-score = {140, 120, 100, 90, 0}
-level = {'A', 'B', 'C', 'D', 'E'}
+score = [140, 120, 100, 90, 0]
+level = ['A', 'B', 'C', 'D', 'E']
 
 
 fun _get_level_iter(s) is 
@@ -36,7 +36,7 @@ get_level = _get_level_ifelse
 while true then
     try
         s = int_input('Score: ')
-        print 'Level:' ; get_level(s)
+        print 'Level:', get_level(s)
     catch _ then
         print 'Bad input!'
     end

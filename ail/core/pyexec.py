@@ -7,6 +7,16 @@ from ..py_runtime.namespace import fill_namespace
 from ..py_runtime.exceptions import print_py_traceback
 
 
+SIG_OK = 0
+SIG_EXCEPTION = 1
+SIG_STOP = 3
+SIG_SYSTEM_EXIT = 2
+
+
+class StopExec(BaseException):
+    pass
+
+
 def _test_run():
 
     source = open('./tests/test.ail').read()
@@ -44,6 +54,8 @@ def exec_as_python(source: str, filename: str, globals: dict) -> int:
         return 2
     except Exception:
         print_py_traceback()
+        return 1
+    except StopExec:
         return 1
 
 

@@ -91,20 +91,24 @@ class AILImporter:
         self.__loading_modules.append(path)
 
         try:
+            from ..core.pyexec import StopExec
+
             ns = self.get_namespace(path)
+            if ns is None:
+                raise StopExec()
 
             if mode == 0:  # load
                 namespace.update(ns)
             elif mode == 1:
                 if len(members) > 0:
                     for member in members:
-                        v = ns.get(member, None)
-                        if v is None:
+                        v = ns.get(member, _NONE)
+                        if v is _NONE:
                             raise _exceptions.AILImportError(
                                 'cannot import member \'%s\' from \'%s\'' % 
                                 (member, name))
                         namespace[member] = v
-                        return
+                    return
 
                 module_obj = AILModule(name, path, ns)
                 namespace[alias] = module_obj
@@ -131,7 +135,11 @@ class AILImporter:
             module_globals = AIL_PY_GLOBAL.copy()
             source = open(path, encoding='UTF-8').read()
 
-            _exec(source, path, module_globals)
+            status = _exec(source, path, module_globals)
+            if status == 1:
+                return None
+            elif status == 2:
+                raise SystemExit(1)
 
             return module_globals
         except FileNotFoundError as e:
@@ -217,20 +225,23 @@ class AILStruct:
         self.__ail_as_instance__ = False
         self.__ail_struct_name__ = name
         self.__ail_as_object__ = False
+        self.__bound_functions__ = {}
 
-        self.__instance__ = copy(self)
-        self.__instance__.__ail_as_instance__ = True
+        self.__ail_dict__ = dict()
 
         self.__init_members__()
 
-    def __ail_check_bound__(self, target, try_bound: bool = False):
+    def __ail_check_bound__(self, instance, target, try_bound: bool = False):
         is_func = isfunction(target) or isbuiltin(target)
         if not is_func:
             if try_bound:
                 return target
             raise TypeError('bound target must be a function')
-        method = MethodType(target, self.__instance__)
+        method = MethodType(target, instance)
         return method
+
+    def __set_bound_function__(self, name: str, func):
+        self.__bound_functions__[name] = func
 
     def __init_members__(self):
         try:
@@ -247,10 +258,11 @@ class AILStruct:
             if not self.__ail_as_instance__:
                 raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                      (self.__ail_struct_name__, name))
-        if name not in self.__ail_dict__:
+        if name in self.__ail_dict__:
+            return self.__ail_dict__[name]
+        else:
             raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                  (self.__ail_struct_name__, name))
-        return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value):
         if name[:2] == name[-2:] == '__':
@@ -261,14 +273,23 @@ class AILStruct:
                                      (self.__ail_struct_name__, name))
         elif name in self.__ail_protected__ and not self.__ail_as_instance__:
             raise AttributeError('readonly attribute')
+        elif self.__ail_as_instance__:
+            v = self.__ail_check_bound__(self, value, True)
+            self.__ail_dict__[name] = v
+        elif self.__ail_as_object__:
+            if name in self.__ail_protected__:
+                raise AttributeError('cannot set a protected attribute \'%s\'' % name)
+            self.__ail_dict__[name] = value
         elif name not in self.__ail_members__:
             raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                  (self.__ail_struct_name__, name))
-        super().__setattr__(name, value)
+        else:
+            raise AttributeError('cannot set attribute to struct')
+        # super().__setattr__(name, value)
 
     def __str__(self) -> str:
         if self.__ail_as_object__:
-            return '<struct \'%s\' at %s>' % \
+            return '<struct \'%s\' object at %s>' % \
                    (self.__ail_struct_name__, hex(id(self)))
         return '<struct \'%s\'>' % self.__ail_struct_name__
 
