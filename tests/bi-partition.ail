@@ -1,0 +1,42 @@
+// 二分法求近似零点值
+
+begin
+
+input "Please enter : (a, b, E)" ; a, b, E
+
+func f(x) is
+    return x**2 - x - 50
+end
+
+a = int(a)
+b = int(b)
+E = float(E)
+o = 0
+
+do
+
+	c = (a + b) / 2
+
+    if o == c then
+        break
+    endif
+
+	if f(a) * f(c) < 0 then
+		b = c
+	else
+		if f(c) == 0 then
+			break
+		endif
+		a = c
+	endif
+
+    o = c
+
+    print 'try: c =', c
+
+loop until abs(a - b) >= E
+
+print "The approximate zero point value is : ", c
+
+end
+

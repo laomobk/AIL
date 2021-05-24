@@ -18,7 +18,8 @@ _PY_BUILTINS = {
     'len', 'type', 'isinstance',
     'isimplement', 'str', 'repr',
     'int', 'float', 'super',
-    'Object', 'FileIO', 'fnum'
+    'Object', 'FileIO', 'fnum',
+    'abs'
 }
 
 

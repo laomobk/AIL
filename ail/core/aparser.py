@@ -2243,9 +2243,12 @@ class ASTConverter:
             stmt.test.ln
         )
 
-        body.append(break_if)
+        try_body = _set_lineno(
+            try_stmt(body, [], [break_if]),
+            stmt.test.ln
+        )
 
-        return _set_lineno(while_stmt(true_test, body), stmt.ln)
+        return _set_lineno(while_stmt(true_test, [try_body]), stmt.ln)
 
     def _convert_for_stmt(self, stmt: ast.ForStmtAST) -> List[pyast.stmt]:
         for_stmt = []
