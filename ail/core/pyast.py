@@ -109,7 +109,7 @@ def compare_expr(
 
 
 def constant_expr(value: object) -> _ast.Constant:
-    return _ast.Constant(value=value, kind=None)
+    return _ast.Constant(value=value, kind=None, n=value)
 
 
 def dict_expr(keys: List[_ast.expr], values: List[_ast.expr]) -> _ast.Dict:
