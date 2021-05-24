@@ -1,4 +1,4 @@
-# AIL 1.2 Alpha 3
+# AIL 1.2 Alpha 4
 
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)

@@ -4,7 +4,7 @@ from .._config import CORE_PATH
 
 AIL_MAIN_VERSION = 1
 AIL_SUB_VERSION = [2]
-AIL_VERSION_STATE = 'alpha 3'
+AIL_VERSION_STATE = 'alpha 4'
 AIL_VERSION = '%s.%s %s' % (AIL_MAIN_VERSION,
                             '.'.join([str(v) for v in AIL_SUB_VERSION]),
                             AIL_VERSION_STATE)
