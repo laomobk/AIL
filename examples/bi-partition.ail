@@ -4,9 +4,7 @@ begin
 
 input "Please enter : (a, b, E)" ; a, b, E
 
-func f(x) is
-    return x**2 - x - 50
-end
+f = (x) -> x**2 - x - 50
 
 a = int(a)
 b = int(b)
