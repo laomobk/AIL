@@ -1,5 +1,5 @@
 
 argv = _get_ccom().argv
 
-print argv
+print argv = 2
 

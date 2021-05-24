@@ -620,8 +620,8 @@ class Parser:
             rl.append(('^', r))
         return ast.BinXorExprAST(left, rl, ln)
 
-    def __parse_binary_expr(self) -> ast.BitOpExprAST:
-        expr = self.__parse_test_expr()
+    def __parse_binary_expr(self, as_stmt: bool = False) -> ast.BitOpExprAST:
+        expr = self.__parse_test_expr(as_stmt)
 
         return expr
 
@@ -896,8 +896,11 @@ class Parser:
 
         return ast.OrTestAST(left, rl, self.__now_ln)
 
-    def __parse_test_expr(self) -> ast.TestExprAST:
+    def __parse_test_expr(self, as_stmt: bool = True) -> ast.TestExprAST:
         t = self.__parse_or_test_expr()
+
+        if isinstance(t, ast.AssignExprAST) and not as_stmt:
+            self.__syntax_error('cannot assign in a expression')
 
         if type(t) not in (
                 ast.AndTestAST, ast.OrTestAST, ast.NotTestAST, ast.CmpTestAST):
@@ -1811,7 +1814,7 @@ class Parser:
 
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 (nt.value not in (_keywords + limit) or nt.value == 'not'):
-            a = self.__parse_binary_expr()
+            a = self.__parse_binary_expr(True)
             self.__expect_newline()
 
         elif nt.ttype == AIL_ENTER:
