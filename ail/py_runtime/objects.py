@@ -80,10 +80,7 @@ class AILImporter:
             mode: int, name: str, namespace: dict, 
             alias: str, members: List[str]):
 
-        path = _LOADER.search_module(name)
-        if path is None:
-            raise _exceptions.AILModuleNotFoundError(
-                    'cannot find module \'%s\'' % name)
+        path = self.get_path(name)
 
         if path in self.__loading_modules:
             raise ImportError('Cannot import module \'%s\' ' % name +
@@ -103,7 +100,7 @@ class AILImporter:
                     module_obj = None
 
             if module_obj is None:
-                ns = self.get_namespace(path)
+                ns = self.get_namespace(path, self.get_source(path))
                 module_obj = AILModule(name, path, ns)
 
             _shared.loaded_modules[path] = module_obj
@@ -127,8 +124,21 @@ class AILImporter:
                 namespace[alias] = module_obj
         finally:
             self.__loading_modules.remove(path)
-
-    def get_namespace(self, path: str) -> dict:
+    
+    @staticmethod
+    def get_path(name: str, default=_NONE) -> str:
+        path = _LOADER.search_module(name)
+        if path is None and default is _NONE:
+            raise _exceptions.AILModuleNotFoundError(
+                    'cannot find module \'%s\'' % name)
+        return path
+    
+    @staticmethod
+    def get_source(path: str) -> str:
+        return open(path, encoding='UTF-8').read()
+    
+    @staticmethod
+    def get_namespace(path: str, source: str) -> dict:
         if _LOADER.get_type(path) in ('py', 'ailp'):
             ns = _LOADER.get_py_namespace(path, False, True)
             if isinstance(ns, _RTError):
@@ -146,7 +156,6 @@ class AILImporter:
         try:
             from . import AIL_PY_GLOBAL
             module_globals = AIL_PY_GLOBAL.copy()
-            source = open(path, encoding='UTF-8').read()
 
             status = _exec(source, path, module_globals)
             if status == 1:
@@ -280,19 +289,24 @@ class AILStruct:
     def __setattr__(self, name: str, value):
         if name[:2] == name[-2:] == '__':
             return super().__setattr__(name, value)
+
         elif name[:2] == '__':
             if not self.__ail_as_instance__:
                 raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                      (self.__ail_struct_name__, name))
+
         elif name in self.__ail_protected__ and not self.__ail_as_instance__:
             raise AttributeError('readonly attribute')
+
         elif self.__ail_as_instance__:
             v = self.__ail_check_bound__(self, value, True)
             self.__ail_dict__[name] = v
+
         elif self.__ail_as_object__:
             if name in self.__ail_protected__:
                 raise AttributeError('cannot set a protected attribute \'%s\'' % name)
             self.__ail_dict__[name] = value
+
         elif name not in self.__ail_members__:
             raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
                                  (self.__ail_struct_name__, name))
