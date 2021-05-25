@@ -1074,7 +1074,7 @@ class Parser:
         return ast.AssignExprListAST(el, self.__now_ln)
 
     def __parse_binary_expr_list(self) -> ast.BinaryExprListAST:
-        f = self.__parse_binary_expr()
+        f = self.__parse_binary_expr(True)
 
         el = [f]
 

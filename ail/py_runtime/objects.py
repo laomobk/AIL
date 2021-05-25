@@ -5,6 +5,7 @@ from types import MethodType
 from typing import List
 
 from . import exceptions as _exceptions
+from . import shared as _shared
 
 from ..core.aloader import MAIN_LOADER as _LOADER
 from ..core.aobjects import AILObject, convert_to_ail_object
@@ -93,7 +94,20 @@ class AILImporter:
         try:
             from ..core.pyexec import StopExec
 
-            ns = self.get_namespace(path)
+            module_obj = None
+
+            if path in _shared.loaded_modules:
+                module_obj = _shared.loaded_modules[path]
+                ns = getattr(module_obj, '_$_module_globals', None)
+                if not isinstance(module_obj, AILModule):
+                    module_obj = None
+
+            if module_obj is None:
+                ns = self.get_namespace(path)
+                module_obj = AILModule(name, path, ns)
+
+            _shared.loaded_modules[path] = module_obj
+
             if ns is None:
                 raise StopExec()
 
@@ -110,14 +124,13 @@ class AILImporter:
                         namespace[member] = v
                     return
 
-                module_obj = AILModule(name, path, ns)
                 namespace[alias] = module_obj
         finally:
             self.__loading_modules.remove(path)
 
     def get_namespace(self, path: str) -> dict:
         if _LOADER.get_type(path) in ('py', 'ailp'):
-            ns = _LOADER.get_py_namespace(path, False)
+            ns = _LOADER.get_py_namespace(path, False, True)
             if isinstance(ns, _RTError):
                 raise ImportError(ns.msg)
 

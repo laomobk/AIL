@@ -83,7 +83,8 @@ class ModuleLoader:
 
         if not pyc_mode and is_pyc_module:
             return error.AILRuntimeError(
-                'module \'%s\' must load in Python Compatible mode')
+                'module \'%s\' must load in Python Compatible mode' % pypath,
+                'ImportError')
 
         if not (is_mod or is_pyc_module) or not has_namespace:
             return error.AILRuntimeError(

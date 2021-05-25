@@ -1,4 +1,5 @@
 from . import functions as _func
+from . import shared as _shared
 
 from .objects import convert_object
 
@@ -35,6 +36,7 @@ AIL_PY_GLOBAL.update({
     '__ail_import__': _func.ail_import,
     '__ail_make_struct__': _func.make_struct,
     '__ail_bind_function__': _func.bind_function,
+    '__modules__': _shared.loaded_modules,
     'new': _func.new_struct_object,
     'contains': _func.contains,
     'console': convert_object(_get_console_object()),
