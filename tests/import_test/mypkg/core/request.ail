@@ -8,8 +8,8 @@ print 'core/request.ail'
 
 fun get() {
     print 'core/request.get()'
-    url = urlutil.trim(url)
-    print 'requesting...  url =', url
+    t_url = urlutil.trim(url)
+    print 'requesting...  url =', t_url
 }
 
 end

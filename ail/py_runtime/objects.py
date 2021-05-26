@@ -1,6 +1,8 @@
 
 from copy import copy
 from inspect import isfunction, isbuiltin
+from os import getcwd, chdir
+from os.path import dirname
 from types import MethodType
 from typing import List
 
@@ -153,9 +155,15 @@ class AILImporter:
         # exec and get namespace
         from ..core.pyexec import exec_as_python as _exec
 
+        cwd = getcwd()
+
         try:
             from . import AIL_PY_GLOBAL
             module_globals = AIL_PY_GLOBAL.copy()
+
+            module_work_dir = dirname(path)
+
+            chdir(module_work_dir)
 
             status = _exec(source, path, module_globals)
             if status == 1:
@@ -170,6 +178,8 @@ class AILImporter:
                     (path, str(e)))
         except UnicodeDecodeError as e:
             raise _exceptions.AILImportError('cannot decode module with UTF-8')
+        finally:
+            chdir(cwd)
 
 
 class AILObjectWrapper:
