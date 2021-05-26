@@ -8,7 +8,7 @@ from .core import aconfig
 from .core.astate import MAIN_INTERPRETER_STATE
 from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 from .core.abuiltins import init_builtins
-from .core.pyexec import exec_as_python
+from .core.pyexec import exec_pyc_main
 from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
 from .core.acompiler import Compiler
@@ -175,7 +175,7 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
 
         if pyc_mode and not source_mode:
             MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
-            return exec_as_python(source, file_path, dict())
+            return exec_pyc_main(source, file_path, dict())
 
         ast = Parser().parse(Lex().lex(source), source, file_path, source_mode)
         if source_mode:

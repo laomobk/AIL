@@ -50,12 +50,15 @@ def exec_as_python(source: str, filename: str, globals: dict) -> int:
     try:
         exec(code, globals)
         return 0
-    except SystemExit:
-        return 2
+    except StopExec:
+        return 1
+
+
+def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
+    try:
+        return exec_as_python(source, filename, globals)
     except Exception:
         print_py_traceback()
-        return 1
-    except StopExec:
         return 1
 
 
