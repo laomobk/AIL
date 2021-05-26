@@ -2308,7 +2308,8 @@ class ASTConverter:
                 func.ln)
             )
         
-        return _set_lineno(function_def_stmt(name, args, body, decorators), func.ln)
+        return _set_lineno(function_def_stmt(
+            name, args, body, decorators), func.ln)
 
     def _convert_array_expr(self, array: ast.ArrayAST) -> pyast.List:
         items = [self.convert(item) for item in array.items.item_list]

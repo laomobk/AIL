@@ -1,5 +1,17 @@
+begin
 
-argv = _get_ccom().argv
+import '../utils/urlutil'
 
-print argv = 2
+url = 'https://weibo.com/u/6217939256'
 
+print 'core/request.ail'
+
+fun get() {
+    global url
+
+    print 'core/request.get()'
+    url = urlutil.trim(url)
+    print 'requesting...  url =', url
+}
+
+end

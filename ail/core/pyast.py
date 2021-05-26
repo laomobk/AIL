@@ -134,7 +134,7 @@ def function_def_stmt(
 
 
 def global_stmt(names: List[str]) -> _ast.Global:
-    return _ast.FunctionDef(names=names)
+    return _ast.Global(names=names)
 
 
 def keyword_expr(value: _ast.expr) -> _ast.keyword:
