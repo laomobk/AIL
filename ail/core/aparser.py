@@ -484,6 +484,13 @@ class Parser:
             
             self.__next_tok()  # eat '->'
 
+            if self.__now_tok.ttype == AIL_LLBASKET:
+                block = self.__parse_block()
+                a = ast.FunctionDefineAST(
+                    aconfig.LAMBDA_FUNC_NAME,
+                    expr_or_param, block, None, self.__now_ln)
+                return a
+
             expr = self.__parse_binary_expr()
             return_stmt = ast.ReturnStmtAST(expr, expr.ln)
             block = ast.BlockAST([return_stmt], return_stmt.ln, True)

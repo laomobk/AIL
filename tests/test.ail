@@ -1,17 +1,5 @@
-begin
 
-import '../utils/urlutil'
-
-url = 'https://weibo.com/u/6217939256'
-
-print 'core/request.ail'
-
-fun get() {
-    global url
-
-    print 'core/request.get()'
-    url = urlutil.trim(url)
-    print 'requesting...  url =', url
+f = () -> {
+    print 'Hello world';
 }
 
-end
