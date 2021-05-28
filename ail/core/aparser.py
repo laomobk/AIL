@@ -752,7 +752,7 @@ class Parser:
         if msg is None:
             self.__syntax_error()
 
-        if self.__now_tok != ';':
+        if self.__now_tok != ',':
             return ast.InputStmtAST(
                 msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
