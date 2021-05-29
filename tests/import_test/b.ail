@@ -2,11 +2,8 @@ begin
 
 try {
     import 'c'
-} catch err {
-    fun f() {
-        import 'c'
-    }
-    f()
+} catch _ {
+    import 'c'
 }
 
 end

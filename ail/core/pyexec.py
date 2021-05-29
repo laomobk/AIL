@@ -47,11 +47,8 @@ def exec_as_python(source: str, filename: str, globals: dict) -> int:
 
     fill_namespace(globals)
     
-    try:
-        exec(code, globals)
-        return 0
-    except StopExec:
-        return 1
+    exec(code, globals)
+    return 0
 
 
 def exec_pyc_main(source: str, filename: str, globals: dict) -> int:

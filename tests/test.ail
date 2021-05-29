@@ -1,3 +1,4 @@
+import 'nz'
 
 f = () -> {
     print 'Hello world';

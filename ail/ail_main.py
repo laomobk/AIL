@@ -19,6 +19,8 @@ from ._config import (
     AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
 )
 
+from . import _config
+
 _HELP = r''' ail [filename] [--help | -h]'''
 
 
@@ -51,6 +53,10 @@ class ArgParser:
     def _do_help(self, _):
         print(_HELP)
         self.__ok = -1
+
+    def _do_v(self, _):
+        _config.REMOVE_PY_RUNTIME_TRACEBACK = False
+        self.__ok = True
 
     _do_h = _do_help
 

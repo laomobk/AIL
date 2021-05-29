@@ -107,9 +107,6 @@ class AILImporter:
 
             _shared.loaded_modules[path] = module_obj
 
-            if ns is None:
-                raise StopExec()
-
             if mode == 0:  # load
                 namespace.update(ns)
             elif mode == 1:
@@ -166,10 +163,6 @@ class AILImporter:
             chdir(module_work_dir)
 
             status = _exec(source, path, module_globals)
-            if status == 1:
-                return None
-            elif status == 2:
-                raise SystemExit(1)
 
             return module_globals
         except FileNotFoundError as e:
