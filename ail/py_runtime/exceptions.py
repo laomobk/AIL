@@ -10,6 +10,9 @@ import traceback as _traceback
 
 _PY_RUNTIME_DIR = _join(_config.AIL_DIR_PATH, 'py_runtime')
 _PY_EXEC_FILE = _join(_config.AIL_DIR_PATH, 'core', 'pyexec.py')
+_AIL_SHELL_FILE = _join(_config.AIL_DIR_PATH, 'core', 'ashell.py')
+
+_PATHS = (_PY_RUNTIME_DIR, _PY_EXEC_FILE, _AIL_SHELL_FILE)
 
 
 class AILRuntimeError(Exception):
@@ -34,8 +37,7 @@ def remove_py_runtime_traceback(tb: _TracebackType):
     head: _TracebackType = None 
 
     while current is not None:
-        if current.tb_frame.f_code.co_filename.startswith(
-                (_PY_RUNTIME_DIR, _PY_EXEC_FILE)):
+        if current.tb_frame.f_code.co_filename.startswith(_PATHS):
             current = current.tb_next
             if current is None:
                 last.tb_next = None
