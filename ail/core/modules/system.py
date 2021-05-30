@@ -15,7 +15,7 @@ class System:
 
     @staticmethod
     def printf(text, *format):
-        print(text % format)
+        print(text % format, end='')
 
     @property
     def py_version(self):
