@@ -1,4 +1,3 @@
-
 from copy import copy
 from inspect import isfunction, isbuiltin
 from os import getcwd, chdir
@@ -14,7 +13,6 @@ from ..core.aobjects import AILObject, convert_to_ail_object
 from ..core.error import AILRuntimeError as _RTError
 
 from ..objects.null import _NULL_TYPE
-
 
 _NONE = object()
 
@@ -57,7 +55,7 @@ class AILModule:
         v = getattr(self, '_$_module_globals').get(name, _NONE)
         if v is _NONE:
             raise AttributeError('module \'%s\' has no attribute \'%s\'' %
-                (getattr(self, '_$_name'), name))
+                                 (getattr(self, '_$_name'), name))
         return v
 
     def __setattr__(self, name: str, value):
@@ -75,18 +73,36 @@ class AILModule:
 
 
 class AILImporter:
-    def __init__(self): 
+    def __init__(self):
         self.__loading_modules = []
 
+    @staticmethod
+    def get_export(namespace: dict, exports: dict) -> dict:
+        if exports is None:
+            return namespace
+
+        if isinstance(exports, dict):
+            return exports
+        else:
+            try:
+                ns = dict()
+                for k in exports:
+                    if k not in namespace:
+                        raise ImportError('Cannot export name %s in module' % k)
+                    ns[k] = namespace[k]
+                return ns
+            except TypeError:
+                raise ImportError('__export__ must be a dict or a iterable object')
+
     def import_module(self,
-            mode: int, name: str, namespace: dict, 
-            alias: str, members: List[str]):
+                      mode: int, name: str, namespace: dict,
+                      alias: str, members: List[str]):
 
         path = self.get_path(name)
 
         if path in self.__loading_modules:
             raise ImportError('Cannot import module \'%s\' ' % name +
-                    '(may caused circular import)')
+                              '(may caused circular import)')
 
         self.__loading_modules.append(path)
 
@@ -94,6 +110,8 @@ class AILImporter:
             from ..core.pyexec import StopExec
 
             module_obj = None
+
+            ns = dict()
 
             if path in _shared.loaded_modules:
                 module_obj = _shared.loaded_modules[path]
@@ -103,6 +121,7 @@ class AILImporter:
 
             if module_obj is None:
                 ns = self.get_namespace(path, self.get_source(path))
+                ns = self.get_export(ns, ns.get('__export__', None))
                 module_obj = AILModule(name, path, ns)
 
             _shared.loaded_modules[path] = module_obj
@@ -115,7 +134,7 @@ class AILImporter:
                         v = ns.get(member, _NONE)
                         if v is _NONE:
                             raise _exceptions.AILImportError(
-                                'cannot import member \'%s\' from \'%s\'' % 
+                                'cannot import member \'%s\' from \'%s\'' %
                                 (member, name))
                         namespace[member] = v
                     return
@@ -123,19 +142,19 @@ class AILImporter:
                 namespace[alias] = module_obj
         finally:
             self.__loading_modules.remove(path)
-    
+
     @staticmethod
     def get_path(name: str, default=_NONE) -> str:
         path = _LOADER.search_module(name)
         if path is None and default is _NONE:
             raise _exceptions.AILModuleNotFoundError(
-                    'cannot find module \'%s\'' % name)
+                'cannot find module \'%s\'' % name)
         return path
-    
+
     @staticmethod
     def get_source(path: str) -> str:
         return open(path, encoding='UTF-8').read()
-    
+
     @staticmethod
     def get_namespace(path: str, source: str) -> dict:
         if _LOADER.get_type(path) in ('py', 'ailp'):
@@ -145,7 +164,7 @@ class AILImporter:
 
             return {
                 k: (convert_object(v) if isinstance(v, AILObject) else v)
-                for k, v in 
+                for k, v in
                 ns.items()
             }
 
@@ -167,8 +186,8 @@ class AILImporter:
             return module_globals
         except FileNotFoundError as e:
             raise _exceptions.AILModuleNotFoundError(
-                    'cannot find module from given path: \'%s\': %s' % 
-                    (path, str(e)))
+                'cannot find module from given path: \'%s\': %s' %
+                (path, str(e)))
         except UnicodeDecodeError as e:
             raise _exceptions.AILImportError('cannot decode module with UTF-8')
         finally:
@@ -190,8 +209,8 @@ class AILObjectWrapper:
 
         if v is None:
             raise AttributeError(
-                    'object %s has no attribute \'%s\'' % 
-                    (o['__class__'], name))
+                'object %s has no attribute \'%s\'' %
+                (o['__class__'], name))
 
         return check_object(v(o, name))
 
@@ -206,7 +225,7 @@ class AILObjectWrapper:
 
         if v is None:
             raise AttributeError(
-                    'cannot set attribute to \'%s\'' % o['__class__'])
+                'cannot set attribute to \'%s\'' % o['__class__'])
 
         return check_object(v(o, name, convert_to_ail_object(value)))
 
@@ -234,7 +253,7 @@ class AILObjectWrapper:
 
         if v is None:
             raise AttributeError(
-                    '\'%s\' object is not callable' % o['__class__'])
+                '\'%s\' object is not callable' % o['__class__'])
 
         args = [convert_to_ail_object_pyc(o) for o in args]
 
@@ -281,12 +300,12 @@ class AILStruct:
             return super().__getattribute__(name)
         elif name[:2] == '__':
             if not self.__ail_as_instance__:
-                raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                raise AttributeError('struct \'%s\' has no attribute \'%s\'' %
                                      (self.__ail_struct_name__, name))
         if name in self.__ail_dict__:
             return self.__ail_dict__[name]
         else:
-            raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+            raise AttributeError('struct \'%s\' has no attribute \'%s\'' %
                                  (self.__ail_struct_name__, name))
 
     def __setattr__(self, name: str, value):
@@ -295,7 +314,7 @@ class AILStruct:
 
         elif name[:2] == '__':
             if not self.__ail_as_instance__:
-                raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+                raise AttributeError('struct \'%s\' has no attribute \'%s\'' %
                                      (self.__ail_struct_name__, name))
 
         elif name in self.__ail_protected__ and not self.__ail_as_instance__:
@@ -311,7 +330,7 @@ class AILStruct:
             self.__ail_dict__[name] = value
 
         elif name not in self.__ail_members__:
-            raise AttributeError('struct \'%s\' has no attribute \'%s\'' % 
+            raise AttributeError('struct \'%s\' has no attribute \'%s\'' %
                                  (self.__ail_struct_name__, name))
         else:
             raise AttributeError('cannot set attribute to struct')
@@ -324,4 +343,3 @@ class AILStruct:
         return '<struct \'%s\'>' % self.__ail_struct_name__
 
     __repr__ = __str__
-

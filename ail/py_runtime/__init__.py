@@ -7,7 +7,7 @@ from ..core import abuiltins as _builtins
 from ..core.aconfig import RENAME_PY_RUNTIME
 from ..core.aobjects import unpack_ailobj
 from ..core.modules.console import get_console_object as _get_console_object
-
+from ..core.modules.system import SYSTEM_OBJECT
 
 _builtins.init_builtins()
 
@@ -43,6 +43,7 @@ AIL_PY_GLOBAL.update({
     'fnum': _func.func_fnum,
     'true': True,
     'false': False,
+    'system': SYSTEM_OBJECT,
 })
 
 
@@ -52,5 +53,5 @@ if RENAME_PY_RUNTIME:
     for name, module in sys.modules.items():
         if module.__name__.startswith('ail.py_runtime.'):
             module.__spec__.origin = '<ail python runtime component %s>' % \
-                    (module.__name__)
+                                     module.__name__
 
