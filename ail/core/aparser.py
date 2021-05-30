@@ -1065,7 +1065,7 @@ class Parser:
         return ast.WhileStmtAST(test, block, ln)
 
     def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
-        f = self.__parse_assign_expr()
+        f = self.__parse_test_expr(True)
         if not isinstance(f, ast.AssignExprAST):
             self.__syntax_error()
 
@@ -1073,7 +1073,7 @@ class Parser:
 
         while self.__now_tok == ',':
             self.__next_tok()  # eat ','
-            e = self.__parse_assign_expr()
+            e = self.__parse_test_expr(True)
             if not isinstance(e, ast.AssignExprAST):
                 self.__syntax_error()
             el.append(e)
@@ -1087,7 +1087,7 @@ class Parser:
 
         while self.__now_tok == ',':
             self.__next_tok()  # eat ','
-            e = self.__parse_binary_expr()
+            e = self.__parse_binary_expr(True)
             if e is None:
                 self.__syntax_error()
             el.append(e)

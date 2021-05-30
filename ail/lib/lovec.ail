@@ -2,7 +2,7 @@ begin
 
 // I LOVE YOU...
 
-for (y = 1.5, ln = ''; y > -1.5; y = y - 0.1, ln = '') then
+for (y = 1.5, ln = '', t = 0; y > -1.5; y = y - 0.1, ln = '', t = t + 1) then
     for (x = -1.5; x < 1.5; x = x + 0.05) then
         a = x * x + y * y - 1
 
@@ -12,6 +12,9 @@ for (y = 1.5, ln = ''; y > -1.5; y = y - 0.1, ln = '') then
             ln = ln + ' '
         endif
     end
+    if t == 15 then
+        ln += '\tI LOVE U, LXY'
+    endif
     print ln
 end
 
