@@ -2262,8 +2262,11 @@ class ASTConverter:
 
         init_block = ast.BlockAST(stmt.init_list.expr_list, stmt.init_list.ln)
         for_stmt.extend(self._convert_block(init_block, True))
-
-        test = self.convert(stmt.test)
+        
+        if stmt.test is None:
+            test = self._new_constant(True, stmt.ln)
+        else:
+            test = self.convert(stmt.test)
 
         update_block = ast.BlockAST(stmt.update_list.expr_list, stmt.update_list.ln)
 
