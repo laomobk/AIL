@@ -133,7 +133,7 @@ class AILImporter:
                     for member in members:
                         v = ns.get(member, _NONE)
                         if v is _NONE:
-                            raise _exceptions.AILImportError(
+                            raise ImportError(
                                 'cannot import member \'%s\' from \'%s\'' %
                                 (member, name))
                         namespace[member] = v
@@ -147,7 +147,7 @@ class AILImporter:
     def get_path(name: str, default=_NONE) -> str:
         path = _LOADER.search_module(name)
         if path is None and default is _NONE:
-            raise _exceptions.AILModuleNotFoundError(
+            raise ModuleNotFoundError(
                 'cannot find module \'%s\'' % name)
         return path
 
