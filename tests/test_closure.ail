@@ -46,10 +46,10 @@ fun hello() is
 end
 
 
-fun say_hi(func) is
+fun say_hi(func_) is
     fun wrapper() is
         print 'Hello'
-        return func()
+        return func_()
     end
     return wrapper
 end
@@ -73,9 +73,9 @@ fun f3() is
         date = 1026
     end
 
-    print 'before inf3(), date =' ; date
+    print 'before inf3(), date =', date
     inf3()
-    print 'after inf3(), date =' ; date
+    print 'after inf3(), date =', date
 end
 
 f3()
