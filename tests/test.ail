@@ -1,0 +1,11 @@
+
+func f(n: String): Integer {
+    return int(n)
+}
+
+m: Map[String | Integer] = {'x': 5}
+
+num: Integer = f('726')
+
+print num
+

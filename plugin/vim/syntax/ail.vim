@@ -50,6 +50,8 @@ syn keyword ailFunc float
 syn keyword ailFunc addr
 syn keyword ailFunc fnum
 
+syn keyword ailType Integer Float String Boolean Array Map
+
 syn match  ailNumber		"\<\d\+\>"
 syn match  ailNumber		"\<\d\+\.\d*\>"
 syn match  ailNumber		"\.\d\+\>"
@@ -69,6 +71,7 @@ hi def link ailComment		Comment
 hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
 hi def link ailRepeat       Repeat
+hi def link ailType         Type
 
 syn match ailFunction "\h\w*" display contained
 
