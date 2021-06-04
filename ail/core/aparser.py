@@ -66,6 +66,14 @@ def _make_private_name(name):
     return '$'.join(_class_name_stack)
 
 
+class ParserState:
+    def __init__(self, cursor: int, level: int, parent_level: int, parser: 'Parser'):
+        self.cursor = cursor
+        self.level = level
+        self.parent_level = parent_level
+        self.parser = parser
+
+
 class Parser:
     def __init__(self):
         self.__filename = '<NO FILE>'
@@ -79,6 +87,13 @@ class Parser:
         self.__parenthesis_level = 0
 
         self.__pyc_mode = False
+
+    def get_state(self) -> ParserState:
+        return ParserState(self.__tc, self.__level, self.__parenthesis_level, self)
+
+    def set_state(self, state: ParserState):
+        self.__tc, self.__level, self.__parenthesis_level = \
+            state.cursor, state.level, state.parent_level
 
     def __mov_tp(self, step=1):
         self.__tc += step
@@ -156,7 +171,7 @@ class Parser:
         if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error('except NEWLINE')
 
-    def __parse_arg_item(self) -> ast.ArgItemAST:
+    def __parse_arg_item(self, type_comment: bool = False) -> ast.ArgItemAST:
         star = False
 
         if self.__now_tok.ttype == AIL_MULT:
@@ -165,6 +180,9 @@ class Parser:
 
         self.__skip_newlines()
         expr = self.__parse_binary_expr()
+        
+        if type_comment:
+            self.__parse_type_comment()
 
         return ast.ArgItemAST(expr, star, self.__now_ln)
 
@@ -178,7 +196,7 @@ class Parser:
         while self.__now_tok.ttype != AIL_SRBASKET:
             self.__skip_newlines()
 
-            a = self.__parse_arg_item()
+            a = self.__parse_arg_item(True)
             if not isinstance(a.expr, ast.CellAST) or  \
                     a.expr.type != AIL_IDENTIFIER:
                 self.__syntax_error(ln=a.ln)
@@ -220,10 +238,19 @@ class Parser:
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
 
-            a = self.__parse_arg_item()
+            a = self.__parse_arg_item(True)
             alist.append(a)
 
         return ast.ArgListAST(alist, self.__now_ln)
+
+    def __parse_type_comment(self, start: str = ':'):
+        if self.__now_tok != start and start:
+            return
+        
+        if start is not None:
+            self.__next_tok()
+
+        return self.__parse_cell_or_call_expr()
 
     def __parse_value_list(self) -> ast.ValueListAST:
         if self.__now_tok.ttype != AIL_IDENTIFIER:
@@ -768,6 +795,9 @@ class Parser:
     def __parse_assign_expr(self) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_bin_op_expr()
+        
+        state = self.get_state()
+        self.__parse_type_comment()
 
         if left is None:
             self.__syntax_error()
@@ -777,6 +807,7 @@ class Parser:
         if ttype != AIL_ASSI and \
                 (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND) and \
                 ttype != AIL_INP_POW:
+            self.set_state(state)
             return left
         
         # check left is valid or not
@@ -1411,14 +1442,17 @@ class Parser:
         else:
             arg_list = self.__parse_func_def_arg_list()
 
+        self.__parse_type_comment()
+
         self.__skip_newlines()
 
         self.__level += 1
 
         # for new function syntax (':' instead of 'is')
-        if self.__now_tok.ttype == AIL_COLON:
-            self.__now_tok.ttype = AIL_IDENTIFIER
-            self.__now_tok.value = 'is'
+        # if self.__now_tok.ttype == AIL_COLON:
+        #     self.__now_tok.ttype = AIL_IDENTIFIER
+        #     self.__now_tok.value = 'is'
+        # not longer supported at 1.2 alpha 4 - 2021 6 3
 
         block = self.__parse_block('is', 'end',
                                    start_msg=
