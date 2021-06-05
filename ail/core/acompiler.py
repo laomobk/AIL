@@ -217,6 +217,9 @@ class Compiler:
         elif isinstance(tree, ast.FunctionDefineAST):
             bc += self.__compile_function(tree, anonymous_function=True)
 
+        elif isinstance(tree, ast.TupleAST):
+            bc += self.__compile_tuple_expr(tree)
+
         elif type(tree.left) in ast.BINARY_AST_TYPES:
             bc += self.__compile_binary_expr(tree.left)
 
@@ -232,6 +235,16 @@ class Compiler:
 
             bc.add_bytecode(opc, 0, rtree.ln)
 
+        return bc
+
+    def __compile_tuple_expr(self, tree: ast.TupleAST) -> ByteCode:
+        bc = ByteCode()
+
+        for elt in tree.items:
+            bc += self.__compile_binary_expr(elt)
+
+        bc.add_bytecode(build_tuple, len(tree.items), tree.ln)
+        
         return bc
 
     def __compile_unary_expr(self, 
@@ -331,11 +344,14 @@ class Compiler:
 
         left = tree.left
 
-        store_target = {
+        type_map = {
             ast.CellAST: store_var,
             ast.SubscriptExprAST: store_subscr,
-            ast.MemberAccessAST: store_attr
-        }[type(left)]
+            ast.MemberAccessAST: store_attr,
+            ast.TupleAST: None
+        }
+
+        store_target = type_map[type(left)]
         
         if tree.right is not None:
             vc = self.__compile_binary_expr(tree.right)
@@ -351,6 +367,29 @@ class Compiler:
 
         elif store_target == store_subscr:
             bc += self.__compile_subscript_expr(tree.left, False, True)
+
+        elif store_target is None:
+            left: ast.TupleAST
+            bc.add_bytecode(unpack_sequence, len(left.items), left.ln)
+            
+            for item in left.items[::-1]:
+                store_target = type_map[type(item)]
+
+                if store_target == store_var:
+                    ni = self.__buffer.get_or_add_varname_index(item.value)
+                    bc.add_bytecode(store_target, ni, tree.ln)
+                    bc.add_bytecode(pop_top, 0, -1)
+
+                elif store_target == store_attr:
+                    ebc = self.__compile_member_access_expr(item, True)
+                    bc += ebc
+                    bc.add_bytecode(pop_top, 0, -1)
+
+                elif store_target == store_subscr:
+                    bc += self.__compile_subscript_expr(item, False, True)
+                    bc.add_bytecode(pop_top, 0, -1)
+
+            return bc
 
         if single:
             bc.add_bytecode(pop_top, 0, tree.ln)

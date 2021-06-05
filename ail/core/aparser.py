@@ -171,7 +171,8 @@ class Parser:
         if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error('except NEWLINE')
 
-    def __parse_arg_item(self, type_comment: bool = False) -> ast.ArgItemAST:
+    def __parse_arg_item(
+            self, type_comment: bool = False, try_tuple: bool = False) -> ast.ArgItemAST:
         star = False
 
         if self.__now_tok.ttype == AIL_MULT:
@@ -179,7 +180,7 @@ class Parser:
             star = True
 
         self.__skip_newlines()
-        expr = self.__parse_binary_expr()
+        expr = self.__parse_binary_expr(do_tuple=try_tuple)
         
         if type_comment:
             self.__parse_type_comment()
@@ -223,11 +224,11 @@ class Parser:
 
         return ast.ArgListAST(alist, ln)
 
-    def __parse_arg_list(self) -> ast.ArgListAST:
+    def __parse_arg_list(self, try_tuple: bool = False) -> ast.ArgListAST:
         alist = []
 
         if self.__now_tok.ttype != AIL_SRBASKET:
-            a = self.__parse_arg_item()
+            a = self.__parse_arg_item(True, try_tuple)
             alist.append(a)
         else:
             return ast.ArgListAST(alist, self.__now_ln)
@@ -238,7 +239,7 @@ class Parser:
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
 
-            a = self.__parse_arg_item(True)
+            a = self.__parse_arg_item(True, try_tuple)
             alist.append(a)
 
         return ast.ArgListAST(alist, self.__now_ln)
@@ -482,7 +483,12 @@ class Parser:
 
         if self.__now_tok == '(':
             self.__next_tok()
-            expr_or_param = self.__parse_arg_list()
+
+            if self.__now_tok == ')':
+                self.__next_tok()  # eat ')'
+                return ast.TupleAST(ast.ItemListAST([], ln), False, ln)
+
+            expr_or_param = self.__parse_arg_list(True)
 
             if self.__now_tok != ')':
                 self.__syntax_error()
@@ -492,10 +498,14 @@ class Parser:
             exp_list = expr_or_param.exp_list
             
             if self.__now_tok.ttype != AIL_RARROW:
-                if len(exp_list) != 1 or exp_list[0].star:
-                    self.__syntax_error()
-
-                return expr_or_param.exp_list[0].expr
+                for exp in exp_list:
+                    if exp.star:
+                        self.__syntax_error()
+                if len(exp_list) == 1:
+                    return expr_or_param.exp_list[0].expr
+                else:  # maybe a tuple
+                    items = [exp.expr for exp in exp_list]
+                    return ast.TupleAST(items, False, ln)
 
             # now it is lambda expression
 
@@ -654,8 +664,12 @@ class Parser:
             rl.append(('^', r))
         return ast.BinXorExprAST(left, rl, ln)
 
-    def __parse_binary_expr(self, as_stmt: bool = False) -> ast.BitOpExprAST:
-        expr = self.__parse_test_expr(as_stmt)
+    def __parse_binary_expr(
+            self, as_stmt: bool = False, do_tuple: bool = False) -> ast.BitOpExprAST:
+        expr = self.__parse_assign_expr(do_tuple)
+
+        if isinstance(expr, ast.AssignExprAST) and not as_stmt:
+            self.__syntax_error('cannot assign in a expression')
 
         return expr
 
@@ -685,6 +699,24 @@ class Parser:
             rl.append((r_op, r))
 
         return ast.BitOpExprAST(left_op, left, rl, ln)
+
+    def __parse_tuple_expr(self, do_tuple: bool = False) -> ast.TupleAST:
+        ln = self.__now_ln
+        expr = self.__parse_test_expr()
+
+        # check tuple
+
+        if self.__now_tok.ttype != AIL_COMMA or not do_tuple:
+            return expr
+
+        items = [expr]
+
+        while self.__now_tok.ttype == AIL_COMMA:
+            self.__next_tok()
+            item = self.__parse_test_expr()
+            items.append(item)
+
+        return ast.TupleAST(items, False, ln)
 
     def __parse_bit_shift_expr(self) -> ast.BitShiftExprAST:
         ln = self.__now_ln
@@ -792,9 +824,9 @@ class Parser:
 
         return ast.InputStmtAST(msg, vl, ln)
 
-    def __parse_assign_expr(self) -> ast.AssignExprAST:
+    def __parse_assign_expr(self, do_tuple: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
-        left = self.__parse_bin_op_expr()
+        left = self.__parse_tuple_expr(do_tuple)
         
         state = self.get_state()
         self.__parse_type_comment()
@@ -812,8 +844,15 @@ class Parser:
         
         # check left is valid or not
         if type(left) not in (ast.MemberAccessAST,
-                              ast.CellAST, ast.SubscriptExprAST):
+                              ast.CellAST, ast.SubscriptExprAST,
+                              ast.TupleAST):
             self.__syntax_error(ln=left.ln)
+
+        if isinstance(left, ast.TupleAST):
+            for elt in left.items:
+                if type(elt) not in (
+                        ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST):
+                    self.__syntax_error()
 
         # check cell is valid or not
         if isinstance(left, ast.CellAST):
@@ -823,7 +862,7 @@ class Parser:
                 self.__syntax_error('cannot assign to literal', left.ln)
 
         self.__next_tok()
-        r = self.__parse_bin_op_expr()
+        r = self.__parse_binary_expr(do_tuple=do_tuple)
         if r is None:
             self.__syntax_error()
 
@@ -860,7 +899,7 @@ class Parser:
     def __parse_comp_test_expr(self) -> ast.CmpTestAST:
         ln = self.__now_ln
 
-        left = self.__parse_assign_expr()
+        left = self.__parse_bin_op_expr()
 
         if left is None:
             self.__syntax_error()
@@ -873,7 +912,7 @@ class Parser:
         while self.__now_tok.ttype in _cmp_op:
             now_op = self.__now_tok.value
             self.__next_tok()  # eat cmp op
-            r = self.__parse_assign_expr()
+            r = self.__parse_bin_op_expr()
 
             if r is None:
                 self.__syntax_error()
@@ -936,9 +975,6 @@ class Parser:
 
     def __parse_test_expr(self, as_stmt: bool = True) -> ast.TestExprAST:
         t = self.__parse_or_test_expr()
-
-        if isinstance(t, ast.AssignExprAST) and not as_stmt:
-            self.__syntax_error('cannot assign in a expression')
 
         if type(t) not in (
                 ast.AndTestAST, ast.OrTestAST, ast.NotTestAST, ast.CmpTestAST):
@@ -1096,7 +1132,7 @@ class Parser:
         return ast.WhileStmtAST(test, block, ln)
 
     def __parse_assign_expr_list(self) -> ast.AssignExprListAST:
-        f = self.__parse_test_expr(True)
+        f = self.__parse_binary_expr(True)
         if not isinstance(f, ast.AssignExprAST):
             self.__syntax_error()
 
@@ -1104,7 +1140,7 @@ class Parser:
 
         while self.__now_tok == ',':
             self.__next_tok()  # eat ','
-            e = self.__parse_test_expr(True)
+            e = self.__parse_binary_expr(True)
             if not isinstance(e, ast.AssignExprAST):
                 self.__syntax_error()
             el.append(e)
@@ -1529,7 +1565,7 @@ class Parser:
         if self.__now_tok.ttype == AIL_ENTER:
             expr = ast.CellAST('null', AIL_IDENTIFIER, self.__now_ln)
         else:
-            expr = self.__parse_binary_expr()
+            expr = self.__parse_binary_expr(do_tuple=True)
 
         if expr is None:
             self.__syntax_error()
@@ -1855,7 +1891,7 @@ class Parser:
 
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 (nt.value not in (_keywords + limit) or nt.value == 'not'):
-            a = self.__parse_binary_expr(True)
+            a = self.__parse_binary_expr(True, True)
             self.__expect_newline()
 
         elif nt.ttype == AIL_ENTER:
@@ -2258,10 +2294,14 @@ class ASTConverter:
 
         left = self.convert(expr.left)
 
-        if type(left) not in (pyast.Attribute, pyast.Name, pyast.Subscript):
+        if type(left) not in (pyast.Attribute, pyast.Name, pyast.Subscript, pyast.Tuple):
             raise PyTreeConvertException('illegal assign target', expr.ln)
 
         left.ctx = store_ctx()
+
+        if isinstance(left, pyast.Tuple):
+            for elt in left.elts:
+                elt.ctx = store_ctx()
 
         if aug_assign:
             return _set_lineno(aug_assign_stmt(left, aug_op, right), expr.ln)
@@ -2558,6 +2598,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.ArrayAST):
             return self._convert_array_expr(a)
+
+        elif isinstance(a, ast.TupleAST):
+            return tuple_expr([self.convert(e) for e in a.items], load_ctx())
 
         elif isinstance(a, ast.MapAST):
             return self._convert_map_expr(a)

@@ -134,6 +134,9 @@ jump_forward_if_false = 0x58
 pop_jump_forward_if_true_or_pop = 0x59
 pop_jump_forward_if_false_or_pop = 0x5a
 
+unpack_sequence = 0x5b
+build_tuple = 0x5c
+
 COMP_EQ = 0
 COMP_LEQ = 1
 COMP_SEQ = 2

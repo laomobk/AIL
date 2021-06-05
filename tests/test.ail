@@ -1,11 +1,15 @@
 
-func f(n: String): Integer {
-    return int(n)
+class C {
+    x = null
 }
 
-m: Map[String | Integer] = {'x': 5}
+arr = [1, 2, 3]
 
-num: Integer = f('726')
+func f(n: Integer): Tuple {
+    return n + 1, n + 2, n + 3
+}
 
-print num
+a, arr[2], C.x = f(7)
+
+print a, C.x, arr
 

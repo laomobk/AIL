@@ -412,6 +412,13 @@ class ArrayAST:
         self.ln = ln
 
 
+class TupleAST:
+    def __init__(self, items: ItemListAST, store: bool, ln: int):
+        self.items = items
+        self.ln = ln
+        self.store = store
+
+
 class MapAST:
     def __init__(self, keys: list, values: list, ln :int):
         self.keys = keys

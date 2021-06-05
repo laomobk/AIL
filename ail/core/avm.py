@@ -55,6 +55,7 @@ from ..objects.wrapper import WRAPPER_TYPE
 from ..objects.float import FLOAT_TYPE
 from ..objects.complex import COMPLEX_TYPE
 from ..objects.array import ARRAY_TYPE, convert_to_array
+from ..objects.tuple import TUPLE_TYPE, convert_to_tuple
 from ..objects.map import MAP_TYPE
 from ..objects.function import PY_FUNCTION_TYPE, FUNCTION_TYPE, call
 from ..objects.null import null
@@ -102,6 +103,8 @@ false = convert_to_ail_object(False)
 _num_otypes = {INTEGER_TYPE.otype, 
                FLOAT_TYPE.otype, 
                COMPLEX_TYPE.otype}
+
+_seq_types = {list, tuple}
 
 _binary_op_dict = {
     binary_add: ('+', '__add__', '__add__'),
@@ -1186,6 +1189,30 @@ class Interpreter:
                             ARRAY_TYPE, l)
 
                         self.__tof.stack.append(o)
+
+                    elif op == build_tuple: 
+                        l = [self.__stack.pop() for _ in range(argv)][::-1]
+
+                        o = create_object(TUPLE_TYPE, l)
+    
+                        self.__tof.stack.append(o)
+
+                    elif op == unpack_sequence:
+                        top = unpack_ailobj(self.pop_top())
+
+                        if type(top) not in _seq_types:
+                            self.raise_error(
+                                'unpack object must be list or tuple)', 'TypeError')
+
+                        if argv != len(top):
+                            self.raise_error(
+                                'not enough values to unpack (expected %s, got %s)'
+                                    % (argv, len(top)),
+                                'ValueError')
+                        
+                        _append = self.__stack.append
+                        for elt in top:
+                            _append(elt)
 
                     elif op == build_map:
                         m = dict()

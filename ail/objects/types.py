@@ -18,3 +18,4 @@ I_CLASS_TYPE        = 0x10
 I_SUPER_TYPE        = 0x11
 I_OBJECT_TYPE       = 0x12
 I_BYTES_TYPE        = 0x13
+I_TUPLE_TYPE        = 0x14
