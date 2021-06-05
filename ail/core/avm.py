@@ -922,7 +922,7 @@ class Interpreter:
                     # print(m_state.global_interpreter.name)
 
                     if op == pop_top:
-                        tos = self.pop_top()
+                        self.pop_top()
 
                     elif op == print_value:
                         tosl = [self.pop_top() for _ in range(argv)][::-1]
