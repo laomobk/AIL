@@ -486,7 +486,7 @@ class Parser:
 
             if self.__now_tok == ')':
                 self.__next_tok()  # eat ')'
-                return ast.TupleAST(ast.ItemListAST([], ln), False, ln)
+                return ast.TupleAST([], False, ln)
 
             expr_or_param = self.__parse_arg_list(True)
 

@@ -413,7 +413,7 @@ class ArrayAST:
 
 
 class TupleAST:
-    def __init__(self, items: ItemListAST, store: bool, ln: int):
+    def __init__(self, items: list, store: bool, ln: int):
         self.items = items
         self.ln = ln
         self.store = store
