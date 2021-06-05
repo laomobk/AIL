@@ -6,7 +6,7 @@
 ![version badge](https://img.shields.io/badge/version-alpha%201.2-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
-AIL 是一门面向对象的编程语言。具有许多高级易用的数据结构以及语法简洁，功能强大的特点。
+AIL 是一门运行在 Python 虚拟机上的面向对象的编程语言。
 
 ## Hello World
 
