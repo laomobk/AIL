@@ -25,7 +25,8 @@ _keywords_uc = (
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
-    'EXTENDS', 'AND', 'OR', 'NOT'
+    'EXTENDS', 'AND', 'OR', 'NOT',
+    'STATIC', 'PROTECTED',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -1427,17 +1428,142 @@ class Parser:
         if self.__now_tok == 'extends':
             self.__next_tok()
             bases = self.__parse_class_bases()
-        
-        _class_name_stack.append(class_name)
+
         body = self.__parse_block('is', 'end',
                                    start_msg=
-                                   'class body should starts with \'is\' or \':\'')
-        _class_name_stack.pop()
+                                   'class body should starts with \'is\' or \':\'',
+                                   class_body=True)
+
+        instance_property = []
+
+        # check define
+        stmts = body.stmts
+        new_stmts = []
+        properties = []
+
+        for i, stmt in enumerate(stmts):
+            if isinstance(stmt, ast.StaticAssign):
+                stmt: ast.StaticAssign
+                new_stmts.append(stmt.assign)
+
+            elif isinstance(stmt, ast.AssignModifier):
+                stmt: ast.AssignModifier
+                assign, left = stmt.assign, stmt.assign.left
+
+                if isinstance(left, ast.CellAST):
+                    self.__property_rename(left, stmt.context)
+
+                elif isinstance(left, ast.TupleAST):
+                    left: ast.TupleAST
+
+                    for n in left.items:
+                        self.__property_rename(n, stmt.context)
+                else:
+                    self.__syntax_error('illegal class property definition', left.ln)
+                
+                if stmt.static:
+                    new_stmts.append(assign)
+                else:
+                    instance_property.append(assign)
+
+            elif isinstance(stmt, ast.AssignExprAST):
+                instance_property.append(stmt)
+            
+            elif isinstance(stmt, ast.PropertyDefine):
+                stmt: ast.PropertyDefine
+                func = stmt.func
+                if stmt.action == 'get':
+                    properties.append(func.name)
+                    func.decorator.append(ast.CellAST('property', AIL_IDENTIFIER, func.ln))
+                elif stmt.action == 'set':
+                    if func.name not in properties:
+                        self.__syntax_error('property \'%s\' must have a getter' % func.name, func.ln)
+                    func.decorator.append(
+                        ast.MemberAccessAST(ast.CellAST(func.name, AIL_IDENTIFIER, func.ln), 
+                            [ast.CellAST('setter', AIL_IDENTIFIER, func.ln)], func.ln)
+                    )
+
+                new_stmts.append(func)
+
+            else:
+                new_stmts.append(stmt)
+
+        body.stmts = new_stmts
+        stmts = new_stmts
+
+        # setup instance property
+        if instance_property:
+            # find __init__
+            init = None
+            block = []
+            for stmt in stmts:
+                if isinstance(stmt, ast.FunctionDefineAST):
+                    stmt: ast.FunctionDefineAST
+                    if stmt.bindto is not None:
+                        self.__syntax_error('illegal method definition', stmt.ln)
+
+                    if stmt.name == '__init__':
+                        init = stmt
+                        block = stmt.block.stmts
+                        break
+            else:
+                init = ast.FunctionDefineAST(
+                    '__init__',
+                    ast.ArgListAST([ast.ArgItemAST(ast.CellAST(
+                        'self', AIL_IDENTIFIER, ln), False, ln)], ln),
+                    ast.BlockAST(block, ln), None, ln)
+                stmts.insert(0, init)
+
+            for assign in instance_property:
+                left = assign.left
+                if isinstance(left, ast.CellAST):
+                    left: ast.CellAST = assign.left
+                    access = ast.MemberAccessAST(
+                        ast.CellAST('self', AIL_IDENTIFIER, ln), [left], ln)
+                    assign.left = access
+
+                    block.insert(0, assign)
+                elif isinstance(left, ast.TupleAST):
+                    for i, n in enumerate(left.items):
+                        access = ast.MemberAccessAST(
+                            ast.CellAST('self', AIL_IDENTIFIER, ln), [n], ln)
+                        left.items[i] = access
+
+                    block.insert(0, assign)
 
         func = ast.FunctionDefineAST(
                 class_name, ast.ArgListAST([], ln), body, None, ln)
 
         return ast.ClassDefineAST(class_name, func, bases, ln, doc_string)
+
+    def __property_rename(self, left, context: str):
+        if isinstance(left, ast.CellAST) and left.type == AIL_IDENTIFIER:
+            if context == 'private':
+                left: ast.CellAST
+                name: str = left.value
+
+                if name.startswith('__'):
+                    pass  # already a 'private' property
+                elif name.startswith('_'):
+                    pass  # may be a 'protected' property
+                else:
+                    left.value = '__%s' % name
+
+            elif context == 'protected':
+                left: ast.CellAST
+                name: str = left.value
+
+                if name.startswith('__'):
+                    self.__syntax_error(
+                        'this property already a private variable', left.ln)
+                elif name.startswith('_'):
+                    pass  # already a 'protected' property
+                else:
+                    left.value = '_%s' % name
+        else:
+            self.__syntax_error(
+                'only class property can use \'protected\' or \'private\' definition',
+                left.ln)
 
     def __parse_func_def_stmt(
             self, anonymous_function: bool = False,
@@ -1741,6 +1867,51 @@ class Parser:
         return ast.TryCatchStmtAST(
                 try_block, catch_block, finally_block, cname, ln)
 
+    def __parse_static_assign(self) -> ast.StaticAssign:
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'static'
+
+        assign = self.__parse_assign_expr(True)
+
+        return ast.StaticAssign(assign, ln)
+
+    def __parse_modified_assign(self) -> ast.AssignModifier:
+        ln = self.__now_ln
+
+        context = self.__now_tok.value
+
+        self.__next_tok()
+
+        static = False
+
+        if self.__now_tok == 'static':
+            s = self.__parse_static_assign()
+            assign = s.assign
+            static = True
+        else:
+            assign = self.__parse_assign_expr(True)
+
+        return ast.AssignModifier(assign, static, context, ln)
+
+    def __parse_property_define(self) -> ast.PropertyDefine:
+        if self.__now_tok not in ('get', 'set'):
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        action = self.__now_tok.value
+        self.__next_tok()
+
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+        func = self.__parse_func_def_stmt(True)
+        func.name = name
+
+        return ast.PropertyDefine(func, action, ln)
+
     def __parse_try_catch_expr(self) -> ast.TryCatchStmtAST:
         if self.__now_tok != 'try':
             self.__syntax_error()
@@ -1814,7 +1985,7 @@ class Parser:
 
         return ast.TryCatchStmtAST(try_b, cab, fnb, cname, self.__now_ln)
 
-    def __parse_stmt(self, limit: tuple = ()) -> ast.ExprAST:
+    def __parse_stmt(self, limit: tuple = (), class_body: bool = False) -> ast.ExprAST:
         nt = self.__now_tok
 
         if nt == 'print':
@@ -1886,6 +2057,15 @@ class Parser:
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
+        elif class_body and nt in ('private', 'protected'):
+            a = self.__parse_modified_assign()
+
+        elif class_body and nt == 'static':
+            a = self.__parse_static_assign()
+
+        elif class_body and nt in ('get', 'set'):
+            a = self.__parse_property_define()
+
         elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
             self.__syntax_error()
 
@@ -1914,7 +2094,7 @@ class Parser:
 
         return a
 
-    def __parse_new_block(self) -> ast.BlockAST:
+    def __parse_new_block(self, class_body: bool = False) -> ast.BlockAST:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
@@ -1925,7 +2105,7 @@ class Parser:
         stmt_list = []
 
         while self.__now_tok.ttype != AIL_LRBASKET:
-            s = self.__parse_stmt()
+            s = self.__parse_stmt(class_body=class_body)
 
             if s is None:
                 self.__syntax_error()
@@ -1943,9 +2123,10 @@ class Parser:
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,
                       start_enter=True, for_if_else: bool = False, 
-                      for_program: bool = False) -> ast.BlockAST:
+                      for_program: bool = False,
+                      class_body: bool = False) -> ast.BlockAST:
         if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
-            return self.__parse_new_block()
+            return self.__parse_new_block(class_body=class_body)
 
         ln = self.__now_ln
 
@@ -1975,7 +2156,7 @@ class Parser:
                 self.__next_tok()
                 return ast.BlockAST([], ln)
 
-        first = self.__parse_stmt((start, end))
+        first = self.__parse_stmt((start, end), class_body=class_body)
 
         if first is None:
             self.__syntax_error()
@@ -1993,7 +2174,7 @@ class Parser:
                     'elif', 'else', 'endif'):
                 return ast.BlockAST(stmtl, ln)
 
-            s = self.__parse_stmt((start, end))
+            s = self.__parse_stmt((start, end), class_body=class_body)
 
             if s is None:
                 self.__syntax_error()

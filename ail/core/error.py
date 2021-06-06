@@ -208,3 +208,8 @@ def raise_error_as_python(err: AILRuntimeError, where: str = ''):
 
 class BuiltinAILRuntimeError(Exception):
     pass
+
+
+class AILVersionError(Exception):
+    pass
+

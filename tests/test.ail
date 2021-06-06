@@ -1,15 +1,15 @@
 
 class C {
-    x = null
+    x: Integer = 5
+
+    func __init__(self, x) {}
+
+    get x(self) { return 726; }
+    set x(self, value) { print 'set =', value; }
 }
 
-arr = [1, 2, 3]
 
-func f(n: Integer): Tuple {
-    return n + 1, n + 2, n + 3
-}
-
-a, arr[2], C.x = f(7)
-
-print a, C.x, arr
+c = C();
+print c.x;
+c.x = 1026
 

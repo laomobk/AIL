@@ -44,6 +44,7 @@ from .error import (
     AILRuntimeError,
     print_exception_for_vm,
     BuiltinAILRuntimeError,
+    AILVersionError,
 )
 
 from . import shared
@@ -1644,6 +1645,8 @@ class Interpreter:
 
     def __exec(self, cobj, frame=None,
                exec_for_module=False, globals: dict = None):
+        raise AILVersionError('avm is no longer supported in AIL 2.x or later')
+
         if not frame:
             f = Frame()
             f.code = cobj

@@ -215,16 +215,6 @@ class Shell:
                     print(_SH_HELP_STR)
                     continue
 
-                elif line == '$ail':
-                    self.__run_single_line = self.__run_single_line_ail
-                    print('(swiched to AIL native mode)')
-                    continue
-
-                elif line == '$pyc':
-                    self.__run_single_line = self.__run_single_line_pyc
-                    print('(switched to Python Compatible mode)')
-                    continue
-
                 elif more == 1:
                     self.__more_level += 1
                     in_more = True

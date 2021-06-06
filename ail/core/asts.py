@@ -514,6 +514,33 @@ class PyCodeBlock:
         self.ln = ln
 
 
+class StaticAssign:
+    def __init__(self, assign: AssignExprAST, ln: int):
+        self.assign = assign
+        self.ln = ln
+
+
+class AssignModifier:
+    def __init__(self, assign: AssignExprAST, static: bool, context: str, ln: int):
+        self.assign = assign
+        self.context = context
+        self.static = static
+        self.ln = ln
+
+
+class PropertyDefine:
+    def __init__(self, func: FunctionDefineAST, action: str, ln: int):
+        self.func = func
+        self.action = action
+        self.ln = ln
+
+
+class InstanceProperty:
+    def __init__(self, assign: AssignExprAST, ln: int):
+        self.assign = assign
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

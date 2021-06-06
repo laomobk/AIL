@@ -24,6 +24,7 @@ from . import (
     aobjects as obj,
     aobjects as objs,
     asts as ast,
+    error,
     test_utils
 )
 
@@ -1358,6 +1359,8 @@ class Compiler:
         return bc
 
     def compile(self, astree: ast.BlockAST, single_line=False) -> ByteCodeFileBuffer:
+        raise error.AILVersionError('AIL native mode no longer supported in AIL 2.x or later')
+
         self.__init__(self.__mode, self.__filename, self.__ext_varname, self.__name)
         self.__is_single_line = single_line
 
