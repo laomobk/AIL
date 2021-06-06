@@ -1,89 +1,85 @@
-print_expr := 'print' expr [';' expr]* NEWLINE
-input_expr := 'input' expr ';' val_list NEWLINE
 
-assi_expr := NAME '=' expr NEWLINE
+EOL := ';' | NEWLINE
 
- if_else_expr := 'if' test 'then' NEWLINE
-    BLOCK
-    ['elif' test NEWLINE BLOCK]* 
-    ['else' BLOCK]
-'endif'
+print_stmt := 'print' expr [',' expr]* EOL
+input_stmt := 'input' expr ',' val_list EOL
 
+if_else_stmt := 'if' test block ['elif' block]* ['else' block]
 
-while_expr := 'while' test
-	block
-'wend' 
+while_stmt := 'while' expression block
 
-do_loop_expr := 'do'
-	block
-'loop' 'until' test
+do_loop_stmt := 'do' block 'loop' 'until' expression EOL
 
+func_def := ['fun' | 'func'] [bind] NAME '(' param_list ')' [':' expression] block
 
-func_def := 'fun' NAME '(' arg_list ')' 'is'
-	block
-'end'
+expression := tuple_expr
 
-test := or_test
+tuple_expr := or_test [',' or_test]
+
 or_test := and_test ['or' and_test]*
 and_test := not_test ['and' not_test]*
 not_test := 'not' cmp_test
-cmp_test := expr [cmp_op expr]* 
+cmp_test := bin_op_expr [cmp_op bin_op_expr]* 
+
 cmp_op := '>' | '<' | '=' | '!=' | '>=' | '<='
 
-real_expr_list := real_expr [ ',' real_expr]*
-real_expr := md_expr [('+' | '-') md_expr]*
+bin_op_expr := xor_expr [['|' | '&'] xor_expr]*
+xor_expr := shift_expr ['^' shift_expr]*
+shift_expr := add_sub_expr [['<<' | '>>'] add_sub_expr]*
+add_sub_expr := md_expr [('+' | '-') md_expr]*
 md_expr := mod_expr [('*' | '/') mod_expr]*
 mod_expr := pow_expr ['mod' pow_expr]*
-pow_expr := cell ['^' cell]*
-cell := NUMBER | NAME | STRING | call_expr | '(' real_expr ')' | array
-        member_expr
-call_expr := NAME '(' arg_list ')'
-arg_list := NAME [',' NAME]* [',' '*' NAME]
+pow_expr := call_subscript_member_access_expr ['**' call_subscript_member_access_expr]*
+call_subscript_member_access_expr := member_access_expr | call_expr | subscript_expr
+member_access_expr := cell [['.'] NAME]*
+call_expr := cell ['(' arg_list ')']
+subscript_expr := cell ['[' expression ']']
+cell := NAME | STRING | NUMBER | anonymous_function | lambda | map_expr | array_expr
+lambda := '(' param_list ')' '->' block | expression
+anonymous_function := 'func' | 'fun' '(' param_list ')' block
 
-val_list := NAME [',' NAME]*
+map_expr := '{' kv_pair [',' kv_pair]'}'
+kv_pair := expression ':' expression
 
-def_expr := NAME '=' expr NEWLINE
+array_expr := '[' expression [',' expression]* ']'
 
-assi_expr := cell '=' expr NEWLINE
-assi_expr_list := assi_expr [ ',' assi_expr]*
+arg_list := arg [',' arg]* [',' star_arg]
+arg := expression
+star_arg := '*' expression
 
-stmt := while_expr | if_expr | if_else_expr | do_loop_expr | def_expr |
-	print_expr | input_expr | load_stmt | import_stmt
+param_list := param [',' param]* [',' star_param]
+param := NAME [':' expression]
+star_param := '*' NAME [':' expression]
 
-block := stmt*
+assign_stmt := call_subscript_member_access_expr | tuple_expr [':' expression] assi_op expression
+assi_op := '=' | '+=' | '-=' | '*=' | '/=' | '**=' | '<<=' | '>>=' | '^='
+
+stmt := while_stmt | if_expr | if_else_stmt | do_loop_stmt | func_def |
+	print_stmt | input_stmt | load_stmt | import_stmt | assign_stmt | struct_def |
+    class_def | for_stmt | try_catch_stmt
+
+block := '{' stmt* '}'
 
 program := block 'end'
 
-continue_stmt := 'continue'
-break_stmt := 'break'
-return_stmt := 'return' expr
-
-array := '{' item_list '}'
-item_list := cell [',' cell]*
+continue_stmt := 'continue' EOL
+break_stmt := 'break' EOL
+return_stmt := 'return' [expression] EOL
 
 load_stmt := 'load' STRING
-import_stmt := 'import' [NAME] STRING
+import_stmt := 'import' [NAME] STRING ['(' NAME [',' NAME]* ')']
 
-member_expr := cell '.' NAME
+struct_def := 'struct' NAME 'is' '{' [['protected' NAME] | NAME]* '}'
 
-struct_def := 'struct' NAME 'is'
-                NAME 
-                NAME*
-               'end'
+class_def := 'class' NAME ['extends' [expression [',' expression]*]] block
 
-for_stmt := 'for' '(' assi_expr_list? ';'
-                                test? ';'
-                                real_expr_list? ')' 'then'
-             block
-            'end'
+for_stmt := 'for' ['('] [for_init] ';' [for_test] ';' [for_update] [')'] block
+for_init := expression [',' expression]
+for_test := expression
+for_update := expression [',' expression]
 
-throw_expr := 'throw' real_expr
-assert_expr := 'assert' real_expr
+throw_stmt := 'throw' [expression] EOL
+assert_stmt := 'assert' expression EOL
 
-try_catch_expr := 'try' NEWLINE
-                    block
-                  'catch' NAME 'then'
-                    block
-                  'finally' then
-                    block
-                  'end'
+try_catch_stmt := try block ['catch' block] ['finally' block]
+
