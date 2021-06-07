@@ -1,0 +1,23 @@
+
+
+class Point {
+    protected x: Integer = 0;
+    protected y: Integer = 0;
+
+    get x(self) { return self._x; }
+
+    init (self, x, y) {
+        self._x = x;
+        self._y = y;
+    }
+
+    func __str__(self): String {
+        return 'point({}, {})'.format(self._x, self._y);
+    }
+
+    static __repr__ = __str__;
+}
+
+
+print Point(5, 5).x
+

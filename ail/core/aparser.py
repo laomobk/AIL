@@ -26,7 +26,7 @@ _keywords_uc = (
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
-    'STATIC', 'PROTECTED',
+    'STATIC', 'PROTECTED', 'PRIVATE',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -61,6 +61,19 @@ _FROM_FUNC = 1
 
 
 _class_name_stack = list()
+
+
+_special_method_map = {
+    'new': '__new__',
+    'init': '__init__',
+    'del': '__del__',
+    'getattr': '__getattr__',
+    'setattr': '__setattr__',
+    'delattr': '__delattr__',
+    'getitem': '__getitem__',
+    'setitem': '__setitem__',
+    'delitem': '__delitem__',
+}
 
 
 def _make_private_name(name):
@@ -1984,6 +1997,14 @@ class Parser:
 
         return ast.TryCatchStmtAST(try_b, cab, fnb, cname, self.__now_ln)
 
+    def __parse_special_method(self) -> ast.FunctionDefineAST:
+        alias = self.__now_tok.value
+
+        func = self.__parse_func_def_stmt(True)
+        func.name = _special_method_map[alias]
+
+        return func
+
     def __parse_stmt(self, limit: tuple = (), class_body: bool = False) -> ast.ExprAST:
         nt = self.__now_tok
 
@@ -2064,6 +2085,9 @@ class Parser:
 
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
+
+        elif class_body and nt in tuple(_special_method_map.keys()):
+            a = self.__parse_special_method()
 
         elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
             self.__syntax_error()
