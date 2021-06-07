@@ -156,6 +156,16 @@ python3 -m ail
 
 若进入 AIL 的交互环境，则安装成功。
 
+## 文档
+
+AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
+
+## AIL 代码转换细节
+
+想要了解 AIL 代码是如何转换成 Python 语法树的，可以查看：
+
+ [ail_in_python](./docs/developer/ail_in_python.md)
+
 ## tree.txt
 
 这是最早期 AIL 语法分析器生成的语法树
