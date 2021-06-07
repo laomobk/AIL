@@ -124,7 +124,7 @@ AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再�
 - 基本类型注解
 - AIL 内置函数、常量 （并未高亮 Python 的内置函数与常量）
 
-![vim highlight](https://gitee.com/LaomoBK/ail/raw/2.1/images/vim_highlight.jpg)
+![vim highlight](https://gitee.com/LaomoBK/ail/raw/2.1/misc/vim_highlight.jpg)
 
 #### 配置
 
