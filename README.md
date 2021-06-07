@@ -12,7 +12,7 @@ AIL 是一门运行在 Python 虚拟机上的面向对象的编程语言。支�
 ## Hello World
 
 #### Hello World with one statement
-```swift
+```python
 print 'Hello World';
 ```
 ..or..
@@ -28,16 +28,16 @@ console.writeln('Hello World!');
 #### Hello World in function
 ```swift
 func helloWorld() {
-    print 'Hello World!';
+    print "Hello World!";
 }
 
 helloWorld();
 ```
 
 #### Hello World in anonymous function
-```go
+```swift
 (func () {
-    print 'Hello World!';
+    print "Hello World!";
 })();
 ```
 
@@ -45,7 +45,7 @@ helloWorld();
 ```swift
 class Hello {
     func helloWorld(self) {
-        print 'Hello World!';
+        print "Hello World!";
     }
 }
 
