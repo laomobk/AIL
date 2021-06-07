@@ -1,15 +1,18 @@
 
-class C {
-    x: Integer = 5
 
-    func __init__(self, x) {}
+class Point {
+    protected x = 0;
+    protected y = 0;
 
-    get x(self) { return 726; }
-    set x(self, value) { print 'set =', value; }
+    func __init__(self, x, y) {}
+
+    func __str__(self): String {
+        return 'point({}, {})'.format(self._x, self._y)
+    }
+
+    static __repr__ = __str__
 }
 
 
-c = C();
-print c.x;
-c.x = 1026
+print Point(5, 5)
 

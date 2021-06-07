@@ -829,8 +829,8 @@ class Parser:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple)
         
-        state = self.get_state()
         self.__parse_type_comment()
+        state = self.get_state()
 
         if left is None:
             self.__syntax_error()
@@ -1545,7 +1545,7 @@ class Parser:
                 if name.startswith('__'):
                     pass  # already a 'private' property
                 elif name.startswith('_'):
-                    pass  # may be a 'protected' property
+                    self.__syntax_error('this property is \'protected\'', left.ln)
                 else:
                     left.value = '__%s' % name
 
@@ -1554,8 +1554,7 @@ class Parser:
                 name: str = left.value
 
                 if name.startswith('__'):
-                    self.__syntax_error(
-                        'this property already a private variable', left.ln)
+                    self.__syntax_error('this property is \'private\'', left.ln)
                 elif name.startswith('_'):
                     pass  # already a 'protected' property
                 else:
