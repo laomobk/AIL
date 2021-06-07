@@ -1,16 +1,19 @@
 
 
 class Point {
-    protected x = 0;
-    protected y = 0;
+    protected x: Integer = 0;
+    protected y: Integer = 0;
 
-    func __init__(self, x, y) {}
-
-    func __str__(self): String {
-        return 'point({}, {})'.format(self._x, self._y)
+    func __init__(self, x, y) {
+        self._x = x;
+        self._y = y;
     }
 
-    static __repr__ = __str__
+    func __str__(self): String {
+        return 'point({}, {})'.format(self._x, self._y);
+    }
+
+    static __repr__ = __str__;
 }
 
 

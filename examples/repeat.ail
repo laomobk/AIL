@@ -1,12 +1,12 @@
 begin
 
-input 'what is your name: ' ; name
+input 'what is your name: ', name
 
 repeat = 0
 
 while true then
     try
-        input 'repeat time: ' ; repeat
+        input 'repeat time: ', repeat
         repeat = int(repeat)
         
         break

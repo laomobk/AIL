@@ -2,7 +2,7 @@
 
 begin
 
-input "Please enter : (a, b, E)" ; a, b, E
+input "Please enter : (a, b, E)" , a, b, E
 
 f = (x) -> x**2 - x - 50
 

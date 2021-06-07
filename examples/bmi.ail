@@ -6,15 +6,15 @@
 
 begin
 
-fun get_male_std_weight(height):
+fun get_male_std_weight(height) is
     return (height - 80) * 0.7
 end
 
-fun get_female_std_weight(height):
+fun get_female_std_weight(height) is
     return (height - 70) * 0.5
 end
 
-fun check(user_weight, std_weight):
+fun check(user_weight, std_weight) is
     range_10_a = std_weight * 0.9
     range_10_b = std_weight * 1.1
     range_20_a = std_weight * 0.8
@@ -33,7 +33,7 @@ fun check(user_weight, std_weight):
     endif
 end
 
-fun main():
+fun main() is
     print '>>> BMI Calculator <<<'
 
     height = 80

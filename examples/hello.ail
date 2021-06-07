@@ -1,6 +1,6 @@
 begin
 
-input "what is your name: " ; name
+input "what is your name: ", name
 
 while true then
     print name
