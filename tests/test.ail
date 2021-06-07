@@ -1,18 +1,9 @@
-
-
-class Point {
-    protected x = 0;
-    protected y = 0;
-
-    func __init__(self, x, y) {}
-
-    func __str__(self): String {
-        return 'point({}, {})'.format(self._x, self._y)
+func fib(n) {
+    if n == 1 or n == 2 {
+        return 1;
+    } elif n >= 2 {
+        return fib(n - 2) + fib(n - 1);
     }
-
-    static __repr__ = __str__
 }
 
-
-print Point(5, 5)
-
+print fib(5)
