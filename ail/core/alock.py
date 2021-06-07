@@ -1,3 +1,0 @@
-
-GLOBAL_INTERPRETER_LOCK = None
-

@@ -102,7 +102,7 @@ if PY_3:
     LOAD_DEREF = _get_opcode('LOAD_DEREF')
     STORE_DEREF = _get_opcode('STORE_DEREF')
     DELETE_DEREF = _get_opcode('DELETE_DEREF')
-    CALL_FUNCTION_KW = _get_opcode('CALL_FUNCTION_KW')
+    CALL_FUNCTION_KW = _get_opcode('CALL_FUNCTIONKW')
     CALL_FUNCTION_EX = _get_opcode('CALL_FUNCTION_EX')
     SETUP_WITH = _get_opcode('SETUP_WITH')
     LIST_APPEND = _get_opcode('LIST_APPEND')

@@ -1,5 +1,5 @@
 
-from ail.core.modules._error import make_err_struct_object, get_err_struct
+from ail.modules._error import get_err_struct
 from ail.core.aobjects import AILObject, unpack_ailobj, convert_to_ail_object
 from ail.core.astate import MAIN_INTERPRETER_STATE
 from ail.core.error import AILRuntimeError

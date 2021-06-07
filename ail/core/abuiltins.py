@@ -1,6 +1,5 @@
 from .error import AILRuntimeError
 
-from . import aconfig
 from . import aobjects as objs
 from . import corecom as ccom
 
@@ -9,10 +8,10 @@ from .version import (
     AIL_VERSION as _AIL_VERSION
 )
 
-from .modules._fileio import _open
-from .modules.console import get_console_object
-from .modules.helper import print_help
-from .modules.fileio import CLASS_FILEIO
+from ail.modules._fileio import _open
+from ail.modules.console import get_console_object
+from ail.modules.helper import print_help
+from ail.modules.fileio import CLASS_FILEIO
 
 from .anamespace import Namespace
 from .astate import MAIN_INTERPRETER_STATE
@@ -23,7 +22,6 @@ from ..objects import (
     string  as astr,
     integer as aint,
     bool    as abool,
-    wrapper as awrapper,
     float   as afloat,
     complex as acomplex,
     array   as array,

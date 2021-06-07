@@ -3,6 +3,7 @@
 from .alex import Lex
 from .aparser import ASTConverter, Parser
 
+from ..py_runtime import AIL_PY_GLOBAL
 from ..py_runtime.namespace import fill_namespace
 from ..py_runtime.exceptions import print_py_traceback
 
@@ -57,6 +58,9 @@ def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
     except Exception:
         print_py_traceback()
         return 1
+    except (KeyboardInterrupt, EOFError):
+        print_py_traceback()
+        return 0
 
 
 if __name__ == '__main__':

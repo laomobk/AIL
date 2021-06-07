@@ -1,9 +1,9 @@
 import sys
 
-from ..error import AILRuntimeError, get_line_from_file
-from ...objects.struct import new_struct_object, convert_to_pyobj, new_struct
-from ..astate import MAIN_INTERPRETER_STATE
-from ..aobjects import unpack_ailobj, convert_to_ail_object
+from ail.core.error import AILRuntimeError, get_line_from_file
+from ail.objects.struct import new_struct_object, convert_to_pyobj, new_struct
+from ail.core.astate import MAIN_INTERPRETER_STATE
+from ail.core.aobjects import unpack_ailobj, convert_to_ail_object
 
 
 _ERR_STRUCT_MEMBERS = [

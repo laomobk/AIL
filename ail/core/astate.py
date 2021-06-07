@@ -1,7 +1,5 @@
 from typing import List
 
-from . import agc
-
 from .anamespace import Namespace
 from .aframe import Frame
 
@@ -21,7 +19,6 @@ class InterpreterState:
 
     def __init__(self):
         self.frame_stack: List[Frame] = []
-        self.gc: agc.GC = None
 
         self.handling_err_stack = []
         self.err_stack = []

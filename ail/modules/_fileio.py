@@ -1,12 +1,12 @@
 # file IO for AIL
-from ..error import AILRuntimeError
+from ail.core.error import AILRuntimeError
 
-from ..aobjects import (
+from ail.core.aobjects import (
     compare_type, has_attr, unpack_ailobj, ObjectCreater)
 
-from ...objects.struct import STRUCT_OBJ_TYPE, convert_to_pyobj, new_struct_object
-from ...objects.function import convert_to_func_wrapper
-from ...objects.null import null
+from ail.objects.struct import STRUCT_OBJ_TYPE, convert_to_pyobj, new_struct_object
+from ail.objects.function import convert_to_func_wrapper
+from ail.objects.null import null
 
 
 def _convert_to_iobuffer(iobuffer):

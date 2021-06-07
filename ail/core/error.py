@@ -1,7 +1,6 @@
 import sys
 import os.path
 
-from . import debugger
 from .shared import GLOBAL_SHARED_DATA
 
 
@@ -163,24 +162,8 @@ def print_global_error(err: AILRuntimeError, filename: str,
         sys.exit(1)
 
 
-def format_error(error: AILRuntimeError):
-    msg = error.err_type
-    f = error.frame
-    t = error.err_type
-    lno = f.lineno
-
-    source_line = get_line_from_file(lno, f.code.name)
-    line_detail = ''
-
-    if source_line != '':
-        line_detail = '    %s' % source_line
-
-    return 'File: \'%s\', line %s :\n%s%s : %s' % \
-           (f.code.name, p, line_detail, t, msg)
-
-
 def print_exception_for_vm(handling_err_stack: list, err_struct):
-    from .modules._error import _err_to_string
+    from ail.modules._error import _err_to_string
     for err in handling_err_stack:
         sys.stderr.write('Traceback (most recent call last):\n')
         print_stack_trace(err.error_object.stack_trace)
