@@ -14,6 +14,3 @@ func mapwith(function, arr) {
     }
     return new_arr
 }
-
-
-__export__ = ['mapto']

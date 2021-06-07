@@ -499,8 +499,9 @@ class Parser:
             self.__next_tok()
 
             if self.__now_tok == ')':
-                self.__next_tok()  # eat ')'
-                return ast.TupleAST([], False, ln)
+                if self.__peek().ttype != AIL_RARROW:
+                    self.__next_tok()  # eat ')'
+                    return ast.TupleAST([], False, ln)
 
             expr_or_param = self.__parse_arg_list(True)
 
@@ -1343,8 +1344,11 @@ class Parser:
                 pl.append(nt.value)
 
             vl.append(self.__now_tok.value)
+            self.__next_tok()  # eat NAME
 
-            if self.__next_tok().ttype != AIL_ENTER:
+            self.__parse_type_comment()
+
+            if self.__now_tok.ttype != AIL_ENTER:
                 self.__syntax_error()
 
             self.__next_tok()  # eat ENTER

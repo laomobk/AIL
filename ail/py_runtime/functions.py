@@ -21,7 +21,7 @@ def ail_input(prompt: str, value_count: int):
 
     vals = m.split(maxsplit=value_count)
     if len(vals) < value_count:
-        raise _exceptions.AILInputException('')
+        raise ValueError('no enough value to split')
 
     return vals
 

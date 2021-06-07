@@ -2,6 +2,7 @@ import sys
 import os.path
 
 from .shared import GLOBAL_SHARED_DATA
+from . import debugger
 
 
 ERR_NOT_EXIT = False
