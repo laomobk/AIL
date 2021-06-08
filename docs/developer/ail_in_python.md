@@ -330,3 +330,22 @@ class Student():
 |`__str__`       | `__str__`     |
 |`__repr__`      | `__repr__`    |
 
+
+### private 与 protected 声明
+
+AIL 与 Python 一样，是不支持真正意义上的 `private` 与 `protected` 属性的，但是 AIL 可以使用 `private` 和 `protected` 关键字来增加所谓“仪式感”。
+
+```swift
+class C {
+    protected x = 0;
+    private y = 0;
+}
+```
+
+```python
+class C():
+    def __init__(self):
+        self.__y = 0
+        self._x = 0
+```
+

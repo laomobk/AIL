@@ -1,6 +1,4 @@
-class Student {
-    init(self, name: String, age: Integer) {
-        self.__name = name;
-        self.__age = age;
-    }
+class C {
+    protected x;
+    private y;
 }

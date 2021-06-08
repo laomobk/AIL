@@ -1467,7 +1467,15 @@ class Parser:
 
             elif isinstance(stmt, ast.AssignModifier):
                 stmt: ast.AssignModifier
-                assign, left = stmt.assign, stmt.assign.left
+                assign = stmt.assign
+
+                if isinstance(assign, ast.CellAST):
+                    left = assign
+                    continue
+                elif isinstance(assign, ast.AssignExprAST):
+                    left = assign.left
+                else:
+                    self.__syntax_error(ln=assign.ln)
 
                 if isinstance(left, ast.CellAST):
                     self.__property_rename(left, stmt.context)
@@ -1534,9 +1542,13 @@ class Parser:
                 stmts.insert(0, init)
 
             for assign in instance_property:
-                left = assign.left
+                if isinstance(assign, ast.AssignExprAST):
+                    left = assign.left
+                else:
+                    self.__syntax_error(ln=assign.ln)
+
                 if isinstance(left, ast.CellAST):
-                    left: ast.CellAST = assign.left
+                    left: ast.CellAST
                     access = ast.MemberAccessAST(
                         ast.CellAST('self', AIL_IDENTIFIER, ln), [left], ln)
                     assign.left = access
@@ -1585,20 +1597,25 @@ class Parser:
 
     def __parse_func_def_stmt(
             self, anonymous_function: bool = False,
-            doc_string='') -> ast.FunctionDefineAST:
+            doc_string='', with_bound_to: bool = True) -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'fun'
 
         bindto = None
+        bindto_tok_line = 0
 
         if self.__now_tok == '(' and not anonymous_function:
             if self.__next_tok().ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
             bindto = self.__now_tok.value
+            bindto_tok_line = self.__now_ln
 
             if self.__next_tok() != ')':
                 self.__syntax_error()
             self.__next_tok()
+
+        if bindto is not None:
+            self.__syntax_error('this function can not be bound', bindto_tok_line)
         
         if anonymous_function:
             name = aconfig.ANONYMOUS_FUNC_NAME
@@ -1889,6 +1906,9 @@ class Parser:
         ln = self.__now_ln
 
         self.__next_tok()  # eat 'static'
+        
+        if self.__now_tok == 'func' or self.__now_tok == 'fun':
+            assign = self.__parse_func_def_stmt()
 
         assign = self.__parse_assign_expr(True)
 
