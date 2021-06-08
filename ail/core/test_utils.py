@@ -82,7 +82,7 @@ def make_ast_tree(a) -> dict:
                             'star': a.star}}
 
     elif isinstance(a, ast.ArgListAST):
-        return {'ArgList': unpack_list(a.exp_list)}
+        return {'ArgList': unpack_list(a.arg_list)}
 
     elif isinstance(a, ast.ValueListAST):
         return {'ValueList': unpack_list(a.value_list)}

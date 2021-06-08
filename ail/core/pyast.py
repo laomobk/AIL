@@ -47,15 +47,20 @@ def import_alias(name: str, asname: str) -> _ast.alias:
     return _ast.alias(name=name, asname=asname)
 
 
-def arguments(args: List[_ast.arg], vararg: _ast.arg) -> _ast.arguments:
+def arguments(args: List[_ast.arg],
+              vararg: _ast.arg, kwarg: _ast.arg,
+              defaults: List[_ast.expr] = None) -> _ast.arguments:
+    if defaults is None:
+        defaults = []
+
     return _ast.arguments(
         args=args, 
         posonlyargs=[], 
         vararg=vararg, 
         kwonlyargs=[],
         kw_defaults=[],
-        kwarg=None,
-        defaults=[],
+        kwarg=kwarg,
+        defaults=defaults,
     )
 
 
@@ -137,8 +142,8 @@ def global_stmt(names: List[str]) -> _ast.Global:
     return _ast.Global(names=names)
 
 
-def keyword_expr(value: _ast.expr) -> _ast.keyword:
-    return _ast.keyword(value=value, arg=None)
+def keyword_expr(arg: str, value: _ast.expr) -> _ast.keyword:
+    return _ast.keyword(arg=arg, value=value)
 
 
 def if_stmt(

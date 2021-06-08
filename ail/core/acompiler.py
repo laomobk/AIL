@@ -86,7 +86,7 @@ def _make_function_signature(tree: ast.FunctionDefineAST):
 
     name = tree.name
     bind_to = '(%s) ' % tree.bindto if tree.bindto is not None else ''
-    arg_list = tree.arg_list.exp_list
+    arg_list = tree.arg_list.arg_list
 
     for arg in arg_list:
         arg_name = arg.expr.value
@@ -422,7 +422,7 @@ class Compiler:
         
         ex_call = False
 
-        for item in tree.arg_list.exp_list:
+        for item in tree.arg_list.arg_list:
             if item.star:
                 ex_call = True
                 break
@@ -430,7 +430,7 @@ class Compiler:
         if ex_call:
             bc.add_bytecode(call_func_ex, 0, tree.ln)
         else:
-            bc.add_bytecode(call_func, len(tree.arg_list.exp_list), tree.ln)
+            bc.add_bytecode(call_func, len(tree.arg_list.arg_list), tree.ln)
 
         if plain_call and not self.__is_single_line:
             bc.add_bytecode(pop_top, 0, -1)
@@ -1092,8 +1092,8 @@ class Compiler:
 
         has_bindto = tree.bindto is not None
 
-        ext = [c.expr.value for c in tree.arg_list.exp_list]
-        exp_list = tree.arg_list.exp_list
+        ext = [c.expr.value for c in tree.arg_list.arg_list]
+        exp_list = tree.arg_list.arg_list
         var_arg = exp_list[-1].expr.value \
                     if exp_list and exp_list[-1].star else None
         argc = len(exp_list) - (0 if var_arg is None else 1)
@@ -1164,7 +1164,7 @@ class Compiler:
         join_count = 0
         var_arg = False
 
-        for item in tree.exp_list:
+        for item in tree.arg_list:
             if item.star:
                 if norm_arg_count > 0:
                     bc.add_bytecode(build_array, norm_arg_count, -1)

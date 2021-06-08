@@ -187,37 +187,43 @@ class Parser:
     def __parse_arg_item(
             self, type_comment: bool = False, try_tuple: bool = False) -> ast.ArgItemAST:
         star = False
+        kw_star = False
 
         if self.__now_tok.ttype == AIL_MULT:
             self.__next_tok()  # eat '*'
             star = True
+        elif self.__now_tok.ttype == AIL_POW:
+            self.__next_tok()  # eat '**'
+            kw_star = True
 
         self.__skip_newlines()
-        expr = self.__parse_binary_expr(do_tuple=try_tuple)
+        expr = self.__parse_binary_expr(do_tuple=try_tuple, no_assign=True)
+
+        default = None
 
         if type_comment:
             self.__parse_type_comment()
 
-        return ast.ArgItemAST(expr, star, self.__now_ln)
+        if self.__now_tok.ttype == AIL_ASSI:
+            self.__next_tok()  # eat '='
+            default = self.__parse_binary_expr(do_tuple=False, no_assign=True)
 
-    def __parse_func_def_arg_list(self) -> ast.ArgListAST:
+        arg = ast.ArgItemAST(expr, star, self.__now_ln)
+        arg.kw_star = kw_star
+        arg.default = default
+
+        return arg
+
+    def __parse_param_list(self) -> ast.ArgListAST:
         ln = self.__now_ln
 
         alist = []
-
-        has_star = False
 
         while self.__now_tok.ttype != AIL_SRBASKET:
             self.__skip_newlines()
 
             a = self.__parse_arg_item(True)
-            if not isinstance(a.expr, ast.CellAST) or \
-                    a.expr.type != AIL_IDENTIFIER:
-                self.__syntax_error(ln=a.ln)
             alist.append(a)
-
-            if has_star:
-                self.__syntax_error()
 
             self.__skip_newlines()
 
@@ -231,11 +237,48 @@ class Parser:
 
             self.__skip_newlines()
 
-            has_star = a.star
+        self.__next_tok()  # eat ')'
 
-        self.__next_tok()  # eat ')' 
+        self.__check_as_param_list(alist)
 
         return ast.ArgListAST(alist, ln)
+
+    def __check_as_param_list(self, param_list: List[ast.ArgItemAST]):
+        can_keyword = True
+        can_var = True
+        can_single = True
+        can_default = True
+
+        for param in param_list:
+            if not isinstance(param.expr, ast.CellAST) or \
+                    param.expr.type != AIL_IDENTIFIER:
+                self.__syntax_error(ln=param.ln)
+
+            if not can_var and param.star:
+                self.__syntax_error(ln=param.ln)
+            elif not can_single and not (param.star or param.kw_star):
+                self.__syntax_error(ln=param.ln)
+            elif not can_keyword and param.kw_star:
+                self.__syntax_error(ln=param.ln)
+            elif not can_default and param.default is not None:
+                self.__syntax_error(ln=param.ln)
+
+            if param.kw_star and param.star:
+                self.__syntax_error(ln=param.ln)
+            elif (param.star or param.kw_star) and param.default is not None:
+                self.__syntax_error(ln=param.ln)
+
+            if param.default is not None:
+                can_single = False
+
+            if param.kw_star:
+                can_keyword = False
+                can_var = False
+                can_single = False
+                can_default = False
+
+            if param.star:
+                can_var = False
 
     def __parse_arg_list(self, try_tuple: bool = False) -> ast.ArgListAST:
         alist = []
@@ -246,11 +289,11 @@ class Parser:
         else:
             return ast.ArgListAST(alist, self.__now_ln)
 
-        while self.__now_tok.ttype == AIL_COMMA:
-            self.__next_tok()
+        while self.__now_tok.ttype != AIL_SRBASKET:
+            if self.__now_tok.ttype != AIL_COMMA:
+                self.__syntax_error()
 
-            if self.__now_tok.ttype == AIL_SRBASKET:
-                break
+            self.__next_tok()  # eat ','
 
             a = self.__parse_arg_item(True, try_tuple)
             alist.append(a)
@@ -352,7 +395,7 @@ class Parser:
             self.__next_tok()
             return ast.MapAST(keys, values, ln)
 
-        key = self.__parse_binary_expr()
+        key = self.__parse_binary_expr(type_comment=False)
         self.__skip_newlines()
 
         if self.__now_tok.ttype != AIL_COLON:
@@ -377,7 +420,7 @@ class Parser:
                 else:
                     break
 
-            key = self.__parse_binary_expr()
+            key = self.__parse_binary_expr(type_comment=False, do_tuple=False)
             self.__skip_newlines()
 
             if self.__now_tok.ttype != AIL_COLON:
@@ -385,7 +428,7 @@ class Parser:
             self.__next_tok()  # eat ':'
 
             self.__skip_newlines()
-            value = self.__parse_binary_expr()
+            value = self.__parse_binary_expr(type_comment=False, do_tuple=False)
             self.__skip_newlines()
 
             keys.append(key)
@@ -509,14 +552,14 @@ class Parser:
 
             self.__next_tok()  # eat ')'
 
-            exp_list = expr_or_param.exp_list
+            exp_list = expr_or_param.arg_list
 
             if self.__now_tok.ttype != AIL_RARROW:
                 for exp in exp_list:
                     if exp.star:
                         self.__syntax_error()
                 if len(exp_list) == 1:
-                    return expr_or_param.exp_list[0].expr
+                    return expr_or_param.arg_list[0].expr
                 else:  # maybe a tuple
                     items = [exp.expr for exp in exp_list]
                     return ast.TupleAST(items, False, ln)
@@ -525,13 +568,7 @@ class Parser:
 
             has_star = False
 
-            for item in exp_list:
-                if not isinstance(item.expr, ast.CellAST) or \
-                        item.expr.type != AIL_IDENTIFIER:
-                    self.__syntax_error()
-                if has_star:
-                    self.__syntax_error()
-                has_star = item.star
+            self.__check_as_param_list(exp_list)
 
             self.__next_tok()  # eat '->'
 
@@ -561,7 +598,6 @@ class Parser:
                 AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
                 nt in _keywords:
             self.__syntax_error()
-
         name = nt.value  # it can be sub, string, number or identifier
 
         self.__next_tok()  # eat NAME
@@ -679,8 +715,10 @@ class Parser:
         return ast.BinXorExprAST(left, rl, ln)
 
     def __parse_binary_expr(
-            self, as_stmt: bool = False, do_tuple: bool = False) -> ast.BitOpExprAST:
-        expr = self.__parse_assign_expr(do_tuple)
+            self, as_stmt: bool = False, do_tuple: bool = False,
+            no_assign: bool = False, type_comment: bool = True) -> ast.BitOpExprAST:
+        expr = self.__parse_assign_expr(
+            do_tuple, no_assign=no_assign, type_comment=type_comment)
 
         if isinstance(expr, ast.AssignExprAST) and not as_stmt:
             self.__syntax_error('cannot assign in a expression')
@@ -838,12 +876,21 @@ class Parser:
 
         return ast.InputStmtAST(msg, vl, ln)
 
-    def __parse_assign_expr(self, do_tuple: bool = False) -> ast.AssignExprAST:
+    def __parse_assign_expr(self,
+                            do_tuple: bool = False,
+                            no_assign: bool = False,
+                            type_comment: bool = True) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple)
 
-        self.__parse_type_comment()
+        if type_comment:
+            self.__parse_type_comment()
+
         state = self.get_state()
+
+        if no_assign:
+            self.set_state(state)
+            return left
 
         if left is None:
             self.__syntax_error()
@@ -1643,7 +1690,7 @@ class Parser:
 
             self.__next_tok()  # eat ')'
         else:
-            arg_list = self.__parse_func_def_arg_list()
+            arg_list = self.__parse_param_list()
 
         self.__parse_type_comment()
 
@@ -2402,13 +2449,16 @@ class ASTConverter:
         args = []
         keywords = []
 
-        for arg in o_args.exp_list:
+        for arg in o_args.arg_list:
             value = self.convert(arg.expr)
             if arg.star:
-                if isinstance(value, pyast.Dict):
-                    keywords.append(_set_lineno(keyword_expr(value), arg.ln))
-                    continue
                 value = _set_lineno(starred_expr(value, load_ctx()), arg.ln)
+            elif arg.default:
+                value = _set_lineno(
+                    keyword_expr(arg.expr.value, self.convert(arg.default)), arg.ln)
+                keywords.append(value)
+                continue
+
             args.append(value)
 
         return _set_lineno(call_expr(func, args, keywords), expr.ln)
@@ -2683,20 +2733,30 @@ class ASTConverter:
     def _convert_arguments(self, args: ast.ArgListAST) -> pyast.arguments:
         argl = []
         var_arg = None
+        kw_arg = None
+        defaults = []
 
-        for arg in args.exp_list:
+        for arg in args.arg_list:
             assert isinstance(arg.expr, ast.CellAST) and \
                    arg.expr.type == AIL_IDENTIFIER
+
             name = arg.expr.value
             a = _set_lineno(argument(name), arg.ln)
 
             if arg.star:
                 var_arg = a
                 continue
+            if arg.kw_star:
+                kw_arg = a
+                continue
+
+            if arg.default:
+                d = self.convert(arg.default)
+                defaults.append(d)
 
             argl.append(a)
 
-        return _set_lineno(arguments(argl, var_arg), args.ln)
+        return _set_lineno(arguments(argl, var_arg, kw_arg, defaults), args.ln)
 
     def _convert_class_def_stmt(self, cls: ast.ClassDefineAST) -> pyast.ClassDef:
         bases = [self.convert(b) for b in cls.bases]

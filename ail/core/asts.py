@@ -13,6 +13,8 @@ class ArgItemAST:
     def __init__(self, expr: 'ExprAST', star: bool, ln: int):
         self.expr = expr
         self.star = star
+        self.kw_star = False
+        self.default = None
         self.ln = ln
 
 
@@ -22,7 +24,7 @@ class ArgListAST:
     """
 
     def __init__(self, item_list: List[ArgItemAST], ln: int):
-        self.exp_list = item_list  # TODO: refactor exp_list -> item_list
+        self.arg_list = item_list  # TODO: refactor exp_list -> item_list
         self.ln = ln
 
 
