@@ -255,3 +255,78 @@ struct Cat {
 Cat = __ail_make_struct__('Cat', ['type', 'name'], ['type'])
 ```
 
+
+
+## class 定义
+
+AIL 将 class 定义直接转换成 Python 中的 class 定义。AIL 的 class 相比 Python 有许多的语法糖，下面来对这些等效转换进行介绍。
+
+### get 与 set 定义
+
+AIL 中可以直接通过 `get` 与 `set` 两个关键字来进行对 property 的定义。AIL 会在此时进行简单的语义分析：**一个 property 必须要定义其 get 方法，然后才能定义其 set 方法。**语义分析通过后，AIL 会将 get 与 set 转换为**带有装饰器的函数**：
+
+```swift
+class Point {
+    init(self, x, y) {
+        self.__x = x;
+        self.__y = y;
+    }
+
+    get x(self): Integer { return self.__x; }
+    set x(self, x: Integer) { self.__x = x; }
+}
+```
+
+```python
+class Point():
+    def __init__(self, x, y):
+        self.__x = x
+        self.__y = y
+
+    @property
+    def x(self):
+        return self.__x
+
+    @x.setter
+    def x(self):
+        return self.__y
+```
+
+值得注意的是，AIL 并未对 `property` 进行保护，也就是说如果 `property` 值被修改，那么就会出现不同的行为。AIL 允许用户在这里进行自定义。
+
+### 简便特殊方法
+
+AIL 提供了一种较为简便的方法来定义 Python 中的特殊方法。不再需要像一个完整的方法定义那样去声明特殊方法。
+
+```swift
+class Student {
+    init(self, name: String, age: Integer) {
+        self.__name = name;
+        self.__age = age;
+    }
+}
+```
+
+```python
+class Student():
+    def __init__(self, name, age):
+        self.__name = name
+        self.__age = age
+```
+
+在 AIL 2.1 版本中，支持一下的特殊方法使用简便写法：
+
+|  简便写法  | 特殊方法  |
+| ---------- | --------- |
+|`new`       | `__new__`     |
+|`init`      | `__init__`    |
+|`del`       | `__del__`     |
+|`getattr`   | `__getattr__` |
+|`setattr`   | `__setattr__` |
+|`delattr`   | `__delattr__` |
+|`getitem`   | `__getitem__` |
+|`setitem`   | `__setitem__` |
+|`delitem`   | `__delitem__` |
+|`__str__`       | `__str__`     |
+|`__repr__`      | `__repr__`    |
+

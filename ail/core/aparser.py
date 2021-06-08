@@ -73,6 +73,8 @@ _special_method_map = {
     'getitem': '__getitem__',
     'setitem': '__setitem__',
     'delitem': '__delitem__',
+    '__str__': '__str__',
+    '__repr__': '__repr__',
 }
 
 

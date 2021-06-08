@@ -1,4 +1,6 @@
-struct Cat {
-    protected type: String
-    name: String
+class Student {
+    init(self, name: String, age: Integer) {
+        self.__name = name;
+        self.__age = age;
+    }
 }
