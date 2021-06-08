@@ -333,7 +333,7 @@ class Student():
 
 ### private 与 protected 声明
 
-AIL 与 Python 一样，是不支持真正意义上的 `private` 与 `protected` 属性的，但是 AIL 可以使用 `private` 和 `protected` 关键字来增加所谓“仪式感”。
+AIL 与 Python 一样，是不支持真正意义上的 `private` 与 `protected` 属性的，但是 AIL 可以使用 `private` 和 `protected` 关键字来增加所谓**“仪式感”**。
 
 ```swift
 class C {
@@ -349,3 +349,70 @@ class C():
         self._x = 0
 ```
 
+规则在于，`protected` 关键字声明的变量不能看起来是 "private" 的，也就是说，以下写法将会报错：
+
+```java
+protected __x = 0;
+```
+
+```
+  File '<test>', line 2:
+   protected __x = 0;
+SyntaxError: this property is 'private'
+```
+
+类似的规则用于 `private` ：
+
+```java
+private _x = 0;
+```
+
+```
+  File '<test>', line 2:
+   private _x = 0;
+SyntaxError: this property is 'protected'
+```
+
+AIL 仍然可以直接使用 `__` 和 `_` 来声明不同类型的变量。
+
+**private 和 protected 关键字仅在 class 定义中起作用。**
+
+### 类属性与实例属性
+
+使用 `static` 关键字来声明一个属性是否是属于类的。如果这个属性没有被声明为 `static` ，那么这个属性的定义将会被放置在 `__init__` 之中，但是如果使用 `static` 关键字来声明一个属性，那么此时这个属性的定义将会放置在类定义中。
+
+```swift
+class C {
+    static id = 0;
+    value = 'C';
+}
+```
+
+```python
+class C():
+    id = 0
+    
+    def __init__(self):
+        self.value = 'C'
+```
+
+同时，方法也可以添加 `static` 声明，当方法定义添加 `static` 声明后，这个转换时将会在这个定义前添加 **`classmethod` 装饰器** ！
+
+```swift
+class HelloWorld {
+    static func main(cls, args: List[String]) {
+        system.println("Hello world!");
+    }
+}
+```
+
+```python
+class HelloWorld():
+    @classmethod
+    def main(cls, args):
+        system.println('Hello world')
+```
+
+和 `get` ，`set` 一样，可以通过修改 `classmethod` 来实现自定义行为。
+
+**static 关键字仅在 class 定义中起作用**

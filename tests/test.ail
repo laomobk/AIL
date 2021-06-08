@@ -1,4 +1,5 @@
-class C {
-    protected x;
-    private y;
+class HelloWorld {
+    static func main(cls, args: List[String]) {
+        system.println("Hello world");
+    }
 }

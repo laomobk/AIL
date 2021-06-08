@@ -1,4 +1,3 @@
-
 import ast as pyast
 
 from os.path import split
@@ -26,7 +25,7 @@ _keywords_uc = (
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
-    'STATIC', 'PROTECTED', 'PRIVATE',
+    'STATIC', 'PROTECTED', 'PRIVATE', 'GET', 'SET'
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -59,9 +58,7 @@ _literal_names = ('null', 'true', 'false')
 _FROM_MAIN = 0
 _FROM_FUNC = 1
 
-
 _class_name_stack = list()
-
 
 _special_method_map = {
     'new': '__new__',
@@ -114,9 +111,9 @@ class Parser:
     def __mov_tp(self, step=1):
         self.__tc += step
 
-    def __next_tok(self, 
-            ignore_newline: bool = False, 
-            convert_semi: bool = True, just_next: bool = False) -> Token:
+    def __next_tok(self,
+                   ignore_newline: bool = False,
+                   convert_semi: bool = True, just_next: bool = False) -> Token:
         if just_next:
             self.__tc += 1
             if convert_semi and self.__now_tok.ttype == AIL_SEMI:
@@ -197,7 +194,7 @@ class Parser:
 
         self.__skip_newlines()
         expr = self.__parse_binary_expr(do_tuple=try_tuple)
-        
+
         if type_comment:
             self.__parse_type_comment()
 
@@ -214,7 +211,7 @@ class Parser:
             self.__skip_newlines()
 
             a = self.__parse_arg_item(True)
-            if not isinstance(a.expr, ast.CellAST) or  \
+            if not isinstance(a.expr, ast.CellAST) or \
                     a.expr.type != AIL_IDENTIFIER:
                 self.__syntax_error(ln=a.ln)
             alist.append(a)
@@ -263,7 +260,7 @@ class Parser:
     def __parse_type_comment(self, start: str = ':'):
         if self.__now_tok != start and start:
             return
-        
+
         if start is not None:
             self.__next_tok()
 
@@ -343,7 +340,7 @@ class Parser:
 
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
-        
+
         self.__skip_newlines()
         self.__next_tok()  # eat '{' and NEWLINES
         self.__skip_newlines()
@@ -354,13 +351,13 @@ class Parser:
         if self.__now_tok.ttype == AIL_LRBASKET:
             self.__next_tok()
             return ast.MapAST(keys, values, ln)
-        
+
         key = self.__parse_binary_expr()
         self.__skip_newlines()
 
         if self.__now_tok.ttype != AIL_COLON:
             self.__syntax_error()
-        
+
         self.__next_tok(ignore_newline=True)  # eat ':'
         self.__skip_newlines()
 
@@ -401,8 +398,8 @@ class Parser:
 
         return ast.MapAST(keys, values, ln)
 
-    def __parse_member_access_expr(self, 
-                                   set_attr=False, 
+    def __parse_member_access_expr(self,
+                                   set_attr=False,
                                    try_=False) -> ast.MemberAccessAST:
         ln = self.__now_ln
         left = self.__parse_cell_or_call_expr()
@@ -513,7 +510,7 @@ class Parser:
             self.__next_tok()  # eat ')'
 
             exp_list = expr_or_param.exp_list
-            
+
             if self.__now_tok.ttype != AIL_RARROW:
                 for exp in exp_list:
                     if exp.star:
@@ -535,7 +532,7 @@ class Parser:
                 if has_star:
                     self.__syntax_error()
                 has_star = item.star
-            
+
             self.__next_tok()  # eat '->'
 
             if self.__now_tok.ttype == AIL_LLBASKET:
@@ -562,7 +559,7 @@ class Parser:
 
         elif self.__now_tok.ttype not in (
                 AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
-                    nt in _keywords:
+                nt in _keywords:
             self.__syntax_error()
 
         name = nt.value  # it can be sub, string, number or identifier
@@ -800,7 +797,7 @@ class Parser:
             self.__syntax_error()
 
         el = [exp]
-        
+
         sep = ','
         if aconfig.OLD_PRINT:
             sep = ';'
@@ -844,7 +841,7 @@ class Parser:
     def __parse_assign_expr(self, do_tuple: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple)
-        
+
         self.__parse_type_comment()
         state = self.get_state()
 
@@ -852,13 +849,13 @@ class Parser:
             self.__syntax_error()
 
         ttype = self.__now_tok.ttype
-        
+
         if ttype != AIL_ASSI and \
                 (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND) and \
                 ttype != AIL_INP_POW:
             self.set_state(state)
             return left
-        
+
         # check left is valid or not
         if type(left) not in (ast.MemberAccessAST,
                               ast.CellAST, ast.SubscriptExprAST,
@@ -888,7 +885,7 @@ class Parser:
         if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1) or \
                 ttype == AIL_INP_POW:
             r = self.__convert_inplace_assign_expr_for_right(
-                    left, r, ttype, self.__now_ln)
+                left, r, ttype, self.__now_ln)
             aug_assign = True
 
         return ast.AssignExprAST(left, r, ln, aug_assign)
@@ -1007,10 +1004,10 @@ class Parser:
                                     else_block: ast.BlockAST,
                                     ln: int) -> ast.IfStmtAST:
         elif_list = []
-        
+
         self.__skip_newlines()
 
-        if self.__now_tok.value not in ('else', 'elif') :
+        if self.__now_tok.value not in ('else', 'elif'):
             return ast.IfStmtAST(test, if_block, elif_list, else_block, ln)
 
         while self.__now_tok.ttype != AIL_EOF:
@@ -1022,7 +1019,7 @@ class Parser:
                 if else_block is None:
                     self.__syntax_error()
                 break
-            
+
             elif self.__now_tok == 'elif':
                 self.__next_tok()  # eat 'elif'
                 elif_test = self.__parse_test_expr()
@@ -1040,7 +1037,7 @@ class Parser:
 
             else:
                 break
-            
+
         return ast.IfStmtAST(test, if_block, elif_list, else_block, ln)
 
     def __parse_if_else_expr0(self) -> ast.IfStmtAST:
@@ -1206,7 +1203,7 @@ class Parser:
 
             if self.__now_tok != ';':
                 self.__syntax_error()
-            self.__next_tok()   # eat ';'
+            self.__next_tok()  # eat ';'
         else:
             self.__next_tok()  # eat ';'
 
@@ -1221,7 +1218,7 @@ class Parser:
 
         if self.__now_tok != '{' and self.__now_tok != 'then':
             update = self.__parse_binary_expr_list()
-        
+
         body = self.__parse_block()
 
         return ast.ForStmtAST(init, test, update, body, ln)
@@ -1320,12 +1317,12 @@ class Parser:
             start_tok = '{'
             end_tok = '}'
             new_block_style = True
-        
+
         if self.__now_tok != start_tok or \
                 self.__next_tok().ttype != AIL_ENTER:
             if not new_block_style:
                 self.__syntax_error()
-        
+
         if self.__now_tok.ttype == AIL_ENTER:
             self.__next_tok()  # eat ENTER
 
@@ -1387,7 +1384,7 @@ class Parser:
         else:
             self.__syntax_error('invalid definition under doc string')
 
-    def __parse_func_def_with_decorator_stmt(self, 
+    def __parse_func_def_with_decorator_stmt(self,
                                              parsed: list = None,
                                              doc_string='') -> ast.FunctionDefineAST:
         ln = self.__now_ln
@@ -1435,7 +1432,7 @@ class Parser:
 
         ln = self.__now_ln
         self.__next_tok()  # eat 'class'
-        
+
         if self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
 
@@ -1449,9 +1446,9 @@ class Parser:
             bases = self.__parse_class_bases()
 
         body = self.__parse_block('is', 'end',
-                                   start_msg=
-                                   'class body should starts with \'is\' or \':\'',
-                                   class_body=True)
+                                  start_msg=
+                                  'class body should starts with \'is\' or \':\'',
+                                  class_body=True)
 
         instance_property = []
 
@@ -1463,14 +1460,22 @@ class Parser:
         for i, stmt in enumerate(stmts):
             if isinstance(stmt, ast.StaticAssign):
                 stmt: ast.StaticAssign
-                new_stmts.append(stmt.assign)
+                if isinstance(stmt.assign, ast.AssignExprAST):
+                    new_stmts.append(stmt.assign)
+                elif isinstance(stmt.assign, ast.CellAST):
+                    pass
+                elif isinstance(stmt.assign, ast.FunctionDefineAST):
+                    func: ast.FunctionDefineAST = stmt.assign
+                    func.decorator.append(ast.CellAST('classmethod', AIL_IDENTIFIER, func.ln))
+                    new_stmts.append(func)
+                else:
+                    self.__syntax_error(ln=stmt.ln)
 
             elif isinstance(stmt, ast.AssignModifier):
                 stmt: ast.AssignModifier
                 assign = stmt.assign
 
                 if isinstance(assign, ast.CellAST):
-                    left = assign
                     continue
                 elif isinstance(assign, ast.AssignExprAST):
                     left = assign.left
@@ -1487,7 +1492,7 @@ class Parser:
                         self.__property_rename(n, stmt.context)
                 else:
                     self.__syntax_error('illegal class property definition', left.ln)
-                
+
                 if stmt.static:
                     new_stmts.append(assign)
                 else:
@@ -1495,7 +1500,7 @@ class Parser:
 
             elif isinstance(stmt, ast.AssignExprAST):
                 instance_property.append(stmt)
-            
+
             elif isinstance(stmt, ast.PropertyDefine):
                 stmt: ast.PropertyDefine
                 func = stmt.func
@@ -1506,12 +1511,11 @@ class Parser:
                     if func.name not in properties:
                         self.__syntax_error('property \'%s\' must have a getter' % func.name, func.ln)
                     func.decorator.append(
-                        ast.MemberAccessAST(ast.CellAST(func.name, AIL_IDENTIFIER, func.ln), 
-                            [ast.CellAST('setter', AIL_IDENTIFIER, func.ln)], func.ln)
+                        ast.MemberAccessAST(ast.CellAST(func.name, AIL_IDENTIFIER, func.ln),
+                                            [ast.CellAST('setter', AIL_IDENTIFIER, func.ln)], func.ln)
                     )
 
                 new_stmts.append(func)
-
             else:
                 new_stmts.append(stmt)
 
@@ -1562,8 +1566,10 @@ class Parser:
 
                     block.insert(0, assign)
 
+        body.stmts = body.stmts[::-1]
+
         func = ast.FunctionDefineAST(
-                class_name, ast.ArgListAST([], ln), body, None, ln)
+            class_name, ast.ArgListAST([], ln), body, None, ln)
 
         return ast.ClassDefineAST(class_name, func, bases, ln, doc_string)
 
@@ -1614,9 +1620,9 @@ class Parser:
                 self.__syntax_error()
             self.__next_tok()
 
-        if bindto is not None:
+        if bindto is not None and not with_bound_to:
             self.__syntax_error('this function can not be bound', bindto_tok_line)
-        
+
         if anonymous_function:
             name = aconfig.ANONYMOUS_FUNC_NAME
         else:
@@ -1709,7 +1715,7 @@ class Parser:
         if self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error()
 
-        name = self.__now_tok.value 
+        name = self.__now_tok.value
 
         self.__next_tok()  # eat name
 
@@ -1767,9 +1773,9 @@ class Parser:
         if expr is None or \
                 self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
- 
+
         self.__expect_newline()
-    
+
         return ast.AssertStmtAST(expr, self.__now_ln)
 
     def __parse_import_stmt(self) -> ast.ImportStmtAST:
@@ -1829,7 +1835,7 @@ class Parser:
 
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
-            
+
             if self.__now_tok.ttype != AIL_COMMA:
                 self.__syntax_error()
             self.__next_tok()  # eat ','
@@ -1866,14 +1872,14 @@ class Parser:
         ln = self.__now_ln
 
         self.__skip_newlines()
-        
+
         if self.__now_tok != 'catch':
             has_catch_block = False
             catch_block = ast.BlockAST([], self.__now_ln)
             cname = None
         else:
             self.__next_tok()  # eat 'catch'
-            
+
             if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error('require name')
 
@@ -1892,25 +1898,25 @@ class Parser:
                 self.__syntax_error()
 
             return ast.TryCatchStmtAST(
-                    try_block, catch_block, 
-                    ast.BlockAST([], self.__now_ln), cname, ln)
+                try_block, catch_block,
+                ast.BlockAST([], self.__now_ln), cname, ln)
 
         self.__next_tok()  # eat 'finally'
 
         finally_block = self.__parse_block()
 
         return ast.TryCatchStmtAST(
-                try_block, catch_block, finally_block, cname, ln)
+            try_block, catch_block, finally_block, cname, ln)
 
     def __parse_static_assign(self) -> ast.StaticAssign:
         ln = self.__now_ln
 
         self.__next_tok()  # eat 'static'
-        
+
         if self.__now_tok == 'func' or self.__now_tok == 'fun':
             assign = self.__parse_func_def_stmt()
-
-        assign = self.__parse_assign_expr(True)
+        else:
+            assign = self.__parse_assign_expr(True)
 
         return ast.StaticAssign(assign, ln)
 
@@ -2133,7 +2139,7 @@ class Parser:
 
         else:
             self.__syntax_error()
-        
+
         # ** not use anymore (2021.3.21)
         # if self.__now_tok.ttype != AIL_ENTER:
         #     # a stmt should be end of ENTER
@@ -2171,7 +2177,7 @@ class Parser:
 
     def __parse_block(self, start='then', end='end',
                       start_msg: str = None, end_msg: str = None,
-                      start_enter=True, for_if_else: bool = False, 
+                      start_enter=True, for_if_else: bool = False,
                       for_program: bool = False,
                       class_body: bool = False) -> ast.BlockAST:
         if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
@@ -2240,7 +2246,7 @@ class Parser:
 
         return ast.BlockAST(stmtl, ln)
 
-    def parse(self, ts: TokenStream, 
+    def parse(self, ts: TokenStream,
               source: str, filename: str,
               pyc_mode: bool = False) -> ast.BlockAST:
         self.__init__()
@@ -2325,8 +2331,8 @@ class ASTConverter:
         if self.__block_stmt_append_func_stack:
             self.__block_stmt_append_func_stack[-1](stmt)
 
-    def _new_name(self, 
-            id: str, ln: int, ctx: pyast.expr_context = load_ctx()) -> pyast.Name:
+    def _new_name(self,
+                  id: str, ln: int, ctx: pyast.expr_context = load_ctx()) -> pyast.Name:
         return _set_lineno(name_expr(id, ctx), ln)
 
     def _new_constant(self, value: Union[int, float, str], ln: int) -> pyast.Constant:
@@ -2438,9 +2444,9 @@ class ASTConverter:
 
         return input_call
 
-    def _convert_bool_expr(self, 
-            expr: Union[ast.AndTestAST, ast.OrTestAST], 
-            op: pyast.boolop) -> pyast.BoolOp:
+    def _convert_bool_expr(self,
+                           expr: Union[ast.AndTestAST, ast.OrTestAST],
+                           op: pyast.boolop) -> pyast.BoolOp:
         o_values = expr.right.copy()
         o_values.insert(0, expr.left)
 
@@ -2485,7 +2491,7 @@ class ASTConverter:
         op = {
             '+': uadd_uop,
             '-': usub_uop,
-            '~': invert_uop, 
+            '~': invert_uop,
             '!': not_uop,
         }[expr.op]()
 
@@ -2494,7 +2500,7 @@ class ASTConverter:
         return _set_lineno(unary_op_expr(op, operand), expr.ln)
 
     def _convert_assign_expr(self,
-            expr: ast.AssignExprAST, as_stmt: bool) -> pyast.Assign:
+                             expr: ast.AssignExprAST, as_stmt: bool) -> pyast.Assign:
         if not as_stmt:
             raise PyTreeConvertException('not support assign expression', expr.ln)
 
@@ -2566,7 +2572,7 @@ class ASTConverter:
 
         init_block = ast.BlockAST(stmt.init_list.expr_list, stmt.init_list.ln)
         for_stmt.extend(self._convert_block(init_block, True))
-        
+
         if stmt.test is None:
             test = self._new_constant(True, stmt.ln)
         else:
@@ -2587,7 +2593,7 @@ class ASTConverter:
         test = self.convert(stmt.test)
         body = self._convert_block(stmt.block, True)
         else_body = self._convert_block(stmt.else_block, True)
-        
+
         return _set_lineno(if_stmt(test, body, else_body), stmt.ln)
 
     def _convert_try_stmt(self, stmt: ast.TryCatchStmtAST) -> pyast.Try:
@@ -2598,7 +2604,7 @@ class ASTConverter:
             _set_lineno(
                 except_handler(
                     self._new_name('Exception', stmt.catch_block.ln), stmt.name,
-                    self._convert_block(stmt.catch_block, True)), 
+                    self._convert_block(stmt.catch_block, True)),
                 stmt.catch_block.ln),
             stmt.catch_block.ln)
 
@@ -2613,15 +2619,15 @@ class ASTConverter:
 
         if func.bindto:
             decorators.insert(0,
-                self._new_call_name(
-                    '__ail_bind_function__',
-                    [
-                        self._new_constant(name, func.ln),
-                        self._new_name(func.bindto, func.ln)
-                    ],
-                func.ln)
-            )
-        
+                              self._new_call_name(
+                                  '__ail_bind_function__',
+                                  [
+                                      self._new_constant(name, func.ln),
+                                      self._new_name(func.bindto, func.ln)
+                                  ],
+                                  func.ln)
+                              )
+
         return _set_lineno(function_def_stmt(
             name, args, body, decorators), func.ln)
 
@@ -2642,14 +2648,14 @@ class ASTConverter:
         return _set_lineno(lambda_expr(args, expr), func.ln)
 
     def _convert_function_def(
-            self, 
-            func: ast.FunctionDefineAST, 
+            self,
+            func: ast.FunctionDefineAST,
             as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
         if not as_stmt:
             if func.is_lambda:
                 return self._convert_lambda_expr(func)
             func.name = '<anonymous %s>' % hash(func)
-            
+
         func_stmt = self._convert_function_def_stmt(func)
 
         if as_stmt:
@@ -2659,20 +2665,20 @@ class ASTConverter:
         return self._new_name(func.name, func.arg_list.ln)
 
     def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
-        return assign_stmt([self._new_name(struct.name, struct.ln, store_ctx())], 
-            self._new_call_name(
-            '__ail_make_struct__',
-            [
-                self._new_constant(struct.name, struct.ln),
-                _set_lineno(list_expr(
-                    [self._new_constant(n, struct.ln) for n in struct.name_list],
-                    load_ctx(),
-                ), struct.ln),
-                _set_lineno(list_expr(
-                    [self._new_constant(n, struct.ln) for n in struct.protected_list],
-                    load_ctx(),
-                ), struct.ln),
-            ], struct.ln))
+        return assign_stmt([self._new_name(struct.name, struct.ln, store_ctx())],
+                           self._new_call_name(
+                               '__ail_make_struct__',
+                               [
+                                   self._new_constant(struct.name, struct.ln),
+                                   _set_lineno(list_expr(
+                                       [self._new_constant(n, struct.ln) for n in struct.name_list],
+                                       load_ctx(),
+                                   ), struct.ln),
+                                   _set_lineno(list_expr(
+                                       [self._new_constant(n, struct.ln) for n in struct.protected_list],
+                                       load_ctx(),
+                                   ), struct.ln),
+                               ], struct.ln))
 
     def _convert_arguments(self, args: ast.ArgListAST) -> pyast.arguments:
         argl = []
@@ -2680,7 +2686,7 @@ class ASTConverter:
 
         for arg in args.exp_list:
             assert isinstance(arg.expr, ast.CellAST) and \
-                arg.expr.type == AIL_IDENTIFIER
+                   arg.expr.type == AIL_IDENTIFIER
             name = arg.expr.value
             a = _set_lineno(argument(name), arg.ln)
 
@@ -2888,7 +2894,7 @@ class ASTConverter:
         body = self.convert(block, True)
 
         return _set_lineno(module(body), block.ln)
-    
+
     def convert_single(self, block: ast.BlockAST) -> pyast.Interactive:
         body = self.convert(block, True)
 
@@ -2901,7 +2907,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True # and False
+TEST_CONVERT_PYAST = True  # and False
 
 
 def test_parse():
