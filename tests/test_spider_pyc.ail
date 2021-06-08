@@ -10,7 +10,7 @@ headers = {
 
 
 func get_info() {
-    #resp = requests.get(url, headers=headers);
+    resp = requests.get(url, headers=headers);
 
     if resp.status_code == 200 {
         print '200 OK';

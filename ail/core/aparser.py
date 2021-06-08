@@ -25,7 +25,7 @@ _keywords_uc = (
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
-    'STATIC', 'PROTECTED', 'PRIVATE', 'GET', 'SET'
+    'STATIC', 'PROTECTED', 'PRIVATE',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -213,6 +213,14 @@ class Parser:
         arg.default = default
 
         return arg
+
+    def __check_as_arg_list(self, args: ast.ArgListAST):
+        args = args.arg_list
+
+        for arg in args:
+            if arg.default and \
+                    not (isinstance(arg.expr, ast.CellAST) and arg.expr.type == AIL_IDENTIFIER):
+                self.__syntax_error(ln=arg.ln)
 
     def __parse_param_list(self) -> ast.ArgListAST:
         ln = self.__now_ln
@@ -504,6 +512,8 @@ class Parser:
                     argl = ast.ArgListAST([], ln)
                 else:
                     argl = self.__parse_arg_list()
+
+                self.__check_as_arg_list(argl)
 
                 self.__next_tok()  # eat ')'
 

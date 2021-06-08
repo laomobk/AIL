@@ -14,3 +14,9 @@ func mapwith(function, arr) {
     }
     return new_arr
 }
+
+
+if __main__ {
+    print mapwith((x) -> x + 1, [1, 2, 3])
+}
+

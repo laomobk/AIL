@@ -33,7 +33,8 @@ def _test_run():
     exec(code, AIL_PY_GLOBAL)
 
 
-def exec_as_python(source: str, filename: str, globals: dict) -> int:
+def exec_as_python(
+        source: str, filename: str, globals: dict, main: bool = True) -> int:
     """
     :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
     """
@@ -46,7 +47,12 @@ def exec_as_python(source: str, filename: str, globals: dict) -> int:
     converter = ASTConverter()
     code = compile(converter.convert_module(node), filename, 'exec')
 
-    fill_namespace(globals)
+    name = '__main__'
+
+    if not main:
+        name = filename
+
+    fill_namespace(globals, name, main)
     
     exec(code, globals)
     return 0

@@ -181,7 +181,7 @@ class AILImporter:
 
             chdir(module_work_dir)
 
-            status = _exec(source, path, module_globals)
+            status = _exec(source, path, module_globals, False)
 
             return module_globals
         except FileNotFoundError as e:
