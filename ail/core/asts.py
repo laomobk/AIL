@@ -339,13 +339,14 @@ class FunctionDefineAST:
 class ClassDefineAST:
     def __init__(self, 
                  name: str, func: FunctionDefineAST,
-                 bases: List[ExprAST], ln: int,
+                 bases: List[ExprAST], meta: ExprAST, ln: int,
                  doc_str=''):
         self.name = name
         self.func = func
         self.bases = bases
-        self.ln = ln
+        self.meta = meta
         self.doc_str = doc_str
+        self.ln = ln
 
 
 class ReturnStmtAST:

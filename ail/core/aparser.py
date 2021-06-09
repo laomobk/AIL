@@ -1477,7 +1477,7 @@ class Parser:
 
         while self.__now_tok == ',':
             self.__next_tok()
-            sub = self.__parse_binary_expr()
+            sub = self.__parse_binary_expr(do_tuple=False)
             bases.append(sub)
 
         return bases
@@ -1495,8 +1495,13 @@ class Parser:
 
         class_name = self.__now_tok.value
         bases = []
+        meta = None
 
         self.__next_tok()  # eat NAME
+
+        if self.__now_tok.ttype == AIL_COLON:
+            self.__next_tok()  # eat ':'
+            meta = self.__parse_binary_expr(do_tuple=False)
 
         if self.__now_tok == 'extends':
             self.__next_tok()
@@ -1628,7 +1633,7 @@ class Parser:
         func = ast.FunctionDefineAST(
             class_name, ast.ArgListAST([], ln), body, None, ln)
 
-        return ast.ClassDefineAST(class_name, func, bases, ln, doc_string)
+        return ast.ClassDefineAST(class_name, func, bases, meta, ln, doc_string)
 
     def __property_rename(self, left, context: str):
         if isinstance(left, ast.CellAST) and left.type == AIL_IDENTIFIER:
@@ -2773,8 +2778,14 @@ class ASTConverter:
         name = cls.name
         decorators = [self.convert(d) for d in cls.func.decorator]
         body = self._convert_block(cls.func.block, True)
+        keywords = []
 
-        return _set_lineno(class_def_stmt(name, bases, [], body, decorators), cls.ln)
+        if cls.meta is not None:
+            k = keyword_expr('metaclass', self.convert(cls.meta))
+            keywords.append(k)
+
+        return _set_lineno(
+            class_def_stmt(name, bases, keywords, body, decorators), cls.ln)
 
     def _convert_load_stmt(self, load: ast.LoadStmtAST) -> pyast.Call:
         ln = load.ln

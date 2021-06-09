@@ -7,21 +7,18 @@ import 'maptools' (mapwith)
 
 
 setup(
-    *{
-        'name': 'ail',
-        'packages': find_packages(),
-        'version': '{}.{}'.format(AIL_MAIN_VERSION,
+    name='ail',
+    packages=find_packages(),
+    version='{}.{}'.format(AIL_MAIN_VERSION,
                     '.'.join(mapwith((x) -> str(x), AIL_SUB_VERSION))),
 
-        'entry_points': {
-            'console_scripts': [
-                'ail = ail.__main__:main',
-            ]
-        },
+    entry_points={
+        'console_scripts': [
+            'ail = ail.__main__:main',
+        ]
+    },
 
-        'package_data': {
-            'ail': ['lib/*.ail',]
-        }
+    package_data={
+        'ail': ['lib/*.ail', 'core/INSTALL_TIME']
     }
 )
-
