@@ -1,0 +1,34 @@
+
+import './manager' (ClientManager)
+import './handler' (ClientHandler)
+
+#from socket import socket as _socket
+
+class ChatServer {
+    private socket = _socket();
+    private manager = ClientManager();
+
+    func __listen_and_serve(self) {
+        self.__socket.listen();
+
+        for {
+            client_socket, _ = self.__socket.accept();
+            handler = ClientHandler(client_socket, self.__manager);
+            self.__manager.add_handler(handler);
+            handler.listen_async();
+        }
+    }
+
+    func run_server(self, ip: String, port: int) {
+        self.__socket.bind((ip, port));
+
+        print 'listening... {}:{}'.format(ip, port)
+        
+        try {
+            self.__listen_and_serve();
+        } finally {
+            self.__socket.close();
+        }
+    }
+}
+

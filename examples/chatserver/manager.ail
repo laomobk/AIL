@@ -1,0 +1,21 @@
+
+class ClientManager {
+    private handler_list = [];
+
+    func add_handler(self, handler) {
+        self.__handler_list.append(handler)
+    }
+
+    func broadcast(self, message, sender) {
+        for i = 0; i < len(self.__handler_list); i += 1 {
+            handler = self.__handler_list[i];
+
+            if handler == sender {
+                continue;
+            }
+
+            handler.send_message(message);
+        }
+    }
+}
+

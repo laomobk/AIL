@@ -1,0 +1,31 @@
+
+import 'thread' (Thread)
+import './data' (Message)
+
+class ClientHandler {
+    init(self, client_socket, manager) {
+        self.__client_socket = client_socket;
+        self.__manager = manager
+    }
+
+    func listen_async(self) {
+        t = Thread(self.__listen);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    func __listen(self) {
+        for {
+            data = Message.load_data_from_socket(self.__client_socket);
+            print(data.message)
+            self.__manager.broadcast(data, self)
+        }
+    }
+
+    func send_message(self, message) {
+        data = message.data;
+
+        self.__client_socket.sendall(data);
+    }
+}
+

@@ -1,0 +1,29 @@
+
+class Message {
+    init(self, message: String) {
+        self.__message = message;
+        self.__message_b = message.encode('UTF-8');
+    }
+
+    get length(self) {
+        return len(self.__message_b);
+    }
+
+    get message(self) {
+        return self.__message;
+    }
+
+    get data(self) {
+        return self.length.to_bytes(4, 'big') + self.__message_b;
+    }
+
+    static func load_data_from_socket(self, socket): Message {
+        read = socket.recv;
+
+        length = int.from_bytes(read(4), 'big');
+        message = read(length).decode('UTF-8');
+
+        return Message(message)
+    }
+}
+
