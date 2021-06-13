@@ -25,7 +25,7 @@ _keywords_uc = (
     'XOR', 'MOD',
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
-    'STATIC', 'PROTECTED', 'PRIVATE',
+    'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -36,7 +36,7 @@ _end_signs = tuple([x.lower() for x in _end_signs_uc])
 _cmp_op = (
     AIL_EQ, AIL_LARGER, AIL_SMALER,
     AIL_LARGER_EQ, AIL_SMALER_EQ,
-    AIL_UEQ
+    AIL_UEQ, AIL_AUEQ, AIL_AEQ, 
 )
 
 _inplace_op_dict = {
@@ -2440,6 +2440,8 @@ class ASTConverter:
             '>=': pyast.GtE(),
             '==': pyast.Eq(),
             '!=': pyast.NotEq(),
+            '!==': pyast.IsNot(),
+            '===': pyast.Is(),
         }[r_op]
 
         o_left = left

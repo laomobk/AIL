@@ -783,12 +783,20 @@ class Lex:
 
             elif c == '!':  # 感叹号
                 if self.__nextch() == '=':  # !=
-                    self.__stream.append(Token(
-                        '!=',
-                        AIL_UEQ,
-                        self.__ln
-                    ))
-                    self.__movchr(2)
+                    if self.__nextch() == '=':  # !==
+                        self.__stream.append(Token(
+                            '!==',
+                            AIL_AUEQ,
+                            self.__ln
+                        ))
+                        self.__movchr(3)
+                    else:
+                        self.__stream.append(Token(
+                            '!=',
+                            AIL_UEQ,
+                            self.__ln
+                        ))
+                        self.__movchr(2)
 
                 else:  # NOT
                     self.__stream.append(Token(
@@ -829,12 +837,20 @@ class Lex:
 
             elif c == '=':  # 等于号
                 if self.__nextch() == '=':  # 等于
-                    self.__stream.append(Token(
-                        '==',
-                        AIL_EQ,
-                        self.__ln
-                    ))
-                    self.__movchr(2)
+                    if self.__nextch() == '=':  # ===
+                        self.__stream.append(Token(
+                            '===',
+                            AIL_AEQ,
+                            self.__ln
+                        ))
+                        self.__movchr(3)
+                    else:
+                        self.__stream.append(Token(
+                            '==',
+                            AIL_EQ,
+                            self.__ln
+                        ))
+                        self.__movchr(2)
 
                 else:  # 赋值
                     self.__stream.append(Token(

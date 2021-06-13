@@ -46,6 +46,8 @@ AIL_AND             = 47    #   &&
 AIL_NOT             = 48    #   !
 AIL_ENTER           = 49    #   \n
 AIL_EOF             = 410   #   <EOF>
+AIL_AEQ             = 411   #   ===
+AIL_AUEQ            = 412   #   !==
 
 AIL_PLUS_PLUS       = 50    #   ++
 AIL_SUB_SUB         = 51    #   --
