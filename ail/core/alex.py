@@ -837,7 +837,7 @@ class Lex:
 
             elif c == '=':  # 等于号
                 if self.__nextch() == '=':  # 等于
-                    if self.__nextch() == '=':  # ===
+                    if self.__nextch(2) == '=':  # ===
                         self.__stream.append(Token(
                             '===',
                             AIL_AEQ,
