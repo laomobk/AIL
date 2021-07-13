@@ -1520,50 +1520,7 @@ class Parser:
         properties = []
 
         for i, stmt in enumerate(stmts):
-            if isinstance(stmt, ast.StaticAssign):
-                stmt: ast.StaticAssign
-                if isinstance(stmt.assign, ast.AssignExprAST):
-                    new_stmts.append(stmt.assign)
-                elif isinstance(stmt.assign, ast.CellAST):
-                    pass
-                elif isinstance(stmt.assign, ast.FunctionDefineAST):
-                    func: ast.FunctionDefineAST = stmt.assign
-                    func.decorator.append(ast.CellAST('classmethod', AIL_IDENTIFIER, func.ln))
-                    new_stmts.append(func)
-                else:
-                    self.__syntax_error(ln=stmt.ln)
-
-            elif isinstance(stmt, ast.AssignModifier):
-                stmt: ast.AssignModifier
-                assign = stmt.assign
-
-                if isinstance(assign, ast.CellAST):
-                    continue
-                elif isinstance(assign, ast.AssignExprAST):
-                    left = assign.left
-                else:
-                    self.__syntax_error(ln=assign.ln)
-
-                if isinstance(left, ast.CellAST):
-                    self.__property_rename(left, stmt.context)
-
-                elif isinstance(left, ast.TupleAST):
-                    left: ast.TupleAST
-
-                    for n in left.items:
-                        self.__property_rename(n, stmt.context)
-                else:
-                    self.__syntax_error('illegal class property definition', left.ln)
-
-                if stmt.static:
-                    new_stmts.append(assign)
-                else:
-                    instance_property.append(assign)
-
-            elif isinstance(stmt, ast.AssignExprAST):
-                instance_property.append(stmt)
-
-            elif isinstance(stmt, ast.PropertyDefine):
+            if isinstance(stmt, ast.PropertyDefine):
                 stmt: ast.PropertyDefine
                 func = stmt.func
                 if stmt.action == 'get':
@@ -1582,53 +1539,6 @@ class Parser:
                 new_stmts.append(stmt)
 
         body.stmts = new_stmts
-        stmts = new_stmts
-
-        # setup instance property
-        if instance_property:
-            # find __init__
-            init = None
-            block = []
-            for stmt in stmts:
-                if isinstance(stmt, ast.FunctionDefineAST):
-                    stmt: ast.FunctionDefineAST
-                    if stmt.bindto is not None:
-                        self.__syntax_error('illegal method definition', stmt.ln)
-
-                    if stmt.name == '__init__':
-                        init = stmt
-                        block = stmt.block.stmts
-                        break
-            else:
-                init = ast.FunctionDefineAST(
-                    '__init__',
-                    ast.ArgListAST([ast.ArgItemAST(ast.CellAST(
-                        'self', AIL_IDENTIFIER, ln), False, ln)], ln),
-                    ast.BlockAST(block, ln), None, ln)
-                stmts.insert(0, init)
-
-            for assign in instance_property:
-                if isinstance(assign, ast.AssignExprAST):
-                    left = assign.left
-                else:
-                    self.__syntax_error(ln=assign.ln)
-
-                if isinstance(left, ast.CellAST):
-                    left: ast.CellAST
-                    access = ast.MemberAccessAST(
-                        ast.CellAST('self', AIL_IDENTIFIER, ln), [left], ln)
-                    assign.left = access
-
-                    block.insert(0, assign)
-                elif isinstance(left, ast.TupleAST):
-                    for i, n in enumerate(left.items):
-                        access = ast.MemberAccessAST(
-                            ast.CellAST('self', AIL_IDENTIFIER, ln), [n], ln)
-                        left.items[i] = access
-
-                    block.insert(0, assign)
-
-        body.stmts = body.stmts[::-1]
 
         func = ast.FunctionDefineAST(
             class_name, ast.ArgListAST([], ln), body, None, ln)
@@ -2170,12 +2080,6 @@ class Parser:
 
         elif nt == 'import':
             a = self.__parse_import_stmt()
-
-        elif class_body and nt in ('private', 'protected'):
-            a = self.__parse_modified_assign()
-
-        elif class_body and nt == 'static':
-            a = self.__parse_static_assign()
 
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()

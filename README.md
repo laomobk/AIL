@@ -68,37 +68,12 @@ func fib(n) {
 }
 ```
 
-##### "静态"与实例属性
-
-*AIL不支持真正意义上的静态属性，只是模拟静态行为*
-
-```swift
-class Point {
-    private static p_id = 100;
-    
-    private x: Integer = 0;
-    private y: Integer = 0;
-    
-    func __init__(self, x: Integer, y: Integer) {
-        self.__x = x;
-        self.__y = y;
-    }
-    
-    get x(self) { return self.__x; }
-    get y(self) { return self.__y; }
-    
-    func get_id(self): Integer {
-        return self.__p_id;
-    }
-}
-```
-
 ##### 单例模式
 
 ```swift
 class CandyFactory {
-    private static instance = null;
-    
+    __instance = null;
+
     func __new__(cls) {
         if cls.__instance == null {
             instance = super().__new__(cls);
@@ -112,7 +87,7 @@ class CandyFactory {
 factory_a = CandyFactory();
 factory_b = CandyFactory();
 
-print id(factory_a), id(factory_b), factory_a == factory_b;
+print id(factory_a), id(factory_b), factory_a === factory_b;
 ```
 
 ## VIM 语法高亮支持

@@ -1,0 +1,22 @@
+
+result = match x {
+    case Point(1, 2) {
+        ...
+    }
+    case Point(4, 5) {
+        ...
+    }
+}
+
+
+/* python code
+
+def <match>(x):
+    if __ail_match__(x, Point(1, 2)):
+        ...
+    elif __ail_match__(x, Point(4, 5)):
+        ...
+
+result = <match>(x)
+
+*/
