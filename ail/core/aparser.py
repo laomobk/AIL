@@ -386,6 +386,48 @@ class Parser:
 
         return ast.ArrayAST(items, ln)
 
+    def __parse_match_expr(self) -> ast.MatchExpr:
+        if self.__now_tok != 'match':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'match'
+
+        target = self.__parse_binary_expr()
+        if target is None:
+            self.__syntax_error()
+
+    def __parse_match_body(self) -> List[ast.MatchCase]:
+        if self.__now_tok.ttype != AIL_LLBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '{'
+
+        if self.__now_tok.ttype == AIL_LRBASKET:
+            self.__next_tok()  # eat '}'
+            return list()
+
+    def __parse_match_case(self) -> ast.MatchCase:
+        ln = self.__now_ln
+        patterns = []
+
+        if self.__now_tok == 'else':
+            pass
+        else:
+            expr = self.__parse_binary_expr(do_tuple=True)
+            if isinstance(expr, ast.TupleAST):
+                patterns = expr.items
+            else:
+                patterns.append(expr)
+
+        if self.__now_tok.ttype != AIL_COLON:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ':'
+
+        expr = self.__parse_binary_expr()
+
+        return ast.MatchCase(patterns, expr, ln)
+
     def __parse_map_expr(self) -> ast.MapAST:
         ln = self.__now_ln
 

@@ -544,6 +544,19 @@ class InstanceProperty:
         self.ln = ln
 
 
+class MatchCase:
+    def __init__(self, patterns: list, expr, ln: int):
+        self.patterns = patterns
+        self.expr = expr
+        self.ln = ln
+
+
+class MatchExpr:
+    def __init__(self, cases: List[MatchCase], ln: int):
+        self.cases = cases
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,
