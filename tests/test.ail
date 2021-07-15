@@ -1,8 +1,6 @@
 
-
-
 result = match x {
-    Point(1, 2), Point(3, 4): true,
-    else: null,
+    1: true,
+    2: false
 }
 

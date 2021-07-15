@@ -122,6 +122,23 @@ def make_ast_tree(a) -> dict:
                     {'test': make_ast_tree(a.test),
                      'body': make_ast_tree(a.block)}}
 
+    elif isinstance(a, ast.MatchExpr):
+        return {
+            'MatchExprAST':
+                {
+                    'target': make_ast_tree(a.target),
+                    'cases': make_ast_tree(a.cases),
+                }
+        }
+
+    elif isinstance(a, ast.MatchCase):
+        return {
+            'MatchCase': {
+                'patterns': make_ast_tree(a.patterns),
+                'expr': make_ast_tree(a.expr),
+            }
+        }
+
     elif isinstance(a, ast.FunctionDefineAST):
         return {
             'FunctionDefAST':

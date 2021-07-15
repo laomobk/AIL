@@ -387,6 +387,8 @@ class Parser:
         return ast.ArrayAST(items, ln)
 
     def __parse_match_expr(self) -> ast.MatchExpr:
+        ln = self.__now_ln
+
         if self.__now_tok != 'match':
             self.__syntax_error()
 
@@ -396,24 +398,51 @@ class Parser:
         if target is None:
             self.__syntax_error()
 
+        cases = self.__parse_match_body()
+
+        return ast.MatchExpr(target, cases, ln)
+
     def __parse_match_body(self) -> List[ast.MatchCase]:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
         self.__next_tok()  # eat '{'
+        self.__skip_newlines()
 
         if self.__now_tok.ttype == AIL_LRBASKET:
             self.__next_tok()  # eat '}'
             return list()
+
+        cases = list()
+
+        while True:
+            self.__skip_newlines()
+            case = self.__parse_match_case()
+            self.__skip_newlines()
+
+            cases.append(case)
+
+            if self.__now_tok.ttype == AIL_LRBASKET:
+                self.__next_tok()  # eat '}'
+                break
+
+            if self.__now_tok.ttype != AIL_COMMA:
+                self.__syntax_error()
+
+            self.__next_tok()  # eat ','
+
+        return cases
 
     def __parse_match_case(self) -> ast.MatchCase:
         ln = self.__now_ln
         patterns = []
 
         if self.__now_tok == 'else':
-            pass
+            self.__next_tok()  # eat 'else'
         else:
-            expr = self.__parse_binary_expr(do_tuple=True)
+            self.__skip_newlines()
+            expr = self.__parse_binary_expr(
+                do_tuple=True, type_comment=False)
             if isinstance(expr, ast.TupleAST):
                 patterns = expr.items
             else:
@@ -424,6 +453,7 @@ class Parser:
 
         self.__next_tok()  # eat ':'
 
+        self.__skip_newlines()
         expr = self.__parse_binary_expr()
 
         return ast.MatchCase(patterns, expr, ln)
@@ -769,6 +799,9 @@ class Parser:
     def __parse_binary_expr(
             self, as_stmt: bool = False, do_tuple: bool = False,
             no_assign: bool = False, type_comment: bool = True) -> ast.BitOpExprAST:
+        if self.__now_tok == 'match':
+            return self.__parse_match_expr()
+            
         expr = self.__parse_assign_expr(
             do_tuple, no_assign=no_assign, type_comment=type_comment)
 
@@ -2936,7 +2969,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True  # and False
+TEST_CONVERT_PYAST = True and False
 
 
 def test_parse():

@@ -552,7 +552,8 @@ class MatchCase:
 
 
 class MatchExpr:
-    def __init__(self, cases: List[MatchCase], ln: int):
+    def __init__(self, target, cases: List[MatchCase], ln: int):
+        self.target = target
         self.cases = cases
         self.ln = ln
 
