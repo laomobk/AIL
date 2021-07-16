@@ -146,6 +146,10 @@ def keyword_expr(arg: str, value: _ast.expr) -> _ast.keyword:
     return _ast.keyword(arg=arg, value=value)
 
 
+def if_expr(test: _ast.expr, body: _ast.expr, orelse: _ast.expr) -> _ast.IfExp:
+    return _ast.IfExp(test=test, body=body, orelse=orelse)
+
+
 def if_stmt(
         test: _ast.expr, body: List[_ast.stmt], 
         orelse: List[_ast.If]) -> _ast.If:

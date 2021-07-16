@@ -2390,7 +2390,7 @@ class ASTConverter:
         elif cell.value == 'true':
             return _set_lineno(constant_expr(True), cell.ln)
         elif cell.value == 'false':
-            return _set_lineno(constant_expr(True), cell.ln)
+            return _set_lineno(constant_expr(False), cell.ln)
         elif cell.type == AIL_NUMBER:
             return _set_lineno(constant_expr(eval(cell.value)), cell.ln)
         elif cell.type == AIL_STRING:
@@ -2532,6 +2532,63 @@ class ASTConverter:
         new_left = ast.MemberAccessAST(o_left, rights[:1], ln)
         right = self._convert_member_access_expr(new_left, rights[1:], ln)
         return right
+
+    def _convert_match_expr(self, expr: ast.MatchExpr) -> pyast.expr:
+        """
+        the match expression will be converted to an if expression
+        e.g.
+            result = match x {
+                1: true,  // body
+                2: false,  // orelse
+            }
+            ---- python code ----
+            result = True if ail::match(x, (1,)) else \
+                     False if ail::match(x, (2,)) else py::raise(...)
+        """
+
+        target = self.convert(expr.target)
+
+        return self.__make_if_expr_from_match_expr(target, expr.cases, 0, expr.ln)
+
+    def __make_if_expr_from_match_expr(self, target: pyast.expr,
+                                       cases: List[ast.MatchCase],
+                                       c_index: int, ln: int) -> pyast.expr:
+        if c_index >= len(cases):
+            return self._new_call_name(
+                'py::raise',
+                [
+                    self._new_call_name(
+                        'py::UnhandledMatchError',
+                        [self._new_constant('unhandled match value', ln)],
+                        ln,
+                    )
+                ],
+                ln
+            )
+
+        case = cases[c_index]
+
+        patterns = [self.convert(x) for x in case.patterns]
+        body = self.convert(case.expr)
+
+        if len(patterns) == 0:
+            return body
+
+        only_const = all((isinstance(x, pyast.Constant) for x in patterns))
+        match_call = self._new_call_name(
+            'ail::match',
+            [
+                target,
+                _set_lineno(tuple_expr(patterns, load_ctx()), case.ln),
+                self._new_constant(only_const, case.ln)],
+            case.ln,
+        )
+
+        return _set_lineno(
+            if_expr(
+                match_call, body, self.__make_if_expr_from_match_expr(
+                    target, cases, c_index + 1, ln
+                )), ln)
 
     def _convert_unary_expr(self, expr: ast.UnaryExprAST) -> pyast.UnaryOp:
         op = {
@@ -2946,6 +3003,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.PyCodeBlock):
             return self._convert_py_code_block(a)
+
+        elif isinstance(a, ast.MatchExpr):
+            return self._convert_match_expr(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)

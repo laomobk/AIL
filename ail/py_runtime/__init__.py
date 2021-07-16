@@ -1,5 +1,6 @@
 from . import functions as _func
 from . import shared as _shared
+from . import exceptions as _exception
 
 from .objects import convert_object
 
@@ -43,6 +44,12 @@ AIL_PY_GLOBAL.update({
     'true': True,
     'false': False,
     'system': SYSTEM_OBJECT,
+    'UnhandledMatchError': _exception.UnhandledMatchError,
+
+    'py::UnhandledMatchError': _exception.UnhandledMatchError,
+    'py::raise': _func.raise_exception,
+
+    'ail::match': _func.ail_match,
 })
 
 

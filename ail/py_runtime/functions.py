@@ -12,6 +12,16 @@ from . import exceptions as _exceptions
 _IMPORTER = _AILImporter()
 
 
+def raise_exception(err_obj):
+    raise err_obj
+
+
+def ail_match(target, patterns: list, only_constant: bool) -> bool:
+    if only_constant:
+        return target in patterns
+    return target in patterns  # TODO: complete the situation of advance match
+
+
 def ail_input(prompt: str, value_count: int):
     m = input(prompt)
     if value_count == 1:

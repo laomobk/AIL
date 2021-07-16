@@ -31,6 +31,10 @@ class AILModuleNotFoundError(AILImportError):
     pass
 
 
+class UnhandledMatchError(Exception):
+    pass
+
+
 def remove_py_runtime_traceback(tb: _TracebackType):
     current = tb
     last: _TracebackType = None

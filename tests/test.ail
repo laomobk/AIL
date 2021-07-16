@@ -1,6 +1,6 @@
 
-result = match x {
-    1: true,
-    2: false
-}
+x = 2
 
+result = match x { 1: true, 2: false }
+
+print 'x =', x, '| result =', result
