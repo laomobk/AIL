@@ -410,8 +410,7 @@ class Parser:
         self.__skip_newlines()
 
         if self.__now_tok.ttype == AIL_LRBASKET:
-            self.__next_tok()  # eat '}'
-            return list()
+            self.__syntax_error('match body cannot be empty')
 
         cases = list()
 
