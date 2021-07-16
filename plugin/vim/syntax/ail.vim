@@ -19,7 +19,8 @@ syn keyword ailStmt break continue throw
 syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt get set init new getattr setattr delattr getitem setitem delitem del
-syn keyword ailStmt mod
+syn keyword ailStmt mod and not or
+syn keyword ailStmt match
 
 syn keyword ailConst false true __main__
 

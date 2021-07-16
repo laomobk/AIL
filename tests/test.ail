@@ -1,6 +1,30 @@
 
-x = 2
 
-result = match x {}
+class case {
+    init(self, case_func) {
+        self.__func = case_func
+    }
 
-print 'x =', x, '| result =', result
+    func __match__(self, target) {
+        return self.__func(target)
+    }
+}
+
+
+class Point {
+    init(self, x: Integer, y: Integer) {
+        self.x = x;
+        self.y = y;
+    }
+
+    func __match__(self, target): Boolean {
+        return self.x == target.x and self.y == target.y
+    }
+}
+
+
+print match Point(1, 2) {
+    case((target) -> target.x == 1): 'yes',
+    else: 'no'
+}
+

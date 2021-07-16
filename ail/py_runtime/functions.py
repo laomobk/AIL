@@ -19,7 +19,15 @@ def raise_exception(err_obj):
 def ail_match(target, patterns: list, only_constant: bool) -> bool:
     if only_constant:
         return target in patterns
-    return target in patterns  # TODO: complete the situation of advance match
+
+    for pattern in patterns:
+        if hasattr(pattern, '__match__'):
+            if pattern.__match__(target):
+                return True
+        else:
+            return target == pattern
+
+    return False
 
 
 def ail_input(prompt: str, value_count: int):
