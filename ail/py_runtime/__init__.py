@@ -52,6 +52,7 @@ AIL_PY_GLOBAL.update({
 
     'ail::match': _func.ail_match,
     'ail::ObjectPattern': _object.ObjectPattern,
+    'ail::NamespaceMeta': _object.NamespaceMeta,
 })
 
 

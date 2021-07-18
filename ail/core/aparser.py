@@ -26,7 +26,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
-    'MATCH',
+    'MATCH', 'NAMESPACE',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -2214,6 +2214,9 @@ class Parser:
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
+        elif nt == 'namespace':
+            a = self.__parse_namespace_stmt()
+
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
 
@@ -2958,6 +2961,13 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
+    def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> pyast.ClassDef:
+        return _set_lineno(class_def_stmt(
+            stmt.name, [], [keyword_expr('metaclass', self._new_name('ail::NamespaceMeta', stmt.ln))],
+            self._convert_block(stmt.block),
+            [],
+        ), stmt.ln)
+
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
         return _increase_all_lineno(code.ln - 1, module_node.body)
@@ -3081,6 +3091,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.ObjectPatternExpr):
             return self._convert_object_pattern_expr(a)
+
+        elif isinstance(a, ast.NamespaceStmt):
+            return self._convert_namespace_stmt(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)
