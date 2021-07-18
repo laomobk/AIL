@@ -1,7 +1,10 @@
 
-namespace Nezha {
-    name = 'Nezha'
-    date = 20190726
+
+class _C {}
+
+
+namespace __export__ {
+    name = 'nezha';
+    C = _C
 }
 
-print Nezha.name
