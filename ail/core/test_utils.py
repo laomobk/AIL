@@ -239,6 +239,13 @@ def make_ast_tree(a) -> dict:
                      'finally_block': make_ast_tree(a.finally_block),
                      'error_name': make_ast_tree(a.name)}}
 
+    elif isinstance(a, ast.ObjectPatternExpr):
+        return {'ObjectPatternAST': 
+                    {
+                        'left': make_ast_tree(a.left),
+                        'keys': make_ast_tree(a.keys),
+                        'values': make_ast_tree(a.values)}}
+
     elif isinstance(a, list):
         return unpack_list(a)
 

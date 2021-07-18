@@ -558,6 +558,21 @@ class MatchExpr:
         self.ln = ln
 
 
+class ObjectPatternExpr:
+    def __init__(self, left, keys: list, values: list, ln: int):
+        self.left = left
+        self.keys = keys
+        self.values = values
+        self.ln = ln
+
+
+class NamespaceStmt:
+    def __init__(self, name, block, ln: int):
+        self.block = block
+        self.ln = ln
+        self.name = name
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

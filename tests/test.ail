@@ -23,8 +23,8 @@ class Point {
 }
 
 
-print match Point(1, 2) {
-    case((target) -> target.x == 1): 'yes',
-    else: 'no'
+print match Point(3, 4) {
+    Point!{ x: 3, y: 4 }: 'yes',
+    else: 'undefined',
 }
 

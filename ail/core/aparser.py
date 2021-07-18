@@ -26,6 +26,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
+    'MATCH',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -394,13 +395,32 @@ class Parser:
 
         self.__next_tok()  # eat 'match'
 
-        target = self.__parse_binary_expr()
+        target = self.__parse_binary_expr(type_comment=False)
         if target is None:
             self.__syntax_error()
 
         cases = self.__parse_match_body()
 
         return ast.MatchExpr(target, cases, ln)
+
+    def __parse_namespace_stmt(self) -> ast.NamespaceStmt:
+        if self.__now_tok != 'namespace':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'namespace'
+
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error()
+
+        name = self.__now_tok.value
+
+        self.__next_tok()  # eat NAME
+
+        block = self.__parse_block(start='is')
+
+        return ast.NamespaceStmt(name, block, ln)
 
     def __parse_match_body(self) -> List[ast.MatchCase]:
         if self.__now_tok.ttype != AIL_LLBASKET:
@@ -413,8 +433,19 @@ class Parser:
             self.__syntax_error('match body cannot be empty')
 
         cases = list()
+        
+        self.__skip_newlines()
+        cases.append(self.__parse_match_case())
+        self.__skip_newlines()
 
-        while True:
+        while self.__now_tok.ttype == AIL_COMMA:
+            self.__skip_newlines()
+            self.__next_tok()  # eat ','
+            self.__skip_newlines()
+
+            if self.__now_tok.ttype == AIL_LRBASKET:
+                break
+
             self.__skip_newlines()
             case = self.__parse_match_case()
             self.__skip_newlines()
@@ -422,13 +453,12 @@ class Parser:
             cases.append(case)
 
             if self.__now_tok.ttype == AIL_LRBASKET:
-                self.__next_tok()  # eat '}'
                 break
 
-            if self.__now_tok.ttype != AIL_COMMA:
-                self.__syntax_error()
+        if self.__now_tok.ttype != AIL_LRBASKET:
+            self.__syntax_error()
 
-            self.__next_tok()  # eat ','
+        self.__next_tok()  # eat '}'
 
         return cases
 
@@ -453,7 +483,7 @@ class Parser:
         self.__next_tok()  # eat ':'
 
         self.__skip_newlines()
-        expr = self.__parse_binary_expr()
+        expr = self.__parse_binary_expr(type_comment=False)
 
         return ast.MatchCase(patterns, expr, ln)
 
@@ -554,13 +584,38 @@ class Parser:
 
         return ast.MemberAccessAST(left, rl, ln)
 
+    def __parse_object_pattern_expr(
+            self, left, for_match=False) -> ast.ObjectPatternExpr:
+        ln = self.__now_ln
+
+        if self.__now_tok.ttype != AIL_NOT:
+            return left
+
+        self.__next_tok()  # eat '!'
+
+        if self.__now_tok.ttype != AIL_LLBASKET:
+            self.__syntax_error()
+
+        map_tree = self.__parse_map_expr()
+
+        for key_node in map_tree.keys:
+            if not isinstance(key_node, ast.CellAST) or  \
+                    key_node.type != AIL_IDENTIFIER:
+                    
+                self.__syntax_error(ln=key_node.ln)
+
+        keys = [k.value for k in map_tree.keys]
+
+        return ast.ObjectPatternExpr(left, keys, map_tree.values, ln)
+
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
         ca = self.__parse_low_cell_expr()
 
         left = ca
 
-        while self.__now_tok.ttype in (AIL_MLBASKET, AIL_SLBASKET):
+        while self.__now_tok.ttype in (
+                AIL_MLBASKET, AIL_SLBASKET, AIL_NOT):
             nt = self.__now_tok.ttype
             ln = self.__now_ln
 
@@ -589,6 +644,10 @@ class Parser:
                 self.__next_tok()  # eat ')'
 
                 left = ast.CallExprAST(left, argl, ln)
+
+            elif nt == AIL_NOT:
+                left = self.__parse_object_pattern_expr(left)
+
         return left
 
     def __parse_low_cell_expr(self) -> ast.ExprAST:
@@ -2549,6 +2608,20 @@ class ASTConverter:
 
         return self.__make_if_expr_from_match_expr(target, expr.cases, 0, expr.ln)
 
+    def _convert_object_pattern_expr(self, expr: ast.ObjectPatternExpr) -> pyast.expr:
+        keys = [self._new_constant(k, expr.ln) for k in expr.keys]
+        values = [self.convert(v) for v in expr.values]
+        left = self.convert(expr.left)
+
+        return self._new_call_name(
+            'ail::ObjectPattern',
+            [
+                left,
+                dict_expr(keys, values),
+            ],
+            expr.ln,
+        )
+
     def __make_if_expr_from_match_expr(self, target: pyast.expr,
                                        cases: List[ast.MatchCase],
                                        c_index: int, ln: int) -> pyast.expr:
@@ -3005,6 +3078,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.MatchExpr):
             return self._convert_match_expr(a)
+
+        elif isinstance(a, ast.ObjectPatternExpr):
+            return self._convert_object_pattern_expr(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)

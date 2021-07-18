@@ -1,22 +1,31 @@
 
-result = match x {
-    case Point(1, 2) {
-        ...
+
+class case {
+    init(self, case_func) {
+        self.__func = case_func
     }
-    case Point(4, 5) {
-        ...
+
+    func __match__(self, target) {
+        return self.__func(target)
     }
 }
 
 
-/* python code
+class Point {
+    init(self, x: Integer, y: Integer) {
+        self.x = x;
+        self.y = y;
+    }
 
-def <match>(x):
-    if __ail_match__(x, Point(1, 2)):
-        ...
-    elif __ail_match__(x, Point(4, 5)):
-        ...
+    func __match__(self, target): Boolean {
+        return self.x == target.x and self.y == target.y
+    }
+}
 
-result = <match>(x)
 
-*/
+print match Point(3, 4) {
+    Point(1, 2), Point(3, 4): 'yes',
+    Point(-1, -2): 'no',
+    else: 'undefined'
+}
+

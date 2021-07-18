@@ -343,3 +343,20 @@ class AILStruct:
         return '<struct \'%s\'>' % self.__ail_struct_name__
 
     __repr__ = __str__
+
+
+class ObjectPattern:
+    def __init__(self, type_: type, kv_dict: dict):
+        self.__type = type_
+        self.__kv_dict = kv_dict
+
+    def __match__(self, target) -> bool:
+        if not isinstance(target, self.__type):
+            return False
+
+        for k, v in self.__kv_dict.items():
+            if not hasattr(target, k) or getattr(target, k) != v:
+                return False
+
+        return True
+

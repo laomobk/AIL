@@ -1,6 +1,7 @@
 from . import functions as _func
 from . import shared as _shared
 from . import exceptions as _exception
+from . import objects as _object
 
 from .objects import convert_object
 
@@ -50,6 +51,7 @@ AIL_PY_GLOBAL.update({
     'py::raise': _func.raise_exception,
 
     'ail::match': _func.ail_match,
+    'ail::ObjectPattern': _object.ObjectPattern,
 })
 
 

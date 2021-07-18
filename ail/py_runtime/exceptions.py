@@ -11,8 +11,16 @@ import traceback as _traceback
 _PY_RUNTIME_DIR = _join(_config.AIL_DIR_PATH, 'py_runtime')
 _PY_EXEC_FILE = _join(_config.AIL_DIR_PATH, 'core', 'pyexec.py')
 _AIL_SHELL_FILE = _join(_config.AIL_DIR_PATH, 'core', 'ashell.py')
+_AIL_PARSER_FILE = _join(_config.AIL_DIR_PATH, 'core', 'aparser.py')
+_AIL_ERROR_FILE = _join(_config.AIL_DIR_PATH, 'core', 'error.py')
 
-_PATHS = (_PY_RUNTIME_DIR, _PY_EXEC_FILE, _AIL_SHELL_FILE)
+_PATHS = (
+    _PY_RUNTIME_DIR, 
+    _PY_EXEC_FILE, 
+    _AIL_SHELL_FILE, 
+    _AIL_PARSER_FILE,
+    _AIL_ERROR_FILE
+)
 
 
 class AILRuntimeError(Exception):

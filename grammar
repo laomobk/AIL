@@ -12,7 +12,7 @@ do_loop_stmt := 'do' block 'loop' 'until' expression EOL
 
 func_def := ['fun' | 'func'] [bind] NAME '(' param_list ')' [':' expression] block
 
-expression := tuple_expr
+expression := match_expr | tuple_expr
 
 tuple_expr := or_test [',' or_test]
 
@@ -42,6 +42,9 @@ map_expr := '{' kv_pair [',' kv_pair]'}'
 kv_pair := expression ':' expression
 
 array_expr := '[' expression [',' expression]* ']'
+
+match_expr := 'match' expression '{' match_case [',' match_case]* '}'
+match_case := expression [',' expression]* ':' expression
 
 arg_list := arg [',' arg]* [',' star_arg]
 arg := expression
@@ -82,4 +85,3 @@ throw_stmt := 'throw' [expression] EOL
 assert_stmt := 'assert' expression EOL
 
 try_catch_stmt := try block ['catch' block] ['finally' block]
-
