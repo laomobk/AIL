@@ -30,6 +30,8 @@ except ImportError:
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
 
+DISABLE_WORD_BLOCK = True
+
 _MORE_KEYWORD = ('is', 'then', 'do', 'try', 'finally')
 _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
@@ -105,19 +107,22 @@ class Shell:
 
         ts = Lex().lex(line)
 
-        ignore_more = False
-        hold_on_more = 0
-
         for index, tok in enumerate(ts.token_list):
-            if tok.ttype == tokent.AIL_IDENTIFIER:
-                if tok.value in _MORE_KEYWORD:
-                    return 1
-                if tok.value in _END_KEYWORD:
-                    return -1
-            elif tok.ttype == tokent.AIL_COLON and index == len(ts.token_list) - 1:
-                return 1
+            if DISABLE_WORD_BLOCK:
+                if tok.ttype in (
+                        tokent.AIL_LLBASKET, tokent.AIL_MLBASKET, tokent.AIL_SLBASKET):
+                    self.__more_level += 1
+                elif tok.ttype in (
+                        tokent.AIL_LRBASKET, tokent.AIL_MRBASKET, tokent.AIL_SRBASKET):
+                    self.__more_level -= 1
+            else:
+                if tok.ttype == tokent.AIL_IDENTIFIER:
+                    if tok.value in _MORE_KEYWORD:
+                        self.__more_level += 1
+                    if tok.value in _END_KEYWORD:
+                        self.__more_level -= 1
 
-        return hold_on_more
+        return self.__more_level > 0
 
     @staticmethod
     def __print_welcome_text():
@@ -182,11 +187,14 @@ class Shell:
         in_edit = False
         run_buf = False
 
+        more = False
+
         while True:
             try:
                 if run_buf:
                     run_buf = False
                     self.__run_block()
+                    continue
                 
                 line = input(ps)
                 
@@ -215,24 +223,16 @@ class Shell:
                     print(_SH_HELP_STR)
                     continue
 
-                elif more == 1:
-                    self.__more_level += 1
+                if more:
                     in_more = True
                     ps = self.ps2
                     self.__buffer.append(line)
-
-                elif more == -1:
-                    self.__more_level -= 1 if self.__more_level > 0 else 0
-                    self.__buffer.append(line)
-
-                    if self.__more_level == 0:
-                        in_more = False
-                        ps = self.ps1
-                        self.__run_block()
-
-                elif self.__more_level >= 0:
+                else:
                     if in_more:
                         self.__buffer.append(line)
+                        in_more = False
+                        run_buf = True
+                        ps = self.ps1
                     else:
                         self.__run_single_line(line)
 
