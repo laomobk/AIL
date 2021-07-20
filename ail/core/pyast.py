@@ -1,4 +1,4 @@
-import _ast
+import ast as _ast
 
 from typing import List, TypeVar
 
