@@ -84,4 +84,5 @@ for_update := expression [',' expression]
 throw_stmt := 'throw' [expression] EOL
 assert_stmt := 'assert' expression EOL
 
-try_catch_stmt := try block ['catch' block] ['finally' block]
+catch_case := 'catch' expression NAME block
+try_catch_stmt := try block catch_case* ['finally' block]
