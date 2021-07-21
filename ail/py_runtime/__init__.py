@@ -21,7 +21,8 @@ _PY_BUILTINS = {
     'isimplement', 'str', 'repr',
     'int', 'float', 'super',
     'Object', 'FileIO', 'fnum',
-    'abs'
+    'abs',
+    'open',
 }
 
 
