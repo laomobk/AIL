@@ -30,6 +30,7 @@ class _Option:
         self.filename = ''
         self.rest_args = []
         self.source = False
+        self.cmd = None
 
 
 class ArgParser:
@@ -73,6 +74,12 @@ class ArgParser:
             return True
         self.__ok = False
         return False
+
+    def _do_c(self, opt: _Option):
+        n = self.__next_arg()
+        opt.shell_mode = False
+        opt.cmd = n
+        self.__ok = True
 
     def _do_debug(self, opt: _Option):
         n = self.__next_arg()
@@ -174,10 +181,14 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
     shared.GLOBAL_SHARED_DATA.find_path.append(file_dir)
 
     try:
-        if not os.path.exists(file_path):
+        if option.cmd is None and not os.path.exists(file_path):
             raise FileNotFoundError('file \'%s\' not found' % file_path)
 
-        source = open(file_path, encoding='UTF-8').read()
+        if option.cmd is not None:
+            source = option.cmd
+            file_path = '<string>'
+        else:
+            source = open(file_path, encoding='UTF-8').read()
 
         if pyc_mode and not source_mode:
             MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()

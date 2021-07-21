@@ -21,7 +21,7 @@ _bin_num_chars = ('01', 2)
 _sci_num_chars = ('0123456789+-', 12)
 
 
-def isidentifier(ch: str) -> bool:
+def is_identifier(ch: str) -> bool:
     if ch.isalpha():
         return True
     if u"\U0001F600" <= ch and ch <= u"\U0001F64F":
@@ -106,7 +106,7 @@ def get_identifier(source: str, cursor: int) -> tuple:
 
         if not (source[ccur].isnumeric() or \
                 source[ccur] == '_' or \
-                isidentifier(source[ccur])):
+                is_identifier(source[ccur])):
             break
 
         buffer += source[ccur]
@@ -309,7 +309,7 @@ def get_string(source: str, cursor: int) -> tuple:
     while ccur < len(source):
         if instr and source[ccur] == '\\' and slen > ccur + 1 \
                 and source[ccur + 1] in (
-                'a', 'b', 'f', 'n', 'r', 't', 'v', '0', 'x', '\'', '"', '\\'):
+                'a', 'b', 'f', 'n', 'r', 't', 'v', '0', 'x', '\'', '"', '\\', '`'):
             # escape character
             target = {
                 'a': '\a',
@@ -323,7 +323,8 @@ def get_string(source: str, cursor: int) -> tuple:
                 'x': 'x',
                 '\'': '\'',
                 '"': '"',
-                '\\': '\\'
+                '\\': '\\',
+                '`': '`',
             }.get(source[ccur + 1])
 
             if target in ('0', 'x'):
@@ -345,6 +346,8 @@ def get_string(source: str, cursor: int) -> tuple:
             break
 
         if source[ccur] == '\n':
+            if schr != '`':
+                return -1, 0, 0
             lni += 1
 
         if instr:
@@ -812,7 +815,7 @@ class Lex:
                 # 忽略空白符
                 self.__movchr()
 
-            elif isidentifier(c) or c == '_':
+            elif is_identifier(c) or c == '_':
                 # 如果是标识符
                 mov, buf = get_identifier(self.__source, self.__chp)
                 self.__stream.append(Token(
@@ -860,7 +863,7 @@ class Lex:
                     ))
                     self.__movchr()
 
-            elif c in ('"', '\''):
+            elif c in ('"', '\'', '`'):
                 # 如果是字符串
                 mov, lni, buf = get_string(self.__source, self.__chp)
 

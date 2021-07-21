@@ -1,17 +1,12 @@
 
-
-class _C {}
-
-
-namespace Films {
-    __key = 20190726110011;
-    name = 'nezha'
+func fib(n) {
+    if n > 1 {
+        return fib(n - 1) + fib(n - 2)
+    } else {
+        return 1
+    }
 }
 
 
-namespace __export__ {
-    name = 'nezha';
-    C = _C;
-    key = Films.__key
-}
+print fib(10)
 

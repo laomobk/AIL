@@ -71,8 +71,6 @@ _special_method_map = {
     'getitem': '__getitem__',
     'setitem': '__setitem__',
     'delitem': '__delitem__',
-    '__str__': '__str__',
-    '__repr__': '__repr__',
 }
 
 
@@ -2062,77 +2060,52 @@ class Parser:
         return ast.PropertyDefine(func, action, ln)
 
     def __parse_try_catch_expr(self) -> ast.TryCatchStmtAST:
+        ln = self.__now_ln
+
+        # 2021.7.21: the old style block is no longer supported for try-catch statement.
+
         if self.__now_tok != 'try':
             self.__syntax_error()
 
-        new_block_style = False
-
-        if self.__peek(1).ttype == AIL_LLBASKET:
-            new_block_style = True
-            self.__next_tok()  # eat '{'
-
-        try_b = self.__parse_block(start='try', end='catch')
+        self.__next_tok()  # eat 'try'
 
         self.__skip_newlines()
+        try_block = self.__parse_block()
+        self.__skip_newlines()
 
-        if new_block_style:
-            return self.__parse_new_catch_finally_body(try_b)
+        cases = []
 
-        if new_block_style:
+        while self.__now_tok == 'catch':
+            c_ln = self.__now_ln
             self.__next_tok()  # eat 'catch'
+            if self.__now_tok.ttype != AIL_LLBASKET:
+                exc_expr = self.__parse_binary_expr(type_comment=False)
 
-        if try_b is None or self.__now_tok.ttype != AIL_IDENTIFIER:
-            self.__syntax_error()
-
-        cname = self.__now_tok.value
-
-        self.__next_tok()  # eat NAME
-
-        if self.__now_tok != 'then' or self.__next_tok().ttype != AIL_ENTER:
-            self.__syntax_error()
-
-        self.__next_tok()  # eat ENTER
-
-        catch_sl = []
-        finally_sl = []
-
-        now = catch_sl
-        in_finally = False
-
-        while self.__now_tok != 'end':
-            if self.__now_tok == 'finally':
-                if in_finally:
+                if self.__now_tok.ttype != AIL_IDENTIFIER:
                     self.__syntax_error()
+                exc_alias = self.__now_tok.value
+                self.__next_tok()  # eat NAME
 
-                in_finally = True
+                catch_block = self.__parse_block()
 
-                if self.__next_tok().ttype != AIL_ENTER:
-                    self.__syntax_error()
-
-                self.__next_tok()  # eat ENTER
-
-                now = finally_sl
-
-            if self.__now_tok == 'end':
-                break
-
-            s = self.__parse_stmt()
-
-            if isinstance(s, ast.NullLineAST):
-                pass
-            elif isinstance(s, ast.EOFAST):
-                self.__syntax_error("try statement should ends with 'end'")
+                cases.append(ast.CatchCase(exc_expr, exc_alias, catch_block, c_ln))
             else:
-                now.append(s)
+                catch_block = self.__parse_block()
+                cases.append(ast.CatchCase(None, None, catch_block, c_ln))
 
-        cab = ast.BlockAST(catch_sl, self.__now_ln)
-        fnb = ast.BlockAST(finally_sl, self.__now_ln)
-
-        self.__next_tok()  # eat 'end'
-
-        self.__expect_newline()
-
-        return ast.TryCatchStmtAST(try_b, cab, fnb, cname, self.__now_ln)
+        if len(cases) > 1:
+            for i, case in enumerate(cases):
+                if case.exc_expr is None and i != len(cases) - 1:
+                    # the catch {...} must be last.
+                    self.__syntax_error(ln=case.ln)
+        
+        finally_block = None
+        
+        if self.__now_tok == 'finally':
+            self.__next_tok()  # eat 'finally'
+            finally_block = self.__parse_block()
+        
+        return ast.TryCatchStmtAST(try_block, cases, finally_block, ln)
 
     def __parse_special_method(self) -> ast.FunctionDefineAST:
         alias = self.__now_tok.value
@@ -2776,17 +2749,26 @@ class ASTConverter:
 
     def _convert_try_stmt(self, stmt: ast.TryCatchStmtAST) -> pyast.Try:
         try_body = self._convert_block(stmt.try_block, True)
-        finally_body = self._convert_block(stmt.finally_block, True)
+        if stmt.finally_block is not None:
+            finally_body = self._convert_block(stmt.finally_block, True)
+        else:
+            finally_body = []
 
-        handler = _set_lineno(
-            _set_lineno(
-                except_handler(
-                    self._new_name('Exception', stmt.catch_block.ln), stmt.name,
-                    self._convert_block(stmt.catch_block, True)),
-                stmt.catch_block.ln),
-            stmt.catch_block.ln)
+        handlers = [self._convert_catch_case(c) for c in stmt.catch_cases]
 
-        return _set_lineno(try_stmt(try_body, [handler], finally_body), stmt.ln)
+        return _set_lineno(try_stmt(try_body, handlers, finally_body), stmt.ln)
+
+    def _convert_catch_case(self, case: ast.CatchCase) -> pyast.ExceptHandler:
+        if case.exc_expr is None:
+            return _set_lineno(
+                except_handler(None, None, self.convert(case.block)), case.ln
+            )
+        return _set_lineno(
+            except_handler(
+                self.convert(case.exc_expr),
+                case.alias,
+                self._convert_block(case.block)), case.ln
+        )
 
     def _convert_function_def_stmt(
             self, func: ast.FunctionDefineAST) -> pyast.FunctionDef:

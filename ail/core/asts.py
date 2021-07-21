@@ -499,15 +499,21 @@ class AssertStmtAST:
         self.ln = ln
 
 
+class CatchCase:
+    def __init__(self, exc_expr, alias, block, ln: int):
+        self.exc_expr = exc_expr
+        self.alias = alias
+        self.block = block
+        self.ln = ln
+
+
 class TryCatchStmtAST:
     def __init__(self, try_block: BlockAST,
-                 catch_block: BlockAST,
-                 finally_block: BlockAST,
-                 name: str, ln: int):
+                 catch_cases: List[CatchCase],
+                 finally_block: BlockAST, ln: int):
         self.try_block = try_block
-        self.catch_block = catch_block
+        self.catch_cases = catch_cases
         self.finally_block = finally_block
-        self.name = name
         self.ln = ln
 
 
