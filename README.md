@@ -1,4 +1,4 @@
-# AIL 2.1 alpha 0
+# AIL 2.1 alpha 1
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.6%2B-blue)

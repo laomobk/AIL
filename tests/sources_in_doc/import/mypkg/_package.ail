@@ -1,0 +1,7 @@
+
+print '_package.ail loading...'
+
+namespace __export__ {
+    date = 20190726
+}
+
