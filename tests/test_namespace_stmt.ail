@@ -1,0 +1,15 @@
+
+namespace MyNamespace {
+    func f() {
+        print 'f()';
+    }
+
+    func g() {
+        print 'g()'
+        f();
+    }
+}
+
+
+MyNamespace.g()
+
