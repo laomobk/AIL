@@ -1,12 +1,17 @@
 
-func fib(n) {
-    if n > 1 {
-        return fib(n - 1) + fib(n - 2)
-    } else {
-        return 1
+namespace x {
+    func f() {
+        print 'call f()';
     }
+
+    func g() {
+        print 'call g()';
+        f();
+    }
+
+    #return {'gg': g}
 }
 
 
-print fib(10)
+x.gg();
 

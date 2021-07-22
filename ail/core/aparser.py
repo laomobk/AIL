@@ -791,12 +791,12 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok != 'mod':
+        if self.__now_tok != 'mod' and self.__now_tok.ttype != AIL_MOD:
             return left
 
         rl = []
 
-        while self.__now_tok == 'mod':
+        while self.__now_tok == 'mod' or self.__now_tok.ttype == AIL_MOD:
             self.__next_tok()
             r = self.__parse_power_expr()
             if r is None:
@@ -2891,7 +2891,7 @@ class ASTConverter:
             [
                 self._new_constant(0, ln),
                 self._new_constant(path, ln),
-                self._new_call_name('locals', [], ln)
+                self._new_call_name('py::locals', [], ln)
             ],
             ln
         )
@@ -2911,7 +2911,7 @@ class ASTConverter:
             [
                 self._new_constant(1, ln),
                 self._new_constant(path, ln),
-                self._new_call_name('locals', [], ln),
+                self._new_call_name('py::locals', [], ln),
                 self._new_constant(imp.name, ln),
                 _set_lineno(
                     list_expr(
@@ -2943,12 +2943,33 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
-    def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> pyast.ClassDef:
-        return _set_lineno(class_def_stmt(
-            stmt.name, [], [keyword_expr('metaclass', self._new_name('ail::NamespaceMeta', stmt.ln))],
-            self._convert_block(stmt.block),
-            [],
-        ), stmt.ln)
+    def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> List[pyast.stmt]:
+        """
+        namespace x {...}
+
+        -- will be converted to:
+        
+        @ail::namespace
+        def x():
+            ...
+            return py::locals()
+
+        """
+        ln = stmt.ln
+
+        block = self.convert(stmt.block, as_stmt=True)
+        block.append(
+            _set_lineno(return_stmt(
+                self._new_call_name('py::locals', [], ln),
+            ), ln)
+        )
+
+        return _set_lineno(function_def_stmt(
+            stmt.name,
+            arguments([], None, None), block,
+            [self._new_name('ail::namespace', ln)],
+        ), ln)
+
 
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)

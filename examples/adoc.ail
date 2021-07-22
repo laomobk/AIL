@@ -178,6 +178,6 @@ namespace Test {
 
 
 if __main__ {
-    Test.test('E:/test.md')
+    Test.test('test.md')
 }
 

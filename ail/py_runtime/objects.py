@@ -83,7 +83,7 @@ class AILImporter:
 
         if isinstance(exports, dict):
             return exports
-        elif isinstance(exports, NamespaceMeta):
+        elif isinstance(exports, Namespace):
             return exports.__dict__
         else:
             try:
@@ -363,13 +363,13 @@ class ObjectPattern:
         return True
 
 
-class NamespaceMeta:
-    def __init__(self, *args):
-        name, _, namespace = args
-        self.__dict__ = namespace
+class Namespace:
+    def __init__(self, name, namespace_locals):
+        self.__dict__ = namespace_locals
         self.__dict__['__name__'] = name
 
     def __str__(self) -> str:
         return '<namespace \'%s\' at %s>' % (self.__name__, hex(id(self)))
 
     __repr__ = __str__
+

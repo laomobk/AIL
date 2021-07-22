@@ -4,7 +4,7 @@ from functools import wraps
 from inspect import isfunction, isbuiltin
 from typing import List, Dict, Union
 
-from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct
+from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct, Namespace
 
 from . import exceptions as _exceptions
 
@@ -14,6 +14,11 @@ _IMPORTER = _AILImporter()
 
 def raise_exception(err_obj):
     raise err_obj
+
+
+def convert_to_namespace(namespace_func):
+    func_locals = namespace_func()
+    return Namespace(namespace_func.__name__, func_locals)
 
 
 def ail_match(target, patterns: list, only_constant: bool) -> bool:
