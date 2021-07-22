@@ -1,17 +1,11 @@
 
-namespace x {
-    func f() {
-        print 'call f()';
+try {
+    1 / 0
+} catch Exception e {
+    print 'I got a(n) %s' % match type(e) {
+        NameError: 'NameError: %s' % e,
+        ZeroDivisionError: 'ZeroDivisionError: %s' % e,
+        else: 'Exception: %s' % e,
     }
-
-    func g() {
-        print 'call g()';
-        f();
-    }
-
-    #return {'gg': g}
 }
-
-
-x.gg();
 

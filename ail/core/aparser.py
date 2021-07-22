@@ -729,6 +729,9 @@ class Parser:
 
         nt = self.__now_tok
 
+        if nt == 'match':
+            return self.__parse_match_expr()
+
         if self.__now_tok.ttype == AIL_ENTER:
             self.__syntax_error(ln=self.__now_ln - 1)
 
@@ -855,8 +858,6 @@ class Parser:
     def __parse_binary_expr(
             self, as_stmt: bool = False, do_tuple: bool = False,
             no_assign: bool = False, type_comment: bool = True) -> ast.BitOpExprAST:
-        if self.__now_tok == 'match':
-            return self.__parse_match_expr()
             
         expr = self.__parse_assign_expr(
             do_tuple, no_assign=no_assign, type_comment=type_comment)
@@ -2969,7 +2970,6 @@ class ASTConverter:
             arguments([], None, None), block,
             [self._new_name('ail::namespace', ln)],
         ), ln)
-
 
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
