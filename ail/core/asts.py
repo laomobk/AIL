@@ -25,6 +25,7 @@ class ArgListAST:
 
     def __init__(self, item_list: List[ArgItemAST], ln: int):
         self.arg_list = item_list  # TODO: refactor exp_list -> item_list
+        self.may_tuple = False
         self.ln = ln
 
 

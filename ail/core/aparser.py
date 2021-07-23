@@ -287,25 +287,33 @@ class Parser:
             if param.star:
                 can_var = False
 
-    def __parse_arg_list(self, try_tuple: bool = False) -> ast.ArgListAST:
+    def __parse_arg_list(self) -> ast.ArgListAST:
         alist = []
 
+        may_tuple = False
+
         if self.__now_tok.ttype != AIL_SRBASKET:
-            a = self.__parse_arg_item(True, try_tuple)
+            a = self.__parse_arg_item(True)
             alist.append(a)
         else:
             return ast.ArgListAST(alist, self.__now_ln)
 
-        while self.__now_tok.ttype != AIL_SRBASKET:
-            if self.__now_tok.ttype != AIL_COMMA:
-                self.__syntax_error()
-
+        while self.__now_tok.ttype == AIL_COMMA:
             self.__next_tok()  # eat ','
+            may_tuple = True
 
-            a = self.__parse_arg_item(True, try_tuple)
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                break
+
+            a = self.__parse_arg_item(True)
             alist.append(a)
 
-        return ast.ArgListAST(alist, self.__now_ln)
+        if self.__now_tok.ttype != AIL_SRBASKET:
+            self.__syntax_error()
+
+        a = ast.ArgListAST(alist, self.__now_ln)
+        a.may_tuple = may_tuple
+        return a
 
     def __parse_type_comment(self, start: str = ':'):
         if self.__now_tok != start and start:
@@ -683,7 +691,7 @@ class Parser:
                     self.__next_tok()  # eat ')'
                     return ast.TupleAST([], False, ln)
 
-            expr_or_param = self.__parse_arg_list(True)
+            expr_or_param = self.__parse_arg_list()
 
             if self.__now_tok != ')':
                 self.__syntax_error()
@@ -694,9 +702,11 @@ class Parser:
 
             if self.__now_tok.ttype != AIL_RARROW:
                 for exp in exp_list:
-                    if exp.star:
+                    if exp.star or exp.kw_star:
                         self.__syntax_error()
                 if len(exp_list) == 1:
+                    if expr_or_param.may_tuple:
+                        return ast.TupleAST([exp_list[0].expr], False, exp_list[0].ln)
                     return expr_or_param.arg_list[0].expr
                 else:  # maybe a tuple
                     items = [exp.expr for exp in exp_list]
@@ -907,8 +917,16 @@ class Parser:
 
         while self.__now_tok.ttype == AIL_COMMA:
             self.__next_tok()
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                break
+
             item = self.__parse_test_expr()
             items.append(item)
+
+        if self.__now_tok.ttype != AIL_SLBASKET:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ')'
 
         return ast.TupleAST(items, False, ln)
 
