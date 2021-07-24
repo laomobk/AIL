@@ -917,16 +917,8 @@ class Parser:
 
         while self.__now_tok.ttype == AIL_COMMA:
             self.__next_tok()
-            if self.__now_tok.ttype == AIL_SRBASKET:
-                break
-
             item = self.__parse_test_expr()
             items.append(item)
-
-        if self.__now_tok.ttype != AIL_SLBASKET:
-            self.__syntax_error()
-
-        self.__next_tok()  # eat ')'
 
         return ast.TupleAST(items, False, ln)
 

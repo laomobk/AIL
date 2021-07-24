@@ -1,11 +1,14 @@
 
-try {
-    1 / 0
-} catch Exception e {
-    print 'I got a(n) %s' % match type(e) {
-        NameError: 'NameError: %s' % e,
-        ZeroDivisionError: 'ZeroDivisionError: %s' % e,
-        else: 'Exception: %s' % e,
-    }
+
+namespace a {
+    a, b = 1, 2;
 }
+
+
+namespace b {
+    #return a.__dict__
+}
+
+
+print b.a, b.b;
 
