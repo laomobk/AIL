@@ -580,6 +580,13 @@ class NamespaceStmt:
         self.name = name
 
 
+class UsingStmt:
+    def __init__(self, expr, alias: str, using_from: list, ln: int):
+        self.expr = expr
+        self.alias = alias
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,
