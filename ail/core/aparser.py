@@ -26,7 +26,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
-    'MATCH', 'NAMESPACE',
+    'MATCH', 'NAMESPACE', 'FOREACH', 'IN'
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -408,6 +408,18 @@ class Parser:
         cases = self.__parse_match_body()
 
         return ast.MatchExpr(target, cases, ln)
+
+    def __parse_using_stmt(self) -> ast.UsingStmt:
+        if self.__now_tok != 'using':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'using'
+
+        target = self.__parse_binary_expr(type_comment=False)
+
+        return ast.UsingStmt(target, ln)
 
     def __parse_namespace_stmt(self) -> ast.NamespaceStmt:
         if self.__now_tok != 'namespace':
@@ -976,7 +988,7 @@ class Parser:
 
         return ast.AddSubExprAST(left_op, left, rl, ln)
 
-    def __parse_print_expr(self) -> ast.PrintStmtAST:
+    def __parse_print_stmt(self) -> ast.PrintStmtAST:
         ln = self.__now_ln
 
         self.__next_tok()  # eat 'PRINT'
@@ -1005,7 +1017,7 @@ class Parser:
 
         return ast.PrintStmtAST(el, ln)
 
-    def __parse_input_expr(self) -> ast.InputStmtAST:
+    def __parse_input_stmt(self) -> ast.InputStmtAST:
         ln = self.__now_ln
 
         self.__next_tok()  # eat 'INPUT'
@@ -1302,7 +1314,7 @@ class Parser:
             else:
                 self.__syntax_error()
 
-    def __parse_if_else_expr(self) -> ast.IfStmtAST:
+    def __parse_if_else_stmt(self) -> ast.IfStmtAST:
         base_tree = self.__parse_if_else_expr0()
 
         if len(base_tree.elif_list) == 0:
@@ -1323,7 +1335,7 @@ class Parser:
 
         return base_tree
 
-    def __parse_while_expr(self) -> ast.WhileStmtAST:
+    def __parse_while_stmt(self) -> ast.WhileStmtAST:
         ln = self.__now_ln
         self.__next_tok()  # eat 'while'
 
@@ -1374,6 +1386,35 @@ class Parser:
 
         return ast.BinaryExprListAST(el, self.__now_ln)
 
+    def __parse_foreach_stmt(self) -> ast.ForeachStmt:
+        if self.__now_tok != 'foreach':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+
+        self.__next_tok()  # eat 'foreach'
+
+        target = self.__parse_binary_expr(do_tuple=True, type_comment=False)
+        if isinstance(target, ast.TupleAST):
+            for item in target.items:
+                if not isinstance(item, ast.CellAST) or item.type != AIL_IDENTIFIER:
+                    self.__syntax_error()
+            target.store = True
+        else:
+            if not isinstance(target, ast.CellAST) or target.type != AIL_IDENTIFIER:
+                self.__syntax_error()
+
+        if self.__now_tok != 'in':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'in'
+
+        iter = self.__parse_binary_expr(do_tuple=True, type_comment=False)
+
+        block = self.__parse_block()
+
+        return ast.ForeachStmt(target, iter, block, ln)
+
     def __parse_new_for_stmt(self, from_classic=False) -> ast.ForStmtAST:
         if not from_classic and self.__now_tok != 'for':
             self.__syntax_error()
@@ -1422,7 +1463,7 @@ class Parser:
 
         return ast.ForStmtAST(init, test, update, body, ln)
 
-    def __parse_for_expr(self) -> ast.ForStmtAST:
+    def __parse_for_stmt(self) -> ast.ForStmtAST:
         if self.__now_tok != 'for':
             self.__syntax_error()
 
@@ -1855,7 +1896,7 @@ class Parser:
 
         return ast.ReturnStmtAST(expr, self.__now_ln)
 
-    def __parse_throw_expr(self) -> ast.ThrowStmtAST:
+    def __parse_throw_stmt(self) -> ast.ThrowStmtAST:
         if self.__now_tok != 'throw':
             self.__syntax_error()
 
@@ -1876,7 +1917,7 @@ class Parser:
 
         return ast.ThrowStmtAST(expr, ln)
 
-    def __parse_assert_expr(self) -> ast.AssertStmtAST:
+    def __parse_assert_stmt(self) -> ast.AssertStmtAST:
         if self.__now_tok != 'assert':
             self.__syntax_error()
 
@@ -2070,7 +2111,7 @@ class Parser:
 
         return ast.PropertyDefine(func, action, ln)
 
-    def __parse_try_catch_expr(self) -> ast.TryCatchStmtAST:
+    def __parse_try_catch_stmt(self) -> ast.TryCatchStmtAST:
         ln = self.__now_ln
 
         # 2021.7.21: the old style block is no longer supported for try-catch statement.
@@ -2130,19 +2171,19 @@ class Parser:
         nt = self.__now_tok
 
         if nt == 'print':
-            a = self.__parse_print_expr()
+            a = self.__parse_print_stmt()
 
         elif nt == 'input':
-            a = self.__parse_input_expr()
+            a = self.__parse_input_stmt()
 
         elif nt == 'if':
-            a = self.__parse_if_else_expr()
+            a = self.__parse_if_else_stmt()
 
         elif nt == 'while':
-            a = self.__parse_while_expr()
+            a = self.__parse_while_stmt()
 
         elif nt == 'for':
-            a = self.__parse_for_expr()
+            a = self.__parse_for_stmt()
 
         elif nt == 'do':
             a = self.__parse_do_loop_expr()
@@ -2187,19 +2228,22 @@ class Parser:
             a = self.__parse_class_def_stmt()
 
         elif nt == 'assert':
-            a = self.__parse_assert_expr()
+            a = self.__parse_assert_stmt()
 
         elif nt == 'throw':
-            a = self.__parse_throw_expr()
+            a = self.__parse_throw_stmt()
 
         elif nt == 'try':
-            a = self.__parse_try_catch_expr()
+            a = self.__parse_try_catch_stmt()
 
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
         elif nt == 'namespace':
             a = self.__parse_namespace_stmt()
+
+        elif nt == 'foreach':
+            a = self.__parse_foreach_stmt()
 
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
@@ -2366,7 +2410,7 @@ class Parser:
         self.__tc = 0
         self.__level = 0  # level 0
 
-        return self.__parse_print_expr()
+        return self.__parse_print_stmt()
 
 
 _PyTreeT = TypeVar('_PyTreeT')
@@ -2729,6 +2773,22 @@ class ASTConverter:
 
         return _set_lineno(while_stmt(true_test, [try_body]), stmt.ln)
 
+    def _convert_foreach_stmt(self, stmt: ast.ForeachStmt):
+        target = self.convert(stmt.target)
+        if isinstance(target, pyast.Tuple):
+            for name in target.elts:
+                if isinstance(name, pyast.Name):
+                    name.ctx = store_ctx()
+        target.ctx = store_ctx()
+
+        return _set_lineno(
+            for_stmt(
+                target,
+                self.convert(stmt.iter),
+                self._convert_block(stmt.body),
+            ), stmt.ln,
+        )
+
     def _convert_for_stmt(self, stmt: ast.ForStmtAST) -> List[pyast.stmt]:
         for_stmt = []
 
@@ -2954,7 +3014,7 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
-    def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> List[pyast.stmt]:
+    def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> pyast.stmt:
         """
         namespace x {...}
 
@@ -2980,6 +3040,16 @@ class ASTConverter:
             arguments([], None, None), block,
             [self._new_name('ail::namespace', ln)],
         ), ln)
+
+    def _convert_using_stmt(self, stmt: ast.UsingStmt) -> pyast.Call:
+        return self._new_call_name(
+            'ail::using',
+            [
+                self.convert(stmt.target),
+                self._new_call_name('py::locals', [], stmt.ln),
+            ],
+            stmt.ln,
+        )
 
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
@@ -3050,7 +3120,8 @@ class ASTConverter:
             return self._convert_array_expr(a)
 
         elif isinstance(a, ast.TupleAST):
-            return tuple_expr([self.convert(e) for e in a.items], load_ctx())
+            ctx = store_ctx() if a.store else load_ctx()
+            return tuple_expr([self.convert(e) for e in a.items], ctx)
 
         elif isinstance(a, ast.MapAST):
             return self._convert_map_expr(a)
@@ -3107,6 +3178,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.NamespaceStmt):
             return self._convert_namespace_stmt(a)
+
+        elif isinstance(a, ast.ForeachStmt):
+            return self._convert_foreach_stmt(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)

@@ -366,10 +366,9 @@ class ObjectPattern:
 class Namespace:
     def __init__(self, name, namespace_locals):
         self.__dict__ = namespace_locals
-        self.__dict__['__name__'] = name
+        self.__name__ = name
 
     def __str__(self) -> str:
         return '<namespace \'%s\' at %s>' % (self.__name__, hex(id(self)))
 
     __repr__ = __str__
-

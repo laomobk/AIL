@@ -581,9 +581,16 @@ class NamespaceStmt:
 
 
 class UsingStmt:
-    def __init__(self, expr, alias: str, using_from: list, ln: int):
-        self.expr = expr
-        self.alias = alias
+    def __init__(self, target, ln: int):
+        self.target = target
+        self.ln = ln
+
+
+class ForeachStmt:
+    def __init__(self, target, iter, body, ln: int):
+        self.target = target
+        self.iter = iter
+        self.body = body
         self.ln = ln
 
 

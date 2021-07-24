@@ -1,14 +1,4 @@
 
-
-namespace a {
-    a, b = 1, 2;
+foreach x in map((x) -> x ** 2, range(100)) {
+    print x;
 }
-
-
-namespace b {
-    #return a.__dict__
-}
-
-
-print b.a, b.b;
-

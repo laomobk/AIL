@@ -21,7 +21,7 @@ _PY_BUILTINS = {
     'isimplement', 'str', 'repr',
     'int', 'float', 'super',
     'Object', 'FileIO', 'fnum',
-    'abs',
+    'abs', 'map',
     'open',
 }
 
@@ -48,6 +48,8 @@ AIL_PY_GLOBAL.update({
     'system': SYSTEM_OBJECT,
     'UnhandledMatchError': _exception.UnhandledMatchError,
 
+    'Map': dict,
+
     'py::UnhandledMatchError': _exception.UnhandledMatchError,
     'py::raise': _func.raise_exception,
     'py::locals': locals,
@@ -55,6 +57,7 @@ AIL_PY_GLOBAL.update({
     'ail::match': _func.ail_match,
     'ail::ObjectPattern': _object.ObjectPattern,
     'ail::namespace': _func.convert_to_namespace,
+    'ail::using': _func.ail_using,
 })
 
 

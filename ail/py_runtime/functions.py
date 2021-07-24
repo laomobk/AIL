@@ -21,6 +21,10 @@ def convert_to_namespace(namespace_func):
     return Namespace(namespace_func.__name__, func_locals)
 
 
+def ail_using(ns_obj: 'Namespace', namespace: dict):
+    namespace.update(ns_obj.__dict__)
+
+
 def ail_match(target, patterns: list, only_constant: bool) -> bool:
     if only_constant:
         return target in patterns
