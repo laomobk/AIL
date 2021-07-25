@@ -2378,7 +2378,8 @@ class Parser:
 
     def parse(self, ts: TokenStream,
               source: str, filename: str,
-              pyc_mode: bool = False) -> ast.BlockAST:
+              pyc_mode: bool = True,
+              eval_mode: bool = False) -> ast.BlockAST:
         self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
@@ -2391,10 +2392,15 @@ class Parser:
         self.__pyc_mode = pyc_mode
 
         if len(ts.token_list) == 0:
+            if eval_mode:
+                return None
             return ast.BlockAST([], 0)
 
         while self.__now_tok.ttype == AIL_ENTER:  # skip enter at beginning
             self.__next_tok()
+
+        if eval_mode:
+            return self.__parse_binary_expr(type_comment=False, no_assign=True)
 
         return self.__parse_block('begin', 'end',
                                   'A program should starts with \'begin\'',
@@ -3196,6 +3202,13 @@ class ASTConverter:
         body = self.convert(block, True)
 
         return _set_lineno(interactive(body), block.ln)
+
+    def convert_eval(self, expr_node) -> pyast.Expression:
+        expr = self.convert(expr_node)
+        if not isinstance(expr, pyast.expr):
+            raise TypeError('expected Expression, but got %s' % type(expr))
+
+        return _set_lineno(expression(expr), expr_node.ln)
 
     def test(self, tree):
         t = self.convert(tree)

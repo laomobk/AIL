@@ -130,6 +130,10 @@ def expr_stmt(value: _ast.expr) -> _ast.Expr:
     return _ast.Expr(value=value)
 
 
+def expression(body: _ast.expr) -> _ast.Expression:
+    return _ast.Expression(body=body)
+
+
 def for_stmt(target: _ast.expr, iter: _ast.expr, body: List[_ast.stmt]):
     return _ast.For(
         target=target, iter=iter, body=body, orelse=[], type_comment=None)

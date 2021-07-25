@@ -8,6 +8,9 @@ from ..py_runtime.namespace import fill_namespace
 from ..py_runtime.exceptions import print_py_traceback
 
 
+_globals = globals
+
+
 SIG_OK = 0
 SIG_EXCEPTION = 1
 SIG_STOP = 3
@@ -67,6 +70,24 @@ def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
     except (KeyboardInterrupt, EOFError):
         print_py_traceback()
         return 0
+
+
+def ail_eval(source, globals=None, locals=None):
+    l = Lex()
+    ts = l.lex(source, '<eval>')
+
+    p = Parser()
+    node = p.parse(ts, source, '<eval>', True, True)
+
+    converter = ASTConverter()
+    code = compile(converter.convert_eval(node), '<eval>', 'eval')
+
+    if globals is None:
+        globals = {}
+
+    fill_namespace(globals)
+
+    return eval(code, globals, locals)
 
 
 if __name__ == '__main__':
