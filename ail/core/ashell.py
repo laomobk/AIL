@@ -255,6 +255,10 @@ class Shell:
 
             except KeyboardInterrupt as e:
                 in_more = False
+                self.__more_level = 0
+                ps = self.ps1
+                self.__buffer.clear()
+
                 if in_edit:
                     in_edit = False
                     ps = self.ps1
