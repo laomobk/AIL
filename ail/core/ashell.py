@@ -22,10 +22,15 @@ from . import aobjects as objs, error, tokentype as tokent
 
 import os
 
+from ..modules import shcompleter
+
+
+_readline_availble = True
 try:
     import readline
 except ImportError:
-    pass
+    _readline_availble = False
+
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
@@ -99,6 +104,14 @@ class Shell:
         self.__globals = _SHELL_NAMESPACE
         self.__pyc_globals = {}
         self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
+
+        self.__setup_readline_completer()
+
+    def __setup_readline_completer(self):
+        if _readline_availble:
+            completer = shcompleter.Completer(self.__pyc_globals)
+            readline.set_completer(completer.complete)
+            readline.parse_and_bind('tab: complete')
 
     def __get_more_line_state(self, line: str) -> int:
         """
