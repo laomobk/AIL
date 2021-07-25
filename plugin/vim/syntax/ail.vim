@@ -24,7 +24,7 @@ syn keyword ailStmt match namespace
 
 syn keyword ailConst false true __main__
 
-syn keyword ailRepeat while for do loop until
+syn keyword ailRepeat while for do loop until foreach
 
 syn keyword ailFunc abs
 syn keyword ailFunc ng
