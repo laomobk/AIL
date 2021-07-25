@@ -42,7 +42,7 @@ fun main() is
     handler = get_male_std_weight
 
     while true then
-        try
+        try {
             sex = int_input('girl(0) or boy(1)?: ')
 
             if sex == 1 or sex == 0 then
@@ -50,28 +50,28 @@ fun main() is
             else
                 print 'please enter 1 or 0 !'
             endif
-        catch _ then
+        } catch Exception _ {
             print 'please enter 1 or 0 !'
-        end
+        }
     wend
 
     while true then
-        try
+        try {
             height = int_input('your height(cm): ')
             break
-        catch _ then
+        } catch Exception _ {
             print 'please input a integer!'
-        end
+        }
     wend
 
     while true then
-        try
+        try {
             input 'your weight(kg): ' ; weight
             weight = float(weight)
             break
-        catch _ then
+        } catch Exception _ {
             print 'please input a number!'
-        end
+        }
     wend
 
     if sex == 0 then
