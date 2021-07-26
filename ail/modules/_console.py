@@ -1,4 +1,6 @@
 
+# this is old console module
+
 from sys import stdout
 from sys import stderr
 
@@ -79,7 +81,7 @@ def get_console_object() -> AILObject:
     return _console_struct_object_cache
 
 
-_IS_AIL_MODULE_ = True
 _AIL_NAMESPACE_ = {
     'console': get_console_object()
 }
+

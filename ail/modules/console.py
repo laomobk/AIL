@@ -30,7 +30,7 @@ class Console:
         err.flush()
 
     def readln(self, msg):
-        return input(stro(msg))
+        return input(str(msg))
 
 
 console = Console()

@@ -24,7 +24,7 @@ if __main__ {
         try {
             row = int(console.readln('row: '))
             break
-        } catch _ {
+        } catch Exception e {
             print 'try again!'
         }
     }

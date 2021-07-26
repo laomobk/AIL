@@ -34,12 +34,12 @@ get_level = _get_level_ifelse
 
 
 while true then
-    try
+    try {
         s = int_input('Score: ')
         print 'Level:', get_level(s)
-    catch _ then
+    } catch Exception e {
         print 'Bad input!'
-    end
+    }
 wend
 
 end
