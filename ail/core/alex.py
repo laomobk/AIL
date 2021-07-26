@@ -278,7 +278,7 @@ def parse_complex_escape_character(
         return chr(int(oct_buf, 8)), 4
 
 
-def get_string(source: str, cursor: int) -> tuple:
+def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
     """
     source : 源码文件
     cursor : 源码字符指针
@@ -307,7 +307,7 @@ def get_string(source: str, cursor: int) -> tuple:
     tcur = 0
 
     while ccur < len(source):
-        if instr and source[ccur] == '\\' and slen > ccur + 1 \
+        if not r_str and instr and source[ccur] == '\\' and slen > ccur + 1 \
                 and source[ccur + 1] in (
                 'a', 'b', 'f', 'n', 'r', 't', 'v', '0', 'x', '\'', '"', '\\', '`'):
             # escape character
@@ -817,6 +817,26 @@ class Lex:
 
             elif is_identifier(c) or c == '_':
                 # 如果是标识符
+                if c == 'r':  # 原生字符串
+                    if self.__nextch() in ('`', '"', '\''):
+                        self.__movchr()
+                        mov, lni, buf = get_string(self.__source, self.__chp, r_str=True)
+
+                        if mov == -1:
+                            self.__error_msg('EOL while scanning string literal')
+                        elif mov == -2:
+                            self.__error_msg('Cannot decode an escape character')
+
+                        self.__stream.append(Token(
+                            buf,
+                            AIL_STRING,
+                            self.__ln
+                        ))
+
+                        self.__ln += lni
+                        self.__movchr(mov)
+                        continue
+
                 mov, buf = get_identifier(self.__source, self.__chp)
                 self.__stream.append(Token(
                     buf,
