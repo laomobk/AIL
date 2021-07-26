@@ -9,7 +9,6 @@ from .version import (
 )
 
 from ail.modules._fileio import _open
-from ail.modules.console import get_console_object
 from ail.modules.helper import print_help
 from ail.modules.fileio import CLASS_FILEIO
 
@@ -541,7 +540,7 @@ def init_builtins():
         'builtins': objs.convert_to_ail_object(func_builtins),
         'locals': objs.convert_to_ail_object(func_locals),
         'dir': objs.convert_to_ail_object(func_dir),
-        'console': objs.convert_to_ail_object(get_console_object()),
+        # 'console': objs.convert_to_ail_object(get_console_object()),
         'help': objs.convert_to_ail_object(print_help),
         'complex': objs.convert_to_ail_object(func_complex),
         'map': objs.convert_to_ail_object(func_map),

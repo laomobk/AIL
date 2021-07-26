@@ -7,7 +7,7 @@ from .objects import convert_object
 
 from ..core import abuiltins as _builtins
 from ..core.aconfig import RENAME_PY_RUNTIME
-from ail.modules.console import get_console_object as _get_console_object
+from ail.modules.console import console as _console
 from ail.modules.system import SYSTEM_OBJECT
 
 _builtins.init_builtins()
@@ -41,7 +41,7 @@ AIL_PY_GLOBAL.update({
     '__modules__': _shared.loaded_modules,
     'new': _func.new_struct_object,
     'contains': _func.contains,
-    'console': convert_object(_get_console_object()),
+    'console': _console,
     'fnum': _func.func_fnum,
     'true': True,
     'false': False,

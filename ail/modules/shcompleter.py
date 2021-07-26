@@ -1,6 +1,12 @@
 
 import builtins as _builtins
 
+from ail.py_runtime.objects import (
+    AILObjectWrapper as _ObjectWrapper,
+    AILModule as _AILModule,
+)
+
+
 _readline_available = False
 
 try:
@@ -79,15 +85,41 @@ class Completer:
         except Exception:
             return []
 
-        words = set(dir(this))
+        words = []
+        
+        if isinstance(this, _ObjectWrapper):
+            try:
+                words = set(this.ail_object.members.keys())
+            except AttributeError:
+                words = set(dir(this))
+        elif isinstance(this, _AILModule):
+            try:
+                words = set(this._module_globals.keys())
+            except AttributeError:
+                words = set(dir(this)) 
+        else:
+            words = set(dir(this))
+
         n = len(attr)
         
         matches = []
+
+        show_prefix = attr[:1] == '_'
         
         for word in words:
+            if '::' in word:
+                continue
+
+            if word[:1] == '_' and not show_prefix:
+                continue
+
             if word[:n] == attr:
                 matches.append('%s.%s' % (expr, word))
         
         matches.sort()
         return matches
+
+
+_AIL_PYC_MODULE_ = True
+_AIL_NAMESPACE_ = {'Completer': Completer}
 

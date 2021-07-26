@@ -786,7 +786,7 @@ class Lex:
 
             elif c == '!':  # 感叹号
                 if self.__nextch() == '=':  # !=
-                    if self.__nextch() == '=':  # !==
+                    if self.__nextch(2) == '=':  # !==
                         self.__stream.append(Token(
                             '!==',
                             AIL_AUEQ,
