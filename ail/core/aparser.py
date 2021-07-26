@@ -3162,10 +3162,11 @@ class ASTConverter:
             return self._convert_for_stmt(a)
 
         elif isinstance(a, ast.BinaryExprListAST):
-            raise PyTreeConvertException('BinaryExprListAST cannot be converted', a.ln)
+            raise PyTreeConvertException(
+                'BinaryExprListAST cannot be converted', a.ln)
 
         elif isinstance(a, ast.AssertStmtAST):
-            return _set_lineno(assert_stmt(self.convert(a.test), None), a.ln)
+            return _set_lineno(assert_stmt(self.convert(a.expr), None), a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
             return _set_lineno(raise_stmt(self.convert(a.expr)), a.ln)

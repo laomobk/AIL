@@ -137,6 +137,9 @@ python3 -m ail
 
 AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
 
+## AIL 语句
+文档 [AIL语句] (./docs/reference/statements.md) 简要地描述了 AIL 的语句
+
 ## AIL 代码转换细节
 
 想要了解 AIL 代码是如何转换成 Python 语法树的，可以查看：
