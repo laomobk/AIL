@@ -46,6 +46,9 @@ class Completer:
         except IndexError:
             return None
 
+    def __check_callable_prefix(self, word, obj) -> str:
+        return ('%s(' % word) if callable(obj) else word
+
     def match_name(self, text: str):
         from ..core.aparser import _keywords
 
@@ -53,21 +56,30 @@ class Completer:
         matches = []
         n = len(text)
 
+        for word in _keywords:
+            if word not in matches:
+                if word[:n] == text:
+                    matches.append(word)
+
         for word in ns.keys():
             if '::' in word:
                 continue
 
             if word[:n] == text:
+                try:
+                    word = self.__check_callable_prefix(word, ns[word])
+                except Exception:
+                    pass
                 matches.append(word)
 
         for word in dir(_builtins):
             if word not in matches:
                 if word[:n] == text:
-                    matches.append(word)
-
-        for word in _keywords:
-            if word not in matches:
-                if word[:n] == text:
+                    try:
+                        word = self.__check_callable_prefix(
+                                word, getattr(_builtins, word))
+                    except Exception:
+                        pass
                     matches.append(word)
 
         return matches
@@ -112,8 +124,12 @@ class Completer:
 
             if word[:1] == '_' and not show_prefix:
                 continue
-
             if word[:n] == attr:
+                try:
+                    word = self.__check_callable_prefix(word, getattr(this, word))
+                except Exception:
+                    pass
+
                 matches.append('%s.%s' % (expr, word))
         
         matches.sort()
