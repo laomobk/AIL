@@ -1,0 +1,17 @@
+
+func main() {
+    n = int(console.readln('请输入学生人数: '));
+    scores = array(n, 0);
+
+    foreach i in range(n) {
+        s = int(console.readln('请输入第 %s 位学生的分数: ' % (i + 1)));
+        scores[i] = s;
+    }
+
+    print '这 %s 位学生的平均分是: %s' % (n, sum(scores) / n);
+}
+
+
+if __name__ == '__main__' {
+    main();
+}
