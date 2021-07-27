@@ -1927,13 +1927,14 @@ class Parser:
 
         expr = self.__parse_test_expr()
 
-        if expr is None or \
-                self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error()
+        msg = None
+
+        if self.__now_tok.ttype != AIL_ENTER:
+            msg = self.__parse_binary_expr(type_comment=False)
 
         self.__expect_newline()
 
-        return ast.AssertStmtAST(expr, self.__now_ln)
+        return ast.AssertStmtAST(expr, msg, self.__now_ln)
 
     def __parse_import_stmt(self) -> ast.ImportStmtAST:
         if self.__now_tok != 'import':
@@ -3175,7 +3176,9 @@ class ASTConverter:
                 'BinaryExprListAST cannot be converted', a.ln)
 
         elif isinstance(a, ast.AssertStmtAST):
-            return _set_lineno(assert_stmt(self.convert(a.expr), None), a.ln)
+            return _set_lineno(assert_stmt(
+                self.convert(a.expr), self.convert(a.msg)), 
+                a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
             return _set_lineno(raise_stmt(self.convert(a.expr)), a.ln)

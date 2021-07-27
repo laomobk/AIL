@@ -495,8 +495,9 @@ class ThrowStmtAST:
 
 
 class AssertStmtAST:
-    def __init__(self, expr: TestExprAST, ln: int):
+    def __init__(self, expr: TestExprAST, msg, ln: int):
         self.expr = expr
+        self.msg = msg
         self.ln = ln
 
 
