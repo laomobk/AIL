@@ -235,7 +235,7 @@ class name [:meta_class] [extends super_class...]
 namespace NAME { statements }
 ```
 
-名称空间定义语句属于显式定义语句。名称空间内部若不使用显式定义语句，则会出现风险。具体请查阅 [namespace](.namespace.md) .
+名称空间定义语句属于显式定义语句。名称空间内部若不使用显式定义语句，则会出现风险。具体请查阅 [namespace](./namespace.md) .
 
 ### 结构体定义语句
 
