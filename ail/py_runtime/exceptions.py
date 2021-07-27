@@ -45,7 +45,7 @@ class UnhandledMatchError(Exception):
 
 def remove_py_runtime_traceback(tb: _TracebackType):
     current = tb
-    last: _TracebackType = None
+    last: _TracebackType = tb
     head: _TracebackType = None 
 
     while current is not None:

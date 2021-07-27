@@ -1346,7 +1346,8 @@ class Parser:
 
         block = self.__parse_block('then', 'wend',
                                    'while block should starts with \'then\'',
-                                   "while block should ends with 'wend'")
+                                   "while block should ends with 'wend'",
+                                   loop_body=True)
 
         if block is None:
             self.__syntax_error()
@@ -1411,7 +1412,7 @@ class Parser:
 
         iter = self.__parse_binary_expr(do_tuple=True, type_comment=False)
 
-        block = self.__parse_block()
+        block = self.__parse_block(loop_body=True)
 
         return ast.ForeachStmt(target, iter, block, ln)
 
@@ -1459,7 +1460,7 @@ class Parser:
         if self.__now_tok != '{' and self.__now_tok != 'then':
             update = self.__parse_binary_expr_list()
 
-        body = self.__parse_block()
+        body = self.__parse_block(loop_body=True)
 
         return ast.ForStmtAST(init, test, update, body, ln)
 
@@ -1495,13 +1496,13 @@ class Parser:
 
         initl, test, binl = mt
 
-        forb = self.__parse_block()
+        forb = self.__parse_block(loop_body=True)
         if not forb.new:
             self.__expect_newline()
 
         return ast.ForStmtAST(initl, test, binl, forb, self.__now_ln)
 
-    def __parse_do_loop_expr(self) -> ast.DoLoopStmtAST:
+    def __parse_do_loop_stmt(self) -> ast.DoLoopStmtAST:
         ln = self.__now_ln
 
         new_block_style = False
@@ -1509,11 +1510,12 @@ class Parser:
         if self.__peek(1).ttype != AIL_LLBASKET:
             block = self.__parse_block('do', 'loop',
                                        'do loop statement should starts with \'do\'',
-                                       "do loop statement should ends with 'until'")
+                                       "do loop statement should ends with 'until'",
+                                       loop_body=True)
         else:
             new_block_style = True
             self.__next_tok()  # eat 'do'
-            block = self.__parse_block()
+            block = self.__parse_block(loop_body=True)
 
         if block is None:
             self.__syntax_error()
@@ -2167,7 +2169,9 @@ class Parser:
 
         return func
 
-    def __parse_stmt(self, limit: tuple = (), class_body: bool = False) -> ast.ExprAST:
+    def __parse_stmt(
+            self, limit: tuple = (), class_body: bool = False,
+            loop_body: bool = False) -> ast.ExprAST:
         nt = self.__now_tok
 
         if nt == 'print':
@@ -2186,9 +2190,11 @@ class Parser:
             a = self.__parse_for_stmt()
 
         elif nt == 'do':
-            a = self.__parse_do_loop_expr()
+            a = self.__parse_do_loop_stmt()
 
         elif nt == 'continue':
+            if not loop_body:
+                self.__syntax_error('\'continue\' outside loop')
             a = self.__parse_continue_stmt()
 
         elif nt == 'nonlocal':
@@ -2202,6 +2208,8 @@ class Parser:
             a = self.__parse_global_stmt()
 
         elif nt == 'break':
+            if not loop_body:
+                self.__syntax_error('\'break\' outside loop')
             a = self.__parse_break_stmt()
 
         elif nt == 'return':
@@ -2309,7 +2317,8 @@ class Parser:
                       start_msg: str = None, end_msg: str = None,
                       start_enter=True, for_if_else: bool = False,
                       for_program: bool = False,
-                      class_body: bool = False) -> ast.BlockAST:
+                      class_body: bool = False,
+                      loop_body: bool = False) -> ast.BlockAST:
         if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
             return self.__parse_new_block(class_body=class_body)
 
@@ -2341,7 +2350,7 @@ class Parser:
                 self.__next_tok()
                 return ast.BlockAST([], ln)
 
-        first = self.__parse_stmt((start, end), class_body=class_body)
+        first = self.__parse_stmt((start, end), class_body=class_body, loop_body=loop_body)
 
         if first is None:
             self.__syntax_error()

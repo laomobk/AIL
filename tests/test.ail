@@ -1,6 +1,0 @@
-
-foreach x in map((x) -> x ** 2, range(100)) {
-    print x;
-}
-
-
