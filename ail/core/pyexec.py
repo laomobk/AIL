@@ -1,7 +1,10 @@
 # python compatible
 
+from sys import stderr
+
 from .alex import Lex
 from .aparser import ASTConverter, Parser
+from .error import AILSyntaxError
 
 from ..py_runtime import AIL_PY_GLOBAL
 from ..py_runtime.namespace import fill_namespace
@@ -41,11 +44,15 @@ def exec_as_python(
     """
     :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
     """
-    l = Lex()
-    ts = l.lex(source, filename)
+    try:
+        l = Lex()
+        ts = l.lex(source, filename)
 
-    p = Parser()
-    node = p.parse(ts, source, filename, True)
+        p = Parser()
+        node = p.parse(ts, source, filename, True)
+    except AILSyntaxError as e:
+        print(e.raw_msg, file=stderr)
+        return 1
 
     converter = ASTConverter()
     code = compile(converter.convert_module(node), filename, 'exec')

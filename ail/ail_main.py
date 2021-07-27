@@ -13,6 +13,7 @@ from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
 from .core.acompiler import Compiler
 from .core.avm import Interpreter, InterpreterWrapper
+from .core.error import AILSyntaxError
 
 
 from ._config import (
@@ -230,6 +231,8 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
 def launch_main(argv: list, pyc_mode: bool = True):
     try:
         return _launch_main(argv, pyc_mode)
+    except AILSyntaxError as e:
+        print(e.raw_msg, file=sys.stderr)
     except SystemExit:
         return 0
 

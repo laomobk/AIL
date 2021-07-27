@@ -6,7 +6,7 @@ from . import debugger
 
 
 ERR_NOT_EXIT = False
-THROW_ERROR_TO_PYTHON = False
+THROW_ERROR_TO_PYTHON = True
 
 
 def get_line_from_file(lno: int, fp: str, strip=True):
@@ -94,7 +94,7 @@ def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None)
             filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:
-        raise BuiltinAILRuntimeError(err_msg)
+        raise AILSyntaxError(msg, err_msg, filename, line)
     else:
         sys.stderr.write(err_msg)
         sys.stderr.flush()
@@ -192,6 +192,15 @@ def raise_error_as_python(err: AILRuntimeError, where: str = ''):
 
 class BuiltinAILRuntimeError(Exception):
     pass
+
+
+class AILSyntaxError(BuiltinAILRuntimeError):
+    def __init__(self, msg, raw_msg, filename: str, line: int):
+        super().__init__(f'\n{raw_msg}')
+        self.msg = msg
+        self.raw_msg = raw_msg
+        self.filename = filename
+        self.line = line
 
 
 class AILVersionError(Exception):
