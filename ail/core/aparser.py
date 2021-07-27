@@ -176,7 +176,7 @@ class Parser:
     def __syntax_error(self, msg=None, ln: int = 0):
         error_msg(
             self.__now_ln if ln <= 0 else ln,
-            'SyntaxError%s' % ((': ' if msg else '') + (msg if msg else '')),
+            'SyntaxError: %s' % (str(msg) if msg else 'invalid syntax'),
             self.__filename, source=self.__source)
 
     def __expect_newline(self):
@@ -1984,8 +1984,12 @@ class Parser:
         self.__next_tok()  # eat '('
 
         members = []
+        m_ln = None
 
         while self.__now_tok.ttype != AIL_SRBASKET:
+            if m_ln is None:
+                m_ln = self.__now_tok.ln
+                
             if self.__now_tok.ttype != AIL_IDENTIFIER:
                 self.__syntax_error()
             members.append(self.__now_tok.value)
@@ -1997,6 +2001,9 @@ class Parser:
             if self.__now_tok.ttype != AIL_COMMA:
                 self.__syntax_error()
             self.__next_tok()  # eat ','
+
+        if len(members) > 0:
+            self.__syntax_error(msg='alias and members in one import statement', ln=m_ln)
 
         self.__next_tok()  # eat ')'
 

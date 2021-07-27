@@ -7,6 +7,7 @@ from .objects import convert_object
 
 from ..core import abuiltins as _builtins
 from ..core.aconfig import RENAME_PY_RUNTIME
+from ..core.error import AILSyntaxError, BuiltinAILRuntimeError
 from ail.modules.console import console as _console
 from ail.modules.system import SYSTEM_OBJECT
 
@@ -47,8 +48,10 @@ AIL_PY_GLOBAL.update({
     'false': False,
     'system': SYSTEM_OBJECT,
     'UnhandledMatchError': _exception.UnhandledMatchError,
-
+    'eval': _func.ail_eval,
     'Map': dict,
+    'AILSyntaxError': AILSyntaxError,
+    'BuiltinAILRuntimeError': BuiltinAILRuntimeError,
 
     'py::UnhandledMatchError': _exception.UnhandledMatchError,
     'py::raise': _func.raise_exception,

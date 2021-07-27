@@ -21,6 +21,16 @@ def convert_to_namespace(namespace_func):
     return Namespace(namespace_func.__name__, func_locals)
 
 
+_eval_cache = None
+
+
+def ail_eval(source: str, globals=None, locals=None):
+    global _eval_cache
+    if _eval_cache is None:
+        from ..core.pyexec import ail_eval as _eval_cache
+    return _eval_cache(source, globals=globals, locals=locals)
+
+
 def ail_using(ns_obj: 'Namespace', namespace: dict):
     namespace.update(ns_obj.__dict__)
 
