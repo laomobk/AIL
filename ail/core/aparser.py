@@ -181,7 +181,7 @@ class Parser:
 
     def __expect_newline(self):
         if self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error('except NEWLINE')
+            self.__syntax_error('except newline')
 
     def __parse_arg_item(
             self, type_comment: bool = False, try_tuple: bool = False) -> ast.ArgItemAST:
@@ -1925,7 +1925,7 @@ class Parser:
 
         self.__next_tok()  # eat 'assert'
 
-        expr = self.__parse_test_expr()
+        expr = self.__parse_binary_expr(type_comment=False)
 
         msg = None
 
@@ -2408,7 +2408,8 @@ class Parser:
 
         self.__pyc_mode = pyc_mode
 
-        if len(ts.token_list) == 0:
+        if len(ts.token_list) == 0 or (
+                len(ts.token_list) == 1 and ts.token_list[0].ttype == AIL_EOF):
             if eval_mode:
                 return None
             return ast.BlockAST([], 0)
@@ -3184,8 +3185,8 @@ class ASTConverter:
 
         elif isinstance(a, ast.AssertStmtAST):
             return _set_lineno(assert_stmt(
-                self.convert(a.expr), self.convert(a.msg)), 
-                a.ln)
+                        self.convert(a.expr), self.convert(a.msg)), 
+                    a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
             return _set_lineno(raise_stmt(self.convert(a.expr)), a.ln)

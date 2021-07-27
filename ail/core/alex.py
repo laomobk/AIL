@@ -429,7 +429,7 @@ class Token:
 
     def __ne__(self, obj: object):
         if isinstance(obj, str):
-            return self.value != obj and self.ttype != AIL_STRING
+            return self.value != obj or self.ttype == AIL_STRING
         elif isinstance(obj, Token):
             return self.value != obj.value
         else:
