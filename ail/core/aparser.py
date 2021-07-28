@@ -2002,8 +2002,9 @@ class Parser:
                 self.__syntax_error()
             self.__next_tok()  # eat ','
 
-        if len(members) > 0:
-            self.__syntax_error(msg='alias and members in one import statement', ln=m_ln)
+        if len(members) > 0 and alias is not None:
+            self.__syntax_error(
+                    msg='alias and members in one import statement', ln=m_ln)
 
         self.__next_tok()  # eat ')'
 
