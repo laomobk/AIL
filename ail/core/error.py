@@ -106,7 +106,7 @@ class BuiltinAILRuntimeError(Exception):
 
 class AILSyntaxError(BuiltinAILRuntimeError):
     def __init__(self, msg, raw_msg, filename: str, line: int):
-        super().__init__(f'\n{raw_msg}')
+        super().__init__(raw_msg)
         self.msg = msg
         self.raw_msg = raw_msg
         self.filename = filename
