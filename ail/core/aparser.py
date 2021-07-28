@@ -627,6 +627,15 @@ class Parser:
 
         return ast.ObjectPatternExpr(left, keys, map_tree.values, ln)
 
+    def __parse_slice_expr(self) -> ast.SliceExpr:
+        ln = self.__now_ln
+
+        start = None
+        stop = None
+        step = None
+
+        return ast.SliceExpr(start, stop, step, ln)
+
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
         # in fact, it is for subscript
         ca = self.__parse_low_cell_expr()
@@ -643,7 +652,7 @@ class Parser:
                 if self.__now_tok == ']':
                     self.__syntax_error()
 
-                expr = self.__parse_binary_expr()
+                expr = self.__parse_slice_expr()
 
                 if self.__now_tok != ']':
                     self.__syntax_error()
@@ -2635,6 +2644,13 @@ class ASTConverter:
             left, _set_lineno(index_slice(value), expr.ln), load_ctx()
         ), expr.ln)
 
+    def _convert_slice_expr(self, expr: ast.SliceExpr) -> pyast.Slice:
+        start = None if expr.start is None else self.convert(expr.start)
+        stop = None if expr.stop is None else self.convert(expr.stop)
+        step = None if expr.step is None else self.convert(expr.step)
+
+        return slice_expr(start, stop, step)
+
     def _convert_member_access_expr(self, left, rights, ln: int) -> pyast.Attribute:
         o_left = left
 
@@ -3218,6 +3234,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.ForeachStmt):
             return self._convert_foreach_stmt(a)
+
+        elif isinstance(a, ast.SliceExpr):
+            return self._convert_slice_expr(a)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)

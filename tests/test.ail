@@ -1,5 +1,2 @@
 
-// import 'pkgtools' (get_namespace);
-load 'pkgtools';
-
-print get_namespace();
+test[::]

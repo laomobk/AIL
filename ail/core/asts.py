@@ -595,6 +595,13 @@ class ForeachStmt:
         self.ln = ln
 
 
+class SliceExpr:
+    def __init__(self, start, stop, step, ln: int):
+        self.start = start
+        self.stop = stop
+        self.step = step
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

@@ -214,6 +214,10 @@ def starred_expr(value: _ast.expr, ctx: _ast.expr_context) -> _ast.Starred:
     return _ast.Starred(value=value, ctx=ctx)
 
 
+def slice_expr(lower: _ast.expr, upper: _ast.expr, step: _ast.expr) -> _ast.Slice:
+    return _ast.Slice(lower=lower, upper=upper, step=step)
+
+
 def subscript_expr(
         value: _ast.expr, slice: _ast.slice, ctx: _ast.expr_context) -> _ast.Subscript:
     return _ast.Subscript(value=value, slice=slice, ctx=ctx)
