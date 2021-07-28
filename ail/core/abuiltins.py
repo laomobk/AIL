@@ -1,4 +1,6 @@
 
+import builtins as _builtins
+
 from . import corecom as ccom
 
 from .version import (
@@ -27,7 +29,7 @@ def func_builtins():
     builtins() -> Map[string, any]
     @returns the builtin namespace
     """
-    return __builtins__.globals()
+    return _builtins.__dict__
 
 
 def func_int_input(prompt):
@@ -51,7 +53,7 @@ def contains(a, b) -> bool:
     """
     :return: b in a
     """
-    return a in b
+    return b in a
 
 
 BUILTINS = {}

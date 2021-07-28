@@ -10,7 +10,7 @@ _builtins.init_builtins()
 
 
 _PY_BUILTINS = {
-    'globals', 'locals', 'builtins',
+    'globals', 'locals',
     'help', 'dir',
     'chr', 'ord', 'hex', 'oct',
     'len', 'type', 'isinstance',
@@ -35,7 +35,6 @@ AIL_PY_GLOBAL.update({
     '__ail_make_struct__': _func.make_struct,
     '__ail_bind_function__': _func.bind_function,
     'new': _func.new_struct_object,
-    'contains': _func.contains,
     'console': _console,
     'fnum': _func.func_fnum,
     'true': True,

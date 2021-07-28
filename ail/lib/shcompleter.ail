@@ -8,9 +8,12 @@ try {
     _readline_available = True;
 } catch ImportError _ {}
 
+_debug_completer = false;
+
 class Completer {
     init(self, namespace_) {
         self._namesapce = namespace_;
+        self.matches = [];
     }
 
     func complete(self, text: str, state: int) {
@@ -29,18 +32,32 @@ class Completer {
                 return null;
             }
         }
+        
+        try {
+            if state == 0 {
+                if contains(text, '.') {
+                    m = self.match_attr(text);
+                } else {
+                    m = self.match_name(text);
+                }
 
-        if state == 0 {
-            if contains(text, '.') {
-                m = self.match_attr(text);
+                self._matches = m;
+            }
+            
+            if state < len(self._matches) {
+                return self._matches[state];
             } else {
-                m = self.match_name(text);
+                return null;
             }
 
-            self._namesapce = m;
+        } catch Exception e {
+            if _debug_completer {
+                #from traceback import print_exc
+                print '(completer: %s)' % e;
+                print_exc();
+            }
+            return [];
         }
-
-        return m;
     }
 
     func match_name(self, text: str) {
@@ -51,29 +68,32 @@ class Completer {
         n = len(text);
 
         foreach word in _keywords {
-            if word[slice(null, 32)] == text {
+            if word[slice(null, n)] == text {
                 matches.append(word);
             }
         }
 
         foreach word in ns {
-            if contains(b, word) or contains(text, '::') {
+            if contains(matches, word) or contains(text, '::') {
                 continue;
             }
 
-            if word[slice(null, 32)] == text {
+            if word[slice(null, n)] == text {
+                word = self.__rename_callable(word, ns.get(word, None))
                 matches.append(word);
             }
         }
 
         b = builtins().keys();
+        b_ns = builtins()
         
         foreach word in b {
-            if contains(b, word) or contains(text, '::') {
+            if contains(matches, word) or contains(text, '::') {
                 continue;
             }
 
-            if word[slice(null, 32)] == text {
+            if word[slice(null, n)] == text {
+                word = self.__rename_callable(word, b_ns.get(word, null))
                 matches.append(word);
             }
         }
@@ -102,7 +122,7 @@ class Completer {
         matches = [];
         show_prefix = attr[slice(0, 1)] == '_';
 
-        n = len(text);
+        n = len(attr);
 
         foreach word in words {
             if contains(word, '::') or (
@@ -110,14 +130,23 @@ class Completer {
                 continue;
             }
 
-            if word[slice(0, n)] == text {
-                matches.append(word);
+            if word[slice(None, n)] == attr {
+                word = self.__rename_callable(word, getattr(this, word, null))
+                matches.append('%s.%s' % (expr, word));
             }
         }
 
         matches.sort();
 
         return matches;
+    }
+
+    func __rename_callable(self, text, obj) {
+        if callable(obj) {
+            return '%s(' % text;
+        }
+
+        return text;
     }
 }
 
