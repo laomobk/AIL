@@ -68,7 +68,7 @@ class Completer {
         n = len(text);
 
         foreach word in _keywords {
-            if word[slice(null, n)] == text {
+            if word[:n] == text {
                 matches.append(word);
             }
         }
@@ -78,7 +78,7 @@ class Completer {
                 continue;
             }
 
-            if word[slice(null, n)] == text {
+            if word[:n] == text {
                 word = self.__rename_callable(word, ns.get(word, None))
                 matches.append(word);
             }
@@ -92,7 +92,7 @@ class Completer {
                 continue;
             }
 
-            if word[slice(null, n)] == text {
+            if word[:n] == text {
                 word = self.__rename_callable(word, b_ns.get(word, null))
                 matches.append(word);
             }
@@ -120,17 +120,17 @@ class Completer {
 
         words = set(dir(this));
         matches = [];
-        show_prefix = attr[slice(0, 1)] == '_';
+        show_prefix = attr[:1] == '_';
 
         n = len(attr);
 
         foreach word in words {
             if contains(word, '::') or (
-                    not show_prefix and word[slice(0, 1)] == '_') {
+                    not show_prefix and word[:1] == '_') {
                 continue;
             }
 
-            if word[slice(None, n)] == attr {
+            if word[:n] == attr {
                 word = self.__rename_callable(word, getattr(this, word, null))
                 matches.append('%s.%s' % (expr, word));
             }
