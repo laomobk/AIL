@@ -1,3 +1,0 @@
-
-loaded_modules = dict()
-

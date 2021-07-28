@@ -1,13 +1,9 @@
 
 from copy import copy
-from functools import wraps
 from inspect import isfunction, isbuiltin
 from typing import List, Dict, Union
 
 from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct, Namespace
-
-from . import exceptions as _exceptions
-
 
 _IMPORTER = _AILImporter()
 

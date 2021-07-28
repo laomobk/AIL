@@ -5,14 +5,10 @@ import sys
 from importlib import import_module
 from .core import shared
 from .core import aconfig
-from .core.astate import MAIN_INTERPRETER_STATE
-from .core.avmsig import WHY_HANDLING_ERR, WHY_ERROR
 from .core.abuiltins import init_builtins
 from .core.pyexec import exec_pyc_main
 from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
-from .core.acompiler import Compiler
-from .core.avm import Interpreter, InterpreterWrapper
 from .core.error import AILSyntaxError
 
 
@@ -156,7 +152,7 @@ def launch_py_test(test_name):
         print('No test named \'%s\'' % test_name)
 
 
-def _launch_main(argv: list, pyc_mode: bool = True) -> int:
+def _launch_main(argv: list) -> int:
     init_builtins()
 
     option = ArgParser().parse(argv)
@@ -191,8 +187,7 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
         else:
             source = open(file_path, encoding='UTF-8').read()
 
-        if pyc_mode and not source_mode:
-            MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
+        if not source_mode:
             return exec_pyc_main(source, file_path, dict())
 
         ast = Parser().parse(Lex().lex(source), source, file_path, source_mode)
@@ -213,24 +208,14 @@ def _launch_main(argv: list, pyc_mode: bool = True) -> int:
                 print('AIL: require module \'astunparse\'')
                 return 1
 
-        code_object = Compiler(
-                ast, filename=file_path).compile(ast).code_object
-        code_object.is_main = True
-
-        why = MAIN_INTERPRETER_STATE.global_interpreter.exec(
-                code_object)
-
-        if why in (WHY_HANDLING_ERR, WHY_ERROR):
-            return 1
-
     except FileNotFoundError as e:
         print('AIL: can\'t open file \'%s\': %s' % (file_path, str(e)))
         return 1
 
 
-def launch_main(argv: list, pyc_mode: bool = True):
+def launch_main(argv: list):
     try:
-        return _launch_main(argv, pyc_mode)
+        return _launch_main(argv)
     except AILSyntaxError as e:
         print(e.raw_msg, file=sys.stderr)
     except SystemExit:

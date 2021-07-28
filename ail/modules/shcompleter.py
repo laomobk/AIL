@@ -1,8 +1,7 @@
 
 import builtins as _builtins
 
-from ail.py_runtime.objects import (
-    AILObjectWrapper as _ObjectWrapper,
+from ail.core.objects import (
     AILModule as _AILModule,
 )
 
@@ -98,13 +97,8 @@ class Completer:
             return []
 
         words = []
-        
-        if isinstance(this, _ObjectWrapper):
-            try:
-                words = set(this.ail_object.members.keys())
-            except AttributeError:
-                words = set(dir(this))
-        elif isinstance(this, _AILModule):
+
+        if isinstance(this, _AILModule):
             try:
                 words = set(this._module_globals.keys())
             except AttributeError:

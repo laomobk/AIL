@@ -2,18 +2,7 @@
 
 import os.path
 
-from inspect import isfunction
-from os import chdir, getcwd
-from traceback import format_exc
-from typing import Tuple, Union
-
-from .alex import Lex
-from .aparser import Parser
-from .acompiler import Compiler
-from .astate import MAIN_INTERPRETER_STATE
-from .avmsig import WHY_HANDLING_ERR, WHY_ERROR
-
-from . import aobjects as objs, error
+from . import error
 from . import shared
 
 _ALLOW_FILE_TYPE = ('ail', 'py', 'ailp')
@@ -24,10 +13,6 @@ _ALLOW_FILE_TYPE = ('ail', 'py', 'ailp')
 且要在该Python模块中设置 _IS_AIL_MODULE_ = True 字段！
 AIL 会加载这个字典，作为 namespace 导入到 AIL 主名称空间中
 '''
-
-
-def is_meta(name):
-    return name[:2] == name[-2:] == '__'
 
 
 def _trim_path(path: str) -> str:
@@ -64,51 +49,23 @@ class ModuleLoader:
 
     search_module = __search_module
 
-    def __load_py_namespace(self, pypath, convert: bool = True, pyc_mode=False):
+    def __load_py_namespace(self, pypath):
         v = {}
 
-        try:
-            cobj = compile(
+        cobj = compile(
                     open(pypath, encoding='UTF-8').read(), pypath, 'exec')
-            exec(cobj, v)
-        except Exception as e:
-            excs = format_exc()
-            return error.AILRuntimeError(
-                '%s' % excs, 'LoadError')
+        exec(cobj, v)
 
         is_mod = v.get('_IS_AIL_MODULE_', False)
         is_mod = v.get('_AIL_MODULE_', False) if not is_mod else True
         is_pyc_module = v.get('_AIL_PYC_MODULE_', False)
         has_namespace = '_AIL_NAMESPACE_' in v
 
-        if not pyc_mode and is_pyc_module:
-            return error.AILRuntimeError(
-                'module \'%s\' must load in Python Compatible mode' % pypath,
-                'ImportError')
-
         if not (is_mod or is_pyc_module) or not has_namespace:
-            return error.AILRuntimeError(
+            raise ModuleNotFoundError(
                 '%s is not an AIL MODULE!' % pypath, 'LoadError')
 
-        if '_AIL_NAMESPACE_' in v:
-            nsp = v['_AIL_NAMESPACE_']
-
-            # convert all objects to AILObject
-            for k, v in nsp.items():
-                if is_pyc_module:
-                    break
-
-                if not convert:
-                    if isfunction(v):
-                        nsp[k] = objs.convert_to_ail_object(v)
-                    else:
-                        nsp[k] = v
-                else:
-                    nsp[k] = objs.convert_to_ail_object(v)
-
-            return nsp
-
-        return {}
+        return v.get('_AIL_NAMESPACE_', {})
 
     get_py_namespace = __load_py_namespace
 
@@ -120,93 +77,6 @@ class ModuleLoader:
             return fns[-1]
 
     get_type = __get_type
-
-    def __add_to_loaded(self, module_path: str, namespace: dict):
-        self.__check_and_delete_meta(namespace)
-        if namespace is not None:
-            self.__loaded[module_path] = namespace
-        return namespace
-
-    def __check_and_delete_meta(self, namespace: dict):
-        del_target = []
-
-        for k in namespace.keys():
-            if is_meta(k):
-                del_target.append(k)
-
-        for k in del_target:
-            del namespace[k]
-
-        return namespace
-
-    def load_namespace(
-            self, 
-            module_name: str, 
-            import_mode: bool = False) -> Union[dict, Tuple]:
-        """
-        :return: 1 if module not found
-                 2 if circular import(or load)
-                 3 if error while importing (or loading) a module
-                 4 if handing error
-        """
-
-        from .avm import Frame
-
-        p = self.__search_module(module_name)
-
-        if p is None:
-            return 1, p
-
-        if p in self.__loading_paths:
-            return 2, p
-
-        if p in self.__loaded.keys():
-            return self.__loaded[p], p
-
-        self.__loading_paths.append(p)
-        remove_path = self.__loading_paths.remove
-        
-        cwd = getcwd()
-        module_work_dir = os.path.dirname(p)
-
-        chdir(module_work_dir)
-
-        if self.__get_type(p) in ('py', 'ailp'):
-            remove_path(p)
-            ns = self.__load_py_namespace(p)
-            
-            if isinstance(ns, error.AILRuntimeError):
-                return ns, p
-
-            ns = self.__add_to_loaded(p, ns)
-            chdir(cwd)
-            return ns, p
-
-        elif self.__get_type(p) == 'ail':
-            source = open(p).read()
-            ast = Parser().parse(Lex().lex(source), source, p)
-            cobj = Compiler(filename=p, name=p).compile(ast).code_object
-
-            frame = Frame(cobj, cobj.varnames, cobj.consts)
-
-            namespace = dict()
-            interpreter = MAIN_INTERPRETER_STATE.global_interpreter
-            why = interpreter.exec_for_import(
-                    cobj, frame, globals=namespace)
-
-            remove_path(p)
-            chdir(cwd)
-
-            if why == WHY_ERROR:
-                return 3, p
-            elif why == WHY_HANDLING_ERR:
-                return 4, p
-            
-            return self.__add_to_loaded(p, namespace), p
-
-        remove_path(p)
-        chdir(cwd)
-        return 1, p
 
 
 MAIN_LOADER = ModuleLoader()

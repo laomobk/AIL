@@ -1,36 +1,21 @@
 import sys
-import traceback
 
-from time import ctime
-
-from .acompiler import Compiler
-from .abuiltins import BUILTINS as _BUILTINS
 from .alex import Lex
 from .aparser import Parser, ASTConverter
-from .astate import MAIN_INTERPRETER_STATE
-from .avm import Interpreter, Frame, InterpreterWrapper
-from .version import AIL_VERSION, AIL_COPYRIGHT, AIL_INSTALL_TIME
+from .version import AIL_VERSION, AIL_COPYRIGHT
 
-from ..objects import function
-from ..objects import string
-from ..objects import null
+from ail.core.namespace import fill_namespace
+from ail.core.exceptions import print_py_traceback
 
-from ..py_runtime.namespace import fill_namespace
-from ..py_runtime.exceptions import print_py_traceback
-
-from . import aobjects as objs, error, tokentype as tokent
-
-import os
+from . import error, tokentype as tokent
 
 from ..modules import shcompleter
-
 
 _readline_availble = True
 try:
     import readline
 except ImportError:
     _readline_availble = False
-
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
@@ -45,12 +30,12 @@ _WELCOME_STR = \
 '''AIL %s (Python %s)
 Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
-        _VER_STR, 
+        _VER_STR,
         sys.version
-)
+    )
 
 _SH_HELP_STR = \
-'''AIL shell commands:
+    '''AIL shell commands:
     $help   get commands help
     $exit   exit shell forcibly
     $break  break more mode forcibly
@@ -70,12 +55,6 @@ def _py_copyright():
     return copyright()
 
 
-_SHELL_NAMESPACE = {
-    'exit': objs.convert_to_ail_object(_sh_exit),
-    'copyright': objs.convert_to_ail_object(_sh_copyright),
-    'python_copyright': objs.convert_to_ail_object(_py_copyright),
-}
-
 _SHELL_PYC_NAMESPACE = {
     'copyright': _sh_copyright,
     'python_copyright': copyright,
@@ -94,14 +73,10 @@ class Shell:
 
         self.__more_level = 0
 
-        self.__main_frame = Frame()
-
         self.__lexer = Lex()
         self.__parser = Parser()
-        self.__compiler = Compiler(filename='<shell>', name='<string>')
         self.__converter = ASTConverter()
-        
-        self.__globals = _SHELL_NAMESPACE
+
         self.__pyc_globals = {}
         self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
 
@@ -141,42 +116,16 @@ class Shell:
     def __print_welcome_text():
         print(_WELCOME_STR)
 
-    def __run_single_line_pyc(self, line: str, block: bool=False):
+    def __run_single_line_pyc(self, line: str, block: bool = False):
         t = self.__lexer.lex(line, '<shell>')
         t = self.__parser.parse(t, line, '<shell>', True)
         n = self.__converter.convert_single(t)
         c = compile(n, '<shell>', 'single')
-        
+
         try:
-            interpreter = MAIN_INTERPRETER_STATE.global_interpreter
-            MAIN_INTERPRETER_STATE.global_interpreter = InterpreterWrapper()
             exec(c, self.__pyc_globals)
         except Exception:
             print_py_traceback()
-        finally:
-            MAIN_INTERPRETER_STATE.global_interpreter = interpreter
-
-    def __run_single_line_ail(self, line: str, block=False):
-        single_line = not block
-
-        t = self.__lexer.lex(line, '<shell>')
-        t = self.__parser.parse(t, line, '<shell>')
-        cobj = self.__compiler.compile(t, single_line=single_line).code_object
-        
-        cobj.is_main = True
-        self.__main_frame.code = cobj
-        self.__main_frame.varnames = cobj.varnames
-        self.__main_frame.consts = cobj.consts
-        
-        MAIN_INTERPRETER_STATE.global_interpreter.exec(
-            cobj, self.__main_frame, globals=self.__globals)
-
-        if self.__main_frame.stack:
-            tof = self.__main_frame.stack.pop()
-            if tof is not null.null and tof is not None:
-                print(repr(tof))
-
-        MAIN_INTERPRETER_STATE.frame_stack.clear()
 
     __run_single_line = __run_single_line_pyc
 
@@ -184,9 +133,6 @@ class Shell:
         self.__run_single_line('\n'.join(self.__buffer), True)
 
         self.__buffer = []
-
-    def __read_temp_file(self):
-        return open(self.__temp_name).read()
 
     def run_shell(self):
         self.__run_shell()
@@ -208,9 +154,9 @@ class Shell:
                     run_buf = False
                     self.__run_block()
                     continue
-                
+
                 line = input(ps)
-                
+
                 if not in_edit:
                     more = self.__get_more_line_state(line)
 
@@ -252,7 +198,6 @@ class Shell:
             except error.BuiltinAILRuntimeError as e:
                 in_more = False
                 print(str(e), end='')
-                self.__main_frame.stack = []
                 self.__buffer = []
 
             except EOFError as e:
@@ -278,8 +223,6 @@ class Shell:
 
                 print('\n%s' % str(type(e).__name__))
                 self.__buffer = []
-
-            self.__main_frame.variable['__temp__'] = '\n'.join(self.__buffer)
 
 
 if __name__ == '__main__':

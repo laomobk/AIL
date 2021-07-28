@@ -1,6 +1,6 @@
 
-from ail.py_runtime.exceptions import AILImportError, AILModuleNotFoundError
-from ail.py_runtime.objects import AILImporter
+from ail.core.exceptions import AILImportError, AILModuleNotFoundError
+from ail.core.objects import AILImporter
 
 _AIL_PYC_MODULE_ = True
 

@@ -1,14 +1,8 @@
 
-from .abytecode import (
-    ByteCodeFileBuffer,
-    LineNumberTableGenerator
-)
-from . import aobjects as obj, asts as ast, aopcode as opcs
+from . import asts as ast
 
 
 def print_pyast(tree):
-    dump_func = None
-    
     try:
         import astunparse
         dump_func = astunparse.dump
@@ -175,7 +169,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ArrayAST):
         return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 
-    elif isinstance(a, ast.MapAST):
+    elif isinstance(a, ast.DictAST):
         return {'MapAST': {'keys': make_ast_tree(a.keys), 
                            'values': make_ast_tree(a.values)}}
 
@@ -250,172 +244,3 @@ def make_ast_tree(a) -> dict:
         return unpack_list(a)
 
     return a
-
-
-class ByteCodeDisassembler:
-    __SHOW_VARNAME = (
-        opcs.store_var,
-        opcs.load_global,
-        opcs.load_local,
-        opcs.load_variable,
-        opcs.store_function,
-        opcs.load_varname,
-        opcs.load_module,
-        opcs.load_attr,
-        opcs.store_attr,
-        opcs.setup_catch,
-        opcs.bind_function,
-        opcs.import_from,
-    )
-
-    __SHOW_CONST = (
-        opcs.load_const,
-        opcs.import_name,
-        opcs.load_module,
-    )
-
-    __SHOW_COMPARE_OP = (
-        opcs.compare_op,
-    )
-
-    __SHOW_JUMPPOINT = (
-        opcs.jump_if_false_or_pop,
-        opcs.jump_if_true_or_pop,
-        opcs.jump_absolute,
-        opcs.jump_if_false
-    )
-
-    def __init__(self):
-        self.__now_buffer: ByteCodeFileBuffer = None
-
-        self.__lnotab_cursor = 0
-        self.__offset_counter = 0
-
-        self.__jump_point_table = []
-
-        self.__dis_task = []
-
-    @property
-    def __lnotab(self) -> LineNumberTableGenerator:
-        return self.__now_buffer.lnotab
-
-    @property
-    def __varnames(self) -> list:
-        return self.__now_buffer.varnames
-
-    @property
-    def __consts(self) -> list:
-        return self.__now_buffer.consts
-
-    @property
-    def __bytecodes(self) -> list:
-        return self.__now_buffer.bytecodes.blist \
-            if not isinstance(self.__now_buffer, obj.AILCodeObject) \
-            else self.__now_buffer.bytecodes
-
-    def __check_lno(self) -> bool:
-        if self.__lnotab.table[self.__lnotab_cursor] == self.__offset_counter:
-            self.__offset_counter = 0
-            self.__move_lnotab_cursor()
-            return True
-        return False
-
-    def __move_lnotab_cursor(self):
-        self.__lnotab_cursor += 2
-
-    def __get_opname(self, opcode: int) -> str:
-        for k, v in opcs.__dict__.items():
-            if opcode == v:
-                return k
-
-    def __get_opcode_comment(self, opcode: int, argv: int) -> str:
-        cmt = '( %s )'
-
-        if opcode in self.__SHOW_CONST:
-            c = self.__consts[argv]
-
-            if isinstance(c, obj.AILCodeObject) and c not in self.__dis_task:
-                self.__dis_task.append(c)
-
-            return cmt % repr(c)
-
-        elif opcode in self.__SHOW_VARNAME:
-            return cmt % self.__varnames[argv]
-
-        elif opcode in self.__SHOW_COMPARE_OP:
-            return cmt % repr(opcs.COMPARE_OPERATORS[argv])
-
-        return ''
-
-    def __check_jump_point(self, opcode: int, argv: int):
-        if opcode not in self.__SHOW_JUMPPOINT:
-            return
-
-        if argv not in self.__jump_point_table:
-            self.__jump_point_table.append(argv)
-
-    def __get_jump_point_commit(self) -> str:
-        if self.__offset_counter in self.__jump_point_table:
-            self.__jump_point_table.remove(self.__offset_counter)
-            return '<<'
-        return ''
-
-    def disassemble(self, buffer_: ByteCodeFileBuffer):
-        self.__dis_task.append(buffer_)
-
-        while self.__dis_task:
-            now_tsk = self.__dis_task.pop(0)
-
-            print('Disassembly of %s:\n' % (now_tsk
-                                            if isinstance(now_tsk, obj.AILCodeObject)
-                                            else now_tsk.code_object))
-
-            self.disassemble_single(now_tsk)
-
-    def disassemble_single(self, buffer_: ByteCodeFileBuffer):
-        self.__now_buffer = buffer_
-
-        # print('lnotab :', self.__now_buffer.lnotab.table)
-
-        self.__move_lnotab_cursor()  # 跳过第一对
-
-        for bi in range(0, len(self.__bytecodes), 2):
-            bc = self.__bytecodes[bi]
-            argv = self.__bytecodes[bi + 1]
-
-            try:
-                comment = self.__get_opcode_comment(bc, argv)
-            except Exception as e:
-                comment = '!(bad argv: %s  exception: %s)' % (argv, e)
-
-            self.__check_jump_point(bc, argv)
-
-            lni = int(bi / 2)
-
-            if 0 <= lni < len(self.__now_buffer.lineno_list):
-                ln = self.__now_buffer.lineno_list[lni]
-            else:
-                ln = -1
-
-            print('\t', ln if ln >= 0 else '', bi, self.__get_opname(bc), argv,
-                  comment, self.__get_jump_point_commit(),
-                  sep='\t')
-
-            self.__offset_counter += 2
-
-            # if self.__check_lno():
-            #     print()
-
-        print()
-
-
-def show_bytecode(bf: ByteCodeFileBuffer):
-    diser = ByteCodeDisassembler()
-
-    diser.disassemble(bf)
-
-
-def get_opname(op: int):
-    for k, v in opcs.__dict__.items():
-        if v == op:
-            return k

@@ -22,8 +22,8 @@ CB_CYAN = 46
 CB_WHITE = 47
 
 fun put_pixel(x, y, txcolor, bgcolor) is
-    printf(escape('\033[' + y + ';' + x + 'H' + 
-                  '\033[' + txcolor + ';' + bgcolor + 'm \033[0m'), {})
+    printf(escape('\033[' + str(y) + ';' + str(x) + 'H' +
+                  '\033[' + str(txcolor) + ';' + str(bgcolor) + 'm \033[0m'), {})
 end
 
 

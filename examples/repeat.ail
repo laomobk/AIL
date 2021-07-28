@@ -5,14 +5,14 @@ input 'what is your name: ', name
 repeat = 0
 
 while true then
-    try
+    try {
         input 'repeat time: ', repeat
         repeat = int(repeat)
         
         break
-    catch _ then
+    } catch Exception _ {
         print 'please enter a number!'
-    end
+    }
 wend
 
 for (n = 0 ; n < repeat ; n = n + 1) then

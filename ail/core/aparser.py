@@ -96,6 +96,7 @@ class Parser:
         self.__tc = 0
 
         self.__level = 0  # level 0
+        self.__loop_level = 0
         self.__parenthesis_level = 0
 
         self.__pyc_mode = False
@@ -505,7 +506,7 @@ class Parser:
 
         return ast.MatchCase(patterns, expr, ln)
 
-    def __parse_map_expr(self) -> ast.MapAST:
+    def __parse_dict_expr(self) -> ast.DictAST:
         ln = self.__now_ln
 
         if self.__now_tok.ttype != AIL_LLBASKET:
@@ -520,7 +521,7 @@ class Parser:
 
         if self.__now_tok.ttype == AIL_LRBASKET:
             self.__next_tok()
-            return ast.MapAST(keys, values, ln)
+            return ast.DictAST(keys, values, ln)
 
         key = self.__parse_binary_expr(type_comment=False)
         self.__skip_newlines()
@@ -566,7 +567,7 @@ class Parser:
 
         self.__next_tok()  # eat '}'
 
-        return ast.MapAST(keys, values, ln)
+        return ast.DictAST(keys, values, ln)
 
     def __parse_member_access_expr(self,
                                    set_attr=False,
@@ -614,7 +615,7 @@ class Parser:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
-        map_tree = self.__parse_map_expr()
+        map_tree = self.__parse_dict_expr()
 
         for key_node in map_tree.keys:
             if not isinstance(key_node, ast.CellAST) or  \
@@ -679,7 +680,7 @@ class Parser:
 
             return a
         elif self.__now_tok.ttype == AIL_LLBASKET:
-            a = self.__parse_map_expr()
+            a = self.__parse_dict_expr()
 
             if a is None:
                 self.__syntax_error()
@@ -1437,7 +1438,7 @@ class Parser:
             init = self.__parse_binary_expr_list()
             if len(init.expr_list) == 1 and \
                     (self.__now_tok == '{' or self.__now_tok == 'then'):
-                body = self.__parse_block()
+                body = self.__parse_block(loop_body=True)
                 return ast.WhileStmtAST(init.expr_list[0], body, ln)
             # compatible with classic for.
             init = ast.AssignExprListAST(init.expr_list, ln)
@@ -2180,7 +2181,7 @@ class Parser:
 
     def __parse_stmt(
             self, limit: tuple = (), class_body: bool = False,
-            loop_body: bool = False) -> ast.ExprAST:
+            ) -> ast.ExprAST:
         nt = self.__now_tok
 
         if nt == 'print':
@@ -2202,7 +2203,7 @@ class Parser:
             a = self.__parse_do_loop_stmt()
 
         elif nt == 'continue':
-            if not loop_body:
+            if self.__loop_level == 0:
                 self.__syntax_error('\'continue\' outside loop')
             a = self.__parse_continue_stmt()
 
@@ -2217,7 +2218,7 @@ class Parser:
             a = self.__parse_global_stmt()
 
         elif nt == 'break':
-            if not loop_body:
+            if self.__loop_level == 0:
                 self.__syntax_error('\'break\' outside loop')
             a = self.__parse_break_stmt()
 
@@ -2328,71 +2329,79 @@ class Parser:
                       for_program: bool = False,
                       class_body: bool = False,
                       loop_body: bool = False) -> ast.BlockAST:
-        if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
-            return self.__parse_new_block(class_body=class_body)
 
-        ln = self.__now_ln
+        try:
+            if loop_body:
+                self.__loop_level += 1
 
-        if for_if_else:
-            if self.__now_tok.ttype != AIL_ENTER:
+            if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
+                return self.__parse_new_block(class_body=class_body)
+
+            ln = self.__now_ln
+
+            if for_if_else:
+                if self.__now_tok.ttype != AIL_ENTER:
+                    self.__syntax_error()
+
+                self.__next_tok()  # eat enter
+
+                if self.__now_tok in ('else', 'elif', 'endif'):
+                    # not eat, leave to if_else parse
+                    return ast.BlockAST([], ln)
+
+            elif for_program:
+                if self.__now_tok == start:
+                    self.__next_tok()
+            else:
+                if self.__now_tok != start:
+                    self.__syntax_error(start_msg)
+
+                if start_enter and self.__next_tok().ttype != AIL_ENTER:
+                    self.__syntax_error()
+
+                self.__next_tok()  # eat enter
+
+                if self.__now_tok == end:  # empty block
+                    self.__next_tok()
+                    return ast.BlockAST([], ln)
+
+            first = self.__parse_stmt((start, end), class_body=class_body)
+
+            if first is None:
                 self.__syntax_error()
 
-            self.__next_tok()  # eat enter
-
-            if self.__now_tok in ('else', 'elif', 'endif'):
-                # not eat, leave to if_else parse
-                return ast.BlockAST([], ln)
-
-        elif for_program:
-            if self.__now_tok == start:
-                self.__next_tok()
-        else:
-            if self.__now_tok != start:
-                self.__syntax_error(start_msg)
-
-            if start_enter and self.__next_tok().ttype != AIL_ENTER:
-                self.__syntax_error()
-
-            self.__next_tok()  # eat enter
-
-            if self.__now_tok == end:  # empty block
-                self.__next_tok()
-                return ast.BlockAST([], ln)
-
-        first = self.__parse_stmt((start, end), class_body=class_body, loop_body=loop_body)
-
-        if first is None:
-            self.__syntax_error()
-
-        elif isinstance(first, ast.EOFAST):
-            self.__syntax_error(end_msg)
-
-        stmtl = []
-
-        if not isinstance(first, ast.NullLineAST):
-            stmtl.append(first)
-
-        while self.__now_tok != end:
-            if for_if_else and self.__now_tok.value in (
-                    'elif', 'else', 'endif'):
-                return ast.BlockAST(stmtl, ln)
-
-            s = self.__parse_stmt((start, end), class_body=class_body)
-
-            if s is None:
-                self.__syntax_error()
-
-            if isinstance(s, ast.EOFAST):
-                if for_program:
-                    break
+            elif isinstance(first, ast.EOFAST):
                 self.__syntax_error(end_msg)
 
-            if not isinstance(s, ast.NullLineAST):
-                stmtl.append(s)
+            stmtl = []
 
-        self.__next_tok()  # eat end
+            if not isinstance(first, ast.NullLineAST):
+                stmtl.append(first)
 
-        return ast.BlockAST(stmtl, ln)
+            while self.__now_tok != end:
+                if for_if_else and self.__now_tok.value in (
+                        'elif', 'else', 'endif'):
+                    return ast.BlockAST(stmtl, ln)
+
+                s = self.__parse_stmt((start, end), class_body=class_body)
+
+                if s is None:
+                    self.__syntax_error()
+
+                if isinstance(s, ast.EOFAST):
+                    if for_program:
+                        break
+                    self.__syntax_error(end_msg)
+
+                if not isinstance(s, ast.NullLineAST):
+                    stmtl.append(s)
+
+            self.__next_tok()  # eat end
+
+            return ast.BlockAST(stmtl, ln)
+        finally:
+            if loop_body:
+                self.__loop_level -= 1
 
     def parse(self, ts: TokenStream,
               source: str, filename: str,
@@ -2892,7 +2901,7 @@ class ASTConverter:
 
         return _set_lineno(list_expr(items, load_ctx()), array.ln)
 
-    def _convert_map_expr(self, m: ast.MapAST) -> pyast.Dict:
+    def _convert_map_expr(self, m: ast.DictAST) -> pyast.Dict:
         keys = [self.convert(k) for k in m.keys]
         values = [self.convert(v) for v in m.values]
 
@@ -3148,7 +3157,7 @@ class ASTConverter:
             ctx = store_ctx() if a.store else load_ctx()
             return tuple_expr([self.convert(e) for e in a.items], ctx)
 
-        elif isinstance(a, ast.MapAST):
+        elif isinstance(a, ast.DictAST):
             return self._convert_map_expr(a)
 
         elif isinstance(a, ast.ItemListAST):

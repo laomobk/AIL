@@ -6,9 +6,9 @@ from .alex import Lex
 from .aparser import ASTConverter, Parser
 from .error import AILSyntaxError
 
-from ..py_runtime import AIL_PY_GLOBAL
-from ..py_runtime.namespace import fill_namespace
-from ..py_runtime.exceptions import print_py_traceback
+from . import AIL_PY_GLOBAL
+from ail.core.namespace import fill_namespace
+from ail.core.exceptions import print_py_traceback
 
 
 _globals = globals

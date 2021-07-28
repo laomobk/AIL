@@ -1,3 +1,0 @@
-
-class NoGlobalInterpreterException(Exception):
-    pass

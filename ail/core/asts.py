@@ -423,7 +423,7 @@ class TupleAST:
         self.store = store
 
 
-class MapAST:
+class DictAST:
     def __init__(self, keys: list, values: list, ln :int):
         self.keys = keys
         self.values = values
@@ -604,7 +604,7 @@ BINARY_AST_TYPES = (
     DefineExprAST,
     CallExprAST,
     ArrayAST,
-    MapAST,
+    DictAST,
     SubscriptExprAST,
     MemberAccessAST,
     AssignExprAST,
