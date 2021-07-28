@@ -72,6 +72,9 @@ class Completer:
                 matches.append(word)
 
         for word in dir(_builtins):
+            if '::' in word:
+                continue
+
             if word not in matches:
                 if word[:n] == text:
                     try:
