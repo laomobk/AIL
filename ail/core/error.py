@@ -1,6 +1,8 @@
 import sys
 import os.path
 
+from . import debugger
+
 
 ERR_NOT_EXIT = False
 THROW_ERROR_TO_PYTHON = True
@@ -70,7 +72,7 @@ def get_line_from_source(lno: int, source: str, strip=True):
         return ''
 
 
-# @debugger.debug_python_runtime
+@debugger.debug_python_runtime
 def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None):
     """
     line : 行号

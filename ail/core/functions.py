@@ -61,7 +61,10 @@ def ail_input(prompt: str, value_count: int):
 
 def ail_import(
         mode: int, name: str, namespace: dict, 
-        alias: str=None, members: List[str]=[]):
+        alias: str=None, members: List[str] = []):
+    """
+    :param mode: 0 -> load | 1 -> import
+    """
     if alias is None:
         alias = name
 

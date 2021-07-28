@@ -47,6 +47,13 @@ def func_array(size, default=None):
     return [default for _ in range(size)]
 
 
+def contains(a, b) -> bool:
+    """
+    :return: b in a
+    """
+    return a in b
+
+
 BUILTINS = {}
 
 
@@ -61,4 +68,5 @@ def init_builtins():
         'array': func_array,
         '_ccom': ccom.get_cc_object(),
         'builtins': func_builtins,
+        'contains': contains,
     }

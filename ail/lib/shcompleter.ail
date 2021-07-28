@@ -1,0 +1,123 @@
+// shcompleter.ail - a completer for ail shell
+
+_readline_available = False;
+
+try {
+    /* import readline and check readline avalible*/
+    #import readline
+    _readline_available = True;
+} catch ImportError _ {}
+
+class Completer {
+    init(self, namespace_) {
+        self._namesapce = namespace_;
+    }
+
+    func complete(self, text: str, state: int) {
+        if not _readline_available {
+            return '\t';
+        }
+
+        ns = self._namesapce;
+
+        if not text.strip() {
+            if state == 0 {
+                readline.insert_text('\t');
+                readline.redisplay();
+                return '';
+            } else {
+                return null;
+            }
+        }
+
+        if state == 0 {
+            if contains(text, '.') {
+                m = self.match_attr(text);
+            } else {
+                m = self.match_name(text);
+            }
+
+            self._namesapce = m;
+        }
+
+        return m;
+    }
+
+    func match_name(self, text: str) {
+        #from ail.core.aparser import _keywords
+
+        ns = self._namesapce;
+        matches = [];
+        n = len(text);
+
+        foreach word in _keywords {
+            if word[slice(null, 32)] == text {
+                matches.append(word);
+            }
+        }
+
+        foreach word in ns {
+            if contains(b, word) or contains(text, '::') {
+                continue;
+            }
+
+            if word[slice(null, 32)] == text {
+                matches.append(word);
+            }
+        }
+
+        b = builtins().keys();
+        
+        foreach word in b {
+            if contains(b, word) or contains(text, '::') {
+                continue;
+            }
+
+            if word[slice(null, 32)] == text {
+                matches.append(word);
+            }
+        }
+
+        matches.sort();
+
+        return matches;
+    }
+
+    func match_attr(self, text: str) {
+        #import re
+        #m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text);
+        if not m {
+            return [];
+        }
+
+        expr, attr = m.group(1, 3);
+
+        try {
+            this = eval(expr, self._namesapce);
+        } catch Exception _ {
+            return [];
+        }
+
+        words = set(dir(this));
+        matches = [];
+        show_prefix = attr[slice(0, 1)] == '_';
+
+        n = len(text);
+
+        foreach word in words {
+            if contains(word, '::') or (
+                    not show_prefix and word[slice(0, 1)] == '_') {
+                continue;
+            }
+
+            if word[slice(0, n)] == text {
+                matches.append(word);
+            }
+        }
+
+        matches.sort();
+
+        return matches;
+    }
+}
+

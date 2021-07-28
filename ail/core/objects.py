@@ -14,25 +14,10 @@ _NONE = object()
 
 class AILModule:
     def __init__(self, name: str, path: str, globals: dict):
-        setattr(self, '_$_module_globals', globals)
+        self.__dict__ = globals
+
         setattr(self, '_$_name', name)
         setattr(self, '_$_path', path)
-
-    def __getattr__(self, name: str):
-        if name[:2] == '_$':
-            return super().__getattribute__(name[2:])
-
-        v = getattr(self, '_$_module_globals').get(name, _NONE)
-        if v is _NONE:
-            raise AttributeError('module \'%s\' has no attribute \'%s\'' %
-                                 (getattr(self, '_$_name'), name))
-        return v
-
-    def __setattr__(self, name: str, value):
-        if name[:2] == '_$':
-            return super().__setattr__(name[2:], value)
-
-        self._module_globals[name] = value
 
     def __str__(self):
         return '<AILModule \'%s\' from \'%s\'>' % (
