@@ -634,6 +634,37 @@ class Parser:
         stop = None
         step = None
 
+        if self.__now_tok.ttype != AIL_COLON:
+            start = self.__parse_binary_expr(
+                type_comment=False, do_tuple=True)
+            if self.__now_tok.ttype == AIL_MRBASKET:
+                return start
+        
+        if self.__now_tok.ttype != AIL_COLON:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ':'
+
+        if self.__now_tok.ttype == AIL_MRBASKET:
+            return ast.SliceExpr(start, stop, step, ln)
+
+        if self.__now_tok.ttype != AIL_COLON:
+            stop = self.__parse_binary_expr(
+                type_comment=False, do_tuple=True)
+            if self.__now_tok.ttype == AIL_MRBASKET:
+                return ast.SliceExpr(start, stop, step, ln)
+        
+        if self.__now_tok.ttype != AIL_COLON:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat ':'
+
+        if self.__now_tok.ttype == AIL_MRBASKET:
+            return ast.SliceExpr(start, stop, step, ln)
+
+        step = self.__parse_binary_expr(
+            type_comment=False, do_tuple=True)
+
         return ast.SliceExpr(start, stop, step, ln)
 
     def __parse_cell_or_call_expr(self) -> ast.SubscriptExprAST:
@@ -2638,10 +2669,15 @@ class ASTConverter:
 
     def _convert_subscript_expr(self, expr: ast.SubscriptExprAST) -> pyast.Subscript:
         left = self.convert(expr.left)
-        value = self.convert(expr.expr)
+        
+        if isinstance(expr.expr, ast.SliceExpr):
+            slice = self._convert_slice_expr(expr.expr)
+        else:
+            value = self.convert(expr.expr)
+            slice = _set_lineno(index_slice(value), expr.ln)
 
         return _set_lineno(subscript_expr(
-            left, _set_lineno(index_slice(value), expr.ln), load_ctx()
+            left, slice, load_ctx()
         ), expr.ln)
 
     def _convert_slice_expr(self, expr: ast.SliceExpr) -> pyast.Slice:
@@ -2649,7 +2685,7 @@ class ASTConverter:
         stop = None if expr.stop is None else self.convert(expr.stop)
         step = None if expr.step is None else self.convert(expr.step)
 
-        return slice_expr(start, stop, step)
+        return _set_lineno(slice_expr(start, stop, step), expr.ln)
 
     def _convert_member_access_expr(self, left, rights, ln: int) -> pyast.Attribute:
         o_left = left

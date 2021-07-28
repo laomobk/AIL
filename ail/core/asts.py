@@ -600,6 +600,7 @@ class SliceExpr:
         self.start = start
         self.stop = stop
         self.step = step
+        self.ln = ln
 
 
 BINARY_AST_TYPES = (
