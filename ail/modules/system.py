@@ -10,10 +10,6 @@ class System:
         print(*args)
 
     @staticmethod
-    def print(*args):
-        print(*args, end='')
-
-    @staticmethod
     def printf(text, *format):
         print(text % format, end='')
 

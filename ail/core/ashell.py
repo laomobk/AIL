@@ -2,7 +2,7 @@ import sys
 
 from .alex import Lex
 from .aparser import Parser, ASTConverter
-from .version import AIL_VERSION, AIL_COPYRIGHT
+from .version import AIL_VERSION, AIL_COPYRIGHT, AIL_VERSION_NUMBER
 
 from ail.core.namespace import fill_namespace
 from ail.core.exceptions import print_py_traceback
@@ -25,13 +25,13 @@ DISABLE_WORD_BLOCK = True
 _MORE_KEYWORD = ('is', 'then', 'do', 'try', 'finally')
 _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
-_VER_STR = '%s' % AIL_VERSION if AIL_VERSION else ''
+_VER_STR = '%s (%s)' % (AIL_VERSION if AIL_VERSION else '', AIL_VERSION_NUMBER)
 _WELCOME_STR = \
 '''AIL %s (Python %s)
 Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
         _VER_STR,
-        sys.version
+        sys.version,
     )
 
 _SH_HELP_STR = \
