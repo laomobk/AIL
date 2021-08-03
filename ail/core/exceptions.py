@@ -8,7 +8,7 @@ import sys as _sys
 import traceback as _traceback
 
 
-_PY_RUNTIME_DIR = _join(_config.AIL_DIR_PATH, 'py_runtime')
+_PY_RUNTIME_DIR = _join(_config.AIL_DIR_PATH, 'core')
 _PY_EXEC_FILE = _join(_config.AIL_DIR_PATH, 'core', 'pyexec.py')
 _AIL_SHELL_FILE = _join(_config.AIL_DIR_PATH, 'core', 'ashell.py')
 _AIL_PARSER_FILE = _join(_config.AIL_DIR_PATH, 'core', 'aparser.py')

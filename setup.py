@@ -18,7 +18,7 @@ except:
 
 setup(
     name='ail',
-    packages=find_packages(),
+    packages=['ail'],
     version='%s.%s' % (AIL_MAIN_VERSION,
                        '.'.join([str(sv) for sv in AIL_SUB_VERSION])),
 
@@ -27,6 +27,8 @@ setup(
             'ail = ail.__main__:main',
         ]
     },
+
+    include_package_data=True,
 
     package_data={
         'ail': ['lib/*.ail', 'core/INSTALL_TIME']
