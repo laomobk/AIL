@@ -68,7 +68,14 @@ def ail_import(
     if alias is None:
         alias = name
 
-    return _IMPORTER.import_module(mode, name, namespace, alias, members)
+    if namespace is None:
+        namespace = {}
+    
+    _IMPORTER.import_module(mode, name, namespace, alias, members)
+    
+    if mode == 1:
+        return namespace.values() if members else namespace[name]
+    return None
 
 
 def bind_function(name: str, struct: _AILStruct):

@@ -3085,6 +3085,37 @@ class ASTConverter:
         if imp.members is None:
             members = []
 
+        if not members:
+            target = self._new_name(imp.name, ln, store_ctx())
+        else:
+            target = _set_lineno(tuple_expr(
+                [self._new_name(x, ln, store_ctx()) for x in imp.members], 
+                store_ctx()
+            ), ln)
+        
+        # 2021.8.9: import stmt will be convert to an assign stmt
+        assi = _set_lineno(
+            assign_stmt(
+                [target],
+                self._new_call_name(
+                    '__ail_import__',
+                    [
+                        self._new_constant(1, ln),
+                        self._new_constant(path, ln),
+                        self._new_constant(None, ln),
+                        self._new_constant(imp.name, ln),
+                        _set_lineno(
+                            list_expr(
+                                [self._new_constant(m, ln) 
+                                    for m in members], load_ctx()), ln),
+                    ],
+                    ln
+                )
+            ),
+            ln,
+        )
+        
+        # 2021.8.9: the 'call' form of import is not used
         call = self._new_call_name(
             '__ail_import__',
             [
@@ -3099,7 +3130,7 @@ class ASTConverter:
             ln
         )
 
-        return call
+        return assi
 
     def _convert_block(
             self, block: ast.BlockAST,

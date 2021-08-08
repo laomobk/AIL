@@ -52,11 +52,7 @@ class Hello {
 Hello().helloWorld();
 ```
 
-## 更多例子
-
-***代码均已在 AIL 2.1 alpha 0 下测试通过***
-
-##### 斐波那契数列
+#### 斐波那契数列
 
 ```swift
 func fib(n) {
@@ -68,26 +64,53 @@ func fib(n) {
 }
 ```
 
-##### 单例模式
+## 主要语言特性
+
+*以下例子均已在 AIL 2.1 版本下通过编译*
+
+### 更多的 for 语句
 
 ```swift
-class CandyFactory {
-    __instance = null;
-
-    func __new__(cls) {
-        if cls.__instance == null {
-            instance = super().__new__(cls);
-            cls.__instance = instance;
-        }
-        return cls.__instance;
-    }
+for i = 0, j = len(x); i < len(x); i += 1, j -= 1 {
+    // ...
 }
 
+for {
+    // forever...
+}
 
-factory_a = CandyFactory();
-factory_b = CandyFactory();
+foreach i in range(100) {
+    // ...
+}
+```
 
-print id(factory_a), id(factory_b), factory_a === factory_b;
+### 强大的 match 表达式
+
+```swift
+name = match lang_name {
+    'Python': 'py',
+    'Java': 'java',
+    'AIL': 'ail',
+}
+
+(match point {
+    Point! { x: 5, y: 6 }: () -> {
+        // handle it...
+    },
+    else: () -> {
+        // handle it...
+    }
+})();
+```
+
+### 嵌套名称空间
+
+```C#
+namespace Lang {
+    py = 'Python';
+    java = 'Java';
+    ail = 'AIL';
+}
 ```
 
 ## VIM 语法高亮支持

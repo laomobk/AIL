@@ -72,16 +72,17 @@ class AILImporter:
 
             if path in _shared.loaded_modules:
                 module_obj = _shared.loaded_modules[path]
-                ns = getattr(module_obj, '_$_module_globals', None)
                 if not isinstance(module_obj, AILModule):
                     module_obj = None
+                else:
+                    ns = module_obj.__dict__
 
             if module_obj is None:
                 ns = self.get_namespace(path, self.get_source(path))
                 ns = self.get_export(ns, ns.get('__export__', None))
                 module_obj = AILModule(name, path, ns)
 
-            _shared.loaded_modules[path] = module_obj
+                _shared.loaded_modules[path] = module_obj
 
             if mode == 0:  # load
                 namespace.update(ns)
