@@ -2,15 +2,16 @@
 from typing import List, Tuple
 
 
-class ExprAST:
-    """
-    这是所有 表达式AST 的父类
-    """
+class Expression:
+    pass
+
+
+class Statement:
     pass
 
 
 class ArgItemAST:
-    def __init__(self, expr: 'ExprAST', star: bool, ln: int):
+    def __init__(self, expr: 'Expression', star: bool, ln: int):
         self.expr = expr
         self.star = star
         self.kw_star = False
@@ -29,7 +30,7 @@ class ArgListAST:
         self.ln = ln
 
 
-class CellAST:
+class CellAST(Expression):
     """
     cell := NUMBER | NAME | STRING | call_expr
     """
@@ -45,14 +46,14 @@ class CellAST:
     __repr__ = __str__
 
 
-class MemberAccessAST:
+class MemberAccessAST(Expression):
     def __init__(self, left: CellAST, members: CellAST, ln: int):
         self.left = left
         self.members = members
         self.ln = ln
 
 
-class UnaryExprAST:
+class UnaryExprAST(Expression):
     """
     unary_expr := [unary_op] member_expr
     """
@@ -63,7 +64,7 @@ class UnaryExprAST:
         self.ln = ln
 
 
-class PowerExprAST:
+class PowerExprAST(Expression):
     """
     pow_expr := unary_expr ['^' unary_expr]
     """
@@ -74,7 +75,7 @@ class PowerExprAST:
         self.ln = ln
 
 
-class ModExprAST:
+class ModExprAST(Expression):
     """
     mod_expr := pow_expr ['mod' pow_expr]
     """
@@ -85,7 +86,7 @@ class ModExprAST:
         self.ln = ln
 
 
-class MuitDivExprAST:
+class MuitDivExprAST(Expression):
     """
     md_expr := mod_expr [('*' | '/') mod_expr]
     """
@@ -97,7 +98,7 @@ class MuitDivExprAST:
         self.ln = ln
 
 
-class AddSubExprAST:
+class AddSubExprAST(Expression):
     """
     real_expr := md_expr [('+' | '-') md_expr]* | '(' real_expr ')'
     """
@@ -111,14 +112,14 @@ class AddSubExprAST:
         self.ln = ln
 
 
-class GenericBinaryExprAST:
+class GenericBinaryExprAST(Expression):
     def __init__(self, left, right: list, ln: int):
         self.left = left
         self.right = right
         self.ln = ln
 
 
-class BitShiftExprAST:
+class BitShiftExprAST(Expression):
     def __init__(self, op: str,
                  left: AddSubExprAST,
                  right: List[Tuple[str, AddSubExprAST]], ln: int):
@@ -128,7 +129,7 @@ class BitShiftExprAST:
         self.ln = ln
 
 
-class BinXorExprAST:
+class BinXorExprAST(Expression):
     def __init__(self,
                  left: BitShiftExprAST,
                  right: List[Tuple[str, BitShiftExprAST]], ln: int):
@@ -137,7 +138,7 @@ class BinXorExprAST:
         self.ln = ln
 
 
-class BitOpExprAST:
+class BitOpExprAST(Expression):
     def __init__(self, op: str,
                  left: BinXorExprAST,
                  right: List[Tuple[str, BinXorExprAST]], ln: int):
@@ -147,7 +148,7 @@ class BitOpExprAST:
         self.ln = ln
 
 
-class CallExprAST:
+class CallExprAST(Expression):
     """
     call_expr := NAME '(' arg_list ')'
     """
@@ -171,7 +172,7 @@ class ValueListAST:
         return '<ValueList %s>' % str(self.value_list)
 
 
-class AssignExprAST(ExprAST):
+class AssignExprAST(Expression):
     """
     assi_expr := cell ['=' expr]* NEWLINE
     """
@@ -184,18 +185,18 @@ class AssignExprAST(ExprAST):
         self.ln = ln
 
 
-class DefineExprAST(ExprAST):
+class DefineExprAST(Expression):
     """
     def_expr := NAME '=' expr NEWLINE
     """
 
-    def __init__(self, name: str, value: ExprAST, ln: int):
+    def __init__(self, name: str, value: Expression, ln: int):
         self.value = value
         self.name = name
         self.ln = ln
 
 
-class PrintStmtAST(ExprAST):
+class PrintStmtAST(Expression):
     """
     print_expr := 'PRINT' expr [';' expr]* NEWLINE
     """
@@ -205,29 +206,29 @@ class PrintStmtAST(ExprAST):
         self.ln = ln
 
 
-class InputStmtAST(ExprAST):
+class InputStmtAST(Expression):
     """
     input_expr := 'INPUT' expr ';' val_list NEWLINE
     """
 
-    def __init__(self, msg: ExprAST, val_list: ValueListAST, ln: int):
+    def __init__(self, msg: Expression, val_list: ValueListAST, ln: int):
         self.msg = msg
         self.value_list = val_list
         self.ln = ln
 
 
-class CmpTestAST:
+class CmpTestAST(Expression):
     """
     cmp_test := expr [cmp_op expr]*
     """
 
-    def __init__(self, left: ExprAST, right: list, ln: int):
+    def __init__(self, left: Expression, right: list, ln: int):
         self.left = left
         self.right = right
         self.ln = ln
 
 
-class AndTestAST:
+class AndTestAST(Expression):
     """
     and_test := cmp_test ['and' cmp_test]
     """
@@ -238,7 +239,7 @@ class AndTestAST:
         self.ln = ln
 
 
-class OrTestAST:
+class OrTestAST(Expression):
     """
     or_test := and_test ['or' and_test]*
     """
@@ -249,7 +250,7 @@ class OrTestAST:
         self.ln = ln
 
 
-class TestExprAST:
+class TestExprAST(Expression):
     """
     test := or_test
     """
@@ -259,7 +260,7 @@ class TestExprAST:
         self.ln = ln
 
 
-class BlockAST:
+class BlockAST(Expression):
     """
     BLOCK := stmt*
     """
@@ -270,7 +271,7 @@ class BlockAST:
         self.new = new
 
 
-class IfStmtAST:
+class IfStmtAST(Statement):
     """
     if_else_expr := 'if' test 'then' NEWLINE
                 BLOK
@@ -290,7 +291,7 @@ class IfStmtAST:
         self.ln = ln
 
 
-class WhileStmtAST:
+class WhileStmtAST(Statement):
     """
     while_expr := 'while' test 'then'
         BLOCK
@@ -303,7 +304,7 @@ class WhileStmtAST:
         self.ln = ln
 
 
-class DoLoopStmtAST:
+class DoLoopStmtAST(Statement):
     """
     do_loop_expr := 'do' 'NEWLINE
                 BLOCK
@@ -316,7 +317,7 @@ class DoLoopStmtAST:
         self.ln = ln
 
 
-class FunctionDefineAST:
+class FunctionDefineAST(Statement):
     """
     func_def := 'fun' ['(' NAME ')'] NAME '(' arg_list ')' NEWLINE
                 BLOCK
@@ -337,10 +338,10 @@ class FunctionDefineAST:
         self.lambda_return = None
 
 
-class ClassDefineAST:
-    def __init__(self, 
+class ClassDefineAST(Statement):
+    def __init__(self,
                  name: str, func: FunctionDefineAST,
-                 bases: List[ExprAST], meta: ExprAST, ln: int,
+                 bases: List[Expression], meta: Expression, ln: int,
                  doc_str=''):
         self.name = name
         self.func = func
@@ -350,29 +351,29 @@ class ClassDefineAST:
         self.ln = ln
 
 
-class ReturnStmtAST:
+class ReturnStmtAST(Statement):
     """
     return_stmt := 'return' expr
     """
 
-    def __init__(self, expr: ExprAST, ln: int):
+    def __init__(self, expr: Expression, ln: int):
         self.expr = expr
         self.ln = ln
 
 
-class GlobalStmtAST:
+class GlobalStmtAST(Statement):
     def __init__(self, name: str, ln: int):
         self.name = name
         self.ln = ln
 
 
-class NonlocalStmtAST:
+class NonlocalStmtAST(Statement):
     def __init__(self, name: str, ln: int):
         self.name = name
         self.ln = ln
 
 
-class ContinueStmtAST:
+class ContinueStmtAST(Statement):
     """
     continue_stmt := 'continue'
     """
@@ -381,7 +382,7 @@ class ContinueStmtAST:
         self.ln = ln
 
 
-class BreakStmtAST:
+class BreakStmtAST(Statement):
     """
     break_stmt := 'break'
     """
@@ -390,7 +391,7 @@ class BreakStmtAST:
         self.ln = ln
 
 
-class NullLineAST:
+class NullLineAST(Statement):
     """
     null_line := NEWLINE
     """
@@ -410,40 +411,40 @@ class ItemListAST:
         self.ln = ln
 
 
-class ArrayAST:
+class ArrayAST(Expression):
     def __init__(self, items: ItemListAST, ln: int):
         self.items = items
         self.ln = ln
 
 
-class TupleAST:
+class TupleAST(Expression):
     def __init__(self, items: list, store: bool, ln: int):
         self.items = items
         self.ln = ln
         self.store = store
 
 
-class DictAST:
+class DictAST(Expression):
     def __init__(self, keys: list, values: list, ln :int):
         self.keys = keys
         self.values = values
         self.ln = ln
 
 
-class SubscriptExprAST:
+class SubscriptExprAST(Expression):
     def __init__(self, left: AddSubExprAST, expr: AddSubExprAST, ln: int):
         self.expr = expr
         self.left = left
         self.ln = ln
 
 
-class LoadStmtAST:
+class LoadStmtAST(Statement):
     def __init__(self, path: str, ln: int):
         self.path = path
         self.ln = ln
 
 
-class ImportStmtAST:
+class ImportStmtAST(Statement):
     def __init__(self, path: str, name: str, ln: int, members: List[str] = None):
         self.path = path
         self.name = name
@@ -477,7 +478,7 @@ class BinaryExprListAST:
         self.ln = ln
 
 
-class ForStmtAST:
+class ForStmtAST(Statement):
     def __init__(self, init_list: AssignExprListAST,
                  test: TestExprAST, update_list: BinaryExprListAST,
                  block: BlockAST, ln):
@@ -488,13 +489,13 @@ class ForStmtAST:
         self.ln = ln
 
 
-class ThrowStmtAST:
+class ThrowStmtAST(Statement):
     def __init__(self, expr: AddSubExprAST, ln: int):
         self.expr = expr
         self.ln = ln
 
 
-class AssertStmtAST:
+class AssertStmtAST(Statement):
     def __init__(self, expr: TestExprAST, msg, ln: int):
         self.expr = expr
         self.msg = msg
@@ -509,7 +510,7 @@ class CatchCase:
         self.ln = ln
 
 
-class TryCatchStmtAST:
+class TryCatchStmtAST(Statement):
     def __init__(self, try_block: BlockAST,
                  catch_cases: List[CatchCase],
                  finally_block: BlockAST, ln: int):
@@ -559,14 +560,14 @@ class MatchCase:
         self.ln = ln
 
 
-class MatchExpr:
+class MatchExpr(Expression):
     def __init__(self, target, cases: List[MatchCase], ln: int):
         self.target = target
         self.cases = cases
         self.ln = ln
 
 
-class ObjectPatternExpr:
+class ObjectPatternExpr(Expression):
     def __init__(self, left, keys: list, values: list, ln: int):
         self.left = left
         self.keys = keys
@@ -574,20 +575,20 @@ class ObjectPatternExpr:
         self.ln = ln
 
 
-class NamespaceStmt:
+class NamespaceStmt(Statement):
     def __init__(self, name, block, ln: int):
         self.block = block
         self.ln = ln
         self.name = name
 
 
-class UsingStmt:
+class UsingStmt(Statement):
     def __init__(self, target, ln: int):
         self.target = target
         self.ln = ln
 
 
-class ForeachStmt:
+class ForeachStmt(Statement):
     def __init__(self, target, iter, body, ln: int):
         self.target = target
         self.iter = iter
@@ -595,12 +596,19 @@ class ForeachStmt:
         self.ln = ln
 
 
-class SliceExpr:
+class SliceExpr(Expression):
     def __init__(self, start, stop, step, ln: int):
         self.start = start
         self.stop = stop
         self.step = step
         self.ln = ln
+
+
+class StarredExpr(Expression):
+    def __init__(self, value, store: bool, ln: int):
+        self.value = value
+        self.ln = ln
+        self.store = store
 
 
 BINARY_AST_TYPES = (

@@ -709,7 +709,7 @@ class Parser:
 
         return left
 
-    def __parse_low_cell_expr(self) -> ast.ExprAST:
+    def __parse_low_cell_expr(self) -> ast.Expression:
         ln = self.__now_ln
 
         if self.__now_tok.ttype == AIL_MLBASKET:
@@ -957,20 +957,35 @@ class Parser:
 
         return ast.BitOpExprAST(left_op, left, rl, ln)
 
-    def __parse_tuple_expr(self, do_tuple: bool = False) -> ast.TupleAST:
+    def __parse_tuple_expr(self, do_tuple: bool = False, do_star=False) -> ast.TupleAST:
         ln = self.__now_ln
-        expr = self.__parse_test_expr()
+        if do_star and self.__now_tok.ttype == AIL_MULT:
+            ln = self.__now_ln
+            self.__next_tok()  # eat '*'
+            expr = self.__parse_test_expr()
+            expr = ast.StarredExpr(expr, True, ln)
+        else:
+            expr = self.__parse_test_expr()
 
         # check tuple
 
         if self.__now_tok.ttype != AIL_COMMA or not do_tuple:
+            if isinstance(expr, ast.StarredExpr):
+                self.__syntax_error(
+                    'starred assignment target must be in a list or tuple', ln=expr.ln)
             return expr
 
         items = [expr]
 
         while self.__now_tok.ttype == AIL_COMMA:
             self.__next_tok()
-            item = self.__parse_test_expr()
+            if do_star and self.__now_tok.ttype == AIL_MULT:
+                ln = self.__now_ln
+                self.__next_tok()  # eat '*'
+                item = self.__parse_test_expr()
+                item = ast.StarredExpr(item, True, ln)
+            else:
+                item = self.__parse_test_expr()
             items.append(item)
 
         return ast.TupleAST(items, False, ln)
@@ -1086,7 +1101,7 @@ class Parser:
                             no_assign: bool = False,
                             type_comment: bool = True) -> ast.AssignExprAST:
         ln = self.__now_ln
-        left = self.__parse_tuple_expr(do_tuple)
+        left = self.__parse_tuple_expr(do_tuple, True)
 
         if type_comment:
             self.__parse_type_comment()
@@ -1106,6 +1121,10 @@ class Parser:
                 (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND) and \
                 ttype != AIL_INP_POW:
             self.set_state(state)
+            if isinstance(left, ast.TupleAST):
+                for ele in left.items:
+                    if isinstance(ele, ast.StarredExpr):
+                        self.__syntax_error(ln=ele.ln)
             return left
 
         # check left is valid or not
@@ -1117,7 +1136,8 @@ class Parser:
         if isinstance(left, ast.TupleAST):
             for elt in left.items:
                 if type(elt) not in (
-                        ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST):
+                        ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST,
+                        ast.StarredExpr):
                     self.__syntax_error()
 
         # check cell is valid or not
@@ -1143,7 +1163,7 @@ class Parser:
         return ast.AssignExprAST(left, r, ln, aug_assign)
 
     def __convert_inplace_assign_expr_for_right(
-            self, left, right, ttype, ln) -> ast.ExprAST:
+            self, left, right, ttype, ln) -> ast.Expression:
         op_str, op_ast, need_op_str = _inplace_op_dict.get(ttype)
 
         if need_op_str:
@@ -2221,7 +2241,7 @@ class Parser:
 
     def __parse_stmt(
             self, limit: tuple = (), class_body: bool = False,
-            ) -> ast.ExprAST:
+            ) -> ast.Expression:
         nt = self.__now_tok
 
         if nt == 'print':
@@ -2829,6 +2849,8 @@ class ASTConverter:
 
         if isinstance(left, pyast.Tuple):
             for elt in left.elts:
+                if isinstance(elt, pyast.Starred):
+                    elt.value.ctx = store_ctx()
                 elt.ctx = store_ctx()
 
         if aug_assign:
@@ -3273,6 +3295,12 @@ class ASTConverter:
 
         elif isinstance(a, ast.SliceExpr):
             return self._convert_slice_expr(a)
+
+        elif isinstance(a, ast.StarredExpr):
+            return _set_lineno(starred_expr(
+                self.convert(a.value),
+                store_ctx() if a.store else load_ctx(),
+            ), a.ln)
 
         elif isinstance(a, list):
             raise PyTreeConvertException('list cannot be converted', a.ln)
