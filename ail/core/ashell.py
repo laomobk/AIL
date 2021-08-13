@@ -117,12 +117,12 @@ class Shell:
         print(_WELCOME_STR)
 
     def __run_single_line_pyc(self, line: str, block: bool = False):
-        t = self.__lexer.lex(line, '<shell>')
-        t = self.__parser.parse(t, line, '<shell>', True)
-        n = self.__converter.convert_single(t)
-        c = compile(n, '<shell>', 'single')
-
         try:
+            t = self.__lexer.lex(line, '<shell>')
+            t = self.__parser.parse(t, line, '<shell>', True)
+            n = self.__converter.convert_single(t)
+            c = compile(n, '<shell>', 'single')
+
             exec(c, self.__pyc_globals)
         except Exception:
             print_py_traceback()

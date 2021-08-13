@@ -177,7 +177,7 @@ class Parser:
     def __syntax_error(self, msg=None, ln: int = 0):
         error_msg(
             self.__now_ln if ln <= 0 else ln,
-            'SyntaxError: %s' % (str(msg) if msg else 'invalid syntax'),
+            'invalid syntax',
             self.__filename, source=self.__source)
 
     def __expect_newline(self):

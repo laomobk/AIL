@@ -73,7 +73,8 @@ def get_line_from_source(lno: int, source: str, strip=True):
 
 
 # @debugger.debug_python_runtime
-def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None):
+def error_msg(
+        line: int, msg: str, filename: str, errcode=1, source: str = None):
     """
     line : 行号
     msg : 信息
@@ -93,7 +94,12 @@ def error_msg(line: int, msg: str, filename: str, errcode=1, source: str = None)
             filename, msg, line)
 
     if THROW_ERROR_TO_PYTHON:
-        raise AILSyntaxError(msg, err_msg, filename, line)
+        s = SyntaxError()
+        s.filename = filename
+        s.lineno = line
+        s.text = source_line
+        s.msg = msg
+        raise s
     else:
         sys.stderr.write(err_msg)
         sys.stderr.flush()
