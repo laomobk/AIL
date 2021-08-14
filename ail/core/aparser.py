@@ -206,7 +206,8 @@ class Parser:
 
         if self.__now_tok.ttype == AIL_ASSI:
             self.__next_tok()  # eat '='
-            default = self.__parse_binary_expr(do_tuple=False, no_assign=True)
+            default = self.__parse_binary_expr(
+                do_tuple=False, no_assign=True)
 
         arg = ast.ArgItemAST(expr, star, self.__now_ln)
         arg.kw_star = kw_star
@@ -264,7 +265,8 @@ class Parser:
 
             if not can_var and param.star:
                 self.__syntax_error(ln=param.ln)
-            elif not can_single and not (param.star or param.kw_star):
+            elif not can_single and not (
+                    param.star or param.kw_star or param.default):
                 self.__syntax_error(ln=param.ln)
             elif not can_keyword and param.kw_star:
                 self.__syntax_error(ln=param.ln)
