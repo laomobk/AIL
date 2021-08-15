@@ -1,3 +1,33 @@
 
-print (a=1, b=2) -> a
+func select(iterable, f) {
+    foreach x in iterable {
+        if f(x) {
+            return x;
+        }
+    }
+    return null;
+}
+
+func append(l, x) {
+    l.append(x);
+    return l;
+}
+
+
+dividers = (cur, x) -> { 
+    d = select(range(2, x + 1), (y) -> x % y == 0);
+    match d {
+        null: cur,
+        else: dividers(append(cur, x), int(x / d)),
+    }
+}
+
+
+num = 24, 97, 1, 5, 12, 36, 72;
+
+foreach n in num {
+    cur = [];
+    dividers(cur, n);
+    print '%s: %s' % (n, cur);
+}
 

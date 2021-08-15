@@ -2325,6 +2325,9 @@ class Parser:
         elif nt == 'foreach':
             a = self.__parse_foreach_stmt()
 
+        elif nt == 'match':
+            a = self.__parse_match_expr()
+
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
 
