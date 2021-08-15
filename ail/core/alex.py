@@ -454,6 +454,9 @@ class TokenStream:
         将 tok 增加到尾部
         """
 
+        if tok.ttype == AIL_IDENTIFIER and tok.value == 'in':
+            tok.ttype = AIL_IN
+
         self.__tli.append(tok)
 
     def __repr__(self):

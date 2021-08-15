@@ -44,7 +44,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ModExprAST):
         return {'ModAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
 
-    elif isinstance(a, ast.MuitDivExprAST):
+    elif isinstance(a, ast.MultDivExprAST):
         return {'MDAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
 
     elif isinstance(a, ast.AddSubExprAST):

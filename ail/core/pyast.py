@@ -241,3 +241,11 @@ def unary_op_expr(op: _ast.operator, operand: _ast.expr) -> _ast.UnaryOp:
 def while_stmt(test: _ast.expr, body: List[_ast.stmt]) -> _ast.While:
     return _ast.While(test=test, body=body, orelse=[])
 
+
+def with_stmt(items: List[_ast.withitem], body: List[_ast.stmt]) -> _ast.With:
+    return _ast.With(items=items, body=body, type_comment=None)
+
+
+def with_item(context_expr: _ast.expr, optional_vars: _ast.expr) -> _ast.withitem:
+    return _ast.withitem(context_expr=context_expr, optional_vars=optional_vars)
+

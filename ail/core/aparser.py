@@ -3,6 +3,8 @@ import ast as pyast
 from os.path import split
 from typing import Union
 
+import astunparse
+
 from . import aconfig
 
 from .alex import Token, TokenStream, Lex
@@ -26,7 +28,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
-    'MATCH', 'NAMESPACE', 'FOREACH', 'IN'
+    'MATCH', 'NAMESPACE', 'FOREACH', 'IN',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -37,16 +39,17 @@ _end_signs = tuple([x.lower() for x in _end_signs_uc])
 _cmp_op = (
     AIL_EQ, AIL_LARGER, AIL_SMALER,
     AIL_LARGER_EQ, AIL_SMALER_EQ,
-    AIL_UEQ, AIL_AUEQ, AIL_AEQ, 
+    AIL_UEQ, AIL_AUEQ, AIL_AEQ,
+    AIL_IN,
 )
 
 _inplace_op_dict = {
     AIL_INP_BIN_AND: ('&', ast.BitOpExprAST, True),
     AIL_INP_BIN_OR: ('|', ast.BitOpExprAST, True),
-    AIL_INP_DIV: ('/', ast.MuitDivExprAST, True),
+    AIL_INP_DIV: ('/', ast.MultDivExprAST, True),
     AIL_INP_LSHIFT: ('<<', ast.BitShiftExprAST, True),
     AIL_INP_MOD: ('mod', ast.ModExprAST, False),
-    AIL_INP_MULT: ('*', ast.MuitDivExprAST, True),
+    AIL_INP_MULT: ('*', ast.MultDivExprAST, True),
     AIL_INP_PLUS: ('+', ast.AddSubExprAST, True),
     AIL_INP_RSHIFT: ('>>', ast.BitShiftExprAST, True),
     AIL_INP_SUB: ('-', ast.AddSubExprAST, True),
@@ -177,7 +180,7 @@ class Parser:
     def __syntax_error(self, msg=None, ln: int = 0):
         error_msg(
             self.__now_ln if ln <= 0 else ln,
-            'invalid syntax',
+            msg,
             self.__filename, source=self.__source)
 
     def __expect_newline(self):
@@ -442,6 +445,40 @@ class Parser:
         block = self.__parse_block(start='is')
 
         return ast.NamespaceStmt(name, block, ln)
+
+    def __parse_with_stmt(self) -> ast.WithStmt:
+        if self.__now_tok != 'with':
+            self.__syntax_error()
+
+        ln = self.__now_ln
+        self.__next_tok()
+
+        items = []
+        
+        while True:
+            item = self.__parse_with_item()
+            items.append(item)
+            if self.__now_tok.value != ';' and self.__now_tok.ttype != AIL_STRING:
+                break
+            self.__next_tok()  # eat ';'
+
+        block = self.__parse_block()
+
+        return ast.WithStmt(items, block, ln)
+
+    def __parse_with_item(self) -> ast.WithItem:
+        item = self.__parse_assign_expr(type_comment=False, do_tuple=True)
+        var = None
+        expr = item
+
+        if isinstance(item, ast.AssignExprAST):
+            if item.aug_assign:
+                self.__syntax_error(ln=item.ln)
+                
+            var = item.left
+            expr = item.right
+
+        return ast.WithItem(expr, var, item.ln)
 
     def __parse_match_body(self) -> List[ast.MatchCase]:
         if self.__now_tok.ttype != AIL_LLBASKET:
@@ -872,7 +909,7 @@ class Parser:
             rl.append(('mod', r))
         return ast.ModExprAST(left, rl, ln)
 
-    def __parse_muit_div_expr(self) -> ast.MuitDivExprAST:
+    def __parse_muit_div_expr(self) -> ast.MultDivExprAST:
         ln = self.__now_ln
 
         left = self.__parse_mod_expr()
@@ -897,7 +934,7 @@ class Parser:
 
             rl.append((r_op, r))
 
-        return ast.MuitDivExprAST(left_op, left, rl, ln)
+        return ast.MultDivExprAST(left_op, left, rl, ln)
 
     def __parse_bin_xor_expr(self) -> ast.BinXorExprAST:
         ln = self.__now_ln
@@ -959,15 +996,18 @@ class Parser:
 
         return ast.BitOpExprAST(left_op, left, rl, ln)
 
-    def __parse_tuple_expr(self, do_tuple: bool = False, do_star=False) -> ast.TupleAST:
+    def __parse_tuple_expr(
+            self, do_tuple: bool = False, do_star=False, name_list=False) -> ast.TupleAST:
         ln = self.__now_ln
+        parse_func = self.__parse_low_cell_expr if name_list else self.__parse_test_expr
+
         if do_star and self.__now_tok.ttype == AIL_MULT:
             ln = self.__now_ln
             self.__next_tok()  # eat '*'
-            expr = self.__parse_test_expr()
+            expr = parse_func()
             expr = ast.StarredExpr(expr, True, ln)
         else:
-            expr = self.__parse_test_expr()
+            expr = parse_func()
 
         # check tuple
 
@@ -984,10 +1024,10 @@ class Parser:
             if do_star and self.__now_tok.ttype == AIL_MULT:
                 ln = self.__now_ln
                 self.__next_tok()  # eat '*'
-                item = self.__parse_test_expr()
+                item = parse_func()
                 item = ast.StarredExpr(item, True, ln)
             else:
-                item = self.__parse_test_expr()
+                item = parse_func()
             items.append(item)
 
         return ast.TupleAST(items, False, ln)
@@ -1458,7 +1498,7 @@ class Parser:
 
         self.__next_tok()  # eat 'foreach'
 
-        target = self.__parse_binary_expr(do_tuple=True, type_comment=False)
+        target = self.__parse_tuple_expr(do_tuple=True, name_list=True)
         if isinstance(target, ast.TupleAST):
             for item in target.items:
                 if not isinstance(item, ast.CellAST) or item.type != AIL_IDENTIFIER:
@@ -2328,6 +2368,9 @@ class Parser:
         elif nt == 'match':
             a = self.__parse_match_expr()
 
+        elif nt == 'with':
+            a = self.__parse_with_stmt()
+
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
 
@@ -2609,6 +2652,7 @@ class ASTConverter:
             '!=': pyast.NotEq(),
             '!==': pyast.IsNot(),
             '===': pyast.Is(),
+            'in': pyast.In(),
         }[r_op]
 
         o_left = left
@@ -2749,6 +2793,27 @@ class ASTConverter:
         target = self.convert(expr.target)
 
         return self.__make_if_expr_from_match_expr(target, expr.cases, 0, expr.ln)
+
+    def _convert_with_stmt(self, stmt: ast.WithStmt) -> pyast.With:
+        items = []
+        for item in stmt.items:
+            expr = self.convert(item.context_expr)
+            var = self.convert(item.optional_var) \
+                if item.optional_var is not None else None
+            if var is not None:
+                var.ctx = store_ctx()
+
+            if isinstance(var, pyast.Tuple):
+                for elt in var.elts:
+                    elt.ctx = store_ctx()
+
+            items.append(
+                _set_lineno(with_item(expr, var), item.ln)
+            )
+
+        body = self._convert_block(stmt.body)
+
+        return _set_lineno(with_stmt(items, body), stmt.ln)
 
     def _convert_object_pattern_expr(self, expr: ast.ObjectPatternExpr) -> pyast.expr:
         keys = [self._new_constant(k, expr.ln) for k in expr.keys]
@@ -3331,6 +3396,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.SliceExpr):
             return self._convert_slice_expr(a)
+
+        elif isinstance(a, ast.WithStmt):
+            return self._convert_with_stmt(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(

@@ -20,10 +20,6 @@ class ArgItemAST:
 
 
 class ArgListAST:
-    """
-    arg_list := expr [',' expr]*
-    """
-
     def __init__(self, item_list: List[ArgItemAST], ln: int):
         self.arg_list = item_list  # TODO: refactor exp_list -> item_list
         self.may_tuple = False
@@ -31,10 +27,6 @@ class ArgListAST:
 
 
 class CellAST(Expression):
-    """
-    cell := NUMBER | NAME | STRING | call_expr
-    """
-
     def __init__(self, value: object, _type: int, ln: int):
         self.value = value
         self.type = _type
@@ -54,10 +46,6 @@ class MemberAccessAST(Expression):
 
 
 class UnaryExprAST(Expression):
-    """
-    unary_expr := [unary_op] member_expr
-    """
-
     def __init__(self, op: str, right_expr: MemberAccessAST, ln: int):
         self.op = op
         self.right_expr = right_expr
@@ -65,10 +53,6 @@ class UnaryExprAST(Expression):
 
 
 class PowerExprAST(Expression):
-    """
-    pow_expr := unary_expr ['^' unary_expr]
-    """
-
     def __init__(self, left: UnaryExprAST, right: List[UnaryExprAST], ln: int):
         self.left = left
         self.right = right
@@ -76,21 +60,13 @@ class PowerExprAST(Expression):
 
 
 class ModExprAST(Expression):
-    """
-    mod_expr := pow_expr ['mod' pow_expr]
-    """
-
     def __init__(self, left: PowerExprAST, right: List[PowerExprAST], ln: int):
         self.left = left
         self.right = right
         self.ln = ln
 
 
-class MuitDivExprAST(Expression):
-    """
-    md_expr := mod_expr [('*' | '/') mod_expr]
-    """
-
+class MultDivExprAST(Expression):
     def __init__(self, op: str, left: ModExprAST, right: List[ModExprAST], ln: int):
         self.op = op
         self.left = left
@@ -99,13 +75,9 @@ class MuitDivExprAST(Expression):
 
 
 class AddSubExprAST(Expression):
-    """
-    real_expr := md_expr [('+' | '-') md_expr]* | '(' real_expr ')'
-    """
-
     def __init__(self, op: str,
-                 left: MuitDivExprAST,
-                 right: List[Tuple[str, MuitDivExprAST]], ln: int):
+                 left: MultDivExprAST,
+                 right: List[Tuple[str, MultDivExprAST]], ln: int):
         self.op = op
         self.left = left
         self.right = right
@@ -611,11 +583,25 @@ class StarredExpr(Expression):
         self.store = store
 
 
+class WithItem(Statement):
+    def __init__(self, context_expr: Expression, optional_var: Expression, ln: int):
+        self.context_expr = context_expr
+        self.optional_var = optional_var
+        self.ln = ln
+
+
+class WithStmt(Statement):
+    def __init__(self, items: List[WithItem], body: BlockAST, ln: int):
+        self.items = items
+        self.body = body
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,
     ModExprAST,
-    MuitDivExprAST,
+    MultDivExprAST,
     AddSubExprAST,
     DefineExprAST,
     CallExprAST,
@@ -634,7 +620,7 @@ BINARY_AST_TYPES = (
 BIN_OP_AST = (
     PowerExprAST,
     ModExprAST,
-    MuitDivExprAST,
+    MultDivExprAST,
     AddSubExprAST,
     BitShiftExprAST,
     BitOpExprAST,

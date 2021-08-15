@@ -20,7 +20,7 @@ syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt get set init new getattr setattr delattr getitem setitem delitem del
 syn keyword ailStmt mod and not or
-syn keyword ailStmt match namespace
+syn keyword ailStmt match namespace with
 
 syn keyword ailConst false true __main__
 
@@ -96,10 +96,10 @@ syn keyword pythonBuiltin	abs all any bin bool bytearray callable chr
 syn keyword pythonBuiltin	classmethod compile complex delattr dict dir
 syn keyword pythonBuiltin	divmod enumerate eval filter float format
 syn keyword pythonBuiltin	frozenset getattr globals hasattr hash
-syn keyword pythonBuiltin	help hex id input int isinstance
+syn keyword pythonBuiltin	help hex id int isinstance
 syn keyword pythonBuiltin	issubclass iter len list locals map max
 syn keyword pythonBuiltin	memoryview min next object oct open ord pow
-syn keyword pythonBuiltin	print property range repr reversed round set
+syn keyword pythonBuiltin	property range repr reversed round set
 syn keyword pythonBuiltin	setattr slice sorted staticmethod str
 syn keyword pythonBuiltin	sum super tuple type vars zip __import__
 syn keyword pythonBuiltin	basestring cmp execfile file
