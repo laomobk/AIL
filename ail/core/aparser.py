@@ -407,7 +407,8 @@ class Parser:
 
         self.__next_tok()  # eat 'match'
 
-        target = self.__parse_binary_expr(type_comment=False)
+        target = self.__parse_assign_expr(type_comment=False, do_tuple=True)
+
         if target is None:
             self.__syntax_error()
 
@@ -2789,10 +2790,26 @@ class ASTConverter:
             result = True if ail::match(x, (1,)) else \
                      False if ail::match(x, (2,)) else py::raise(...)
         """
+        
+        target = expr.target
+        if isinstance(target, ast.AssignExprAST):
+            assi = self._convert_assign_expr(target, as_stmt=True)
+            name = self.convert(target.left)
+            self.__append_stmt_to_top_block(assi)
+            target = name
+        else:
+            left = self._new_name('<match_value>', expr.ln, store_ctx())
+            assi = _set_lineno(
+                assign_stmt(
+                    [left],
+                    self.convert(target)
+                ), expr.ln
+            )
+            self.__append_stmt_to_top_block(assi)
+            target = left
 
-        target = self.convert(expr.target)
-
-        return self.__make_if_expr_from_match_expr(target, expr.cases, 0, expr.ln)
+        return self.__make_if_expr_from_match_expr(
+                        target, expr.cases, 0, expr.ln)
 
     def _convert_with_stmt(self, stmt: ast.WithStmt) -> pyast.With:
         items = []

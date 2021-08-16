@@ -1,4 +1,7 @@
 
-if 'c' in 'abc' {
-    print 'c in abc'
+
+match get_status() {
+    OK: 0,
+    FAILED: 1,
 }
+
