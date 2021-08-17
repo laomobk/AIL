@@ -1,5 +1,5 @@
 
-for i = 1;  (() -> { return foo(); })(); i += 1 {
-    foo();
-}
+do {
+
+} loop until (() -> { return 0; })();
 

@@ -2974,8 +2974,19 @@ class ASTConverter:
         return _set_lineno(while_stmt(test, block), stmt.ln)
 
     def _convert_do_loop_stmt(self, stmt: ast.DoLoopStmtAST) -> pyast.While:
+        necessary_stmts = []
+
+        def _necessary_stmt_hook(stmt):
+            necessary_stmts.append(stmt)
+
         body = self._convert_block(stmt.block, True)
-        test = self.convert(stmt.test)
+
+        try:
+            self.__block_stmt_append_func_stack.append(_necessary_stmt_hook)
+            test = self.convert(stmt.test)
+        finally:
+            self.__block_stmt_append_func_stack.pop()
+
         true_test = _set_lineno(constant_expr(True), stmt.ln)
 
         break_if = _set_lineno(
@@ -2984,7 +2995,7 @@ class ASTConverter:
         )
 
         try_body = _set_lineno(
-            try_stmt(body, [], [break_if]),
+            try_stmt(body, [], necessary_stmts + [break_if]),
             stmt.test.ln
         )
 
