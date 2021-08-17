@@ -1,7 +1,5 @@
 
-
-match get_status() {
-    OK: 0,
-    FAILED: 1,
+for i = 1;  (() -> { return foo(); })(); i += 1 {
+    foo();
 }
 

@@ -814,7 +814,12 @@ class Parser:
             self.__next_tok()  # eat '->'
 
             if self.__now_tok.ttype == AIL_LLBASKET:
-                block = self.__parse_block()
+                try:
+                    self.__level += 1
+                    block = self.__parse_block()
+                finally:
+                    self.__level -= 1
+
                 a = ast.FunctionDefineAST(
                     aconfig.LAMBDA_FUNC_NAME,
                     expr_or_param, block, None, self.__now_ln)
@@ -2946,8 +2951,25 @@ class ASTConverter:
         return _set_lineno(assign_stmt([left], right), expr.ln)
 
     def _convert_while_stmt(self, stmt: ast.WhileStmtAST) -> pyast.While:
-        test = self.convert(stmt.test)
+        top_hook = self.__block_stmt_append_func_stack[-1]
+        necessary_stmts = []
+
+        def _necessary_stmt_hook(stmt):
+            necessary_stmts.append(stmt)
+            top_hook(stmt)
+        
+        try:
+            self.__block_stmt_append_func_stack.append(_necessary_stmt_hook)
+            test = self.convert(stmt.test)
+        finally:
+            self.__block_stmt_append_func_stack.pop()
+        
         block = self._convert_block(stmt.block, True)
+        if necessary_stmts:
+            block = _set_lineno(
+                try_stmt(block, [], necessary_stmts),
+                stmt.ln,
+            )
 
         return _set_lineno(while_stmt(test, block), stmt.ln)
 
@@ -2984,27 +3006,39 @@ class ASTConverter:
             ), stmt.ln,
         )
 
-    def _convert_for_stmt(self, stmt: ast.ForStmtAST) -> List[pyast.stmt]:
-        for_stmt = []
+    def _convert_for_stmt(self, stmt: ast.ForStmtAST) -> pyast.While:
 
-        init_block = ast.BlockAST(stmt.init_list.expr_list, stmt.init_list.ln)
-        for_stmt.extend(self._convert_block(init_block, True))
+        top_hook = self.__block_stmt_append_func_stack[-1]
+        necessary_stmts = []
 
-        if stmt.test is None:
-            test = self._new_constant(True, stmt.ln)
-        else:
-            test = self.convert(stmt.test)
+        def _necessary_stmt_hook(stmt):
+            necessary_stmts.append(stmt)
+            top_hook(stmt)
+    
+        for expr in stmt.init_list.expr_list:
+            py_expr = self.convert(expr, True)
+            self.__append_stmt_to_top_block(py_expr)
 
-        update_block = ast.BlockAST(stmt.update_list.expr_list, stmt.update_list.ln)
-
+        try:
+            self.__block_stmt_append_func_stack.append(_necessary_stmt_hook)
+            if stmt.test is None:
+                test = self._new_constant(True, stmt.ln)
+            else:
+                test = self.convert(stmt.test)
+        finally:
+            self.__block_stmt_append_func_stack.pop()
+            
+        update_block = ast.BlockAST(
+            stmt.update_list.expr_list + necessary_stmts, stmt.update_list.ln
+        )
         body = self._convert_block(stmt.block)
+
         body_with_try = [_set_lineno(
             try_stmt(body, [], self._convert_block(update_block, True)), stmt.block.ln)]
 
         while_stmt_ = _set_lineno(while_stmt(test, body_with_try), stmt.ln)
-        for_stmt.append(while_stmt_)
 
-        return for_stmt
+        return while_stmt_
 
     def _convert_if_stmt(self, stmt: ast.IfStmtAST) -> pyast.If:
         test = self.convert(stmt.test)
