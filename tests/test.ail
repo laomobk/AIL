@@ -1,5 +1,5 @@
 
-do {
-
-} loop until (() -> { return 0; })();
+for i = 0; i < 10; {
+    
+}
 

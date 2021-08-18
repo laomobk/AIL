@@ -3038,14 +3038,16 @@ class ASTConverter:
                 test = self.convert(stmt.test)
         finally:
             self.__block_stmt_append_func_stack.pop()
-            
+        
         update_block = ast.BlockAST(
             stmt.update_list.expr_list + necessary_stmts, stmt.update_list.ln
         )
         body = self._convert_block(stmt.block)
-
-        body_with_try = [_set_lineno(
-            try_stmt(body, [], self._convert_block(update_block, True)), stmt.block.ln)]
+        
+        body_with_try = body
+        if update_block.stmts:
+            body_with_try = [_set_lineno(
+                try_stmt(body, [], self._convert_block(update_block, True)), stmt.block.ln)]
 
         while_stmt_ = _set_lineno(while_stmt(test, body_with_try), stmt.ln)
 
