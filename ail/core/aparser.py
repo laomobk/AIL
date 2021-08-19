@@ -1722,18 +1722,7 @@ class Parser:
 
         self.__next_tok(convert_semi=False)  # eat DOC STRING
 
-        if self.__pyc_mode:
-            return ast.PyCodeBlock(doc_string, ln)
-
-        nt = self.__now_tok
-        if nt == 'class':
-            return self.__parse_class_def_stmt(doc_string=doc_string)
-        elif nt == 'fun' or nt == 'func':
-            return self.__parse_func_def_stmt(doc_string=doc_string)
-        elif nt == '@':
-            return self.__parse_func_def_with_decorator_stmt(doc_string=doc_string)
-        else:
-            self.__syntax_error('invalid definition under doc string')
+        return ast.PyCodeBlock(doc_string, ln)
 
     def __parse_func_def_with_decorator_stmt(self,
                                              parsed: list = None,
@@ -2803,7 +2792,8 @@ class ASTConverter:
             self.__append_stmt_to_top_block(assi)
             target = name
         else:
-            left = self._new_name('<match_value>', expr.ln, store_ctx())
+            match_name = '<match_value_%s-%s>' % (hash(expr), target.ln)
+            left = self._new_name(match_name, expr.ln, store_ctx())
             assi = _set_lineno(
                 assign_stmt(
                     [left],
@@ -2811,7 +2801,7 @@ class ASTConverter:
                 ), expr.ln
             )
             self.__append_stmt_to_top_block(assi)
-            target = left
+            target = self._new_name(match_name, expr.ln)
 
         return self.__make_if_expr_from_match_expr(
                         target, expr.cases, 0, expr.ln)
