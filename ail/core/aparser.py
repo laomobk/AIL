@@ -524,9 +524,15 @@ class Parser:
     def __parse_match_case(self) -> ast.MatchCase:
         ln = self.__now_ln
         patterns = []
+        when_test = None
 
         if self.__now_tok == 'else':
             self.__next_tok()  # eat 'else'
+        elif self.__now_tok == 'when':
+            self.__next_tok()  # eat 'when'
+            when_test = self.__parse_binary_expr(
+                do_tuple=False, type_comment=False)
+            self.__skip_newlines()
         else:
             self.__skip_newlines()
             expr = self.__parse_binary_expr(
@@ -544,7 +550,7 @@ class Parser:
         self.__skip_newlines()
         expr = self.__parse_binary_expr(type_comment=False)
 
-        return ast.MatchCase(patterns, expr, ln)
+        return ast.MatchCase(patterns, expr, ln, when_test)
 
     def __parse_dict_expr(self) -> ast.DictAST:
         ln = self.__now_ln
@@ -2862,22 +2868,27 @@ class ASTConverter:
         patterns = [self.convert(x) for x in case.patterns]
         body = self.convert(case.expr)
 
-        if len(patterns) == 0:
+        if len(patterns) == 0 and case.when_test is None:
             return body
 
         only_const = all((isinstance(x, pyast.Constant) for x in patterns))
-        match_call = self._new_call_name(
-            'ail::match',
-            [
-                target,
-                _set_lineno(tuple_expr(patterns, load_ctx()), case.ln),
-                self._new_constant(only_const, case.ln)],
-            case.ln,
-        )
+
+        if case.when_test:
+            match_test = self.convert(case.when_test)
+        else:
+            match_call = self._new_call_name(
+                'ail::match',
+                [
+                    target,
+                    _set_lineno(tuple_expr(patterns, load_ctx()), case.ln),
+                    self._new_constant(only_const, case.ln)],
+                case.ln,
+            )
+            match_test = match_call
 
         return _set_lineno(
             if_expr(
-                match_call, body, self.__make_if_expr_from_match_expr(
+                match_test, body, self.__make_if_expr_from_match_expr(
                     target, cases, c_index + 1, ln
                 )), ln)
 
@@ -3117,7 +3128,7 @@ class ASTConverter:
         if not as_stmt:
             if func.is_lambda:
                 return self._convert_lambda_expr(func)
-            func.name = '<anonymous %s>' % hash(func)
+            func.name = '<anonymous %s-%s>' % (hash(func), func.ln)
 
         func_stmt = self._convert_function_def_stmt(func)
 

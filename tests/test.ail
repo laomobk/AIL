@@ -1,25 +1,11 @@
-// adoc.ail
 
-#from inspect import getargs
-
-
-__author__ = 'Laomo'
+#from random import randint
 
 
-class FuncArg {
-
-    func __str__(self): String {
-        return '({}{}{})'.format(
-            ', '.join(self.args),
-            match self.vararg {
-                null: '',
-                else: ', *{}'.format(self.vararg),
-            },
-            match self.kwarg {
-                null: '',
-                else: ', **{}'.format(self.kwarg),
-            }
-        )
+foreach _ in range(50) {
+    print match b = randint(0, 100) {
+        when b > 20: 'OK, b = %s' % b,
+        when b <= 20: 'FAILED, b = %s' % b,
     }
 }
 

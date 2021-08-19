@@ -526,9 +526,11 @@ class InstanceProperty:
 
 
 class MatchCase:
-    def __init__(self, patterns: list, expr, ln: int):
+    def __init__(
+            self, patterns: list, expr, ln: int, when_test: Expression = None):
         self.patterns = patterns
         self.expr = expr
+        self.when_test = when_test
         self.ln = ln
 
 
