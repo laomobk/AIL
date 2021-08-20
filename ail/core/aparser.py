@@ -3,7 +3,7 @@ import ast as pyast
 from os.path import split
 from typing import Union
 
-import astunparse
+# import astunparse
 
 from . import aconfig
 
