@@ -2536,6 +2536,10 @@ class Parser:
         while self.__now_tok.ttype == AIL_ENTER:  # skip enter at beginning
             self.__next_tok()
 
+        if self.__now_tok.ttype == AIL_DOC_STRING and \
+                self.__now_tok.value[:1] == '!':
+            self.__next_tok()  # something likes #!/usr/bin/python ...
+
         if eval_mode:
             return self.__parse_binary_expr(type_comment=False, no_assign=True)
 
