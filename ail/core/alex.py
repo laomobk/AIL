@@ -160,6 +160,10 @@ def get_number(source: str, cursor: int) -> tuple:
             now_char = get_source_char(source, char_cur)
             if now_char not in num_chars or now_char == '':
                 return -1, None
+    elif source[char_cur] == '.':
+        buffer += '0'
+        num_chars = num_chars[:-1]
+        base = 10
 
     while char_cur < len(source):
         ch = get_source_char(source, char_cur)
@@ -765,6 +769,23 @@ class Lex:
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
                     self.__ln += 1
+                elif c == '.':
+                    if self.__nextch(1) in '0123456789':
+                        offset, val = get_number(self.__source, self.__chp)
+                        if offset == -1:
+                            error_msg(
+                                self.__ln, 'invalid number', self.__filename,
+                                source=self.__source)
+                        self.__stream.append(Token(
+                                val,
+                                AIL_NUMBER,
+                                self.__ln,
+                            )
+                        )
+                        self.__movchr(offset)
+                    else:
+                        self.__stream.append(Token('.', AIL_DOT, self.__ln))
+                        self.__movchr()
                 else:
                     self.__stream.append(Token(
                         c,
@@ -776,7 +797,6 @@ class Lex:
                             '{': AIL_LLBASKET,
                             '}': AIL_LRBASKET,
                             ',': AIL_COMMA,
-                            '.': AIL_DOT,
                             ';': AIL_SEMI,
                             '$': AIL_MONEY,
                             '@': AIL_AT,

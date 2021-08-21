@@ -1,14 +1,27 @@
+//!test: test number
 
-bin_int = 0b1011010110
 
-oct_int = 0o1326
+func _eval(num_str) {
+    print '%s = %s' % (num_str, aeval(num_str))
+}
 
-ord_int = 726
-ord_float = 50.13
 
-hex_int = 0x2d6
+_cases = (
+    '726',
+    '10.26',
+    '.5',
+    '0xcafe',
+    '0o123',
+    '0b1101',
+    '1e10',
+    '1e+10',
+    '1e-5',
+    '1e-03',
+    '1e+03',
+)
 
-print '0b1011010110 ->', bin_int
-print '0o1326 ->', oct_int
-print '0x2d6 ->', hex_int
+
+foreach c in _cases {
+    _eval(c)
+}
 
