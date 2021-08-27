@@ -38,8 +38,6 @@ class AILImporter:
 
         if isinstance(exports, dict):
             return exports
-        elif isinstance(exports, Namespace):
-            return exports.__dict__
         else:
             try:
                 ns = dict()

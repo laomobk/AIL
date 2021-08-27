@@ -1,0 +1,10 @@
+
+a = 0;
+print a;
+
+a, b, c, d = range(0, 4);
+print a, b, c, d;
+
+a, *b = 1, 2, 3;
+print a, b;
+

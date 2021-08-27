@@ -575,7 +575,7 @@ class Parser:
         if self.__now_tok.ttype != AIL_COLON:
             self.__syntax_error()
 
-        self.__next_tok(ignore_newline=True)  # eat ':'
+        self.__next_tok()  # eat ':'
         self.__skip_newlines()
 
         value = self.__parse_binary_expr()
@@ -1884,7 +1884,7 @@ class Parser:
         if bindto is not None and not with_bound_to:
             self.__syntax_error('this function can not be bound', bindto_tok_line)
 
-        if anonymous_function:
+        if anonymous_function and self.__now_tok.ttype != AIL_IDENTIFIER:
             name = aconfig.ANONYMOUS_FUNC_NAME
         else:
             if self.__now_tok.ttype != AIL_IDENTIFIER:
@@ -3132,7 +3132,8 @@ class ASTConverter:
         if not as_stmt:
             if func.is_lambda:
                 return self._convert_lambda_expr(func)
-            func.name = '<anonymous %s-%s>' % (hash(func), func.ln)
+            if func.name == aconfig.ANONYMOUS_FUNC_NAME:
+                func.name = '<anonymous %s-%s>' % (hash(func), func.ln)
 
         func_stmt = self._convert_function_def_stmt(func)
 
