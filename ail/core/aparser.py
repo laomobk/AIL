@@ -2621,7 +2621,7 @@ class ASTConverter:
         ), ln)
 
     def _convert_cell(self, cell: ast.CellAST) -> Union[pyast.Name, pyast.Constant]:
-        if cell.value == 'null':
+        if cell.value in ('null', 'None'):
             return _set_lineno(constant_expr(None), cell.ln)
         elif cell.value in ('true', 'True'):
             return _set_lineno(constant_expr(True), cell.ln)
