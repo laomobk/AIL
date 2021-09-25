@@ -57,7 +57,7 @@ _inplace_op_dict = {
     AIL_INP_POW: ('**', ast.PowerExprAST, False)
 }
 
-_literal_names = ('null', 'true', 'false')
+_literal_names = ('null', 'true', 'false', 'True', 'False')
 
 _FROM_MAIN = 0
 _FROM_FUNC = 1
@@ -2625,7 +2625,7 @@ class ASTConverter:
             return _set_lineno(constant_expr(None), cell.ln)
         elif cell.value in ('true', 'True'):
             return _set_lineno(constant_expr(True), cell.ln)
-        elif cell.value == ('false', 'False'):
+        elif cell.value in ('false', 'False'):
             return _set_lineno(constant_expr(False), cell.ln)
         elif cell.type == AIL_NUMBER:
             return _set_lineno(constant_expr(eval(cell.value)), cell.ln)
