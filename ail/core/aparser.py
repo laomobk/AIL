@@ -2623,9 +2623,9 @@ class ASTConverter:
     def _convert_cell(self, cell: ast.CellAST) -> Union[pyast.Name, pyast.Constant]:
         if cell.value == 'null':
             return _set_lineno(constant_expr(None), cell.ln)
-        elif cell.value == 'true':
+        elif cell.value in ('true', 'True'):
             return _set_lineno(constant_expr(True), cell.ln)
-        elif cell.value == 'false':
+        elif cell.value == ('false', 'False'):
             return _set_lineno(constant_expr(False), cell.ln)
         elif cell.type == AIL_NUMBER:
             return _set_lineno(constant_expr(eval(cell.value)), cell.ln)
