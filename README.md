@@ -9,6 +9,14 @@ AIL 是一门运行在 Python 虚拟机上的面向对象的编程语言。支�
 
 ***注意：从 2.1 版本开始，AIL 自带的虚拟机和编译器已经被禁用，默认启用 Python 兼容模式***
 
+## 环境需求
+
+**具有完整标准库的 Python3.6+, 最好是 3.7 ~ 3.8 版本**
+
+AIL 需要运行在具有完整标准库的 Python 环境上，版本最低不低于3.5，3.5 ~ 3.6 之间的 Python 版本不确保有正常的 AIL 使用体验。若要取得最好的 AIL 体验，请使用 3.7 ~ 3.8 版本的 Python, 3.9+ 的 Python 版本运行 AIL 并不稳定。
+
+推荐使用 **cpython** 解释器，其他 Python 解释器并未进行过测试。
+
 ## Hello World
 
 #### Hello World with one statement
