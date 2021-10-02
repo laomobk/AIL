@@ -2360,9 +2360,6 @@ class Parser:
         elif nt == 'import':
             a = self.__parse_import_stmt()
 
-        elif nt == 'namespace':
-            a = self.__parse_namespace_stmt()
-
         elif nt == 'foreach':
             a = self.__parse_foreach_stmt()
 
