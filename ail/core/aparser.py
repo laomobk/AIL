@@ -191,6 +191,7 @@ class Parser:
             self, type_comment: bool = False, try_tuple: bool = False) -> ast.ArgItemAST:
         star = False
         kw_star = False
+        type_comment_tree = None
 
         if self.__now_tok.ttype == AIL_MULT:
             self.__next_tok()  # eat '*'
@@ -200,21 +201,23 @@ class Parser:
             kw_star = True
 
         self.__skip_newlines()
-        expr = self.__parse_binary_expr(do_tuple=try_tuple, no_assign=True)
+        expr = self.__parse_binary_expr(
+            do_tuple=try_tuple, no_assign=True, ignore_type_comment=True)
 
         default = None
 
         if type_comment:
-            self.__parse_type_comment()
+            type_comment_tree = self.__parse_type_comment()
 
         if self.__now_tok.ttype == AIL_ASSI:
             self.__next_tok()  # eat '='
             default = self.__parse_binary_expr(
-                do_tuple=False, no_assign=True)
+                do_tuple=False, no_assign=True, ignore_type_comment=True)
 
         arg = ast.ArgItemAST(expr, star, self.__now_ln)
         arg.kw_star = kw_star
         arg.default = default
+        arg.type_comment = type_comment_tree
 
         return arg
 
@@ -299,7 +302,7 @@ class Parser:
         may_tuple = False
 
         if self.__now_tok.ttype != AIL_SRBASKET:
-            a = self.__parse_arg_item(True)
+            a = self.__parse_arg_item()
             alist.append(a)
         else:
             return ast.ArgListAST(alist, self.__now_ln)
@@ -971,10 +974,12 @@ class Parser:
 
     def __parse_binary_expr(
             self, as_stmt: bool = False, do_tuple: bool = False,
-            no_assign: bool = False, type_comment: bool = True) -> ast.BitOpExprAST:
+            no_assign: bool = False, type_comment: bool = False,
+            ignore_type_comment=False) -> ast.BitOpExprAST:
             
         expr = self.__parse_assign_expr(
-            do_tuple, no_assign=no_assign, type_comment=type_comment)
+            do_tuple, no_assign=no_assign, type_comment=type_comment,
+            ignore_type_comment=ignore_type_comment)
 
         if isinstance(expr, ast.AssignExprAST) and not as_stmt:
             self.__syntax_error('cannot assign in a expression')
@@ -1153,12 +1158,19 @@ class Parser:
     def __parse_assign_expr(self,
                             do_tuple: bool = False,
                             no_assign: bool = False,
-                            type_comment: bool = True) -> ast.AssignExprAST:
+                            type_comment: bool = False,
+                            ignore_type_comment: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple, True)
+        type_comment_tree = None
 
-        if type_comment:
-            self.__parse_type_comment()
+        if not ignore_type_comment and type_comment:
+            if isinstance(left, ast.TupleAST):
+                self.__syntax_error('only single target (not tuple) can be annotated')
+                return None
+            type_comment_tree = self.__parse_type_comment()
+        elif self.__now_tok == ':' and not ignore_type_comment:
+            self.__syntax_error('type comment is not available here')
 
         state = self.get_state()
 
@@ -1214,7 +1226,9 @@ class Parser:
                 left, r, ttype, self.__now_ln)
             aug_assign = True
 
-        return ast.AssignExprAST(left, r, ln, aug_assign)
+        tree = ast.AssignExprAST(left, r, ln, aug_assign)
+        tree.type_comment = type_comment_tree
+        return tree
 
     def __convert_inplace_assign_expr_for_right(
             self, left, right, ttype, ln) -> ast.Expression:
@@ -1906,7 +1920,7 @@ class Parser:
         else:
             arg_list = self.__parse_param_list()
 
-        self.__parse_type_comment()
+        type_comment_tree = self.__parse_type_comment()
 
         self.__skip_newlines()
 
@@ -1924,7 +1938,9 @@ class Parser:
 
         self.__level -= 1
 
-        return ast.FunctionDefineAST(name, arg_list, block, bindto, ln, doc_string)
+        tree = ast.FunctionDefineAST(name, arg_list, block, bindto, ln, doc_string)
+        tree.type_comment = type_comment_tree
+        return tree
 
     def __parse_continue_stmt(self) -> ast.ContinueStmtAST:
         if self.__now_tok != 'continue':
@@ -2380,7 +2396,7 @@ class Parser:
 
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
                 (nt.value not in (_keywords + limit) or nt.value == 'not'):
-            a = self.__parse_binary_expr(True, True)
+            a = self.__parse_binary_expr(True, True, False, True)
             self.__expect_newline()
 
         elif nt.ttype == AIL_ENTER:

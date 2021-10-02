@@ -192,14 +192,47 @@ assert expression;
 
 assert 语句用于进行断言。当 `bool(expression) == False` 时，该语句就会向运行时抛出 `AssertionError` 。
 
+### with 语句
+
+with 语句可以方便地使用上下文管理器，让上下文管理器随着代码一起执行。
+
+```
+with_stmt := 'with' with_item [';' with_item] block
+with_item := [assign_tuple '='] expression
+```
+
+当有多个 with_item 的时候，语义上相当于多个 with 语句嵌套:
+
+```python
+with a = A(); b = B() {
+    // ...
+}
+// equals...
+with a = A() {
+    with b = B() {
+        // ...
+    }
+}
+```
+
 ## 定义语句与赋值语句
 
 ### 赋值语句
 ```python
-expression = expression;
+assign_tuple = expression;
 ```
 
 赋值语句属于显式定义语句。
+
+赋值语句不能作为表达式使用。
+
+assign_tuple 部分是特殊的表达式，在一定意义上成为左值表达式。assign 部分可以是下标索引表达式，可以是成员访问表达式，也可以是特殊的 assign 元祖。
+
+assign 元祖中的项目必须是左值表达式，当赋值表达式右边为**可解包对象**的时候，解包结果会被分别赋值给 assign 元祖：
+
+```python
+a, b, c = c, b, a;
+```
 
 ### 函数定义语句
 
@@ -228,14 +261,6 @@ class name [:meta_class] [extends super_class...]
 ```
 
 若不指定 meta_class，则默认是 `type` ，若不指定 super_class, 则默认是 `object` 。
-
-### 名称空间定义语句
-
-```swift
-namespace NAME { statements }
-```
-
-名称空间定义语句属于显式定义语句。名称空间内部若不使用显式定义语句，则会出现风险。具体请查阅 [namespace](./namespace.md) .
 
 ### 结构体定义语句
 

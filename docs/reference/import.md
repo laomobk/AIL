@@ -33,10 +33,7 @@ print a.info
 
 
 print '_package.ail loading...'
-
-namespace __export__ {
-    date = 20190726
-}
+date = 20190726
 ```
 
 ```python

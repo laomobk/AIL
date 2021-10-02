@@ -73,7 +73,8 @@ def make_ast_tree(a) -> dict:
     
     elif isinstance(a, ast.ArgItemAST):
         return {'ArgItem': {'expr': make_ast_tree(a.expr), 
-                            'star': a.star}}
+                            'star': a.star,
+                            'type_comment': make_ast_tree(a.type_comment)}}
 
     elif isinstance(a, ast.ArgListAST):
         return {'ArgList': unpack_list(a.arg_list)}
@@ -141,7 +142,8 @@ def make_ast_tree(a) -> dict:
                     'arg_list': make_ast_tree(a.arg_list),
                     'block': make_ast_tree(a.block),
                     'bindto': make_ast_tree(a.bindto),
-                    'decorator': make_ast_tree(a.decorator)}}
+                    'decorator': make_ast_tree(a.decorator),
+                    'type_comment': make_ast_tree(a.type_comment)}}
 
     elif isinstance(a, ast.ClassDefineAST):
         return {'ClassDefAST': 
@@ -196,7 +198,8 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.AssignExprAST):
         return {'AssignExprAST': {
             'left': make_ast_tree(a.left),
-            'right': make_ast_tree(a.right)}}
+            'right': make_ast_tree(a.right),
+            'type_comment': make_ast_tree(a.type_comment)}}
 
     elif isinstance(a, ast.StructDefineAST):
         return {'StructDefineAST': {

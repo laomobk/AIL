@@ -21,6 +21,7 @@ class ArgItemAST:
         self.kw_star = False
         self.default = None
         self.ln = ln
+        self.type_comment = None
 
 
 class ArgListAST:
@@ -146,6 +147,7 @@ class AssignExprAST(Expression):
         self.right = right
         self.left = left
         self.aug_assign = aug_assign
+        self.type_comment = None
         self.ln = ln
 
 
@@ -240,6 +242,7 @@ class FunctionDefineAST(Statement):
         self.doc_str=  doc_str
         self.is_lambda = False
         self.lambda_return = None
+        self.type_comment = None
 
 
 class ClassDefineAST(Statement):
