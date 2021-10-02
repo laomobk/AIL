@@ -1165,7 +1165,7 @@ class Parser:
         type_comment_tree = None
 
         if not ignore_type_comment and type_comment:
-            if isinstance(left, ast.TupleAST):
+            if isinstance(left, ast.TupleAST) and self.__now_tok == ':':
                 self.__syntax_error('only single target (not tuple) can be annotated')
                 return None
             type_comment_tree = self.__parse_type_comment()
