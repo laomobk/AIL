@@ -86,3 +86,10 @@ assert_stmt := 'assert' expression EOL
 
 catch_case := 'catch' expression NAME block
 try_catch_stmt := try block catch_case* ['finally' block]
+
+match_stmt := 'match' ([NAME [',' NAME]*] '=') expression '{' match_case [',' match_case]* '}'
+match_case := match_pattern ':' expression
+match_pattern := 'else' | expression
+
+object_pattern_right := '!' '{' [object_pattern_key_value [',' object_pattern_key_value]*] '}'
+object_pattern_key_value := NAME '=' expression
