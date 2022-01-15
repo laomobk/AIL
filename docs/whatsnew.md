@@ -8,7 +8,7 @@
 AIL 2.2 版本将开始适配 Python 3.10 的部分功能，源码上会在尽可能兼容 Python 3.7 的基础上进行针对 Python 3.10 的特性的优化。
 
 Python 3.10 版本更新说明：
-![py3.10](https://docs.python.org/zh-cn/3/whatsnew/3.10.html)
+[py3.10](https://docs.python.org/zh-cn/3/whatsnew/3.10.html)
 
 
 ### 更清晰的语法错误提示
