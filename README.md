@@ -1,4 +1,4 @@
-# AIL 2.1 alpha 1
+# AIL 2.2 alpha 0
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.6%2B-blue)
@@ -109,16 +109,6 @@ name = match lang_name {
         // handle it...
     }
 })();
-```
-
-### 嵌套名称空间
-
-```C#
-namespace Lang {
-    py = 'Python';
-    java = 'Java';
-    ail = 'AIL';
-}
 ```
 
 ## VIM 语法高亮支持
