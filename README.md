@@ -1,6 +1,6 @@
 # AIL 2.2 alpha 0
 
-![AIL 2.2 Klee 版本更新](./docs/whatsnew.md)
+[AIL 2.2 Klee 版本更新](./docs/whatsnew.md)
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.6%2B-blue)
