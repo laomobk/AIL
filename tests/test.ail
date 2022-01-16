@@ -1,4 +1,2 @@
+{'a': [1, 2]}
 
-func toFloat(x: int): float {
-    return x / 1;
-}

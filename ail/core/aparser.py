@@ -572,7 +572,7 @@ class Parser:
             self.__next_tok()
             return ast.DictAST(keys, values, ln)
 
-        key = self.__parse_binary_expr(type_comment=False)
+        key = self.__parse_binary_expr(type_comment=False, for_dict_key=True)
         self.__skip_newlines()
 
         if self.__now_tok.ttype != AIL_COLON:
@@ -975,11 +975,12 @@ class Parser:
     def __parse_binary_expr(
             self, as_stmt: bool = False, do_tuple: bool = False,
             no_assign: bool = False, type_comment: bool = False,
-            ignore_type_comment=False) -> ast.BitOpExprAST:
+            ignore_type_comment=False, for_dict_key: bool = False
+            ) -> ast.BitOpExprAST:
             
         expr = self.__parse_assign_expr(
             do_tuple, no_assign=no_assign, type_comment=type_comment,
-            ignore_type_comment=ignore_type_comment)
+            ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key)
 
         if isinstance(expr, ast.AssignExprAST) and not as_stmt:
             self.__syntax_error('cannot assign in a expression')
@@ -1159,14 +1160,20 @@ class Parser:
                             do_tuple: bool = False,
                             no_assign: bool = False,
                             type_comment: bool = False,
-                            ignore_type_comment: bool = False) -> ast.AssignExprAST:
+                            ignore_type_comment: bool = False,
+                            for_dict_key: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple, True)
+        
+        if for_dict_key:
+            return left
+
         type_comment_tree = None
 
         if not ignore_type_comment and type_comment:
             if isinstance(left, ast.TupleAST) and self.__now_tok == ':':
-                self.__syntax_error('only single target (not tuple) can be annotated')
+                self.__syntax_error(
+                    'only single target (not tuple) can be annotated')
                 return None
             type_comment_tree = self.__parse_type_comment()
         elif self.__now_tok == ':' and not ignore_type_comment:
