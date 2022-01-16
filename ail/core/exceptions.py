@@ -1,8 +1,7 @@
 
-from os.path import join as _join
-
 from ail import _config
 
+from os.path import join as _join
 from types import TracebackType as _TracebackType
 import sys as _sys
 import traceback as _traceback
