@@ -401,26 +401,24 @@ def get_doc_string(source: str, cursor: int) -> tuple:
     return ccur - cursor, ln_inc, doc_string
 
 
-class Cursor:  # 字符指针类型
-    """
-    指向源码中的字符的指针
-    """
-
+class Cursor:
     def __init__(self, value=0):
         self.value = value
 
 
 class Token:
-    def __init__(self, value: str, ttype: int, ln: int):
+    def __init__(self, value: str, ttype: int, ln: int, offset: int):
         self.value = value
         self.ttype = ttype
         self.ln = ln
+        self.offset = offset
 
     def __repr__(self):
-        return '<Token \'{0}\'  Type:{1}  LineNumber:{2}>'.format(
+        return '<Token \'{0}\'  type: {1}  lno: {2} ofs: {3}>'.format(
             self.value,
             self.ttype,
-            self.ln
+            self.ln,
+            self.offset,
         )
 
     def __eq__(self, obj: object):
@@ -545,8 +543,8 @@ class Lex:
             if self.__cursor.value + ni < len(self.__source) \
             else '<EOF>'
 
-    def __error_msg(self, msg):
-        error_msg(self.__ln, msg, self.__filename, source=self.__source)
+    def __error_msg(self, msg, offset: int = -1):
+        error_msg(self.__ln, msg, self.__filename, source=self.__source, offset=offset)
 
     def lex(self, source: str, filename: str = '<string>') -> TokenStream:
         if filename is not None:
@@ -560,7 +558,7 @@ class Lex:
             self.__blevel = 0
 
         if len(self.__source) == 0:
-            self.__stream.append(Token('<EOF>', AIL_EOF, 0))
+            self.__stream.append(Token('<EOF>', AIL_EOF, 0, -1))
             return self.__stream
 
         while self.__chp < len(self.__source):
@@ -574,7 +572,8 @@ class Lex:
                     self.__stream.append(Token(
                         '\n',
                         AIL_ENTER,
-                        self.__ln
+                        self.__ln,
+                        self.__chp
                     ))
 
             elif c in ('+', '*', '^', '%', '|', '&', '-'):  # 除法有点特殊
@@ -587,7 +586,8 @@ class Lex:
                                                    '^': AIL_INP_XOR,
                                                    '-': AIL_INP_SUB
                                                }[c],  # 根据c得到单词类型
-                                               self.__ln))
+                                               self.__ln,
+                                               self.__chp))
                     self.__movchr(2)
 
                 elif self.__nextch() in ('+', '-'):  # 自增自减
@@ -595,14 +595,16 @@ class Lex:
                                                AIL_PLUS_PLUS 
                                                     if self.__nextch() == '+' 
                                                     else AIL_SUB_SUB,
-                                               self.__ln))
+                                               self.__ln,
+                                                self.__chp))
                     self.__movchr(2)
 
                 elif c == '|' and self.__nextch() == '|':  # ||
                     self.__stream.append(Token(
                         '||',
                         AIL_OR,
-                        self.__ln
+                        self.__ln,
+                        self.__chp
                     ))
                     self.__movchr(2)
 
@@ -610,7 +612,8 @@ class Lex:
                     self.__stream.append(Token(
                         '&&',
                         AIL_AND,
-                        self.__ln
+                        self.__ln,
+                        self.__chp
                     ))
                     self.__movchr(2)
 
@@ -619,14 +622,16 @@ class Lex:
                         self.__stream.append(Token(
                             '**=',
                             AIL_INP_POW,
-                            self.__ln
+                            self.__ln,
+                            self.__chp
                         ))
                         self.__movchr(3)
                     else:
                         self.__stream.append(Token(
                             '**',
                             AIL_POW,
-                            self.__ln
+                            self.__ln,
+                            self.__chp
                         ))
                         self.__movchr(2)
                 elif c == '-' and self.__nextch() == '>':
@@ -634,6 +639,7 @@ class Lex:
                         '->',
                         AIL_RARROW,
                         self.__ln,
+                        self.__chp
                     ))
                     self.__movchr(2)
                 else:
@@ -647,7 +653,8 @@ class Lex:
                                                    '|': AIL_BIN_OR,
                                                    '&': AIL_BIN_AND,
                                                }[c],
-                                               self.__ln))
+                                               self.__ln,
+                                                self.__chp))
                     self.__movchr(1)
 
             elif c in ('>', '<'):
@@ -663,7 +670,8 @@ class Lex:
                                                        '>>': AIL_INP_RSHIFT,
                                                        '<<': AIL_INP_LSHIFT
                                                    }.get(c + self.__nextch()),
-                                                   self.__ln
+                                                   self.__ln,
+                                                   self.__chp
                                                    ))
 
                         self.__movchr(3)
@@ -674,13 +682,15 @@ class Lex:
                                 self.__stream.append(Token(
                                     '<',
                                     AIL_SMALER,
-                                    self.__ln
+                                    self.__ln,
+                                    self.__chp
                                 ))
 
                                 self.__stream.append(Token(
                                     '>',
                                     AIL_LARGER,
-                                    self.__ln
+                                    self.__ln,
+                                    self.__chp
                                 ))
 
                                 self.__movchr(2)
@@ -695,7 +705,8 @@ class Lex:
                                 '>>': AIL_RSHIFT,
                                 '<<': AIL_LSHIFT
                             }[c + self.__nextch()],
-                            self.__ln
+                            self.__ln,
+                            self.__chp
                         ))
                         self.__movchr(2)
 
@@ -703,7 +714,8 @@ class Lex:
                     self.__stream.append(Token(
                         c + '=',
                         AIL_LARGER_EQ if c == '>' else AIL_SMALER_EQ,
-                        self.__ln
+                        self.__ln,
+                        self.__chp
                     ))
                     self.__movchr(2)
 
@@ -711,7 +723,7 @@ class Lex:
                     self.__stream.append(Token(
                         c,
                         AIL_LARGER if c == '>' else AIL_SMALER,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr()
 
@@ -721,7 +733,7 @@ class Lex:
                     Token(
                         doc_string,
                         AIL_DOC_STRING,
-                        self.__ln,
+                        self.__ln, self.__chp
                     ))
                 self.__ln += ln_inc
                 self.__movchr(offset)
@@ -733,7 +745,7 @@ class Lex:
                     self.__stream.append(Token(
                         '\n',
                         AIL_ENTER,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__ln += 1
 
@@ -752,7 +764,7 @@ class Lex:
                     self.__stream.append(Token(
                         '/=',
                         AIL_INP_DIV,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr(2)
 
@@ -760,7 +772,7 @@ class Lex:
                     self.__stream.append(Token(
                         '/',
                         AIL_DIV,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr()
 
@@ -779,12 +791,13 @@ class Lex:
                         self.__stream.append(Token(
                                 val,
                                 AIL_NUMBER,
-                                self.__ln,
+                                self.__ln, self.__chp
                             )
                         )
                         self.__movchr(offset)
                     else:
-                        self.__stream.append(Token('.', AIL_DOT, self.__ln))
+                        self.__stream.append(Token(
+                            '.', AIL_DOT, self.__ln, self.__chp))
                         self.__movchr()
                 else:
                     self.__stream.append(Token(
@@ -804,7 +817,7 @@ class Lex:
                             ':': AIL_COLON,
                             '~': AIL_WAVE,
                         }[c],
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr()
 
@@ -814,14 +827,14 @@ class Lex:
                         self.__stream.append(Token(
                             '!==',
                             AIL_AUEQ,
-                            self.__ln
+                            self.__ln, self.__chp
                         ))
                         self.__movchr(3)
                     else:
                         self.__stream.append(Token(
                             '!=',
                             AIL_UEQ,
-                            self.__ln
+                            self.__ln, self.__chp
                         ))
                         self.__movchr(2)
 
@@ -829,7 +842,7 @@ class Lex:
                     self.__stream.append(Token(
                         '!',
                         AIL_NOT,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr()
 
@@ -854,7 +867,7 @@ class Lex:
                         self.__stream.append(Token(
                             buf,
                             AIL_STRING,
-                            self.__ln
+                            self.__ln, self.__chp
                         ))
 
                         self.__ln += lni
@@ -865,7 +878,7 @@ class Lex:
                 self.__stream.append(Token(
                     buf,
                     AIL_IDENTIFIER,
-                    self.__ln
+                    self.__ln, self.__chp
                 ))
                 self.__movchr(mov)
 
@@ -878,7 +891,7 @@ class Lex:
                 self.__stream.append(Token(
                     buf,
                     AIL_NUMBER,
-                    self.__ln
+                    self.__ln, self.__chp
                 ))
                 self.__movchr(mov)
 
@@ -888,14 +901,14 @@ class Lex:
                         self.__stream.append(Token(
                             '===',
                             AIL_AEQ,
-                            self.__ln
+                            self.__ln, self.__chp
                         ))
                         self.__movchr(3)
                     else:
                         self.__stream.append(Token(
                             '==',
                             AIL_EQ,
-                            self.__ln
+                            self.__ln, self.__chp
                         ))
                         self.__movchr(2)
 
@@ -903,7 +916,7 @@ class Lex:
                     self.__stream.append(Token(
                         '=',
                         AIL_ASSI,
-                        self.__ln
+                        self.__ln, self.__chp
                     ))
                     self.__movchr()
 
@@ -919,7 +932,7 @@ class Lex:
                 self.__stream.append(Token(
                     buf,
                     AIL_STRING,
-                    self.__ln
+                    self.__ln, self.__chp
                 ))
 
                 self.__ln += lni
@@ -931,19 +944,19 @@ class Lex:
                     self.__movchr(2)
 
             else:
-                self.__error_msg('Unknown character')
+                self.__error_msg('Unknown character', self.__chp)
 
         if self.__nextch(-1) != '\\n':
             self.__stream.append(Token(
                 '\n',
                 AIL_ENTER,
-                self.__ln
+                self.__ln, self.__chp
             ))  # 加回车是有利于语法分析行的检测
 
         self.__stream.append(Token(
             '<EOF>',
             AIL_EOF,
-            self.__ln
+            self.__ln, self.__chp
         ))  # 加回车是有利于语法分析行的检测
 
         return self.__stream

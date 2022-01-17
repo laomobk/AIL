@@ -74,7 +74,8 @@ def get_line_from_source(lno: int, source: str, strip=True):
 
 # @debugger.debug_python_runtime
 def error_msg(
-        line: int, msg: str, filename: str, errcode=1, source: str = None):
+        line: int, msg: str, filename: str, errcode=1, source: str = None,
+        offset: int = -1):
     """
     line : 行号
     msg : 信息
@@ -99,6 +100,7 @@ def error_msg(
         s.lineno = line
         s.text = source_line
         s.msg = msg
+        s.offset = offset + 1
         raise s
     else:
         sys.stderr.write(err_msg)

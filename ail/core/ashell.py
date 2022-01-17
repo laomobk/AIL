@@ -98,8 +98,11 @@ class Shell:
         """
         :return : -1 end more | 0 normal | 1 start more
         """
-
-        ts = Lex().lex(line)
+        
+        try:
+            ts = Lex().lex(line)
+        except SyntaxError:
+            return False
 
         for index, tok in enumerate(ts.token_list):
             if DISABLE_WORD_BLOCK:

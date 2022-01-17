@@ -102,7 +102,7 @@ class Parser:
         self.__loop_level = 0
         self.__parenthesis_level = 0
 
-        self.__pyc_mode = False
+        self.__pyc_mode = True
 
     def get_state(self) -> ParserState:
         return ParserState(self.__tc, self.__level, self.__parenthesis_level, self)
@@ -177,11 +177,17 @@ class Parser:
     def __tok_is(self, tok: Token, value: str) -> bool:
         return tok.ttype != AIL_STRING and tok.value == value
 
-    def __syntax_error(self, msg=None, ln: int = 0):
+    def __syntax_error(self, msg=None, ln: int = 0, offset: int = -1):
+        """
+        :param offset: -1: get offset from current token automatically.
+        """
+        if offset == -1:
+            offset = self.__now_tok.offset
+
         error_msg(
             self.__now_ln if ln <= 0 else ln,
             msg,
-            self.__filename, source=self.__source)
+            self.__filename, source=self.__source, offset=offset)
 
     def __expect_newline(self):
         if self.__now_tok.ttype != AIL_ENTER:

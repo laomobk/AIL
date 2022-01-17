@@ -25,7 +25,6 @@ class StopExec(BaseException):
 
 
 def _test_run():
-
     source = open('./tests/test.ail').read()
     l = Lex()
     ts = l.lex(source)
@@ -44,15 +43,12 @@ def exec_as_python(
     """
     :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
     """
-    try:
-        l = Lex()
-        ts = l.lex(source, filename)
 
-        p = Parser()
-        node = p.parse(ts, source, filename, True)
-    except AILSyntaxError as e:
-        print(e.raw_msg, file=stderr)
-        return 1
+    l = Lex()
+    ts = l.lex(source, filename)
+
+    p = Parser()
+    node = p.parse(ts, source, filename, True)
 
     converter = ASTConverter()
     code = compile(converter.convert_module(node), filename, 'exec')
