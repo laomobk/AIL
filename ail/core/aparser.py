@@ -184,6 +184,9 @@ class Parser:
         if offset == -1:
             offset = self.__now_tok.offset
 
+        if msg is None:
+            msg = 'invalid syntax'
+
         error_msg(
             self.__now_ln if ln <= 0 else ln,
             msg,
@@ -378,6 +381,8 @@ class Parser:
 
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()
+            elif self.__now_tok.ttype not in (AIL_COMMA, AIL_MRBASKET):
+                self.__syntax_error('invalid syntax. Perhaps you forgot a comma?')
 
             self.__skip_newlines()
 
@@ -578,14 +583,20 @@ class Parser:
             self.__next_tok()
             return ast.DictAST(keys, values, ln)
 
+        if self.__now_tok.ttype == AIL_EOF:
+            self.__syntax_error('\'{\' was never closed')
+
         key = self.__parse_binary_expr(type_comment=False, for_dict_key=True)
         self.__skip_newlines()
 
         if self.__now_tok.ttype != AIL_COLON:
-            self.__syntax_error()
+            self.__syntax_error('excepted \':\'')
 
         self.__next_tok()  # eat ':'
         self.__skip_newlines()
+
+        if self.__now_tok.ttype == AIL_EOF:
+            self.__syntax_error('\'{\' was never closed')
 
         value = self.__parse_binary_expr()
         self.__skip_newlines()
@@ -607,8 +618,11 @@ class Parser:
             self.__skip_newlines()
 
             if self.__now_tok.ttype != AIL_COLON:
-                self.__syntax_error()
+                self.__syntax_error('excepted \':\'')
             self.__next_tok()  # eat ':'
+            
+            if self.__now_tok.ttype == AIL_EOF:
+                self.__syntax_error('\'{\' was never closed.')
 
             self.__skip_newlines()
             value = self.__parse_binary_expr(type_comment=False, do_tuple=False)
@@ -618,7 +632,7 @@ class Parser:
             values.append(value)
 
         if self.__now_tok.ttype != AIL_LRBASKET:
-            self.__syntax_error()
+            self.__syntax_error('\'{\' was never closed.')
 
         self.__next_tok()  # eat '}'
 

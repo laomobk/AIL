@@ -1,2 +1,8 @@
-{'a': [1, 2]}
+
+vals = [];
+
+for i = 0; ((x=i) -> {
+        vals.append(x); return i < 10; })(); i += 1 {
+    print vals;
+}
 
