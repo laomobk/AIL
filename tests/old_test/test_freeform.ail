@@ -1,4 +1,6 @@
-else false {
-    print 'Nezha'
-} 
+try {
 
+}
+catch {
+
+}
