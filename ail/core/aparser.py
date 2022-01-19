@@ -196,6 +196,13 @@ class Parser:
         if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error('except newline')
 
+    def __parenthesis_not_match(
+            self, open_: str, close: str, ln: int, ofs: int, s_ln: int, s_ofs: int):
+        self.__syntax_error(
+            'closing parenthesis \'%s\' does not match opening parenthesis \'%s\' ' %
+            (close, open_) + '(at line %s, col %s)' % (s_ln, s_ofs + 1)
+            , ln=ln, offset=ofs)
+
     def __parse_arg_item(
             self, type_comment: bool = False, try_tuple: bool = False) -> ast.ArgItemAST:
         star = False
@@ -363,7 +370,11 @@ class Parser:
 
         return ast.ValueListAST(idl, self.__now_ln)
 
-    def __parse_item_list(self) -> ast.ItemListAST:
+    def __parse_item_list(self, start_tok: Token) -> ast.ItemListAST:
+        if self.__now_tok.ttype in (AIL_SRBASKET, AIL_LRBASKET):
+            self.__parenthesis_not_match(
+                '[', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                start_tok.ln, start_tok.offset)
         if self.__now_tok.ttype == AIL_MRBASKET:
             return ast.ItemListAST([], self.__now_ln)
 
@@ -379,10 +390,16 @@ class Parser:
 
             il.append(eitem)
 
+            if self.__now_tok.ttype in (AIL_SRBASKET, AIL_LRBASKET):
+                self.__parenthesis_not_match(
+                    '[', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                    start_tok.ln, start_tok.offset)
+            
+            if self.__now_tok.ttype not in (AIL_COMMA, AIL_MRBASKET):
+                self.__syntax_error('invalid syntax. Perhaps you forgot a comma?') 
+
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()
-            elif self.__now_tok.ttype not in (AIL_COMMA, AIL_MRBASKET):
-                self.__syntax_error('invalid syntax. Perhaps you forgot a comma?')
 
             self.__skip_newlines()
 
@@ -390,6 +407,8 @@ class Parser:
 
     def __parse_array_expr(self) -> ast.ArrayAST:
         ln = self.__now_ln
+
+        start_tok = self.__now_tok
 
         if self.__now_tok.ttype != AIL_MLBASKET:
             self.__syntax_error()
@@ -401,7 +420,7 @@ class Parser:
             self.__next_tok()  # eat ']'
             return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), ln)
 
-        items = self.__parse_item_list()
+        items = self.__parse_item_list(start_tok)
 
         if self.__now_tok.ttype != AIL_MRBASKET:
             self.__syntax_error()
@@ -2452,6 +2471,8 @@ class Parser:
 
         ln = self.__now_ln
 
+        start_token = self.__now_tok
+
         self.__next_tok()
 
         stmt_list = []
@@ -2466,7 +2487,8 @@ class Parser:
                 stmt_list.append(s)
 
             if isinstance(s, ast.EOFAST):
-                self.__syntax_error('block should ends with \'}\'')
+                self.__syntax_error('block never closed. (at line %s, col %s)' % 
+                        (start_token.ln, start_token.offset + 1))
 
         self.__next_tok()  # eat '}'
 
