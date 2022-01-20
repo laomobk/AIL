@@ -68,6 +68,8 @@ _special_method_map = {
     'new': '__new__',
     'init': '__init__',
     'del': '__del__',
+    '__str__': '__str__',
+    '__repr__': '__repr__',
     'getattr': '__getattr__',
     'setattr': '__setattr__',
     'delattr': '__delattr__',
@@ -564,12 +566,12 @@ class Parser:
         elif self.__now_tok == 'when':
             self.__next_tok()  # eat 'when'
             when_test = self.__parse_binary_expr(
-                do_tuple=False, type_comment=False)
+                do_tuple=False, type_comment=False, for_dict_key=True)
             self.__skip_newlines()
         else:
             self.__skip_newlines()
             expr = self.__parse_binary_expr(
-                do_tuple=True, type_comment=False)
+                do_tuple=True, type_comment=False, for_dict_key=True)
             if isinstance(expr, ast.TupleAST):
                 patterns = expr.items
             else:

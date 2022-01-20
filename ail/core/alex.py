@@ -65,7 +65,7 @@ def skip_comment_block(source: str, cursor: int, ) -> tuple:
     字符指针错误值原因：
     -1 : 注释块不完整
  
-    ( 字符指针右移增量 , 行号增量)
+    (字符指针右移增量 , 行号增量)
     """
 
     ccur = cursor
@@ -756,7 +756,7 @@ class Lex:
                 elif self.__nextch() == '*':  # 注释块
                     # 指针移动到注释块尾部(不包括 '/')
                     self.__movchr(2)
-                    mov, lni = skip_comment_block(self.__source, self.__offset)
+                    mov, lni = skip_comment_block(self.__source, self.__chp)
 
                     if mov == -1:
                         self.__error_msg('EOL while scanning comment block')

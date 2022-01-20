@@ -1,8 +1,6 @@
-
-vals = [];
-
-for i = 0; ((x=i) -> {
-        vals.append(x); return i < 10; })(); i += 1 {
-    print vals;
-
+try {
+    /* import readline and check readline avalible*/
+    #import readline
+    _readline_available = True;
+} catch ImportError _ {}
 
