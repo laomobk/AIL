@@ -351,7 +351,7 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
 
         if source[ccur] == '\n':
             if schr != '`':
-                return -1, 0, 0
+                return -1, lni, 0
             lni += 1
 
         if instr:
@@ -365,7 +365,7 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
             instr = True
 
     if not hasEND:  # 如果字符串没有结束就到达EOF
-        return -1, 0, 0
+        return -1, lni, 0
 
     return cur + 1, lni, buffer  # 跳过最后一个引号
 
@@ -548,8 +548,11 @@ class Lex:
             if self.__cursor.value + ni < len(self.__source) \
             else '<EOF>'
 
-    def __error_msg(self, msg, offset: int = -1):
-        error_msg(self.__ln, msg, self.__filename, source=self.__source, offset=offset)
+    def __error_msg(self, msg, offset: int = -2, ln: int = -1):
+        if ln == -1:
+            ln = self.__ln
+
+        error_msg(ln, msg, self.__filename, source=self.__source, offset=offset)
 
     def lex(self, source: str, filename: str = '<string>') -> TokenStream:
         if filename is not None:
@@ -864,9 +867,9 @@ class Lex:
                         mov, lni, buf = get_string(self.__source, self.__chp, r_str=True)
 
                         if mov == -1:
-                            self.__error_msg('EOL while scanning string literal')
+                            self.__error_msg('unterminated string literal (detected at line %s)' % self.__ln, ln=self.__ln + lni)
                         elif mov == -2:
-                            self.__error_msg('Cannot decode an escape character')
+                            self.__error_msg('cannot decode an escape character')
 
                         self.__stream.append(Token(
                             buf,
@@ -929,9 +932,9 @@ class Lex:
                 mov, lni, buf = get_string(self.__source, self.__chp)
 
                 if mov == -1:
-                    self.__error_msg('EOL while scanning string literal')
+                    self.__error_msg('unterminated string literal (detected at line %s)' % self.__ln, ln=self.__ln + lni)
                 elif mov == -2:
-                    self.__error_msg('Cannot decode an escape character')
+                    self.__error_msg('cannot decode an escape character')
 
                 self.__stream.append(Token(
                     buf,

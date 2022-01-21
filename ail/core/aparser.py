@@ -2130,7 +2130,7 @@ class Parser:
             is_dir = True
 
         if target == '':
-            self.__syntax_error('Cannot import a package in current directory.')
+            self.__syntax_error('cannot import a package in current directory.')
 
         if is_dir:
             if directory == '':
@@ -2489,7 +2489,7 @@ class Parser:
                 stmt_list.append(s)
 
             if isinstance(s, ast.EOFAST):
-                self.__syntax_error('block never closed. (at line %s, col %s)' % 
+                self.__syntax_error('block was never closed. (at line %s, col %s)' % 
                         (start_token.ln, start_token.offset + 1))
 
         self.__next_tok()  # eat '}'
