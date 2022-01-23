@@ -242,6 +242,16 @@ class ObjectPattern:
 
         return True
 
+    def __eq__(self, target):
+        if not isinstance(target, self.__type):
+            return False
+
+        for k, v in self.__kv_dict.items():
+            if not hasattr(target, k) or getattr(target, k) != v:
+                return False
+
+        return True
+
 
 class Namespace:
     def __init__(self, name, namespace_locals):
