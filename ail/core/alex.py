@@ -289,12 +289,13 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
  
     Lap支持多行字符串
  
-    字符指针错误值原因：
+    标志：
+    0: 正常
     -1: 字符串没有结束就到达EOF
     -2: 字符串中出现无法解析的转义字符
     
     返回一个元祖
-    ( 字符指针增量, 行号增量 , 数字字符串)
+    (字符指针增量, 行号增量, 字符串内容, 标志)
     """
     buffer = ''  # 字符串内容缓冲区
     ccur = cursor  # 原始字符指针，跳过引号
@@ -334,7 +335,7 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
             if target in ('0', 'x'):
                 char, offset = parse_complex_escape_character(target, source, ccur+1)
                 if char == -1:
-                    return -2, 0, 0
+                    return cur, lni, None, -2
                 ccur += offset
                 cur += offset
                 buffer += char
@@ -350,8 +351,8 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
             break
 
         if source[ccur] == '\n':
-            if schr != '`':
-                return -1, lni, 0
+            if schr != '`' or ccur == len(source) - 1:
+                return cur, lni, None, -1
             lni += 1
 
         if instr:
@@ -365,9 +366,9 @@ def get_string(source: str, cursor: int, r_str: bool = False) -> tuple:
             instr = True
 
     if not hasEND:  # 如果字符串没有结束就到达EOF
-        return -1, lni, 0
+        return cur, lni, None, -1
 
-    return cur + 1, lni, buffer  # 跳过最后一个引号
+    return cur + 1, lni, buffer, 0  # 跳过最后一个引号
 
 
 def get_doc_string(source: str, cursor: int) -> tuple:
@@ -551,6 +552,9 @@ class Lex:
     def __error_msg(self, msg, offset: int = -2, ln: int = -1):
         if ln == -1:
             ln = self.__ln
+
+        if offset == -2:
+            offset = self.__offset
 
         error_msg(ln, msg, self.__filename, source=self.__source, offset=offset)
 
@@ -864,11 +868,16 @@ class Lex:
                 if c == 'r':  # 原生字符串
                     if self.__nextch() in ('`', '"', '\''):
                         self.__movchr()
-                        mov, lni, buf = get_string(self.__source, self.__chp, r_str=True)
+                        mov, lni, buf, flag = get_string(
+                            self.__source, self.__chp, r_str=True)
+                        self.__ln += lni
+                        self.__movchr(mov)
 
-                        if mov == -1:
-                            self.__error_msg('unterminated string literal (detected at line %s)' % self.__ln, ln=self.__ln + lni)
-                        elif mov == -2:
+                        if flag == -1:
+                            self.__error_msg(
+                                'unterminated string literal (detected at line %s)' 
+                                % self.__ln)
+                        elif flag == -2:
                             self.__error_msg('cannot decode an escape character')
 
                         self.__stream.append(Token(
@@ -877,8 +886,6 @@ class Lex:
                             self.__ln, self.__offset
                         ))
 
-                        self.__ln += lni
-                        self.__movchr(mov)
                         continue
 
                 mov, buf = get_identifier(self.__source, self.__chp)
@@ -929,11 +936,15 @@ class Lex:
 
             elif c in ('"', '\'', '`'):
                 # 如果是字符串
-                mov, lni, buf = get_string(self.__source, self.__chp)
+                mov, lni, buf, flag = get_string(self.__source, self.__chp)
+                self.__ln += lni
+                self.__movchr(mov)
 
-                if mov == -1:
-                    self.__error_msg('unterminated string literal (detected at line %s)' % self.__ln, ln=self.__ln + lni)
-                elif mov == -2:
+                if flag == -1:
+                    self.__error_msg(
+                            'unterminated string literal (detected at line %s)' % 
+                            self.__ln)
+                elif flag == -2:
                     self.__error_msg('cannot decode an escape character')
 
                 self.__stream.append(Token(
@@ -941,9 +952,6 @@ class Lex:
                     AIL_STRING,
                     self.__ln, self.__offset
                 ))
-
-                self.__ln += lni
-                self.__movchr(mov)
 
             elif c == '\\':
                 if self.__nextch() == '\n':

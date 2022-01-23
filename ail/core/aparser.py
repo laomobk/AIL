@@ -589,6 +589,7 @@ class Parser:
 
     def __parse_dict_expr(self) -> ast.DictAST:
         ln = self.__now_ln
+        s_ofs = self.__now_tok.offset
 
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
@@ -603,9 +604,14 @@ class Parser:
         if self.__now_tok.ttype == AIL_LRBASKET:
             self.__next_tok()
             return ast.DictAST(keys, values, ln)
+        
+        if self.__now_tok.ttype in (AIL_SRBASKET, AIL_MRBASKET):
+            self.__parenthesis_not_match(
+                '{', self.__now_tok.value, self.__now_ln, 
+                self.__now_tok.offset, ln, s_ofs)
 
         if self.__now_tok.ttype == AIL_EOF:
-            self.__syntax_error('\'{\' was never closed')
+            self.__syntax_error('\'{\' was never closed (at line %s)' % ln)
 
         key = self.__parse_binary_expr(type_comment=False, for_dict_key=True)
         self.__skip_newlines()
@@ -617,7 +623,7 @@ class Parser:
         self.__skip_newlines()
 
         if self.__now_tok.ttype == AIL_EOF:
-            self.__syntax_error('\'{\' was never closed')
+            self.__syntax_error('\'{\' was never closed (at line %s)' % ln)
 
         value = self.__parse_binary_expr()
         self.__skip_newlines()
@@ -635,7 +641,13 @@ class Parser:
                 else:
                     break
 
-            key = self.__parse_binary_expr(type_comment=False, do_tuple=False)
+            if self.__now_tok.ttype in (AIL_MRBASKET, AIL_SRBASKET):
+                self.__parenthesis_not_match(
+                    '{', self.__now_tok.value, self.__now_ln, 
+                    self.__now_tok.offset, ln, s_ofs)
+
+            key = self.__parse_binary_expr(
+                type_comment=False, do_tuple=False, for_dict_key=True)
             self.__skip_newlines()
 
             if self.__now_tok.ttype != AIL_COLON:
@@ -643,7 +655,7 @@ class Parser:
             self.__next_tok()  # eat ':'
             
             if self.__now_tok.ttype == AIL_EOF:
-                self.__syntax_error('\'{\' was never closed.')
+                self.__syntax_error('\'{\' was never closed. (at line %s)' % ln)
 
             self.__skip_newlines()
             value = self.__parse_binary_expr(type_comment=False, do_tuple=False)
@@ -651,9 +663,14 @@ class Parser:
 
             keys.append(key)
             values.append(value)
+        
+        if self.__now_tok.ttype in (AIL_MRBASKET, AIL_SRBASKET):
+            self.__parenthesis_not_match(
+                '{', self.__now_tok.value, self.__now_ln, 
+                self.__now_tok.offset, ln, s_ofs)
 
         if self.__now_tok.ttype != AIL_LRBASKET:
-            self.__syntax_error('\'{\' was never closed.')
+            self.__syntax_error('\'{\' was never closed. (at line %s)' % ln)
 
         self.__next_tok()  # eat '}'
 
