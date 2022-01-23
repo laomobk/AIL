@@ -319,7 +319,14 @@ class Parser:
 
         may_tuple = False
 
+        p_ln = self.__now_ln
+        p_ofs = self.__now_tok.offset
+
         if self.__now_tok.ttype != AIL_SRBASKET:
+            if self.__now_tok.ttype in (AIL_MRBASKET, AIL_LRBASKET):
+                self.__parenthesis_not_match(
+                    '(', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                    p_ln, p_ofs)
             a = self.__parse_arg_item()
             alist.append(a)
         else:
@@ -332,8 +339,18 @@ class Parser:
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
 
+            if self.__now_tok.ttype in (AIL_MRBASKET, AIL_LRBASKET):
+                self.__parenthesis_not_match(
+                    '(', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                    p_ln, p_ofs)
+
             a = self.__parse_arg_item(True)
             alist.append(a)
+
+        if self.__now_tok.ttype in (AIL_MRBASKET, AIL_LRBASKET):
+            self.__parenthesis_not_match(
+                '(', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                p_ln, p_ofs)
 
         if self.__now_tok.ttype != AIL_SRBASKET:
             self.__syntax_error()
@@ -844,6 +861,8 @@ class Parser:
             return expr
 
         if self.__now_tok == '(':
+            p_ln = self.__now_ln
+            p_ofs = self.__now_tok.offset
             self.__next_tok()
 
             if self.__now_tok == ')':
@@ -854,7 +873,13 @@ class Parser:
             expr_or_param = self.__parse_arg_list()
 
             if self.__now_tok != ')':
-                self.__syntax_error()
+                if self.__now_tok.ttype == (AIL_MRBASKET, AIL_LRBASKET):
+                    self.__parenthesis_not_match(
+                        '(', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
+                        p_ln, p_ofs)
+                else:
+                    self.__syntax_error()
+                
 
             self.__next_tok()  # eat ')'
 
