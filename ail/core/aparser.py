@@ -1058,7 +1058,7 @@ class Parser:
     def __parse_binary_expr(
             self, as_stmt: bool = False, do_tuple: bool = False,
             no_assign: bool = False, type_comment: bool = False,
-            ignore_type_comment=False, for_dict_key: bool = False
+            ignore_type_comment=True, for_dict_key: bool = False,
             ) -> ast.BitOpExprAST:
             
         expr = self.__parse_assign_expr(

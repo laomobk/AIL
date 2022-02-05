@@ -21,6 +21,8 @@ _PATHS = (
     _AIL_ERROR_FILE
 )
 
+_CHINESE_CHARACTER_UTF_RANGE = range(0x4e00, 0x9fa6)
+
 
 class AILRuntimeError(Exception):
     pass
@@ -40,6 +42,44 @@ class AILModuleNotFoundError(AILImportError):
 
 class UnhandledMatchError(Exception):
     pass
+
+
+class _AILTracebackException(_traceback.TracebackException):
+    def format_exception_only(self) -> str:
+        # re-write SyntaxError format only
+        if not issubclass(self.exc_type, SyntaxError):
+            yield super().format_exception_only()
+            return
+
+        stype = self.exc_type.__qualname__
+
+        filename = self.filename or "<string>"
+        lineno = str(self.lineno) or '?'
+        yield '  File "{}", line {}\n'.format(filename, lineno)
+
+        badline = self.text
+        offset = self.offset
+
+        if badline is not None:
+            yield '    {}\n'.format(badline.strip())
+            if offset is not None:
+                caret_space = badline.rstrip('\n')
+                offset = min(len(caret_space), offset) - 1
+                caret_space = caret_space[:offset].lstrip()
+                caret_space = (self.__get_space(c) for c in caret_space)
+                yield '    {}^\n'.format(''.join(caret_space))
+
+        msg = self.msg or "<no detail available>"
+        yield "{}: {}\n".format(stype, msg)
+
+    def __get_space(self, char: str) -> str:
+        # align tab or some non-space character
+        if char.isspace() and char:
+            return char
+
+        if ord(char) in _CHINESE_CHARACTER_UTF_RANGE:
+            return '　'  # full-width space
+        return ' '
 
 
 def remove_py_runtime_traceback(tb: _TracebackType):
@@ -86,5 +126,12 @@ def print_py_traceback():
     _sys.last_type = tb_type
     _sys.last_value = tb_value
 
-    _traceback.print_exception(tb_type, tb_value, tb_value.__traceback__)
+    _print_exception(tb_value, tb_value.__traceback__)
 
+
+def _print_exception(value, tb, limit=None, file=None, chain=True):
+    if file is None:
+        file = _sys.stderr
+    for line in _AILTracebackException(
+            type(value), value, tb, limit=limit).format(chain=chain):
+        print(line, file=file, end="")

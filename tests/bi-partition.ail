@@ -2,7 +2,7 @@
 
 begin
 
-input "Please enter : (a, b, E)" ; a, b, E
+input "Please enter : (a, b, E)", a, b, E
 
 f = (x) -> x**2 - x - 50
 
@@ -12,7 +12,6 @@ E = float(E)
 o = 0
 
 do
-
 	c = (a + b) / 2
 
     if o == c then
