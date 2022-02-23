@@ -48,7 +48,7 @@ class _AILTracebackException(_traceback.TracebackException):
     def format_exception_only(self) -> str:
         # re-write SyntaxError format only
         if not issubclass(self.exc_type, SyntaxError):
-            yield super().format_exception_only()
+            yield from super().format_exception_only()
             return
 
         stype = self.exc_type.__qualname__
