@@ -702,30 +702,9 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
-        if self.__now_tok.ttype != AIL_DOT:
-            return left
-
-        rl = []
-
-        while self.__now_tok == '.':
-            self.__next_tok()  # eat '.'
-            ert = self.__parse_cell_or_call_expr()
-
-            if ert is None or type(ert) not in (
-                    ast.SubscriptExprAST, ast.CallExprAST, ast.CellAST):
-                self.__syntax_error()
-
-            if isinstance(ert, ast.CellAST) and ert.type != AIL_IDENTIFIER:
-                self.__syntax_error()
-
-            rl.append(ert)
-
-        if set_attr and type(rl[-1]) not in (ast.SubscriptExprAST, ast.CellAST):
-            if try_:
-                return None
-            self.__syntax_error()
-
-        return ast.MemberAccessAST(left, rl, ln)
+        # the implementation of this parsing was moved to parse_cell_or_call_expr
+        # 2022 / 2 / 26
+        return left
 
     def __parse_object_pattern_expr(
             self, left, for_match=False) -> ast.ObjectPatternExpr:
@@ -798,7 +777,7 @@ class Parser:
         left = ca
 
         while self.__now_tok.ttype in (
-                AIL_MLBASKET, AIL_SLBASKET, AIL_NOT):
+                AIL_MLBASKET, AIL_SLBASKET, AIL_NOT, AIL_DOT):
             nt = self.__now_tok.ttype
             ln = self.__now_ln
 
@@ -830,6 +809,14 @@ class Parser:
 
             elif nt == AIL_NOT:
                 left = self.__parse_object_pattern_expr(left)
+
+            elif nt == AIL_DOT:
+                self.__next_tok()  # eat '.'
+                right = self.__parse_low_cell_expr()
+                if not (isinstance(right, ast.CellAST) and 
+                        right.type == AIL_IDENTIFIER):
+                    self.__syntax_error()    
+                left = ast.MemberAccessAST(left, right, ln)
 
         return left
 
@@ -2867,26 +2854,15 @@ class ASTConverter:
 
         return _set_lineno(slice_expr(start, stop, step), expr.ln)
 
-    def _convert_member_access_expr(self, left, rights, ln: int) -> pyast.Attribute:
-        o_left = left
+    def _convert_member_access_expr(
+            self, expr: ast.MemberAccessAST) -> pyast.Attribute:
+        assert isinstance(expr.members, ast.CellAST)
 
-        left = self.convert(left)
+        left = self.convert(expr.left)
+        right = self.convert(expr.members.value)
+        attr = _set_lineno(attribute_expr(left, right, load_ctx()), expr.ln)
 
-        if len(rights) == 1:
-            right = self.convert(rights[0])
-            if isinstance(right, pyast.Call):
-                right.func = _set_lineno(
-                    attribute_expr(left, right.func.id, load_ctx()), ln)
-                return right
-            elif isinstance(right, pyast.Subscript):
-                right.value = _set_lineno(
-                    attribute_expr(left, right.value.id, load_ctx()), ln)
-                return right
-            return _set_lineno(attribute_expr(left, right.id, load_ctx()), ln)
-
-        new_left = ast.MemberAccessAST(o_left, rights[:1], ln)
-        right = self._convert_member_access_expr(new_left, rights[1:], ln)
-        return right
+        return attr
 
     def _convert_match_expr(self, expr: ast.MatchExpr) -> pyast.expr:
         """
@@ -3524,7 +3500,7 @@ class ASTConverter:
             return self._convert_import_stmt(a)
 
         elif isinstance(a, ast.MemberAccessAST):
-            return self._convert_member_access_expr(a.left, a.members, a.ln)
+            return self._convert_member_access_expr(a)
 
         elif isinstance(a, ast.AssignExprAST):
             return self._convert_assign_expr(a, as_stmt)
@@ -3611,7 +3587,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True and False
+TEST_CONVERT_PYAST = True  # and False
 
 
 def test_parse():
