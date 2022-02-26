@@ -1,22 +1,32 @@
 
+TRAVERSE_STOP = 0x1
+
+
 func mapto(keys, v_func) {
-    d = {}
-    for i = 0; i < len(keys); i += 1 {
-        d[keys[i]] = v_func(keys[i])
-    }
-    return d
+    #return {k: v_func(k) for k in keys}
 }
 
-func mapwith(function, arr) {
+func mapwith(function, iterable) {
     new_arr = []
-    for i = 0; i < len(arr); i += 1 {
-        new_arr.append(function(arr[i]))
+    foreach x in iterate{
+        new_arr.append(function(x))
     }
     return new_arr
+}
+
+func xmapwith(function, iterable) {
+    foreach x in arr {
+        #yield function(x)
+    }
+}
+
+func traverse(iterate, function) {
+    foreach i, x in enumerate(iterable) {
+        if function(i, x) == TRAVERSE_STOP { return; }
+    }
 }
 
 
 if __main__ {
     print mapwith((x) -> x + 1, [1, 2, 3])
 }
-

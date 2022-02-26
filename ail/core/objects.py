@@ -125,7 +125,7 @@ class AILImporter:
 
         try:
             from . import AIL_PY_GLOBAL
-            module_globals = AIL_PY_GLOBAL.copy()
+            module_globals = {}  # AIL_PY_GLOBAL.copy()
 
             module_work_dir = dirname(path)
 
