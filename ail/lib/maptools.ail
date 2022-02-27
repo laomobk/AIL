@@ -8,7 +8,7 @@ func mapto(keys, v_func) {
 
 func mapwith(function, iterable) {
     new_arr = []
-    foreach x in iterate{
+    foreach x in iterable {
         new_arr.append(function(x))
     }
     return new_arr
