@@ -142,5 +142,6 @@ dmypy.json
 cython_debug/
 
 INSTALL_TIME
+COMMIT_ID
 
 .idea/
