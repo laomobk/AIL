@@ -16,6 +16,23 @@ except:
     pass
 
 
+def try_write_commit_id():
+    try:
+        import subprocess
+
+        if not (exists('AIL_REPO_ROOT') and exists('.git')):
+            return
+        commit_id = subprocess.Popen(
+                ['git rev-parse --short HEAD'], 
+                shell=True, stdout=subprocess.PIPE).communicate()[0].decode()
+        print('[INFO] commit id = %s' % commit_id.replace('\n', ''))
+        open('./ail/COMMIT_ID', 'w').write(commit_id)
+    except Exception:
+        print('[W]: failed to get commit id')
+
+
+try_write_commit_id()
+
 setup(
     name='ail',
     packages=find_packages(),
@@ -24,11 +41,11 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'ail = ail.__main__:main',
+            'ail = ail.__main__:main_as_entry_point',
         ]
     },
 
     package_data={
-        'ail': ['lib/*.ail', 'core/INSTALL_TIME']
+        'ail': ['lib/*.ail', 'core/INSTALL_TIME', 'COMMIT_ID']
     }
 )

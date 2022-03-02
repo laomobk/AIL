@@ -1,5 +1,7 @@
 import sys
 
+from os.path import exists, join
+
 from .alex import Lex
 from .aparser import Parser, ASTConverter
 from .version import (
@@ -11,6 +13,7 @@ from ail.core.namespace import fill_namespace
 from ail.core.exceptions import print_py_traceback
 
 from . import error, tokentype as tokent
+from .. import _config
 
 from ..modules import shcompleter
 
@@ -19,6 +22,31 @@ try:
     import readline
 except ImportError:
     _readline_availble = False
+
+
+def try_get_commit_id():
+    try:
+        if _config.RUN_FROM_ENTRY_POINT:
+            return open(
+                    join(_config.AIL_DIR_PATH, 'COMMIT_ID'))  \
+                .read().replace('\n', '')
+
+        import subprocess
+
+        if not (exists('AIL_REPO_ROOT') and exists('.git')):
+            return
+
+        commit_id = subprocess.Popen(
+                ['git rev-parse --short HEAD'], 
+                shell=True, stdout=subprocess.PIPE).communicate()[0]  \
+                    .decode().replace('\n', '')
+        return commit_id
+
+    except Exception:
+        return
+
+
+commit_id = try_get_commit_id()
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
@@ -32,11 +60,13 @@ _VER_STR = '%s [%s]' % (
     AIL_VERSION_FULL_STRING,
     AIL_VERSION_NUMBER,
 )
+
 _WELCOME_STR = \
-'''AIL %s (Python %s)
+'''AIL %s %s(Python %s)
 Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
         _VER_STR,
+        ('(%s)' % commit_id) if commit_id else '',
         sys.version,
     )
 
