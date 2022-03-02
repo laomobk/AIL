@@ -66,7 +66,7 @@ _WELCOME_STR = \
 Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
         _VER_STR,
-        ('(%s)' % commit_id) if commit_id else '',
+        ('(%s) ' % commit_id) if commit_id else '',
         sys.version,
     )
 
