@@ -24,9 +24,14 @@ def try_write_commit_id():
             return
         commit_id = subprocess.Popen(
                 ['git rev-parse --short HEAD'], 
-                shell=True, stdout=subprocess.PIPE).communicate()[0].decode()
-        print('[INFO] commit id = %s' % commit_id.replace('\n', ''))
-        open('./ail/COMMIT_ID', 'w').write(commit_id)
+                shell=True, stdout=subprocess.PIPE)  \
+                        .communicate()[0].decode().replace('\n', '')
+        branch_name = subprocess.Popen(
+                ['git symbolic-ref --short -q HEAD'], 
+                shell=True, stdout=subprocess.PIPE)  \
+                        .communicate()[0].decode().replace('\n', '')
+        print('[INFO] commit id = %s/%s' % (branch_name, commit_id))
+        open('./ail/COMMIT_ID', 'w').write('%s/%s' % (branch_name, commit_id))
     except Exception:
         print('[W]: failed to get commit id')
 

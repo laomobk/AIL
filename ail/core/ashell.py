@@ -26,7 +26,7 @@ except ImportError:
 
 def try_get_commit_id():
     try:
-        if _config.RUN_FROM_ENTRY_POINT:
+        if _config.RUN_FROM_ENTRY_POINT or not exists('AIL_REPO_ROOT'):
             return open(
                     join(_config.AIL_DIR_PATH, 'COMMIT_ID'))  \
                 .read().replace('\n', '')
@@ -40,13 +40,18 @@ def try_get_commit_id():
                 ['git rev-parse --short HEAD'], 
                 shell=True, stdout=subprocess.PIPE).communicate()[0]  \
                     .decode().replace('\n', '')
-        return commit_id
+        branch_name = subprocess.Popen(
+                ['git symbolic-ref --short -q HEAD'], 
+                shell=True, stdout=subprocess.PIPE).communicate()[0]  \
+                    .decode().replace('\n', '')
+        return '%s/%s' % (branch_name, commit_id)
 
     except Exception:
         return
 
 
 commit_id = try_get_commit_id()
+commit_id = None if len(commit_id) > 50 else commit_id
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
