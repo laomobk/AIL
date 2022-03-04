@@ -25,5 +25,9 @@ class CoreCom:
         return shared.GLOBAL_SHARED_DATA.prog_argv
 
 
+CORE_COM_OBJ = CoreCom()
+
+
 def get_cc_object():
-    return CoreCom()
+    return CORE_COM_OBJ
+

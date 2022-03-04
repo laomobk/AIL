@@ -3,6 +3,7 @@ import builtins
 from . import abuiltins as _builtins, exceptions as _exception, objects as _object, functions as _func
 from .aconfig import RENAME_PY_RUNTIME
 from .error import AILSyntaxError, BuiltinAILRuntimeError
+from .corecom import CORE_COM_OBJ
 from ail.modules.console import console as _console
 from ail.modules.system import SYSTEM_OBJECT
 
@@ -42,6 +43,7 @@ AIL_PY_GLOBAL.update({
     'system': SYSTEM_OBJECT,
     'UnhandledMatchError': _exception.UnhandledMatchError,
     'aeval': _func.ail_eval,
+    '_corecom': CORE_COM_OBJ,
     'AILSyntaxError': AILSyntaxError,
     'BuiltinAILRuntimeError': BuiltinAILRuntimeError,
 
