@@ -26,6 +26,8 @@ except ImportError:
 
 def try_get_commit_id():
     try:
+        if os.name == 'nt':
+        	return
         if _config.RUN_FROM_ENTRY_POINT or not exists('AIL_REPO_ROOT'):
             return open(
                     join(_config.AIL_DIR_PATH, 'COMMIT_ID'))  \
@@ -51,7 +53,7 @@ def try_get_commit_id():
 
 
 commit_id = try_get_commit_id()
-commit_id = None if len(commit_id) > 50 else commit_id
+commit_id = None if not commit_id or len(commit_id) > 50 else commit_id
 
 error.ERR_NOT_EXIT = True
 error.THROW_ERROR_TO_PYTHON = True
