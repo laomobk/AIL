@@ -68,7 +68,6 @@ def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
     try:
         return exec_as_python(source, filename, globals)
     except Exception:
-        raise
         print_py_traceback()
         return 1
     except (KeyboardInterrupt, EOFError):

@@ -1,3 +1,52 @@
 
-a.b[1][2]
+class Engine {
+    func power_on(self) {
+        throw Exception('not implemented');
+    }
+}
 
+class NormalEngine extends Engine {
+    func power_on(self) {
+        print 'normal engine start...';
+    }
+}
+
+class TurboEngine extends Engine {
+    func power_on(self) {
+        print 'turbo engine start...';
+    }
+}
+
+class DuoTurboEngine extends Engine {
+    func power_on(self) {
+        print 'duo turbo engine start...';
+    }
+}
+
+class Rocket {
+    init(self) {
+        self._engine = NormalEngine();
+    }
+
+    func set_engine(self, engine) {
+        self._engine = engine;
+    }
+
+    func launch(self) {
+        self._engine.power_on();
+    }
+}
+
+
+if __name__ == '__main__' {
+    r = Rocket();
+    r.set_engine((() -> {
+        class DuckEngine extends Engine {
+            func power_on(self) {
+                print 'quack quack...';
+            }
+        }
+        return DuckEngine;
+    })()())
+    r.launch();
+}

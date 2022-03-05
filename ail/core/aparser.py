@@ -900,7 +900,7 @@ class Parser:
                     self.__level -= 1
 
                 a = ast.FunctionDefineAST(
-                    aconfig.LAMBDA_FUNC_NAME,
+                    aconfig.ANONYMOUS_FUNC_NAME,
                     expr_or_param, block, None, self.__now_ln)
                 return a
 
