@@ -597,7 +597,8 @@ class Lex:
                                                    '*': AIL_INP_MULT,
                                                    '%': AIL_INP_MOD,
                                                    '^': AIL_INP_XOR,
-                                                   '-': AIL_INP_SUB
+                                                   '-': AIL_INP_SUB,
+                                                   '|': AIL_INP_BIN_OR,
                                                }[c],  # 根据c得到单词类型
                                                self.__ln,
                                                self.__offset))
