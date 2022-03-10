@@ -2462,6 +2462,10 @@ class Parser:
         elif nt == 'with':
             a = self.__parse_with_stmt()
 
+        elif nt == 'not':
+            a = self.__parse_binary_expr(True, True, False, True)
+            self.__expect_newline()
+
         elif class_body and nt in ('get', 'set'):
             a = self.__parse_property_define()
 
@@ -2472,7 +2476,7 @@ class Parser:
             self.__syntax_error()
 
         elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
-                (nt.value not in (_keywords + limit) or nt.value == 'not'):
+                nt.value not in (_keywords + limit):
             a = self.__parse_binary_expr(True, True, False, True)
             self.__expect_newline()
 
