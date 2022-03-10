@@ -50,12 +50,12 @@ SyntaxError: unterminated string literal (detected at line 1)
 ```
 
 
-### 四、标准库更新
+### 三、标准库更新
 
 `maptools` 模块新增 `xmapwith`, `traverse` 函数。
 
 
-### 三、其他更新内容：
+### 四、其他更新内容：
 #### 1. AIL shell 中增加 commit id 和 branch 的显示
 
 ```python
@@ -66,7 +66,7 @@ Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more infor
 >> 
 ```
 
-### 四、重大 BUG 修复与优化
+### 五、重大 BUG 修复与优化
 1. 修复 |= 运算符解析异常问题
 2. 修复 not 表达式引导的表达式解析问题
 3. 修复 复合下标运算表达式(如 `x[1][2]`) 的解析问题
