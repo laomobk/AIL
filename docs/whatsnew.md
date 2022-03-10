@@ -21,7 +21,8 @@ Python 3.10 版本更新说明：
 ```python
 >> a = match x {}
   File "<shell>", line 1
-    a = match x {}                                                                 ^
+    a = match x {}
+                 ^
 SyntaxError: match body cannot be empty
 ```
 
@@ -32,7 +33,8 @@ SyntaxError: match body cannot be empty
 ```python
 >> a = (1, 2]
   File "<shell>", line 1
-    a = (1, 2]                                                                 ^
+    a = (1, 2]
+             ^
 SyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (at line 1, col 6)
 ```
 
@@ -42,7 +44,8 @@ SyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (at 
 ```python
 >> name = 'klee
   File "<shell>", line 1
-    name = 'klee                                                                 ^
+    name = 'klee
+               ^
 SyntaxError: unterminated string literal (detected at line 1)
 ```
 
@@ -56,7 +59,9 @@ SyntaxError: unterminated string literal (detected at line 1)
 #### 1. AIL shell 中增加 commit id 和 branch 的显示
 
 ```python
-AIL 2.2 Klee alpha 2 [727] (2.2/d24235a) (Python 3.8.0 (default, Dec  5 2019, 10:53:43)                                             [Clang 8.0.7 (https://android.googlesource.com/toolchain/clang b55f2d4ebfd35bf6)                                                    Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
+AIL 2.2 Klee alpha 2 [727] (2.2/d24235a) (Python 3.8.0 (default, Dec  5 2019, 10:53:43)
+[Clang 8.0.7 (https://android.googlesource.com/toolchain/clang b55f2d4ebfd35bf6)
+Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 
 >> 
 ```
