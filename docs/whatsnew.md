@@ -20,9 +20,9 @@ Python 3.10 版本更新说明：
 新的 AIL 版本中，当出现语法错误时，AIL 将会给出错误的大致位置：
 
 ```python
->> a = match x {}
+>> a = match x {};
   File "<shell>", line 1
-    a = match x {}
+    a = match x {};
                  ^
 SyntaxError: match body cannot be empty
 ```
@@ -32,9 +32,9 @@ SyntaxError: match body cannot be empty
 新的 AIL 版本中，将对配对错误的括号给出提示：
 
 ```python
->> a = (1, 2]
+>> a = (1, 2];
   File "<shell>", line 1
-    a = (1, 2]
+    a = (1, 2];
              ^
 SyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (at line 1, col 6)
 ```
@@ -70,15 +70,15 @@ Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more infor
 
 `not in` 运算符可以用于快速判断某元素是否存在于一个可迭代对象中：
 ```python
->> knights_of_favonius = ['Jean', 'Kaeya', 'Eula', 'Amber', 'Rosaria', 'Klee']
->> 'Klee' not in knights_of_favonius
+>> knights_of_favonius = ['Jean', 'Kaeya', 'Eula', 'Amber', 'Rosaria', 'Klee'];
+>> 'Klee' not in knights_of_favonius;
 False
->> 'Diona' not in knights_of_favonius
+>> 'Diona' not in knights_of_favonius;
 True
 >>
->> 1 not in [1, 2, 4, 8, 16]
+>> 1 not in [1, 2, 4, 8, 16];
 False
->> 'a' not in 'Jean'
+>> 'a' not in 'Jean';
 False
 >>
 ```
