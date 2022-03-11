@@ -40,7 +40,7 @@ _cmp_op = (
     AIL_EQ, AIL_LARGER, AIL_SMALER,
     AIL_LARGER_EQ, AIL_SMALER_EQ,
     AIL_UEQ, AIL_AUEQ, AIL_AEQ,
-    AIL_IN,
+    AIL_IN, AIL_NOT_IN,
 )
 
 _inplace_op_dict = {
@@ -2755,6 +2755,7 @@ class ASTConverter:
             '!==': pyast.IsNot(),
             '===': pyast.Is(),
             'in': pyast.In(),
+            'not in': pyast.NotIn(),
         }[r_op]
 
         o_left = left

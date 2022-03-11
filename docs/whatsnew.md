@@ -66,6 +66,26 @@ Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more infor
 
 >> 
 ```
+#### 2. 增加 `not in` 运算符
+
+`not in` 运算符可以用于快速判断某元素是否存在于一个可迭代对象中：
+```python
+>> knights_of_favonius = ['Jean', 'Kaeya', 'Eula', 'Amber', 'Rosaria', 'Klee']
+>> 'Klee' not in knights_of_favonius
+False
+>> 'Diona' not in knights_of_favonius
+True
+>>
+>> 1 not in [1, 2, 4, 8, 16]
+False
+>> 'a' not in 'Jean'
+False
+>>
+```
+
+***注意：***
+相比于 `not ... in ...` 表达式，`not in` 作为一个运算符存在，相比前者，使用 `not in` 运算符可以提高程序的执行效率。
+
 
 ### 五、重大 BUG 修复与优化
 1. 修复 |= 运算符解析异常问题

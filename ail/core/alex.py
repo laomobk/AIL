@@ -448,6 +448,7 @@ class TokenStream:
 
     def __init__(self):
         self.__tli = []
+        self.__prev_is_not = False
 
     def __iter__(self):
         return iter(self.__tli)
@@ -455,10 +456,21 @@ class TokenStream:
     def append(self, tok: Token):
         """
         将 tok 增加到尾部
-        """
-
+        """ 
+        
         if tok.ttype == AIL_IDENTIFIER and tok.value == 'in':
-            tok.ttype = AIL_IN
+            if self.__prev_is_not:  # not in
+                self.__prev_is_not = False
+                self.__tli.pop()
+                tok.ttype = AIL_NOT_IN
+                tok.value = 'not in'
+            else:
+                tok.ttype = AIL_IN
+            
+        if tok.ttype == AIL_IDENTIFIER and tok.value == 'not':
+            self.__prev_is_not = True
+        else:
+            self.__prev_is_not = False
 
         self.__tli.append(tok)
 
