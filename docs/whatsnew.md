@@ -77,6 +77,7 @@ Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more infor
 False
 >> 'Diona' not in knights_of_favonius;
 True
+>> // those people are the characters from Genshin Import.
 >>
 >> 1 not in [1, 2, 4, 8, 16];
 False
