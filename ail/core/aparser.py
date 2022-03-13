@@ -9,7 +9,7 @@ from . import aconfig
 
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
-from .error import error_msg
+from .error import AILSyntaxError, error_msg
 from .pyast import *
 from .tokentype import *
 
@@ -105,6 +105,8 @@ class Parser:
         self.__parenthesis_level = 0
 
         self.__pyc_mode = True
+
+        self.__for_lsp = False
 
     def get_state(self) -> ParserState:
         return ParserState(self.__tc, self.__level, self.__parenthesis_level, self)
@@ -2400,117 +2402,124 @@ class Parser:
             self, limit: tuple = (), class_body: bool = False,
             ) -> ast.Expression:
         nt = self.__now_tok
+        
+        try:
+            if nt == 'print':
+                a = self.__parse_print_stmt()
 
-        if nt == 'print':
-            a = self.__parse_print_stmt()
+            elif nt == 'input':
+                a = self.__parse_input_stmt()
 
-        elif nt == 'input':
-            a = self.__parse_input_stmt()
+            elif nt == 'if':
+                a = self.__parse_if_else_stmt()
 
-        elif nt == 'if':
-            a = self.__parse_if_else_stmt()
+            elif nt == 'while':
+                a = self.__parse_while_stmt()
 
-        elif nt == 'while':
-            a = self.__parse_while_stmt()
+            elif nt == 'for':
+                a = self.__parse_for_stmt()
 
-        elif nt == 'for':
-            a = self.__parse_for_stmt()
+            elif nt == 'do':
+                a = self.__parse_do_loop_stmt()
 
-        elif nt == 'do':
-            a = self.__parse_do_loop_stmt()
+            elif nt == 'continue':
+                if self.__loop_level == 0:
+                    self.__syntax_error('\'continue\' outside loop')
+                a = self.__parse_continue_stmt()
 
-        elif nt == 'continue':
-            if self.__loop_level == 0:
-                self.__syntax_error('\'continue\' outside loop')
-            a = self.__parse_continue_stmt()
+            elif nt == 'nonlocal':
+                if self.__level == 0:
+                    self.__syntax_error('nonlocal declaration outside function')
+                a = self.__parse_nonlocal_stmt()
 
-        elif nt == 'nonlocal':
-            if self.__level == 0:
-                self.__syntax_error('nonlocal declaration outside function')
-            a = self.__parse_nonlocal_stmt()
+            elif nt == 'global':
+                if self.__level == 0:
+                    self.__syntax_error('global declaration outside function')
+                a = self.__parse_global_stmt()
 
-        elif nt == 'global':
-            if self.__level == 0:
-                self.__syntax_error('global declaration outside function')
-            a = self.__parse_global_stmt()
+            elif nt == 'break':
+                if self.__loop_level == 0:
+                    self.__syntax_error('\'break\' outside loop')
+                a = self.__parse_break_stmt()
 
-        elif nt == 'break':
-            if self.__loop_level == 0:
-                self.__syntax_error('\'break\' outside loop')
-            a = self.__parse_break_stmt()
+            elif nt == 'return':
+                if self.__level == 0:
+                    self.__syntax_error('return outside function')
+                a = self.__parse_return_stmt()
 
-        elif nt == 'return':
-            if self.__level == 0:
-                self.__syntax_error('return outside function')
-            a = self.__parse_return_stmt()
+            elif nt == 'fun' or nt == 'func':
+                a = self.__parse_func_def_stmt()
 
-        elif nt == 'fun' or nt == 'func':
-            a = self.__parse_func_def_stmt()
+            elif nt.ttype == AIL_DOC_STRING:
+                a = self.__parse_doc_string_object()
 
-        elif nt.ttype == AIL_DOC_STRING:
-            a = self.__parse_doc_string_object()
+            elif nt == '@':
+                a = self.__parse_func_def_with_decorator_stmt()
 
-        elif nt == '@':
-            a = self.__parse_func_def_with_decorator_stmt()
+            elif nt == 'load':
+                a = self.__parse_load_stmt()
 
-        elif nt == 'load':
-            a = self.__parse_load_stmt()
+            elif nt == 'struct':
+                a = self.__parse_struct_def_stmt()
 
-        elif nt == 'struct':
-            a = self.__parse_struct_def_stmt()
+            elif nt == 'class':
+                a = self.__parse_class_def_stmt()
 
-        elif nt == 'class':
-            a = self.__parse_class_def_stmt()
+            elif nt == 'assert':
+                a = self.__parse_assert_stmt()
 
-        elif nt == 'assert':
-            a = self.__parse_assert_stmt()
+            elif nt == 'throw':
+                a = self.__parse_throw_stmt()
 
-        elif nt == 'throw':
-            a = self.__parse_throw_stmt()
+            elif nt == 'try':
+                a = self.__parse_try_catch_stmt()
 
-        elif nt == 'try':
-            a = self.__parse_try_catch_stmt()
+            elif nt == 'import':
+                a = self.__parse_import_stmt()
 
-        elif nt == 'import':
-            a = self.__parse_import_stmt()
+            elif nt == 'foreach':
+                a = self.__parse_foreach_stmt()
 
-        elif nt == 'foreach':
-            a = self.__parse_foreach_stmt()
+            elif nt == 'match':
+                a = self.__parse_match_expr()
 
-        elif nt == 'match':
-            a = self.__parse_match_expr()
+            elif nt == 'with':
+                a = self.__parse_with_stmt()
 
-        elif nt == 'with':
-            a = self.__parse_with_stmt()
+            elif nt == 'not':
+                a = self.__parse_binary_expr(True, True, False, True)
+                self.__expect_newline()
 
-        elif nt == 'not':
-            a = self.__parse_binary_expr(True, True, False, True)
-            self.__expect_newline()
+            elif class_body and nt in ('get', 'set'):
+                a = self.__parse_property_define()
 
-        elif class_body and nt in ('get', 'set'):
-            a = self.__parse_property_define()
+            elif class_body and nt in tuple(_special_method_map.keys()):
+                a = self.__parse_special_method()
 
-        elif class_body and nt in tuple(_special_method_map.keys()):
-            a = self.__parse_special_method()
+            elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
+                self.__syntax_error()
 
-        elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
-            self.__syntax_error()
+            elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
+                    nt.value not in (_keywords + limit):
+                a = self.__parse_binary_expr(True, True, False, True)
+                self.__expect_newline()
 
-        elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
-                nt.value not in (_keywords + limit):
-            a = self.__parse_binary_expr(True, True, False, True)
-            self.__expect_newline()
+            elif nt.ttype == AIL_ENTER:
+                self.__next_tok()
+                return ast.NullLineAST(self.__now_ln)
 
-        elif nt.ttype == AIL_ENTER:
+            elif nt.ttype == AIL_EOF or (
+                    nt.value in _end_signs and nt.ttype != AIL_STRING):
+                return ast.EOFAST(self.__now_ln)
+
+            else:
+                self.__syntax_error()
+        except SyntaxError as e:
+            if not hasattr(e, 'ail_syntax_error') or not self.__for_lsp:
+                raise
             self.__next_tok()
+            print('<Warning: AIL Parser running in LSP mode, will not throw SyntaxError>')
             return ast.NullLineAST(self.__now_ln)
-
-        elif nt.ttype == AIL_EOF or (
-                nt.value in _end_signs and nt.ttype != AIL_STRING):
-            return ast.EOFAST(self.__now_ln)
-
-        else:
-            self.__syntax_error()
 
         # ** not use anymore (2021.3.21)
         # if self.__now_tok.ttype != AIL_ENTER:
@@ -2555,7 +2564,8 @@ class Parser:
                       start_enter=True, for_if_else: bool = False,
                       for_program: bool = False,
                       class_body: bool = False,
-                      loop_body: bool = False) -> ast.BlockAST:
+                      loop_body: bool = False,
+                      lsp_mode: bool = False) -> ast.BlockAST:
 
         try:
             if loop_body:
@@ -2633,7 +2643,7 @@ class Parser:
     def parse(self, ts: TokenStream,
               source: str, filename: str,
               pyc_mode: bool = True,
-              eval_mode: bool = False) -> ast.BlockAST:
+              eval_mode: bool = False, lsp_mode: bool = False) -> ast.BlockAST:
         self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
@@ -2664,7 +2674,7 @@ class Parser:
         return self.__parse_block('begin', 'end',
                                   'A program should starts with \'begin\'',
                                   "A program should ends with 'end'",
-                                  for_program=True)
+                                  for_program=True, lsp_mode=lsp_mode)
 
     def test(self, ts, source):
         self.__init__()

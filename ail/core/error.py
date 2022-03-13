@@ -101,6 +101,7 @@ def error_msg(
         s.text = source_line
         s.msg = msg
         s.offset = offset + 1
+        s.ail_syntax_error = True
         raise s
     else:
         sys.stderr.write(err_msg)
