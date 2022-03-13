@@ -68,6 +68,7 @@ Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more infor
 
 >> 
 ```
+
 #### 2. 增加 `not in` 运算符
 
 `not in` 运算符可以用于快速判断某元素是否存在于一个可迭代对象中：
@@ -87,6 +88,16 @@ False
 
 ***注意：***
 相比于 `not ... in ...` 表达式，`not in` 作为一个运算符存在，相比前者，使用 `not in` 运算符可以提高程序的执行效率。
+
+#### 增加 if-else 三元运算符
+
+使用 `if-else` 三元运算符可以在一个表达式中对值进行选择：
+```python
+>> passed = true
+>> result = 'OK' if passed else 'FAILED'
+>> result
+OK
+```
 
 
 ### 五、重大 BUG 修复与优化
