@@ -534,6 +534,15 @@ class WithStmt(Statement):
         self.ln = ln
 
 
+class IfExpr:
+    def __init__(self,
+                 test: Expression, body: Expression, orelse: Expression, ln: int):
+        self.test = test
+        self.body = body
+        self.orelse = orelse
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

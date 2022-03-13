@@ -1087,7 +1087,7 @@ class Parser:
     def __parse_tuple_expr(
             self, do_tuple: bool = False, do_star=False, name_list=False) -> ast.TupleAST:
         ln = self.__now_ln
-        parse_func = self.__parse_low_cell_expr if name_list else self.__parse_test_expr
+        parse_func = self.__parse_low_cell_expr if name_list else self.__parse_if_expr
 
         if do_star and self.__now_tok.ttype == AIL_MULT:
             ln = self.__now_ln
@@ -1456,6 +1456,27 @@ class Parser:
                 break
 
         return ast.IfStmtAST(test, if_block, elif_list, else_block, ln)
+
+    def __parse_if_expr(self, as_stmt: bool = True) -> ast.IfExpr:
+        ln = self.__now_ln
+
+        body = self.__parse_test_expr(as_stmt)
+
+        if self.__now_tok != 'if':
+            return body
+
+        self.__next_tok()  # eat 'if'
+
+        test = self.__parse_test_expr(False)
+
+        if self.__now_tok != 'else':
+            self.__syntax_error(
+                'uncompleted \'if\' expression, \'else\' was excepted')
+        self.__next_tok()  # eat 'else'
+
+        else_body = self.__parse_test_expr()
+
+        return ast.IfExpr(test, body, else_body, ln)
 
     def __parse_if_else_expr0(self) -> ast.IfStmtAST:
         ln = self.__now_ln
@@ -2794,6 +2815,13 @@ class ASTConverter:
 
         return _set_lineno(call_expr(func, args, keywords), expr.ln)
 
+    def _convert_if_expr(self, expr: ast.IfExpr) -> pyast.IfExp:
+        test = self.convert(expr.test)
+        body = self.convert(expr.body)
+        orelse = self.convert(expr.orelse)
+
+        return _set_lineno(if_expr(test, body, orelse), expr.ln)
+
     def _convert_print_stmt(self, stmt: ast.PrintStmtAST) -> pyast.Call:
         func = _set_lineno(name_expr('print', load_ctx()), stmt.ln)
         args = [self.convert(expr) for expr in stmt.value_list]
@@ -3556,6 +3584,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.WithStmt):
             return self._convert_with_stmt(a)
+
+        elif isinstance(a, ast.IfExpr):
+            return self._convert_if_expr(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(
