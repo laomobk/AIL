@@ -4,8 +4,6 @@ from os.path import split
 from inspect import isfunction, isbuiltin
 from typing import List, Dict, Union
 
-from numpy import full
-
 from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct, Namespace
 
 _IMPORTER = _AILImporter()
