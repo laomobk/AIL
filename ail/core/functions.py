@@ -1,7 +1,10 @@
 
 from copy import copy
+from os.path import split
 from inspect import isfunction, isbuiltin
 from typing import List, Dict, Union
+
+from numpy import full
 
 from .objects import AILImporter as _AILImporter, AILStruct as _AILStruct, Namespace
 
@@ -59,6 +62,12 @@ def ail_input(prompt: str, value_count: int):
     return vals
 
 
+def _get_module_name(full_name: str):
+    if '/' not in full_name:
+        return full_name
+    return split(full_name)[-1]
+
+
 def ail_import(
         mode: int, name: str, namespace: dict, 
         alias: str=None, members: List[str] = []):
@@ -73,8 +82,9 @@ def ail_import(
     
     _IMPORTER.import_module(mode, name, namespace, alias, members)
     
+    module_name = _get_module_name(name)
     if mode == 1:
-        return namespace.values() if members else namespace[name]
+        return namespace.values() if members else namespace[module_name]
     return None
 
 
