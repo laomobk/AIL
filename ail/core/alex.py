@@ -415,8 +415,8 @@ class Token:
         self.offset = offset
 
     def __repr__(self):
-        return '<Token \'{0}\'  type: {1}  lno: {2} ofs: {3}>'.format(
-            self.value,
+        return '<Token {0}  type: {1}  lno: {2} ofs: {3}>'.format(
+            repr(self.value),
             self.ttype,
             self.ln,
             self.offset,
