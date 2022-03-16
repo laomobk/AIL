@@ -28,10 +28,10 @@ except ImportError:
 def try_get_commit_id():
     try:
         if os.name == 'nt':
-        	return
+            return
         if _config.RUN_FROM_ENTRY_POINT or not exists('AIL_REPO_ROOT'):
             return open(
-                    join(_config.AIL_DIR_PATH, 'COMMIT_ID'))  \
+                join(_config.AIL_DIR_PATH, 'COMMIT_ID')) \
                 .read().replace('\n', '')
 
         import subprocess
@@ -40,13 +40,13 @@ def try_get_commit_id():
             return
 
         commit_id = subprocess.Popen(
-                ['git rev-parse --short HEAD'], 
-                shell=True, stdout=subprocess.PIPE).communicate()[0]  \
-                    .decode().replace('\n', '')
+            ['git rev-parse --short HEAD'],
+            shell=True, stdout=subprocess.PIPE).communicate()[0] \
+            .decode().replace('\n', '')
         branch_name = subprocess.Popen(
-                ['git symbolic-ref --short -q HEAD'], 
-                shell=True, stdout=subprocess.PIPE).communicate()[0]  \
-                    .decode().replace('\n', '')
+            ['git symbolic-ref --short -q HEAD'],
+            shell=True, stdout=subprocess.PIPE).communicate()[0] \
+            .decode().replace('\n', '')
         return '%s/%s' % (branch_name, commit_id)
 
     except Exception:
@@ -70,7 +70,7 @@ _VER_STR = '%s [%s]' % (
 )
 
 _WELCOME_STR = \
-'''AIL %s %s(Python %s)
+    '''AIL %s %s(Python %s)
 Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
 ''' % (
         _VER_STR,
@@ -136,7 +136,7 @@ class Shell:
         """
         :return : -1 end more | 0 normal | 1 start more
         """
-        
+
         try:
             ts = Lex().lex(line)
         except SyntaxError:
