@@ -1,33 +1,19 @@
 
-from sys import stdout
-from sys import stderr
+import sys
 
 
 class Console:
-    def __init__(self):
-        self._out_file = stdout
-        self._err_file = stderr
-
     def writeln(self, msg):
-        out = self._out_file
-        out.write(str(msg) + '\n')
-        out.flush()
-
+        print(msg)
 
     def write(self, msg):
-        out = self._out_file
-        out.write(str(msg))
-        out.flush()
+        print(msg, end='')
 
     def errorln(self, msg):
-        err = self._err_file
-        err.write(msg + '\n')
-        err.flush()
+        print(msg, file=sys.stdout)
 
     def error(self, msg):
-        err = self._err_file
-        err.write(msg)
-        err.flush()
+        print(msg, end='', file=sys.stdin)
 
     def readln(self, msg):
         return input(str(msg))
