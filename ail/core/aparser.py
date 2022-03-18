@@ -68,8 +68,6 @@ _special_method_map = {
     'new': '__new__',
     'init': '__init__',
     'del': '__del__',
-    '__str__': '__str__',
-    '__repr__': '__repr__',
     'getattr': '__getattr__',
     'setattr': '__setattr__',
     'delattr': '__delattr__',
