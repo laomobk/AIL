@@ -20,7 +20,7 @@ syn keyword ailStmt import load
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt get set init new getattr setattr delattr getitem setitem delitem del
 syn keyword ailStmt mod and not or
-syn keyword ailStmt match namespace with when
+syn keyword ailStmt match namespace with when yield from
 
 syn keyword ailConst false true __main__
 
@@ -136,6 +136,7 @@ hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
 hi def link ailRepeat       Repeat
 hi def link ailType         Type
+hi def link ailFunction     Function
 
 hi def link pythonExceptions    Structure
 hi def link pythonBuiltin      Identifier
