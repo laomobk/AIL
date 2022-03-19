@@ -1,3 +1,12 @@
+# the version info of AIL
+#
+# -- the AIL version number:
+#
+# 2.1   Leopard     726     2021.5 - 2022.1
+# 2.2   Klee        727     2022.1 - 2022.3
+# 2.3   Diona       728     2022.3 - now
+#
+
 from os.path import exists, join
 from .._config import CORE_PATH
 
@@ -21,7 +30,7 @@ AIL_VERSION_FULL_STRING = '%s.%s%s%s' % (
 
 )
 
-AIL_VERSION_NUMBER = 727
+AIL_VERSION_NUMBER = 728
 
 
 AIL_COPYRIGHT = '2022 Chenhongbo'
