@@ -1067,7 +1067,8 @@ class Parser:
             
         expr = self.__parse_assign_expr(
             do_tuple, no_assign=no_assign, type_comment=type_comment,
-            ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key)
+            ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key,
+            allow_yield=as_stmt)
 
         if isinstance(expr, ast.AssignExprAST) and not as_stmt:
             self.__syntax_error('cannot assign in a expression')
@@ -1248,7 +1249,8 @@ class Parser:
                             no_assign: bool = False,
                             type_comment: bool = False,
                             ignore_type_comment: bool = False,
-                            for_dict_key: bool = False) -> ast.AssignExprAST:
+                            for_dict_key: bool = False,
+                            allow_yield: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
         left = self.__parse_tuple_expr(do_tuple, True)
         
@@ -1308,7 +1310,11 @@ class Parser:
                 self.__syntax_error('cannot assign to literal', left.ln)
 
         self.__next_tok()
-        r = self.__parse_binary_expr(do_tuple=do_tuple)
+
+        if self.__now_tok == 'yield' and allow_yield:
+            r = self.__parse_yield_or_yield_from_expr()
+        else:
+            r = self.__parse_binary_expr(do_tuple=do_tuple)
         if r is None:
             self.__syntax_error()
 
