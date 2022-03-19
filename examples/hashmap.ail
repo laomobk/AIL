@@ -1,0 +1,44 @@
+
+class HashMap {
+    init (self, size=128) {
+        self.__size = size;
+        self.__key_array = array(size);
+    }
+
+    func put(self, key, value) {
+        h = hash(key);
+        i = h % self.__size;
+        if self.__key_array[i] === null {
+            self.__key_array[i] = set();
+        }
+        self.__key_array[i].add((key, value));
+    }
+
+    func get(self, key) {
+        h = hash(key);
+        i = h % self.__size;
+        target = self.__key_array[i];
+        
+        if target === null { throw KeyError(repr(key)); }
+        
+        foreach tup in target {
+            if tup[0] === key { return tup[1]; }
+        }
+        throw KeyError(repr(key))
+    }
+
+    func __str__(self): str {
+        body = '';
+        foreach node in self.__key_array {
+            if node === null { continue; }
+            foreach tup in node {
+                body += '%s: %s, ' % (repr(tup[0]), repr(tup[1]));
+            }
+        }
+
+        return '{' + body + '}';
+    }
+
+    __repr__ = __str__;
+}
+
