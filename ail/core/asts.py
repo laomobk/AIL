@@ -1,4 +1,5 @@
 # AST
+from ast import Expr
 from typing import List, Tuple
 
 
@@ -534,12 +535,24 @@ class WithStmt(Statement):
         self.ln = ln
 
 
-class IfExpr:
+class IfExpr(Expression):
     def __init__(self,
                  test: Expression, body: Expression, orelse: Expression, ln: int):
         self.test = test
         self.body = body
         self.orelse = orelse
+        self.ln = ln
+
+
+class YieldExpr(Expression):
+    def __init__(self, value: Expression, ln: int):
+        self.value = value
+        self.ln = ln
+
+
+class YieldFromExpr(Expression):
+    def __init__(self, value: Expression, ln: int):
+        self.value = value
         self.ln = ln
 
 

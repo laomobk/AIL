@@ -606,6 +606,23 @@ class Parser:
 
         return ast.MatchCase(patterns, expr, ln, when_test)
 
+    def __parse_yield_or_yield_from_expr(self) -> ast.YieldExpr:
+        ln = self.__now_ln
+
+        if self.__now_tok != 'yield':
+            self.__syntax_error()
+
+        self.__next_tok()  # eat 'yield'
+
+        typ = ast.YieldExpr
+        if self.__now_tok == 'from':
+            self.__next_tok()  # eat 'from'
+            typ = ast.YieldFromExpr
+        
+        value = self.__parse_binary_expr()
+
+        return typ(value, ln)
+
     def __parse_dict_expr(self) -> ast.DictAST:
         ln = self.__now_ln
         s_ofs = self.__now_tok.offset
@@ -2486,6 +2503,9 @@ class Parser:
             elif nt == 'with':
                 a = self.__parse_with_stmt()
 
+            elif nt == 'yield':
+                a = self.__parse_yield_or_yield_from_expr()
+
             elif nt == 'not':
                 a = self.__parse_binary_expr(True, True, False, True)
                 self.__expect_newline()
@@ -3418,6 +3438,12 @@ class ASTConverter:
         finally:
             self.__block_stmt_append_func_stack.pop()
 
+    def _convert_yield_expr(self, expr: ast.YieldExpr) -> pyast.Yield:
+        return _set_lineno(yield_expr(self.convert(expr.value)), expr.ln)
+
+    def _convert_yield_from_expr(self, expr: ast.YieldFromExpr) -> pyast.YieldFrom:
+        return _set_lineno(yield_from_expr(self.convert(expr.value)), expr.ln)
+
     def _convert_namespace_stmt(self, stmt: ast.NamespaceStmt) -> pyast.stmt:
         """
         namespace x {...}
@@ -3597,6 +3623,12 @@ class ASTConverter:
 
         elif isinstance(a, ast.IfExpr):
             return self._convert_if_expr(a)
+
+        elif isinstance(a, ast.YieldExpr):
+            return self._convert_yield_expr(a)
+
+        elif isinstance(a, ast.YieldFromExpr):
+            return self._convert_yield_from_expr(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(

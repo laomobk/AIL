@@ -101,7 +101,7 @@ def call_expr(func: _ast.expr, args: List[_ast.expr],
 
 
 def class_def_stmt(
-        name: str, bases: List[_ast.expr], keywords: List[_ast.keyword],
+         name: str, bases: List[_ast.expr], keywords: List[_ast.keyword],
         body: List[_ast.stmt], decorator_list: List[_ast.expr]) -> _ast.ClassDef:
     return _ast.ClassDef(
         name=name, bases=bases, keywords=keywords, body=body, decorator_list=decorator_list)
@@ -249,3 +249,10 @@ def with_stmt(items: List[_ast.withitem], body: List[_ast.stmt]) -> _ast.With:
 def with_item(context_expr: _ast.expr, optional_vars: _ast.expr) -> _ast.withitem:
     return _ast.withitem(context_expr=context_expr, optional_vars=optional_vars)
 
+
+def yield_expr(value: _ast.expr) -> _ast.Yield:
+    return _ast.Yield(value=value)
+
+
+def yield_from_expr(value: _ast.expr) -> _ast.Yield:
+    return _ast.YieldFrom(value=value)
