@@ -610,6 +610,9 @@ class Parser:
         if self.__now_tok != 'yield':
             self.__syntax_error()
 
+        if self.__level == 0:
+            self.__syntax_error('\'yield\' out side function')
+
         self.__next_tok()  # eat 'yield'
 
         typ = ast.YieldExpr
