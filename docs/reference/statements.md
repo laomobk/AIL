@@ -176,6 +176,24 @@ return [expression];
 
 return 语句只能用在函数体内。return 语句用于向调用者返回值。return 语句的 `expression` 是可选的，当不提供返回值，则默认返回 `null` 。
 
+### yield 语句
+
+```python
+yield [from] [expression];
+```
+
+yield 语句被用于**生成器**函数中，而且只能用于函数体中。
+
+#### yield 赋值
+
+**当且仅当** yield 作为赋值语句的右边部分的时候，yield 可以作为表达式使用：
+
+```python
+func f() {
+    x = yield 10;
+}
+```
+
 ### throw 语句
 
 ```python
@@ -305,7 +323,8 @@ import x 'a';
 load STRING;
 ```
 
-load 语句用于将模块的 **所有** 导出成员导入到 **local** 中。 
+load 语句用于将模块的 **所有** 导出成员导入到 **local** 中。
+
 
 ## Python 嵌入代码语句
 
