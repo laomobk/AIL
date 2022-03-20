@@ -58,7 +58,7 @@ def exec_as_python(
     if not main:
         name = filename
 
-    fill_namespace(globals, name, main)
+    fill_namespace(globals, name, main, filename=filename)
     
     exec(code, globals)
     return 0

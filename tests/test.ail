@@ -1,20 +1,3 @@
+#from os.path import dirname
 
-func avg() {
-    total = 10;
-    count = 1;
-
-    for {
-        num = yield total / count;
-        if num !== null {
-            total += num;
-            count += 1;
-        }
-    }
-}
-
-
-g = avg();
-print next(g);
-print g.send(10);
-print g.send(20);
-
+print dirname(__file__);
