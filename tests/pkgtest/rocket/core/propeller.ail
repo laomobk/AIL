@@ -1,0 +1,18 @@
+
+import 'time' (sleep);
+
+
+func check() {
+    print 'checking propeller...';
+    sleep(0.3);
+    print 'propeller all correct!';
+}
+
+func start() {
+    foreach n in range(3) {
+        print 'starting the propeller %s' % n;
+        sleep(0.1);
+        print 'propeller %s started!' % n;
+    }
+}
+

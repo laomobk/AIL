@@ -136,7 +136,7 @@ hi def link ailFunc		    Identifier
 hi def link ailConst		Identifier
 hi def link ailRepeat       Repeat
 hi def link ailType         Type
-hi def link ailFunction     Function
+" hi def link ailFunction     Function
 
 hi def link pythonExceptions    Structure
 hi def link pythonBuiltin      Identifier

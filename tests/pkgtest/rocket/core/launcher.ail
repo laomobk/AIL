@@ -1,0 +1,15 @@
+
+import './engine';
+import './propeller';
+
+
+func launch() {
+    propeller.check();
+    engine.check();
+
+    engine.start();
+    propeller.start();
+
+    print '---- launch !! ----';
+}
+

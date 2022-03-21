@@ -1,0 +1,10 @@
+
+import 'core/launcher';
+import 'core/internal/serial';
+
+
+if __main__ {
+    print 'rocket serial: %s\n' % serial.gen();
+    launcher.launch();
+}
+

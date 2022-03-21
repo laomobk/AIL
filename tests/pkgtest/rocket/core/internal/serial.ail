@@ -1,0 +1,12 @@
+
+#from random import random
+#from hashlib import md5
+
+import '../model'
+
+
+func gen() {
+    x = int(sum(model.MODEL_INFO) * random()).to_bytes(4, 'big');
+    return md5().hexdigest();
+}
+

@@ -1,0 +1,16 @@
+
+import 'time' (sleep);
+
+
+func check() {
+    print 'checking engine...';
+    sleep(0.3);
+    print 'engine all correct!';
+}
+
+func start() {
+    print 'engine starting...';
+    sleep(0.5);
+    print 'engine started!';
+}
+
