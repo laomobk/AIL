@@ -175,7 +175,7 @@ def _launch_main(argv: list) -> int:
                 os.path.normpath(
                     os.path.abspath(file_path)))
 
-    shared.GLOBAL_SHARED_DATA.find_path.append(file_dir)
+    shared.GLOBAL_SHARED_DATA.find_path.insert(0, file_dir)
 
     try:
         if option.cmd is None and not os.path.exists(file_path):
