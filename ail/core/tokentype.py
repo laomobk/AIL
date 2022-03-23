@@ -64,4 +64,7 @@ AIL_INP_BIN_OR      = 66    #   |=
 AIL_INP_LSHIFT      = 67    #   <<=
 AIL_INP_RSHIFT      = 68    #   >>=
 AIL_INP_BIN_AND     = 69    #   &=
-AIL_INP_POW         = 610   #   **=
+AIL_INP_POW         = 610   #   **
+
+AIL_EDITOR_CURSOR   = 71    #   (ascii = 5)
+

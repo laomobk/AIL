@@ -1,5 +1,7 @@
 # 用于ail的词法分析器
 
+from typing import Tuple
+
 from string import hexdigits, octdigits
 
 from .tokentype import *
@@ -570,7 +572,9 @@ class Lex:
 
         error_msg(ln, msg, self.__filename, source=self.__source, offset=offset)
 
-    def lex(self, source: str, filename: str = '<string>') -> TokenStream:
+    def lex(self, 
+            source: str, filename: str = '<string>',
+            editor_cursor: Tuple[int] = None) -> TokenStream:
         if filename is not None:
             self.__filename = filename
             self.__source = source
@@ -586,8 +590,18 @@ class Lex:
             self.__stream.append(Token('<EOF>', AIL_EOF, 0, -1))
             return self.__stream
 
+        if not isinstance(editor_cursor, tuple):
+            editor_cursor = ()
+
         while self.__chp < len(self.__source):
             c = self.__chnow
+
+            if (self.__ln, self.__offset) == tuple(editor_cursor):
+                self.__stream.append(Token(
+                    '<EDITOR_CURSOR>',
+                    AIL_EDITOR_CURSOR, 
+                    self.__ln, self.__offset,
+                ))
 
             if ord(c) == 10:
                 self.__ln += 1
