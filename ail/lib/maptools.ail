@@ -8,19 +8,19 @@ func mapto(keys, v_func) {
 
 func mapwith(function, iterable) {
     new_arr = []
-    foreach x in iterable {
-        new_arr.append(function(x))
+    foreach i, x in enumerate(iterable) {
+        new_arr.append(function(i, x))
     }
     return new_arr
 }
 
 func xmapwith(function, iterable) {
-    foreach x in arr {
-        #yield function(x)
+    foreach i, x in enumerate(iterable) {
+        yield function(i, x);
     }
 }
 
-func traverse(iterate, function) {
+func traverse(iterable, function) {
     foreach i, x in enumerate(iterable) {
         if function(i, x) == TRAVERSE_STOP { return; }
     }
