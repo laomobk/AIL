@@ -256,3 +256,12 @@ def yield_expr(value: _ast.expr) -> _ast.Yield:
 
 def yield_from_expr(value: _ast.expr) -> _ast.Yield:
     return _ast.YieldFrom(value=value)
+
+
+def py_import_stmt(names: List[_ast.alias]) -> _ast.Import:
+    return _ast.Import(names=names)
+
+
+def py_import_from(
+        module: str, names: List[_ast.alias], level: int) -> _ast.ImportFrom:
+    return _ast.ImportFrom(module=module, names=names, level=level)

@@ -1,3 +1,9 @@
 
-a.b.c
+from os import path, system as sys, name;
 
+from os import path,
+               system as sys,
+               name;
+
+
+print name;

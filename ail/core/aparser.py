@@ -3,6 +3,8 @@ import ast as pyast
 from os.path import split
 from typing import Union
 
+from numpy import isin
+
 # import astunparse
 
 from . import aconfig
@@ -29,6 +31,7 @@ _keywords_uc = (
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
     'MATCH', 'NAMESPACE', 'FOREACH', 'IN',
+    'AS', 'MATCH',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -146,6 +149,9 @@ class Parser:
             self.__skip_newlines()
 
         return self.__tok_stream[self.__tc]
+
+    def __is_name(self, tok: Token):
+        return tok.ttype == AIL_IDENTIFIER and tok.value not in _keywords
 
     def __skip_newlines(self):
         while self.__now_tok == '\n':
@@ -2180,6 +2186,100 @@ class Parser:
 
         return ast.AssertStmtAST(expr, msg, self.__now_ln)
 
+    def __parse_py_import_from_stmt(self) -> ast.PyImportFromStmt:
+        ln = self.__now_ln
+        
+        if self.__now_tok != 'from':
+            self.__syntax_error()
+        self.__next_tok()  # eat 'from'
+
+        self.__skip_newlines()
+
+        level = 0
+        module = None
+        if self.__now_tok.ttype == AIL_DOT:
+            level = 1
+            self.__next_tok()  # eat '.'
+            if self.__now_tok == AIL_DOT:
+                level = 2
+                self.__next_tok()  # eat '.'
+        elif self.__is_name(self.__now_tok):
+            module = self.__now_tok.value
+            self.__next_tok()  # eat NAME
+        else:
+            self.__syntax_error('except module name')
+        self.__skip_newlines()
+
+        if self.__now_tok != 'import':
+            self.__syntax_error('except \'import\'')
+        self.__next_tok()  # eat 'import'
+
+        names: List[ast.PyImportAlias] = []
+        while True:
+            self.__skip_newlines()
+            
+            alias = None
+
+            if not self.__is_name(self.__now_tok):
+                self.__syntax_error('except module name')
+            name_ln = self.__now_tok.ln
+            name = self.__now_tok.value
+            self.__next_tok()  # eat NAME
+            
+            self.__skip_newlines()
+
+            if self.__now_tok == 'as':
+                self.__next_tok()  # eat 'as'
+                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                    self.__syntax_error('except module alias')
+                alias = self.__now_tok.value
+                self.__next_tok()
+
+            names.append(ast.PyImportAlias(name, alias, name_ln))
+
+            if self.__now_tok.ttype != AIL_COMMA:
+                break
+            self.__next_tok()  # eat ','
+
+        return ast.PyImportFromStmt(module, names, level, ln)
+
+    def __parse_py_import(self, ln: int) -> ast.PyImportStmt:
+        if self.__now_tok.ttype != AIL_NOT:
+            self.__syntax_error()
+
+        self.__next_tok()  # eat '!'
+
+        # parse names
+
+        names: List[ast.PyImportAlias] = []
+        while True:
+            self.__skip_newlines()
+            
+            alias = None
+
+            if not self.__is_name(self.__now_tok):
+                self.__syntax_error('except module name')
+            name_ln = self.__now_tok.ln
+            name = self.__now_tok.value
+            self.__next_tok()  # eat NAME
+            
+            self.__skip_newlines()
+
+            if self.__now_tok == 'as':
+                self.__next_tok()  # eat 'as'
+                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                    self.__syntax_error('except module alias')
+                alias = self.__now_tok.value
+                self.__next_tok()
+
+            names.append(ast.PyImportAlias(name, alias, name_ln))
+
+            if self.__now_tok.ttype != AIL_COMMA:
+                break
+            self.__next_tok()  # eat ','
+        
+        return ast.PyImportStmt(names, ln)
+
     def __parse_import_stmt(self) -> ast.ImportStmtAST:
         if self.__now_tok != 'import':
             self.__syntax_error()
@@ -2189,6 +2289,9 @@ class Parser:
         is_dir = False
 
         self.__next_tok()  # eat 'import'
+
+        if self.__now_tok.ttype == AIL_NOT:
+            return self.__parse_py_import(ln)
 
         if self.__now_tok.ttype == AIL_IDENTIFIER:
             alias = self.__now_tok.value
@@ -2512,6 +2615,9 @@ class Parser:
 
             elif nt == 'yield':
                 a = self.__parse_yield_or_yield_from_expr()
+
+            elif nt == 'from':
+                a = self.__parse_py_import_from_stmt()
 
             elif nt == 'not':
                 a = self.__parse_binary_expr(True, True, False, True)
@@ -3488,6 +3594,28 @@ class ASTConverter:
             stmt.ln,
         )
 
+    def _convert_py_import_stmt(self, stmt: ast.PyImportStmt) -> pyast.Import:
+        names = stmt.names
+        py_names = []
+
+        for name in names:
+            py_names.append(_set_lineno(
+                import_alias(name.name, name.alias), name.ln))
+        
+        return _set_lineno(py_import_stmt(py_names), stmt.ln)
+
+    def _convert_py_import_from_stmt(
+            self, stmt: ast.PyImportFromStmt) -> pyast.ImportFrom:
+        names = stmt.names
+        py_names = []
+
+        for name in names:
+            py_names.append(_set_lineno(
+                import_alias(name.name, name.alias), name.ln))
+        
+        return _set_lineno(
+            import_from_stmt(stmt.module, names, stmt.level), stmt.ln)
+
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
         return _increase_all_lineno(code.ln - 1, module_node.body)
@@ -3636,6 +3764,12 @@ class ASTConverter:
 
         elif isinstance(a, ast.YieldFromExpr):
             return self._convert_yield_from_expr(a)
+
+        elif isinstance(a, ast.PyImportStmt):
+            return self._convert_py_import_stmt(a)
+
+        elif isinstance(a, ast.PyImportFromStmt):
+            return self._convert_py_import_from_stmt(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(

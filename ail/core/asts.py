@@ -1,6 +1,7 @@
 # AST
 from ast import Expr
 from typing import List, Tuple
+from unicodedata import name
 
 
 class AST:
@@ -553,6 +554,28 @@ class YieldExpr(Expression):
 class YieldFromExpr(Expression):
     def __init__(self, value: Expression, ln: int):
         self.value = value
+        self.ln = ln
+
+
+class PyImportAlias(AST):
+    def __init__(self, name: str, alias: str, ln: int):
+        self.name = name
+        self.alias = alias
+        self.ln = ln
+
+
+class PyImportFromStmt(Statement):
+    def __init__(self, 
+            module: str, names: List[PyImportAlias], level: int, ln: int):
+        self.module = module
+        self.names = names
+        self.level = level
+        self.ln = ln
+
+
+class PyImportStmt(Statement):
+    def __init__(self, names: List[PyImportAlias], ln: int):
+        self.names = names
         self.ln = ln
 
 
