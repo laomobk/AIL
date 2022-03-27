@@ -1,6 +1,7 @@
 # AIL 2.3 alpha 0
 
-[AIL 2.2 Klee 版本内容](./docs/whatsnew.md)
+[AIL 2.3 Diona 版本更新内容](./docs/whatsnew.md)
+
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.6%2B-blue)
@@ -22,20 +23,25 @@ AIL 需要运行在具有完整标准库的 Python 环境上，版本最低不�
 ## Hello World
 
 #### Hello World with one statement
+
 ```python
 print 'Hello World';
 ```
+
 ..or..
+
 ```python
 console.writeln('Hello World!');
 ```
 
 #### Hello World in lambda
+
 ```python
 (() -> console.writeln('Hello World'))();
 ```
 
 #### Hello World in function
+
 ```swift
 func helloWorld() {
     print "Hello World!";
@@ -45,6 +51,7 @@ helloWorld();
 ```
 
 #### Hello World in anonymous function
+
 ```swift
 (func () {
     print "Hello World!";
@@ -52,6 +59,7 @@ helloWorld();
 ```
 
 #### Hello World in class
+
 ```swift
 class Hello {
     func helloWorld(self) {
@@ -129,7 +137,6 @@ AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再�
 #### 配置
 
 1. 将 **plugin/vim/syntax/ail.vim** 与 **plugin/vim/ftdetect/ail.vim** 分别复制到 **{VIM_HOME}/syntax/** 和 **{VIM_HOME}/ftdetect/**
-
 2. 重新启动 vim 即可
 
 ## 安装 AIL
@@ -141,6 +148,7 @@ python setup.py install
 ```
 
 在终端中输入:
+
 ```
 ail
 ```
@@ -161,6 +169,7 @@ python3 -m ail
 AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
 
 ## AIL 语句
+
 文档 [AIL语句](./docs/reference/statements.md) 简要地描述了 AIL 的语句
 
 ## AIL 代码转换细节
