@@ -954,7 +954,8 @@ class Parser:
             self.__syntax_error()
         name = nt.value  # it can be sub, string, number or identifier
 
-        if not self.__is_name(self.__now_tok):
+        if self.__now_tok.ttype == AIL_IDENTIFIER and  \
+                self.__now_tok.value in _keywords:
             self.__syntax_error()
 
         self.__next_tok()  # eat NAME
@@ -2031,7 +2032,7 @@ class Parser:
         if bindto is not None and not with_bound_to:
             self.__syntax_error('this function can not be bound', bindto_tok_line)
 
-        if anonymous_function and self.__is_name(self.__now_tok):
+        if anonymous_function and not self.__is_name(self.__now_tok):
             name = aconfig.ANONYMOUS_FUNC_NAME
         else:
             if not self.__is_name(self.__now_tok):
