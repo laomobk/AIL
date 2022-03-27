@@ -9,7 +9,7 @@
 ![version badge](https://img.shields.io/badge/version-2.2%20alpha-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
-AIL 是一门运行在 Python 虚拟机上的面向对象的编程语言。支持 Python 的诸多特性的同时，也拥有 AIL 自身的特性。
+AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语言。支持 Python 的诸多特性的同时，也拥有 AIL 自身的特性。
 
 ***注意：从 2.1 版本开始，AIL 自带的虚拟机和编译器已经被禁用，默认启用 Python 兼容模式***
 
