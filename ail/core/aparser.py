@@ -2197,13 +2197,7 @@ class Parser:
 
         level = 0
         module = None
-        if self.__now_tok.ttype == AIL_DOT:
-            level = 1
-            self.__next_tok()  # eat '.'
-            if self.__now_tok == AIL_DOT:
-                level = 2
-                self.__next_tok()  # eat '.'
-        elif self.__is_name(self.__now_tok):
+        if self.__is_name(self.__now_tok):
             module = self.__now_tok.value
             self.__next_tok()  # eat NAME
         else:
