@@ -375,7 +375,7 @@ class Parser:
         return self.__parse_cell_or_call_expr()
 
     def __parse_value_list(self) -> ast.ValueListAST:
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             return self.__syntax_error()
 
         ida = self.__now_tok.value
@@ -386,7 +386,7 @@ class Parser:
         while self.__now_tok == ',' and self.__now_tok.ttype != AIL_ENTER:
             self.__next_tok()
 
-            if self.__now_tok.ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__now_tok):
                 self.__syntax_error()
 
             idl.append(self.__now_tok.value)
@@ -494,7 +494,7 @@ class Parser:
 
         self.__next_tok()  # eat 'namespace'
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -954,6 +954,9 @@ class Parser:
             self.__syntax_error()
         name = nt.value  # it can be sub, string, number or identifier
 
+        if not self.__is_name(self.__now_tok):
+            self.__syntax_error()
+
         self.__next_tok()  # eat NAME
 
         return ast.CellAST(name, nt.ttype, ln)
@@ -1244,7 +1247,7 @@ class Parser:
             return ast.InputStmtAST(
                 msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
-        if self.__next_tok().ttype == AIL_IDENTIFIER:
+        if self.__is_name(self.__next_tok()):
             vl = self.__parse_value_list()
         else:
             vl = ast.ValueListAST([], self.__now_ln)
@@ -1803,7 +1806,7 @@ class Parser:
 
         self.__next_tok()  # eat 'struct'
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -1834,12 +1837,12 @@ class Parser:
             self.__next_tok()
 
         while self.__now_tok != end_tok:
-            if self.__now_tok.ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__now_tok):
                 self.__syntax_error()
 
             if self.__now_tok == 'protected':
                 nt = self.__next_tok()
-                if nt.ttype != AIL_IDENTIFIER:
+                if not self.__is_name(self.__now_tok):
                     self.__syntax_error()
                 pl.append(nt.value)
 
@@ -1923,7 +1926,7 @@ class Parser:
         ln = self.__now_ln
         self.__next_tok()  # eat 'class'
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         class_name = self.__now_tok.value
@@ -2016,7 +2019,7 @@ class Parser:
         bindto_tok_line = 0
 
         if self.__now_tok == '(' and not anonymous_function:
-            if self.__next_tok().ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__next_tok()):
                 self.__syntax_error()
             bindto = self.__now_tok.value
             bindto_tok_line = self.__now_ln
@@ -2028,10 +2031,10 @@ class Parser:
         if bindto is not None and not with_bound_to:
             self.__syntax_error('this function can not be bound', bindto_tok_line)
 
-        if anonymous_function and self.__now_tok.ttype != AIL_IDENTIFIER:
+        if anonymous_function and self.__is_name(self.__now_tok):
             name = aconfig.ANONYMOUS_FUNC_NAME
         else:
-            if self.__now_tok.ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__now_tok):
                 self.__syntax_error()
 
             name = self.__now_tok.value
@@ -2100,7 +2103,7 @@ class Parser:
 
         self.__next_tok()  # eat 'global'
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -2119,7 +2122,7 @@ class Parser:
 
         self.__next_tok()  # eat 'nonlocal'
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if not self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -2224,7 +2227,7 @@ class Parser:
 
             if self.__now_tok == 'as':
                 self.__next_tok()  # eat 'as'
-                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                if not self.__is_name(self.__now_tok):
                     self.__syntax_error('except module alias')
                 alias = self.__now_tok.value
                 self.__next_tok()
@@ -2261,7 +2264,7 @@ class Parser:
 
             if self.__now_tok == 'as':
                 self.__next_tok()  # eat 'as'
-                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                if not self.__is_name(self.__now_tok):
                     self.__syntax_error('except module alias')
                 alias = self.__now_tok.value
                 self.__next_tok()
@@ -2287,7 +2290,7 @@ class Parser:
         if self.__now_tok.ttype == AIL_NOT:
             return self.__parse_py_import(ln)
 
-        if self.__now_tok.ttype == AIL_IDENTIFIER:
+        if self.__is_name(self.__now_tok):
             alias = self.__now_tok.value
             self.__next_tok()  # eat name
 
@@ -2331,7 +2334,7 @@ class Parser:
             if m_ln is None:
                 m_ln = self.__now_tok.ln
                 
-            if self.__now_tok.ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__now_tok):
                 self.__syntax_error()
             members.append(self.__now_tok.value)
             self.__next_tok()  # eat name
@@ -2387,7 +2390,7 @@ class Parser:
         else:
             self.__next_tok()  # eat 'catch'
 
-            if self.__now_tok.ttype != AIL_IDENTIFIER:
+            if not self.__is_name(self.__now_tok):
                 self.__syntax_error('require name')
 
             cname = self.__now_tok.value
@@ -2454,7 +2457,7 @@ class Parser:
         action = self.__now_tok.value
         self.__next_tok()
 
-        if self.__now_tok.ttype != AIL_IDENTIFIER:
+        if self.__is_name(self.__now_tok):
             self.__syntax_error()
 
         name = self.__now_tok.value
@@ -2485,7 +2488,7 @@ class Parser:
             if self.__now_tok.ttype != AIL_LLBASKET:
                 exc_expr = self.__parse_binary_expr(type_comment=False)
 
-                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                if not self.__is_name(self.__now_tok):
                     self.__syntax_error()
                 exc_alias = self.__now_tok.value
                 self.__next_tok()  # eat NAME
