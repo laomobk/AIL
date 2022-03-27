@@ -1,109 +1,98 @@
-# AIL 2.2 Klee 版本更新
+# AIL 2.3 Diona
 
-*2022-3-12*
-
-AIL 2.2 带来了更为详细的语法错误信息，并提高了整体的稳定性。
+AIL 2.3 版版本于 2022 年 3 月 20 日开始开发。以下是目前为止 AIL 2.3 版本的主要更新、修复和变更的内容。
 
 ## == 更新内容 ==
 
-### 一、适配 Python 3.10
+### 一、yield 语句
 
-AIL 2.2 版本将开始适配 Python 3.10 的部分功能，源码上会在尽可能兼容 Python 3.7 的基础上进行针对 Python 3.10 的特性的优化。
-
-Python 3.10 版本更新说明：
-[py3.10](https://docs.python.org/zh-cn/3/whatsnew/3.10.html)
-
-
-### 二、更清晰的语法错误提示
-
-新的 AIL 2.2 带来了更为清晰详细的语法错误提示信息。新增加的语法提示包括但不仅限于下面的内容：
-
-#### 错误位置指示
-新的 AIL 版本中，当出现语法错误时，AIL 将会给出错误的大致位置：
+yield 语句被用于函数体中，用于声明该函数为 **生成器** ，同时具有与协程传递数据的作用。例如，下面的代码将会在输出 6 个范围为 [1, 100] 的随机数后抛出 `StopIteration` 异常：
 
 ```python
->> a = match x {};
-  File "<shell>", line 1
-    a = match x {};
-                 ^
-SyntaxError: match body cannot be empty
+from random import randint;
+
+
+func gen_random(n) {
+    foreach _ in range(n) {
+        sig = yield randint(1, 100);
+        if sig {
+            break;
+        }
+    }
+}
+
+
+g = gen_random(10);
+foreach i, x in enumerate(g) {
+    print x;
+    if i > 5 {
+        g.send(1);
+    }
+}
+```
+
+#### yield form 语句
+
+yield from 语句用于在函数中进行委托生成，直到委托生成器结束，函数才会继续向下执行。例如下面的程序，只有一次输出完 `2, 1, 3, 5, 6, 3` 过后，才会打印出 `Generation finished!`。
+
+```python
+func f(*args) {
+    foreach arg in args {
+        yield from arg;
+    }
+    print 'Generation finished!';
+}
+
+
+foreach x in f((2, 1, 3), [5, 6, 3]) {
+    print x;
+}
 ```
 
 
-#### 括号配对错误提示
-新的 AIL 版本中，将对配对错误的括号给出提示：
+### 二、Python import 语句
+
+AIL 2.3 版本加入了来自 Python 的 import 与 import from 语句，用于导入 Python 模块。
 
 ```python
->> a = (1, 2];
-  File "<shell>", line 1
-    a = (1, 2];
-             ^
-SyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (at line 1, col 6)
-```
+import os;  // 导入单个 Python 模块
+improt a, b, c;  // 导入多个 Python 模块
 
-#### 字符串未结束提示
-新的 AIL 版本中，未结束的字符串将会给出更详细的提示详细：
-
-```python
->> name = 'klee
-  File "<shell>", line 1
-    name = 'klee
-               ^
-SyntaxError: unterminated string literal (detected at line 1)
+from os import path; // 导入 Python 模块的单个成员
+from typing import List, Tuple;  // 导入 Python 模块的多个成员
 ```
 
 
-### 三、标准库更新
+### 三、\_\_file\_\_ 变量
 
-`maptools` 模块新增 `xmapwith`, `traverse` 函数。
-
-
-### 四、其他更新内容：
-#### 1. AIL shell 中增加 commit id 和 branch 的显示
+在 AIL 2.3 版本中，可以通过 `__file__` 变量得到当前 AIL 程序的路径，这个路径是**用户使用 AIL 执行此程序时给出的文件路径**。
 
 ```python
-AIL 2.2 Klee alpha 2 [727] (2.2/d24235a) (Python 3.8.0 (default, Dec  5 2019, 10:53:43)
-[Clang 8.0.7 (https://android.googlesource.com/toolchain/clang b55f2d4ebfd35bf6)
-Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
+// ~/foo.ail
 
->> 
+print __file__; 
 ```
-
-#### 2. 增加 `not in` 运算符
-
-`not in` 运算符可以用于快速判断某元素是否存在于一个可迭代对象中：
-```python
->> knights_of_favonius = ['Jean', 'Kaeya', 'Eula', 'Amber', 'Rosaria', 'Klee'];
->> 'Klee' not in knights_of_favonius;
-False
->> 'Diona' not in knights_of_favonius;
-True
->>
->> 1 not in [1, 2, 4, 8, 16];
-False
->> 'a' not in 'Jean';
-False
->>
-```
-
-***注意：***
-相比于 `not ... in ...` 表达式，`not in` 作为一个运算符存在，相比前者，使用 `not in` 运算符可以提高程序的执行效率。
-
-#### 增加 if-else 三元运算符
-
-使用 `if-else` 三元运算符可以在一个表达式中对值进行选择：
-```python
->> passed = true
->> result = 'OK' if passed else 'FAILED'
->> result
-OK
+下面是该程序在 shell 中的执行情况：
+```shell
+pi@raspberrypi:~ $ ail ~/foo.ail
+~/foo.ail
+pi@raspberrypi:~ $ cd ~/ail/ail/core/
+pi@raspberrypi:~/ail/ail/core $ ail ../../../foo.ail 
+../../../foo.ail
+pi@raspberrypi:~/ail/ail/core $
 ```
 
 
-### 五、重大 BUG 修复与优化
-1. 修复 |= 运算符解析异常问题
-2. 修复 not 表达式引导的表达式解析问题
-3. 修复 复合下标运算表达式(如 `x[1][2]`) 的解析问题
-4. 优化 下标、成员访问、调用三个表达式的解析，提高稳定性
-5. 修复非当前目录下 import 出现异常的问题
+## == 修复内容 ==
 
+*暂无*
+
+## == 变更内容 ==
+
+### 一、模块搜寻顺序调整
+自 AIL 2.3 版本开始，AIL 的模块加载顺序调整为：
+
+0. 当前模块的目录 (在 AIL Shell 模式下无此搜寻位置)
+1. 当前工作目录，在 AIL Shell 模式下为 `.`
+2. AIL 原生模块 ($(AIL_ROOT)/module/)
+3. AIL 标准库 ($(AIL_ROOT)/lib/)
