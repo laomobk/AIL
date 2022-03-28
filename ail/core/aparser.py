@@ -1,4 +1,5 @@
 import ast as pyast
+from logging.config import IDENTIFIER
 
 from os.path import split
 from typing import Union
@@ -2200,17 +2201,34 @@ class Parser:
         self.__skip_newlines()
 
         level = 0
-        module = None
-        if self.__is_name(self.__now_tok):
-            module = self.__now_tok.value
-            self.__next_tok()  # eat NAME
-        else:
-            self.__syntax_error('except module name')
+        module = ''
+        while True:
+            if self.__is_name(self.__now_tok):
+                module += self.__now_tok.value
+                self.__next_tok()  # eat NAME
+            else:
+                self.__syntax_error('except module name')
+            if self.__now_tok.ttype == AIL_DOT:
+                module += '.'
+                self.__next_tok()
+
+                if not self.__is_name(self.__now_tok):
+                    self.__syntax_error('except module name')
+
+            if self.__now_tok == 'import':
+                break
+
         self.__skip_newlines()
 
         if self.__now_tok != 'import':
             self.__syntax_error('except \'import\'')
         self.__next_tok()  # eat 'import'
+
+        if self.__now_tok.ttype == AIL_MULT:
+            names = [_set_lineno(import_alias('*', None), self.__now_ln)]
+            self.__next_tok()
+            return ast.PyImportFromStmt(
+                module, names, level, ln)
 
         names: List[ast.PyImportAlias] = []
         while True:
@@ -2254,12 +2272,24 @@ class Parser:
             self.__skip_newlines()
             
             alias = None
+            name = ''
+            while True:
+                if not self.__is_name(self.__now_tok):
+                    self.__syntax_error('except module name')
+                name_ln = self.__now_tok.ln
+                name += self.__now_tok.value
+                self.__next_tok()  # eat NAME
 
-            if not self.__is_name(self.__now_tok):
-                self.__syntax_error('except module name')
-            name_ln = self.__now_tok.ln
-            name = self.__now_tok.value
-            self.__next_tok()  # eat NAME
+                if self.__now_tok.ttype == AIL_DOT:
+                    name += '.'
+                    self.__next_tok()  # eat '.'
+
+                    if not self.__is_name(self.__now_tok):
+                        self.__syntax_error('except module name')
+                    
+                    continue
+                
+                break
             
             self.__skip_newlines()
 
