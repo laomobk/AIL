@@ -4,8 +4,6 @@ from logging.config import IDENTIFIER
 from os.path import split
 from typing import Union
 
-from numpy import isin
-
 # import astunparse
 
 from . import aconfig
