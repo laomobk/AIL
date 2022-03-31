@@ -121,7 +121,9 @@ class Parser:
             state.cursor, state.level, state.parent_level
 
     def __can_continue_when_syntax_error(self, e: SyntaxError) -> bool:
-        return is_ail_syntax_error(e) and self.__flags & CONTINUE_WHEN_SYNTAX_ERROR
+        return self.__now_tok.ttype != AIL_EOF and \
+             is_ail_syntax_error(e) and \
+                 self.__flags & CONTINUE_WHEN_SYNTAX_ERROR
 
     def __mov_tp(self, step=1):
         self.__tc += step
@@ -1217,10 +1219,13 @@ class Parser:
 
         self.__next_tok()  # eat 'PRINT'
 
-        exp = self.__parse_binary_expr()
-
-        if exp is None:
-            self.__syntax_error()
+        try:
+            exp = self.__parse_binary_expr()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
+            exp = ast.BlankNode(self.__now_ln)
 
         el = [exp]
 
@@ -1230,10 +1235,13 @@ class Parser:
 
         while self.__now_tok == sep:
             self.__next_tok()
-            e = self.__parse_binary_expr()
-
-            if e is None:
-                self.__syntax_error()
+            try:
+                e = self.__parse_binary_expr()
+            except SyntaxError as e_:
+                if not self.__can_continue_when_syntax_error(e_):
+                    raise
+                print_py_traceback()
+                e = ast.BlankNode(self.__now_ln)
 
             el.append(e)
 
@@ -1246,12 +1254,16 @@ class Parser:
 
         self.__next_tok()  # eat 'INPUT'
 
-        msg = self.__parse_binary_expr()
-
-        if msg is None:
-            self.__syntax_error()
+        try:
+            msg = self.__parse_binary_expr()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
+            msg = ast.BlankNode(self.__now_ln)
 
         if self.__now_tok != ',':
+            self.__expect_newline()
             return ast.InputStmtAST(
                 msg, ast.ValueListAST([], self.__now_ln), self.__now_ln)
 
@@ -1482,10 +1494,14 @@ class Parser:
 
             elif self.__now_tok == 'elif':
                 self.__next_tok()  # eat 'elif'
-                elif_test = self.__parse_test_expr()
 
-                if elif_test is None:
-                    self.__syntax_error()
+                try:
+                    elif_test = self.__parse_test_expr()
+                except SyntaxError as e:
+                    if not self.__can_continue_when_syntax_error(e):
+                        raise
+                    print_py_traceback()
+                    elif_test = ast.BlankNode(self.__now_ln)
 
                 elif_block = self.__parse_block()
 
@@ -1525,15 +1541,18 @@ class Parser:
         ln = self.__now_ln
         self.__next_tok()  # eat 'if'
 
-        if_test = self.__parse_test_expr()
-
-        if if_test is None:
-            self.__syntax_error()
+        try:
+            if_test = self.__parse_test_expr()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
+            if_test = ast.BlankNode(ln=self.__now_ln)
 
         is_new_block = self.__now_tok.ttype == AIL_LLBASKET
 
         if self.__now_tok != 'then' and not is_new_block:
-            self.__syntax_error()
+            self.__syntax_error('except \'{\'')
 
         if not is_new_block:
             self.__next_tok()  # eat 'then'
@@ -1562,10 +1581,14 @@ class Parser:
 
             elif self.__now_tok == 'elif':
                 self.__next_tok()  # eat 'elif'
-                elif_test = self.__parse_test_expr()
 
-                if elif_test is None:
-                    self.__syntax_error()
+                try:
+                    elif_test = self.__parse_test_expr()
+                except SyntaxError as e:
+                    if not self.__can_continue_when_syntax_error(e):
+                        raise
+                    print_py_traceback()
+                    elif_test = ast.BlankNode(self.__now_ln)
 
                 elif_block = self.__parse_block(for_if_else=True)
 
@@ -1609,7 +1632,13 @@ class Parser:
         ln = self.__now_ln
         self.__next_tok()  # eat 'while'
 
-        test = self.__parse_test_expr()
+        try:
+            test = self.__parse_test_expr()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            test = ast.BlankNode(self.__now_ln)
+            print_py_traceback()
 
         if test is None:
             self.__syntax_error()
@@ -1722,8 +1751,20 @@ class Parser:
             body = self.__parse_block()
             return ast.WhileStmtAST(ast.CellAST('1', AIL_NUMBER, ln), body, ln)
 
+        self.__skip_newlines()
+
         if self.__now_tok != ';':
-            init = self.__parse_binary_expr_list()
+            try:
+                init = self.__parse_binary_expr_list()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                print_py_traceback()
+                init = ast.BinaryExprListAST(
+                    [ast.BlankNode(self.__now_ln)], self.__now_ln)
+
+            self.__skip_newlines()
+            
             if len(init.expr_list) == 1 and \
                     (self.__now_tok == '{' or self.__now_tok == 'then'):
                 body = self.__parse_block(loop_body=True)
@@ -1731,23 +1772,54 @@ class Parser:
             # compatible with classic for.
             init = ast.AssignExprListAST(init.expr_list, ln)
 
-            if self.__now_tok != ';':
-                self.__syntax_error()
-            self.__next_tok()  # eat ';'
+            self.__skip_newlines()
+        
+            try:
+                if self.__now_tok != ';':
+                    self.__syntax_error('except \';\'')
+                self.__next_tok()  # eat ';'
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                print_py_traceback()
+                    
         else:
             self.__next_tok()  # eat ';'
 
+        self.__skip_newlines()
+        
         if self.__now_tok != ';':
-            test = self.__parse_test_expr()
-            if self.__now_tok != ';':
-                self.__syntax_error()
+            try:
+                test = self.__parse_test_expr()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                print_py_traceback()
+                test = ast.BlankNode(self.__now_ln)
 
-            self.__next_tok()
+            self.__skip_newlines()
+        
+            try:
+                if self.__now_tok != ';':
+                    self.__syntax_error('except \';\'')
+                self.__next_tok()  # eat ';'
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                print_py_traceback()
         else:
             self.__next_tok()
 
+        self.__skip_newlines()
+        
         if self.__now_tok != '{' and self.__now_tok != 'then':
-            update = self.__parse_binary_expr_list()
+            try:
+                update = self.__parse_binary_expr_list()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                print_py_traceback()
+                update = ast.BlankNode(self.__now_ln)
 
         body = self.__parse_block(loop_body=True)
 
@@ -1780,7 +1852,13 @@ class Parser:
                 mt[i] = pt[i]()
 
                 if self.__now_tok != dt[i]:
-                    self.__syntax_error()
+                    try:
+                        self.__syntax_error('except \'%s\'' % dt[i])
+                    except SyntaxError as e:
+                        if not self.__can_continue_when_syntax_error(e):
+                            raise
+                        print_py_traceback()
+
                 self.__next_tok()
 
         initl, test, binl = mt
@@ -1806,20 +1884,32 @@ class Parser:
             self.__next_tok()  # eat 'do'
             block = self.__parse_block(loop_body=True)
 
-        if block is None:
-            self.__syntax_error()
+        try:
+            if new_block_style:
+                if self.__now_tok != 'loop':
+                    self.__syntax_error()
+                self.__next_tok()  # eat 'loop'
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
 
-        if new_block_style:
-            if self.__now_tok != 'loop':
+        try:
+            if self.__now_tok != 'until':
                 self.__syntax_error()
-            self.__next_tok()  # eat 'loop'
+            self.__next_tok()  # eat until
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
 
-        if self.__now_tok != 'until':
-            self.__syntax_error()
-
-        self.__next_tok()  # eat until
-
-        test = self.__parse_test_expr()
+        try:
+            test = self.__parse_test_expr()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            test = ast.BlankNode(self.__now_ln)
+            print_py_traceback()
 
         self.__expect_newline()
 
