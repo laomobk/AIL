@@ -111,6 +111,10 @@ def error_msg(
         sys.exit(errcode)
 
 
+def is_ail_syntax_error(err):
+    return isinstance(err, SyntaxError) and hasattr(err, 'ail_syntax_error')
+
+
 class BuiltinAILRuntimeError(Exception):
     pass
 

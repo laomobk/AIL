@@ -579,6 +579,11 @@ class PyImportStmt(Statement):
         self.ln = ln
 
 
+class BlankNode(AST):
+    def __init__(self, ln: int):
+        self.ln = ln
+
+
 BINARY_AST_TYPES = (
     CellAST,
     PowerExprAST,

@@ -243,6 +243,18 @@ def make_ast_tree(a) -> dict:
                         'keys': make_ast_tree(a.keys),
                         'values': make_ast_tree(a.values)}}
 
+    elif isinstance(a, ast.ForeachStmt):
+        return {
+            'ForeachStmt': {
+                'target': make_ast_tree(a.target),
+                'iter': make_ast_tree(a.iter),
+                'body': make_ast_tree(a.body),
+            }
+        }
+
+    elif isinstance(a, ast.BlankNode):
+        return {'<blank node>'}
+
     elif isinstance(a, list):
         return unpack_list(a)
 

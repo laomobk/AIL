@@ -4,13 +4,15 @@ from logging.config import IDENTIFIER
 from os.path import split
 from typing import Union
 
+from ail.core.exceptions import print_py_traceback
+
 # import astunparse
 
 from . import aconfig
 
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
-from .error import AILSyntaxError, error_msg
+from .error import AILSyntaxError, error_msg, is_ail_syntax_error
 from .pyast import *
 from .tokentype import *
 
@@ -79,6 +81,10 @@ _special_method_map = {
 }
 
 
+# it's a experimental feture
+CONTINUE_WHEN_SYNTAX_ERROR = 1
+
+
 def _make_private_name(name):
     return '$'.join(_class_name_stack)
 
@@ -97,16 +103,15 @@ class Parser:
         self.__source = '\n'
         self.__tok_stream = None
         self.__tok_list = None
-
         self.__tc = 0
-
         self.__level = 0  # level 0
         self.__loop_level = 0
         self.__parenthesis_level = 0
 
         self.__pyc_mode = True
-
         self.__for_lsp = False
+
+        self.__flags = 0        
 
     def get_state(self) -> ParserState:
         return ParserState(self.__tc, self.__level, self.__parenthesis_level, self)
@@ -114,6 +119,9 @@ class Parser:
     def set_state(self, state: ParserState):
         self.__tc, self.__level, self.__parenthesis_level = \
             state.cursor, state.level, state.parent_level
+
+    def __can_continue_when_syntax_error(self, e: SyntaxError) -> bool:
+        return is_ail_syntax_error(e) and self.__flags & CONTINUE_WHEN_SYNTAX_ERROR
 
     def __mov_tp(self, step=1):
         self.__tc += step
@@ -1657,22 +1665,41 @@ class Parser:
 
         self.__next_tok()  # eat 'foreach'
 
-        target = self.__parse_tuple_expr(do_tuple=True, name_list=True)
-        if isinstance(target, ast.TupleAST):
-            for item in target.items:
-                if not isinstance(item, ast.CellAST) or item.type != AIL_IDENTIFIER:
+        try:
+            if self.__now_tok == 'in':
+                self.__syntax_error('except iteration receive target')
+            target = self.__parse_tuple_expr(do_tuple=True, name_list=True)
+            if isinstance(target, ast.TupleAST):
+                for item in target.items:
+                    if not isinstance(item, ast.CellAST) or item.type != AIL_IDENTIFIER:
+                        self.__syntax_error()
+                target.store = True
+            else:
+                if not isinstance(target, ast.CellAST) or target.type != AIL_IDENTIFIER:
                     self.__syntax_error()
-            target.store = True
-        else:
-            if not isinstance(target, ast.CellAST) or target.type != AIL_IDENTIFIER:
-                self.__syntax_error()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
+            target = ast.BlankNode(self.__now_ln)
 
-        if self.__now_tok != 'in':
-            self.__syntax_error()
+        try:
+            if self.__now_tok != 'in':
+                self.__syntax_error('except \'in\'')
 
-        self.__next_tok()  # eat 'in'
+            self.__next_tok()  # eat 'in'
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            print_py_traceback()
 
-        iter = self.__parse_binary_expr(do_tuple=True, type_comment=False)
+        try:
+            iter = self.__parse_binary_expr(do_tuple=True, type_comment=False)
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            iter = ast.BlankNode(self.__now_ln)
+            print_py_traceback()
 
         block = self.__parse_block(loop_body=True)
 
@@ -2802,7 +2829,14 @@ class Parser:
     def parse(self, ts: TokenStream,
               source: str, filename: str,
               pyc_mode: bool = True,
-              eval_mode: bool = False, lsp_mode: bool = False) -> ast.BlockAST:
+              eval_mode: bool = False, lsp_mode: bool = False,
+              flags: int=0) -> ast.BlockAST:
+
+        if flags & CONTINUE_WHEN_SYNTAX_ERROR:
+            print(
+                'Parser: flag CONTINUE_WHEN_SYNTAX_ERROR was setted, '
+                'it may cause some exception while parsing file')
+        
         self.__init__()
         self.__tok_stream = ts
         self.__filename = filename
@@ -2811,6 +2845,7 @@ class Parser:
 
         self.__tc = 0
         self.__level = 0  # level 0
+        self.__flags = flags
 
         self.__pyc_mode = pyc_mode
 
@@ -3858,5 +3893,27 @@ def test_parse():
         test_utils.unparse_pyast(tree)
 
 
+def test_parsing_recovery():
+    import pprint
+
+    source = open('./tests/test.ail').read()
+
+    l = Lex()
+    ts = l.lex(source)
+
+    p = Parser()
+    t = p.parse(
+        ts, source, '<test>', TEST_CONVERT_PYAST, 
+        flags=CONTINUE_WHEN_SYNTAX_ERROR
+    )
+
+    pt = test_utils.make_ast_tree(t)
+    pprint.pprint(pt)
+
+
 if __name__ == '__main__':
-    test_parse()
+    import sys
+    if sys.argv[-1] == '-r':
+        test_parsing_recovery()
+    else:
+        test_parse()
