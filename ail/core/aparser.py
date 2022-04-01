@@ -2198,7 +2198,11 @@ class Parser:
 
         self.__next_tok()  # eat 'continue'
 
-        self.__expect_newline()
+        try:
+            self.__expect_newline()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
         return ast.ContinueStmtAST(self.__now_ln)
 
@@ -2208,7 +2212,11 @@ class Parser:
 
         self.__next_tok()  # eat 'break'
 
-        self.__expect_newline()
+        try:
+            self.__expect_newline()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
         return ast.BreakStmtAST(self.__now_ln)
 
@@ -2220,14 +2228,23 @@ class Parser:
 
         self.__next_tok()  # eat 'global'
 
-        if not self.__is_name(self.__now_tok):
-            self.__syntax_error()
+        try:
+            if not self.__is_name(self.__now_tok):
+                self.__syntax_error()
 
-        name = self.__now_tok.value
+            name = self.__now_tok.value
 
-        self.__next_tok()  # eat name
+            self.__next_tok()  # eat name
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            name = ast.BlankNode(self.__now_ln)
 
-        self.__expect_newline()
+        try:
+            self.__expect_newline()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
         return ast.GlobalStmtAST(name, ln)
 
@@ -2239,12 +2256,17 @@ class Parser:
 
         self.__next_tok()  # eat 'nonlocal'
 
-        if not self.__is_name(self.__now_tok):
-            self.__syntax_error()
+        try:
+            if not self.__is_name(self.__now_tok):
+                self.__syntax_error('except name')
 
-        name = self.__now_tok.value
+            name = self.__now_tok.value
 
-        self.__next_tok()  # eat name
+            self.__next_tok()  # eat name
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            name = ast.BlankNode(self.__now_ln)
 
         self.__expect_newline()
 
@@ -2256,15 +2278,21 @@ class Parser:
 
         self.__next_tok()  # eat 'return'
 
-        if self.__now_tok.ttype == AIL_ENTER:
-            expr = ast.CellAST('null', AIL_IDENTIFIER, self.__now_ln)
-        else:
-            expr = self.__parse_binary_expr(do_tuple=True)
+        try:
+            if self.__now_tok.ttype == AIL_ENTER:
+                expr = ast.CellAST('null', AIL_IDENTIFIER, self.__now_ln)
+            else:
+                expr = self.__parse_binary_expr(do_tuple=True)
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            expr = ast.BlankNode(self.__now_ln)
 
-        if expr is None:
-            self.__syntax_error()
-
-        self.__expect_newline()
+        try:
+            self.__expect_newline()
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
         return ast.ReturnStmtAST(expr, self.__now_ln)
 
