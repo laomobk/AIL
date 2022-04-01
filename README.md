@@ -6,7 +6,7 @@
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.6%2B-blue)
-![version badge](https://img.shields.io/badge/version-2.2%20alpha-success)
+![version badge](https://img.shields.io/badge/version-2.3%20alpha-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
 AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语言。支持 Python 的诸多特性的同时，也拥有 AIL 自身的特性。
