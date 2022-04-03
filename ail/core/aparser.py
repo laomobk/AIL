@@ -210,8 +210,12 @@ class Parser:
             self.__filename, source=self.__source, offset=offset)
 
     def __expect_newline(self):
-        if self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error('except newline')
+        try:
+            if self.__now_tok.ttype != AIL_ENTER:
+                self.__syntax_error('except newline')
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
     def __parenthesis_not_match(
             self, open_: str, close: str, ln: int, ofs: int, s_ln: int, s_ofs: int):
@@ -270,24 +274,37 @@ class Parser:
         while self.__now_tok.ttype != AIL_SRBASKET:
             self.__skip_newlines()
 
-            a = self.__parse_arg_item(True)
+            try:
+                a = self.__parse_arg_item(True)
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                a = ast.BlankNode(self.__now_ln)
             alist.append(a)
 
             self.__skip_newlines()
 
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
+            
+            try:    
+                if self.__now_tok.ttype != AIL_COMMA:
+                    self.__syntax_error()
 
-            if self.__now_tok.ttype != AIL_COMMA:
-                self.__syntax_error()
-
-            self.__next_tok()  # eat ','
+                self.__next_tok()  # eat ','
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
             self.__skip_newlines()
 
         self.__next_tok()  # eat ')'
 
-        self.__check_as_param_list(alist)
+        try:
+            self.__check_as_param_list(alist)
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
 
         return ast.ArgListAST(alist, ln)
 
@@ -475,7 +492,6 @@ class Parser:
         self.__next_tok()  # eat 'match'
 
         target = self.__parse_assign_expr(type_comment=False, do_tuple=True)
-
         if target is None:
             self.__syntax_error()
 
@@ -960,7 +976,7 @@ class Parser:
         elif self.__now_tok.ttype not in (
                 AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER, AIL_SUB) or \
                 nt in _keywords:
-            self.__syntax_error()
+            self.__syntax_error('unexcepted token %s' % repr(self.__now_tok.value))
         name = nt.value  # it can be sub, string, number or identifier
 
         if self.__now_tok.ttype == AIL_IDENTIFIER and  \
@@ -1984,8 +2000,6 @@ class Parser:
         return ast.StructDefineAST(name, vl, pl, ln)
 
     def __parse_doc_string_object(self):
-        if self.__now_tok.ttype != AIL_DOC_STRING:
-            self.__syntax_error()
         doc_string = self.__now_tok.value
 
         ln = self.__now_ln
@@ -2008,9 +2022,13 @@ class Parser:
         parsed.append(decorator)
 
         if self.__now_tok.ttype != AIL_ENTER:
-            self.__syntax_error()
-
-        self.__next_tok()  # eat enter
+            try:
+                self.__syntax_error()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+            else:
+                self.__next_tok()  # eat enter
 
         if self.__now_tok == '@':
             return self.__parse_func_def_with_decorator_stmt(parsed)
@@ -2020,7 +2038,13 @@ class Parser:
 
             return func
         else:
-            self.__syntax_error()
+            try:
+                self.__syntax_error('unexcepted token %s' % repr(self.__now_tok.value))
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+        
+        return ast.BlankNode(self.__now_ln)
 
     def __parse_class_bases(self) -> list:
         bases = []
@@ -2137,26 +2161,44 @@ class Parser:
 
         if self.__now_tok == '(' and not anonymous_function:
             if not self.__is_name(self.__next_tok()):
-                self.__syntax_error()
+                try:
+                    self.__syntax_error('except a name to bind')
+                except SyntaxError as e:
+                    if not self.__can_continue_when_syntax_error(e):
+                        raise
+                    
             bindto = self.__now_tok.value
             bindto_tok_line = self.__now_ln
 
-            if self.__next_tok() != ')':
-                self.__syntax_error()
-            self.__next_tok()
+            try:
+                if self.__next_tok() != ')':
+                    self.__syntax_error('expect \')\'')
+                self.__next_tok()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
         if bindto is not None and not with_bound_to:
-            self.__syntax_error('this function can not be bound', bindto_tok_line)
+            try:
+                self.__syntax_error('this function can not be bound', bindto_tok_line)
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
         if anonymous_function and not self.__is_name(self.__now_tok):
             name = aconfig.ANONYMOUS_FUNC_NAME
         else:
-            if not self.__is_name(self.__now_tok):
-                self.__syntax_error()
+            try:
+                if not self.__is_name(self.__now_tok):
+                    self.__syntax_error()
 
-            name = self.__now_tok.value
+                name = self.__now_tok.value
 
-            self.__next_tok()  # eat NAME
+                self.__next_tok()  # eat NAME
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
+                name = ast.BlankNode(self.__now_ln)
 
         if self.__now_tok != '(':
             self.__syntax_error()
@@ -2538,12 +2580,17 @@ class Parser:
 
         self.__next_tok()  # eat 'load'
 
-        if self.__now_tok.ttype != AIL_STRING:
-            self.__syntax_error()
+        try:
+            if self.__now_tok.ttype != AIL_STRING:
+                self.__syntax_error()
 
-        name = self.__now_tok.value
+            name = self.__now_tok.value
 
-        self.__next_tok()  # eat path
+            self.__next_tok()  # eat path
+        except SyntaxError as e:
+            if not self.__can_continue_when_syntax_error(e):
+                raise
+            name = ast.BlankNode(self.__now_ln)
 
         self.__expect_newline()
 
@@ -2701,129 +2748,148 @@ class Parser:
             ) -> ast.Expression:
         nt = self.__now_tok
         
-        try:
-            if nt == 'print':
-                a = self.__parse_print_stmt()
+        if nt == 'print':
+            a = self.__parse_print_stmt()
 
-            elif nt == 'input':
-                a = self.__parse_input_stmt()
+        elif nt == 'input':
+            a = self.__parse_input_stmt()
 
-            elif nt == 'if':
-                a = self.__parse_if_else_stmt()
+        elif nt == 'if':
+            a = self.__parse_if_else_stmt()
 
-            elif nt == 'while':
-                a = self.__parse_while_stmt()
+        elif nt == 'while':
+            a = self.__parse_while_stmt()
 
-            elif nt == 'for':
-                a = self.__parse_for_stmt()
+        elif nt == 'for':
+            a = self.__parse_for_stmt()
 
-            elif nt == 'do':
-                a = self.__parse_do_loop_stmt()
+        elif nt == 'do':
+            a = self.__parse_do_loop_stmt()
 
-            elif nt == 'continue':
+        elif nt == 'continue':
+            try:
                 if self.__loop_level == 0:
                     self.__syntax_error('\'continue\' outside loop')
-                a = self.__parse_continue_stmt()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
-            elif nt == 'nonlocal':
+            a = self.__parse_continue_stmt()
+
+        elif nt == 'nonlocal':
+            try:
                 if self.__level == 0:
-                    self.__syntax_error('nonlocal declaration outside function')
-                a = self.__parse_nonlocal_stmt()
+                    self.__syntax_error(
+                        'nonlocal declaration outside function')
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
-            elif nt == 'global':
+            a = self.__parse_nonlocal_stmt()
+
+        elif nt == 'global':
+            try:
                 if self.__level == 0:
                     self.__syntax_error('global declaration outside function')
-                a = self.__parse_global_stmt()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
-            elif nt == 'break':
+            a = self.__parse_global_stmt()
+
+        elif nt == 'break':
+            try:
                 if self.__loop_level == 0:
                     self.__syntax_error('\'break\' outside loop')
-                a = self.__parse_break_stmt()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
-            elif nt == 'return':
+            a = self.__parse_break_stmt()
+
+        elif nt == 'return':
+            try:
                 if self.__level == 0:
                     self.__syntax_error('return outside function')
-                a = self.__parse_return_stmt()
+            except SyntaxError as e:
+                if not self.__can_continue_when_syntax_error(e):
+                    raise
 
-            elif nt == 'fun' or nt == 'func':
-                a = self.__parse_func_def_stmt()
+            a = self.__parse_return_stmt()
 
-            elif nt.ttype == AIL_DOC_STRING:
-                a = self.__parse_doc_string_object()
+        elif nt == 'fun' or nt == 'func':
+            a = self.__parse_func_def_stmt()
 
-            elif nt == '@':
-                a = self.__parse_func_def_with_decorator_stmt()
+        elif nt.ttype == AIL_DOC_STRING:
+            a = self.__parse_doc_string_object()
 
-            elif nt == 'load':
-                a = self.__parse_load_stmt()
+        elif nt == '@':
+            a = self.__parse_func_def_with_decorator_stmt()
 
-            elif nt == 'struct':
-                a = self.__parse_struct_def_stmt()
+        elif nt == 'load':
+            a = self.__parse_load_stmt()
 
-            elif nt == 'class':
-                a = self.__parse_class_def_stmt()
+        elif nt == 'struct':
+            a = self.__parse_struct_def_stmt()
 
-            elif nt == 'assert':
-                a = self.__parse_assert_stmt()
+        elif nt == 'class':
+            a = self.__parse_class_def_stmt()
 
-            elif nt == 'throw':
-                a = self.__parse_throw_stmt()
+        elif nt == 'assert':
+            a = self.__parse_assert_stmt()
 
-            elif nt == 'try':
-                a = self.__parse_try_catch_stmt()
+        elif nt == 'throw':
+            a = self.__parse_throw_stmt()
 
-            elif nt == 'import':
-                a = self.__parse_import_stmt()
+        elif nt == 'try':
+            a = self.__parse_try_catch_stmt()
 
-            elif nt == 'foreach':
-                a = self.__parse_foreach_stmt()
+        elif nt == 'import':
+            a = self.__parse_import_stmt()
 
-            elif nt == 'match':
-                a = self.__parse_match_expr()
+        elif nt == 'foreach':
+            a = self.__parse_foreach_stmt()
 
-            elif nt == 'with':
-                a = self.__parse_with_stmt()
+        elif nt == 'match':
+            a = self.__parse_match_expr()
 
-            elif nt == 'yield':
-                a = self.__parse_yield_or_yield_from_expr()
+        elif nt == 'with':
+            a = self.__parse_with_stmt()
 
-            elif nt == 'from':
-                a = self.__parse_py_import_from_stmt()
+        elif nt == 'yield':
+            a = self.__parse_yield_or_yield_from_expr()
 
-            elif nt == 'not':
-                a = self.__parse_binary_expr(True, True, False, True)
-                self.__expect_newline()
+        elif nt == 'from':
+            a = self.__parse_py_import_from_stmt()
 
-            elif class_body and nt in ('get', 'set'):
-                a = self.__parse_property_define()
+        elif nt == 'not':
+            a = self.__parse_binary_expr(True, True, False, True)
+            self.__expect_newline()
 
-            elif class_body and nt in tuple(_special_method_map.keys()):
-                a = self.__parse_special_method()
+        elif class_body and nt in ('get', 'set'):
+            a = self.__parse_property_define()
 
-            elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
-                self.__syntax_error()
+        elif class_body and nt in tuple(_special_method_map.keys()):
+            a = self.__parse_special_method()
 
-            elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
-                    nt.value not in (_keywords + limit):
-                a = self.__parse_binary_expr(True, True, False, True)
-                self.__expect_newline()
+        elif nt.value in (_keywords + limit) and nt.ttype != AIL_STRING:
+            self.__syntax_error()
 
-            elif nt.ttype == AIL_ENTER:
-                self.__next_tok()
-                return ast.NullLineAST(self.__now_ln)
+        elif nt.ttype not in (AIL_ENTER, AIL_EOF) and \
+                nt.value not in (_keywords + limit):
+            a = self.__parse_binary_expr(True, True, False, True)
+            self.__expect_newline()
 
-            elif nt.ttype == AIL_EOF or (
-                    nt.value in _end_signs and nt.ttype != AIL_STRING):
-                return ast.EOFAST(self.__now_ln)
-
-            else:
-                self.__syntax_error()
-        except SyntaxError as e:
-            if not hasattr(e, 'ail_syntax_error') or not self.__for_lsp:
-                raise
+        elif nt.ttype == AIL_ENTER:
             self.__next_tok()
-            print('<Warning: AIL Parser running in LSP mode, will not throw SyntaxError>')
             return ast.NullLineAST(self.__now_ln)
+
+        elif nt.ttype == AIL_EOF or (
+                nt.value in _end_signs and nt.ttype != AIL_STRING):
+            return ast.EOFAST(self.__now_ln)
+
+        else:
+            self.__syntax_error()
 
         # ** not use anymore (2021.3.21)
         # if self.__now_tok.ttype != AIL_ENTER:

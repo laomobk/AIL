@@ -1,4 +1,17 @@
 
-for x x x {
-    
-}
+
+
+console.writeln(
+    list(filter(
+        func (item) {
+            print item;
+            return match {
+                1: false,
+                10: true,
+                else: false,
+            }
+        },
+        range(100);
+    ))
+)
+
