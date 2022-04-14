@@ -13,7 +13,7 @@ from .._config import CORE_PATH
 
 AIL_MAIN_VERSION = 2
 AIL_SUB_VERSION = [3]
-AIL_VERSION_STATE = 'alpha 0'
+AIL_VERSION_STATE = 'alpha 1'
 AIL_VERSION_NAME = 'Diona'
 
 AIL_VERSION = '%s.%s %s' % (
