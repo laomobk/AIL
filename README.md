@@ -142,7 +142,7 @@ name = match lang_name {
 
 ## 与 Python 协作
 
-在 AIL 中可以直接导入 Python 模块，使用类似 Python 的 import 语句。
+在 AIL 中可以直接导入 Python 模块，使用类似 Python 的 import 语句：
 ```python
 import! os.path as ospath;
 import! numpy as np;
@@ -153,6 +153,16 @@ from PIL import Image;
 
 
 Image.open('klee.jpg').show();
+```
+
+亦或是在 AIL 程序中直接插入 Python 代码：
+```swift
+func gen(n) {
+    #return [x**n for x in range(n)]
+}
+
+
+print gen(5);
 ```
 
 
