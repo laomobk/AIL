@@ -140,7 +140,7 @@ name = match lang_name {
 })();
 ```
 
-## 与 Python 的协作
+## 与 Python 协作
 
 在 AIL 中可以直接导入 Python 模块，使用类似 Python 的 import 语句。
 ```python
