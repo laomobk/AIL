@@ -16,6 +16,7 @@ def raise_exception(err_obj):
 def convert_to_namespace(namespace_func):
     func_locals = namespace_func()
     namespace_class = copy(Namespace)
+    namespace_class.__name__ = 'Namespace::%s' % namespace_func.__name__
     ns = namespace_class(namespace_func.__name__, func_locals)
     if ns.__cells_dict__:
         namespace_class.__setattr__ = Namespace.__setattr__for_cell__

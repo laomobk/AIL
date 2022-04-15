@@ -31,7 +31,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
-    'MATCH', 'NAMESPACE', 'FOREACH', 'IN',
+    'MATCH', 'NAMESPACE', 'FOREACH', 'IN', 'USING'
     'AS', 'MATCH',
 )
 
@@ -3833,14 +3833,14 @@ class ASTConverter:
         ), ln)
 
     def _convert_using_stmt(self, stmt: ast.UsingStmt) -> pyast.Call:
-        return self._new_call_name(
+        return _set_lineno(expr_stmt(self._new_call_name(
             'ail::using',
             [
                 self.convert(stmt.target),
                 self._new_call_name('py::locals', [], stmt.ln),
             ],
             stmt.ln,
-        )
+        )), stmt.ln)
 
     def _convert_py_import_stmt(self, stmt: ast.PyImportStmt) -> pyast.Import:
         names = stmt.names
@@ -4018,6 +4018,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.PyImportFromStmt):
             return self._convert_py_import_from_stmt(a)
+
+        elif isinstance(a, ast.UsingStmt):
+            return self._convert_using_stmt(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(

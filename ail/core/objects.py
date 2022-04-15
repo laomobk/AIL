@@ -276,6 +276,8 @@ class Namespace:
             if closure is not None and isinstance(closure, tuple):
                 free_vars = v.__code__.co_freevars
                 for i, cell in enumerate(closure):
+                    if not isinstance(cell, _CELL_TYPE):
+                        continue
                     cell_dict[free_vars[i]] = cell
         return cell_dict
 
