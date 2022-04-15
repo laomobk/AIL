@@ -15,7 +15,11 @@ def raise_exception(err_obj):
 
 def convert_to_namespace(namespace_func):
     func_locals = namespace_func()
-    return Namespace(namespace_func.__name__, func_locals)
+    namespace_class = copy(Namespace)
+    ns = namespace_class(namespace_func.__name__, func_locals)
+    if ns.__cells_dict__:
+        namespace_class.__setattr__ = Namespace.__setattr__for_cell__
+    return ns
 
 
 _eval_cache = None

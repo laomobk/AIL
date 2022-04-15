@@ -1,17 +1,15 @@
+namespace N {
+    x = 1;
+    func f2() { print f; }
+    func f() { print x; }
+
+    print id(locals())
+}
 
 
+// print id(N.__dict__);
+N.f = 2;
+// print N.__dict__;
 
-console.writeln(
-    list(filter(
-        func (item) {
-            print item;
-            return match {
-                1: false,
-                10: true,
-                else: false,
-            }
-        },
-        range(100);
-    ))
-)
+N.f2();
 

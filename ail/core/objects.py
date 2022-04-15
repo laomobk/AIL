@@ -12,6 +12,16 @@ from ail.core.aloader import MAIN_LOADER as _LOADER
 _NONE = object()
 
 
+def __get_cell_type():
+    x = 0
+    def ___():
+        return x
+    return type(___.__closure__[0])
+
+
+_CELL_TYPE = __get_cell_type()
+
+
 class AILModule:
     def __init__(self, name: str, path: str, globals: dict):
         self.__dict__ = globals
@@ -257,6 +267,24 @@ class Namespace:
     def __init__(self, name, namespace_locals):
         self.__dict__ = namespace_locals
         self.__name__ = name
+        self.__cells_dict__ = self.__get_cells(namespace_locals)
+
+    def __get_cells(self, ns: dict) -> dict:
+        cell_dict = {}
+        for k, v in ns.items():
+            closure = getattr(v, '__closure__', None)
+            if closure is not None and isinstance(closure, tuple):
+                free_vars = v.__code__.co_freevars
+                for i, cell in enumerate(closure):
+                    cell_dict[free_vars[i]] = cell
+        return cell_dict
+
+    def __setattr__for_cell__(self, name: str, value):
+        cells = self.__cells_dict__
+        if name in cells:
+            cells[name].cell_contents = value
+        else:
+            super(Namespace).__setattr__(name, value)
 
     def __str__(self) -> str:
         return '<namespace \'%s\' at %s>' % (self.__name__, hex(id(self)))

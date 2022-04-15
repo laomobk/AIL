@@ -2862,6 +2862,9 @@ class Parser:
         elif nt == 'from':
             a = self.__parse_py_import_from_stmt()
 
+        elif nt == 'namespace':
+            a = self.__parse_namespace_stmt()
+
         elif nt == 'not':
             a = self.__parse_binary_expr(True, True, False, True)
             self.__expect_newline()
