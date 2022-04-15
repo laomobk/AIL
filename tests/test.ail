@@ -1,9 +1,8 @@
-
-
 namespace Vegetables {
     cabbage = 'cabbage';
     leaf_mustard = 'mustard';
 }
+
 
 namespace Fruits {
     apple = 'apple';
@@ -11,12 +10,4 @@ namespace Fruits {
 }
 
 
-namespace Foods {
-    func get_vegetables() {
-        return Fruits.apple, Fruits.tomato;
-    }
-}
-
-
-print Foods.get_vegetables();
-
+print 'An %s a day keeps the doctor away' % Fruits.apple;

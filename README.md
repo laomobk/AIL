@@ -85,7 +85,7 @@ func fib(n) {
 
 ## 主要语言特性
 
-*以下例子均已在 AIL 2.1 版本下通过编译*
+*以下例子均已在 AIL 2.3 版本下通过编译*
 
 ### 更多的 for 语句
 
@@ -101,6 +101,24 @@ for {
 foreach i in range(100) {
     // ...
 }
+```
+
+### namespace 名称空间
+
+```C#
+namespace Vegetables {
+    cabbage = 'cabbage';
+    leaf_mustard = 'mustard';
+}
+
+
+namespace Fruits {
+    apple = 'apple';
+    tomato = 'tomato';
+}
+
+
+print 'An %s a day keeps the doctor away' % Fruits.apple;
 ```
 
 ### 强大的 match 表达式
