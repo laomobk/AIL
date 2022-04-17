@@ -33,7 +33,7 @@ foreach i, x in enumerate(g) {
 
 #### yield form 语句
 
-yield from 语句用于在函数中进行委托生成，直到委托生成器结束，函数才会继续向下执行。例如下面的程序，只有一次输出完 `2, 1, 3, 5, 6, 3` 过后，才会打印出 `Generation finished!`。
+yield from 语句用于在函数中进行委托生成，直到委托生成器结束，函数才会继续向下执行。例如下面的程序，只有依次输出完 `2, 1, 3, 5, 6, 3` 过后，才会打印出 `Generation finished!`。
 
 ```python
 func f(*args) {
