@@ -83,6 +83,22 @@ pi@raspberrypi:~/ail/ail/core $
 ```
 
 
+### 四、名称空间
+
+在 AIL 2.3 版本中，用户可以使用 `namespace` 语句定义名称空间：
+```python
+namespace Apple {
+    os = 'MacOS';
+    computer = 'Mac';
+}
+
+namespace Microsoft {
+    os = 'Windows';
+    computer = 'PC';
+}
+```
+
+
 ## == 修复内容 ==
 
 *暂无*
