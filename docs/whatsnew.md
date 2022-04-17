@@ -55,8 +55,8 @@ foreach x in f((2, 1, 3), [5, 6, 3]) {
 AIL 2.3 版本加入了来自 Python 的 import 与 import from 语句，用于导入 Python 模块。
 
 ```python
-import os;  // 导入单个 Python 模块
-improt a, b, c;  // 导入多个 Python 模块
+import! os;  // 导入单个 Python 模块
+improt! a, b, c;  // 导入多个 Python 模块
 
 from os import path; // 导入 Python 模块的单个成员
 from typing import List, Tuple;  // 导入 Python 模块的多个成员
