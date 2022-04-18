@@ -331,88 +331,38 @@ class Student():
 |`__repr__`      | `__repr__`    |
 
 
-### private 与 protected 声明
+## namespace 定义
 
-AIL 与 Python 一样，是不支持真正意义上的 `private` 与 `protected` 属性的，但是 AIL 可以使用 `private` 和 `protected` 关键字来增加所谓**“仪式感”**。
+AIL 2.3 版本中引入了 namespace, 一般情况下，namespace 定义会被转换成下面的代码：
+```C#
+namespace N {
+    a = 1;
 
-```swift
-class C {
-    protected x = 0;
-    private y = 0;
-}
-```
-
-```python
-class C():
-    def __init__(self):
-        self.__y = 0
-        self._x = 0
-```
-
-规则在于，`protected` 关键字声明的变量不能看起来是 "private" 的，也就是说，以下写法将会报错：
-
-```java
-protected __x = 0;
-```
-
-```
-  File '<test>', line 2:
-   protected __x = 0;
-SyntaxError: this property is 'private'
-```
-
-类似的规则用于 `private` ：
-
-```java
-private _x = 0;
-```
-
-```
-  File '<test>', line 2:
-   private _x = 0;
-SyntaxError: this property is 'protected'
-```
-
-AIL 仍然可以直接使用 `__` 和 `_` 来声明不同类型的变量。
-
-**private 和 protected 关键字仅在 class 定义中起作用。**
-
-### 类属性与实例属性
-
-使用 `static` 关键字来声明一个属性是否是属于类的。如果这个属性没有被声明为 `static` ，那么这个属性的定义将会被放置在 `__init__` 之中，但是如果使用 `static` 关键字来声明一个属性，那么此时这个属性的定义将会放置在类定义中。
-
-```swift
-class C {
-    static id = 0;
-    value = 'C';
-}
-```
-
-```python
-class C():
-    id = 0
-    
-    def __init__(self):
-        self.value = 'C'
-```
-
-同时，方法也可以添加 `static` 声明，当方法定义添加 `static` 声明后，这个转换时将会在这个定义前添加 **`classmethod` 装饰器** ！
-
-```swift
-class HelloWorld {
-    static func main(cls, args: List[String]) {
-        system.println("Hello world!");
+    func b() {
+        return a;
     }
 }
 ```
-
 ```python
-class HelloWorld():
-    @classmethod
-    def main(cls, args):
-        system.println('Hello world')
+@ail::namespace
+def N():
+    a = 1
+
+    def b():
+        return a
+
+    return py::locals()
 ```
 
-和 `get` ，`set` 一样，可以通过修改 `classmethod` 来实现自定义行为。
+namespace 实际上是一个函数体，在 namespace 函数末尾会返回当前函数的 `locals` ，返回的值作为 namespace 的成员，正因如此，AIL 的 namespace 还有这样的做法：
+```C#
+namespace N {
+    a = 2;
+    b = 3;
 
-**static 关键字仅在 class 定义中起作用**
+    #return {'a': b}
+}
+```
+
+这种操作可以对名称空间的成员进行自定义，但目前 AIL 并不推荐这样的操作，因此也不允许在 namespace 中使用返回语句，*但是可以通过 PyCodeBlock* 绕过这样的限制。
+
