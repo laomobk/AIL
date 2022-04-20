@@ -525,8 +525,12 @@ class Parser:
         name = self.__now_tok.value
 
         self.__next_tok()  # eat NAME
-
-        block = self.__parse_block(start='is')
+        
+        try:
+            self.__level += 1
+            block = self.__parse_block(start='is')
+        finally:
+            self.__level -= 1
 
         return ast.NamespaceStmt(name, block, ln)
 
@@ -2216,19 +2220,20 @@ class Parser:
 
         self.__skip_newlines()
 
-        self.__level += 1
+        try:
+            self.__level += 1
 
-        # for new function syntax (':' instead of 'is')
-        # if self.__now_tok.ttype == AIL_COLON:
-        #     self.__now_tok.ttype = AIL_IDENTIFIER
-        #     self.__now_tok.value = 'is'
-        # not longer supported at 1.2 alpha 4 - 2021 6 3
+            # for new function syntax (':' instead of 'is')
+            # if self.__now_tok.ttype == AIL_COLON:
+            #     self.__now_tok.ttype = AIL_IDENTIFIER
+            #     self.__now_tok.value = 'is'
+            # not longer supported at 1.2 alpha 4 - 2021 6 3
 
-        block = self.__parse_block('is', 'end',
-                                   start_msg=
-                                   'function body should starts with \'is\' or \':\'')
-
-        self.__level -= 1
+            block = self.__parse_block('is', 'end',
+                                       start_msg=
+                                       'function body should starts with \'is\' or \':\'')
+        finally:
+            self.__level -= 1
 
         tree = ast.FunctionDefineAST(name, arg_list, block, bindto, ln, doc_string)
         tree.type_comment = type_comment_tree

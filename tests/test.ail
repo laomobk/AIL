@@ -1,13 +1,9 @@
-namespace Vegetables {
-    cabbage = 'cabbage';
-    leaf_mustard = 'mustard';
+
+func get_code(code) {
+    return ~code << 1;
 }
 
-
-namespace Fruits {
-    apple = 'apple';
-    tomato = 'tomato';
+namespace __export__ {
+    code = get_code(10)
 }
 
-
-print 'An %s a day keeps the doctor away' % Fruits.apple;

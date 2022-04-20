@@ -48,6 +48,14 @@ class AILImporter:
 
         if isinstance(exports, dict):
             return exports
+        elif isinstance(exports, Namespace):
+            ns = dict()
+            members = exports.__namespace_members__
+            namespace_dict = exports.__dict__
+            for m in members:
+                if m in namespace_dict:
+                    ns[m] = namespace_dict[m]
+            return ns
         else:
             try:
                 ns = dict()
@@ -264,10 +272,11 @@ class ObjectPattern:
 
 
 class Namespace:
-    def __init__(self, name, namespace_locals):
+    def __init__(self, name, namespace_locals: dict):
         self.__dict__ = namespace_locals
         self.__name__ = name
         self.__cells_dict__ = self.__get_cells(namespace_locals)
+        self.__namespace_members__ = tuple(namespace_locals.keys())
 
     def __get_cells(self, ns: dict) -> dict:
         cell_dict = {}
