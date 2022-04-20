@@ -1,9 +1,10 @@
 
 func get_code(code) {
-    return ~code << 1;
+    return ~(code << 1);
 }
 
 namespace __export__ {
-    code = get_code(10)
+    code = get_code(727);
 }
+
 
