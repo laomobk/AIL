@@ -5,6 +5,19 @@ from setuptools import setup, find_packages
 from ail.core.version import AIL_MAIN_VERSION, AIL_SUB_VERSION
 
 
+_WELCOME_BANNER = \
+'''******************************
+**                          **
+** AIL Programming Language **
+**     Powered by Python    **
+**                          **
+******************************
+'''
+
+
+print(_WELCOME_BANNER)
+
+
 INSTALL_TIME_PATH = './ail/core/INSTALL_TIME'
 
 try:
