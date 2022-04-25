@@ -3563,7 +3563,8 @@ class ASTConverter:
         body_with_try = body
         if update_block.stmts:
             body_with_try = [_set_lineno(
-                try_stmt(body, [], self._convert_block(update_block, True)), stmt.block.ln)]
+                try_stmt(
+                    body, [], self._convert_block(update_block, True)), stmt.block.ln)]
 
         while_stmt_ = _set_lineno(while_stmt(test, body_with_try), stmt.ln)
 

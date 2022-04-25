@@ -1,9 +1,3 @@
 
-func get_code(code) {
-    return ~(code << 1);
-}
-
-namespace __export__ {
-    code = get_code(727);
-}
+for i = 1; i < 10; i += 1 {}
 

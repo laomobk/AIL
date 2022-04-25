@@ -29,6 +29,8 @@ class AILModule:
         setattr(self, '_$_name', name)
         setattr(self, '_$_path', path)
 
+        self.__class__.__name__ = 'AIL Module [%s]' % name
+
     def __str__(self):
         return '<AILModule \'%s\' from \'%s\'>' % (
             getattr(self, '_$_name'), getattr(self, '_$_path')
