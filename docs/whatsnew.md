@@ -103,6 +103,36 @@ namespace Microsoft {
 
 *暂无*
 
+
+## == 优化内容 ==
+
+### 一、模块对象的 \_\_name\_\_ 属性增加了模块名称
+
+在先前的 AIL 版本中，若试图访问模块对象中不存在的成员时，会抛出这样的异常：
+
+```python
+>> import 'maptools'
+>> maptools.x
+Traceback (most recent call last):
+  File "<shell>", line 1, in <module>
+AttributeError: 'AILModule' object has no attribute 'x'
+```
+
+开发者并不能通过该错误信息得到具体是对哪个模块进行了非法成员访问。
+
+而在 AIL 2.3 版本中，若非法访问模块对象的成员，则会得到下面的信息：
+
+```python
+>> import 'maptools'
+>> maptools.x
+Traceback (most recent call last):
+  File "<shell>", line 1, in <module>
+AttributeError: 'AIL Module [maptools]' object has no attribute 'x'
+```
+
+这样开发者就能清楚地知道是哪个模块对象了。
+
+
 ## == 变更内容 ==
 
 ### 一、模块搜寻顺序调整
