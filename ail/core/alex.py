@@ -819,6 +819,21 @@ class Lex:
                 if c == '\\' and self.__nextch(1) == '\n':
                     self.__movchr(2)
                     self.__ln += 1
+                elif c == ':':
+                    if self.__nextch() == '=':
+                        self.__stream.append(Token(
+                            ':=',
+                            AIL_REASSI,
+                            self.__ln, self.__offset
+                        ))
+                        self.__movchr(2)
+                    else:
+                        self.__stream.append(Token(
+                            ':',
+                            AIL_COLON,
+                            self.__ln, self.__offset,
+                        ))
+                        self.__movchr()
                 elif c == '.':
                     if self.__nextch(1) in '0123456789':
                         offset, val = get_number(self.__source, self.__chp)
@@ -852,7 +867,6 @@ class Lex:
                             '$': AIL_MONEY,
                             '@': AIL_AT,
                             '\\': AIL_ESCAPE,
-                            ':': AIL_COLON,
                             '~': AIL_WAVE,
                         }[c],
                         self.__ln, self.__offset

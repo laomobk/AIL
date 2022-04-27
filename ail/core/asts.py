@@ -153,6 +153,13 @@ class AssignExprAST(Expression):
         self.ln = ln
 
 
+class ReAssignStmt(Statement):
+    def __init__(self, target: str, value: Expression, ln: int):
+        self.target = target
+        self.value = value
+        self.ln = ln
+
+
 class DefineExprAST(Expression):
     def __init__(self, name: str, value: Expression, ln: int):
         self.value = value

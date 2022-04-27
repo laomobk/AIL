@@ -1,3 +1,8 @@
 
-for i = 1; i < 10; i += 1 {}
+a = 10;
+
+
+namespace X {
+    a := a;
+}
 

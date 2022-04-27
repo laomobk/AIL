@@ -12,6 +12,7 @@ AIL_LSHIFT          = 18    #   <<
 AIL_RSHIFT          = 19    #   >>
 AIL_ASSI            = 110   #   =
 AIL_POW             = 111   #   **
+AIL_REASSI          = 112   #   :=
 
 AIL_IDENTIFIER      = 20    #   FOOOOOO
 AIL_NUMBER          = 21    #   2.3 / 123

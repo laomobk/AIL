@@ -1331,6 +1331,13 @@ class Parser:
 
         ttype = self.__now_tok.ttype
 
+        if self.__now_tok.ttype == AIL_REASSI:
+            self.__next_tok()  # eat ':='
+            if not isinstance(left, ast.CellAST):
+                self.__syntax_error('the target of re-assign must be one name')
+            r = self.__parse_binary_expr(do_tuple=do_tuple)
+            return ast.ReAssignStmt(left.value, r, ln)
+
         if ttype != AIL_ASSI and \
                 (ttype < AIL_INP_PLUS or ttype > AIL_INP_BIN_AND) and \
                 ttype != AIL_INP_POW:
@@ -3189,6 +3196,21 @@ class ASTConverter:
         right = self._convert_bin_op_expr(new_left, rights[1:], ln)
         return right
 
+    def _convert_reassign_stmt(self, stmt: ast.ReAssignStmt) -> pyast.Assign:
+        target_name = '$_%s_$' % stmt.target
+        real_assign = _set_lineno(
+                assign_stmt(
+                    [self._new_name(target_name, stmt.ln, store_ctx())], 
+                    self.convert(stmt.value)), 
+                stmt.ln)
+        self.__append_stmt_to_top_block(real_assign)
+
+        return _set_lineno(assign_stmt(
+            [self._new_name(stmt.target, stmt.ln, store_ctx())], 
+            self._new_name(target_name, stmt.ln, )
+        ), stmt.ln)
+
+
     def _convert_call_expr(self, expr: ast.CallExprAST) -> pyast.Call:
         func = self.convert(expr.left)
 
@@ -4027,6 +4049,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.UsingStmt):
             return self._convert_using_stmt(a)
+
+        elif isinstance(a, ast.ReAssignStmt):
+            return self._convert_reassign_stmt(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(
