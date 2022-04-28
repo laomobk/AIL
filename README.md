@@ -140,6 +140,16 @@ name = match lang_name {
 })();
 ```
 
+### 通过引用 global 变量在 local 域中定义同名变量
+
+```go
+a = 10;
+
+func f() {
+    a := a;
+}
+```
+
 ## 与 Python 协作
 
 在 AIL 中可以直接导入 Python 模块，使用类似 Python 的 import 语句：
