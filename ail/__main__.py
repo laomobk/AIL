@@ -5,7 +5,6 @@ from . import _config
 from .ail_main import launch_main
 
 
-
 # entry point
 def main_as_entry_point():
     # print('[run from entry point]')
