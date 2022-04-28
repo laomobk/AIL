@@ -99,6 +99,57 @@ namespace Microsoft {
 ```
 
 
+### 五、Re-Assign 语句
+
+在 AIL 2.3 版本中，可以使用 re-assign 语句进行定义一个需要通过引用 **global** 域中同名变量作为值的变量：
+
+```go
+// foo.ail
+
+a = 1  // outside a
+
+func f() {
+    a := a + 1;
+    print a;  // inside a
+    a = 2;
+}
+
+print a;
+f();
+print a;
+```
+
+```shell
+$ ail foo.ail
+1
+2
+1
+```
+
+一般情况下，该语句可以用于在 namespace 中得到一个来自 global 域的同名变量的拷贝：
+
+```C#
+// bar.ail
+
+a = 10;
+
+namespace N {
+    a := a;
+}
+
+a = 20;
+
+print a;
+print N.a;
+```
+
+```shell
+$ ail bar.ail
+20
+10
+```
+
+
 ## == 修复内容 ==
 
 *暂无*
@@ -142,3 +193,7 @@ AttributeError: 'AIL Module [maptools]' object has no attribute 'x'
 1. 当前工作目录，在 AIL Shell 模式下为 `.`
 2. AIL 原生模块 ($(AIL_ROOT)/module/)
 3. AIL 标准库 ($(AIL_ROOT)/lib/)
+
+
+***最后，希望大家玩的愉快！***
+

@@ -1,12 +1,12 @@
 
 a = 10;
 
-func f() {
-    a := a + 10;
-    print a;
+namespace N {
+    a := a;
 }
 
-f();
+a = 20;
 
-
+print a;
+print N.a;
 
