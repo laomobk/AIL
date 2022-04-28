@@ -1330,7 +1330,7 @@ class Parser:
             self.__syntax_error()
 
         ttype = self.__now_tok.ttype
-
+        
         if self.__now_tok.ttype == AIL_REASSI:
             self.__next_tok()  # eat ':='
             if not isinstance(left, ast.CellAST):
@@ -3197,17 +3197,25 @@ class ASTConverter:
         return right
 
     def _convert_reassign_stmt(self, stmt: ast.ReAssignStmt) -> pyast.Assign:
-        target_name = '$_%s_$' % stmt.target
+        target_name = stmt.target
         real_assign = _set_lineno(
                 assign_stmt(
                     [self._new_name(target_name, stmt.ln, store_ctx())], 
-                    self.convert(stmt.value)), 
-                stmt.ln)
+                    _set_lineno(call_expr(
+                        _set_lineno(attribute_expr(
+                            self._new_call_name('py::globals', [], stmt.ln),
+                            'get', load_ctx()
+                        ), stmt.ln),
+                        [
+                            self._new_constant(target_name, stmt.ln), 
+                            self._new_constant(None, stmt.ln),
+                        ],
+                    ), stmt.ln), ), stmt.ln)
         self.__append_stmt_to_top_block(real_assign)
 
         return _set_lineno(assign_stmt(
             [self._new_name(stmt.target, stmt.ln, store_ctx())], 
-            self._new_name(target_name, stmt.ln, )
+            self.convert(stmt.value)
         ), stmt.ln)
 
 

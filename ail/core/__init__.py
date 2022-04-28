@@ -50,6 +50,7 @@ AIL_PY_GLOBAL.update({
     'py::UnhandledMatchError': _exception.UnhandledMatchError,
     'py::raise': _func.raise_exception,
     'py::locals': locals,
+    'py::globals': globals,
 
     'ail::match': _func.ail_match,
     'ail::ObjectPattern': _object.ObjectPattern,
