@@ -56,6 +56,7 @@ AIL_PY_GLOBAL.update({
     'ail::ObjectPattern': _object.ObjectPattern,
     'ail::namespace': _func.convert_to_namespace,
     'ail::using': _func.ail_using,
+    'ail::get_var': _func.ail_get_var,
 })
 
 

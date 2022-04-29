@@ -3198,18 +3198,19 @@ class ASTConverter:
 
     def _convert_reassign_stmt(self, stmt: ast.ReAssignStmt) -> pyast.Assign:
         target_name = stmt.target
+
+        var_names = self._new_constant(stmt.target, stmt.ln)
+
         real_assign = _set_lineno(
                 assign_stmt(
                     [self._new_name(target_name, stmt.ln, store_ctx())], 
                     _set_lineno(call_expr(
-                        _set_lineno(attribute_expr(
-                            self._new_call_name('py::globals', [], stmt.ln),
-                            'get', load_ctx()
-                        ), stmt.ln),
+                        self._new_name('ail::get_var', stmt.ln,),
                         [
-                            self._new_constant(target_name, stmt.ln), 
-                            self._new_constant(None, stmt.ln),
-                        ],
+                            var_names,
+                            self._new_call_name('py::globals', [], stmt.ln),
+                            self._new_call_name('py::locals', [], stmt.ln),
+                        ]
                     ), stmt.ln), ), stmt.ln)
         self.__append_stmt_to_top_block(real_assign)
 

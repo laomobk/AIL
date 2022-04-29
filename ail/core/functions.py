@@ -37,6 +37,17 @@ def ail_using(ns_obj: 'Namespace', namespace: dict):
     namespace.update(ns_obj.__dict__)
 
 
+def ail_get_var(varname, global_, local, mult_var: bool=False):
+    # search order: global -> local
+    
+    if varname in global_:
+        return global_[varname]
+    elif varname in local:
+        return local[varname]
+    raise NameError(
+            'name \'%s\' is not defined in neither global nor local scope' % varname)
+
+
 def ail_match(target, patterns: list, only_constant: bool) -> bool:
     if only_constant:
         return target in patterns

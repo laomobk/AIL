@@ -99,9 +99,21 @@ namespace Microsoft {
 ```
 
 
-### 五、Re-Assign 语句
+### 五、ShadowAssign 语句
 
-在 AIL 2.3 版本中，可以使用 re-assign 语句进行定义一个需要通过引用 **global** 域中同名变量作为值的变量：
+在 AIL 2.3 版本中，可以使用 shadow assign 语句来进行可以跨域搜寻的定义操作。当使用 shadow assign 语句定义一个变量时，若右部的表达式出现了对该变量名的访问，则会对这个变量进行跨域搜寻，搜寻域由 global 到 local，也就意味着，当 local 和 global 中同时出现该变量时，会优先使用处于 global 域的变量。例如：
+
+```go
+a = 1;
+
+func f() {
+    a = 2;
+    a := a + 1;
+    print a;  // output: 2
+}
+```
+
+相比 global 关键字，使用 shadow-assign 可以在使用 global 变量的基础上，对 global 值进行保护：
 
 ```go
 // foo.ail
@@ -148,7 +160,6 @@ $ ail bar.ail
 20
 10
 ```
-
 
 ## == 修复内容 ==
 
