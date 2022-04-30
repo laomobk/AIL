@@ -98,6 +98,7 @@ namespace Microsoft {
 }
 ```
 
+更多有关 namespace 的内容可以查看 [namespace 说明文档](./reference/namespace.md)
 
 ### 五、ShadowAssign 语句
 
@@ -160,6 +161,8 @@ $ ail bar.ail
 20
 10
 ```
+
+更多有关 shadow assign 的内容可以查看[shadow assign 说明文档](./reference/shadow-assign.md)
 
 ## == 修复内容 ==
 
