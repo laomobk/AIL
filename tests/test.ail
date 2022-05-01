@@ -1,4 +1,3 @@
-message = match stu_code = get_status_code(response) {
-    200: '%s ok' % stu_code,
-    404: '%s page not found' % stu_code,
+match num {
+    when num == 2: 100
 }
