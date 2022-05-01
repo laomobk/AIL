@@ -1,8 +1,12 @@
 # AIL 的包、模块机制
 
-> Date: 2021/7/13
-> 
-> Latest version: 2.1 alpha 0
+> version: 
+>
+>    2021/7/13
+>
+>    2022/5/1
+>
+> Latest version: 2.3 alpha 2
 
 ## AIL 模块
 
@@ -11,7 +15,7 @@
 ```swift
 // a.ail
 
-info = 20190726
+info = 20200727
 ```
 
 ```swift
@@ -26,14 +30,14 @@ print a.info
 
 ## AIL 包
 
-包是又一个 AIL 组织代码的方式，包由一个个模块组成，一般来说，包是一个带有 `_package.ail` 的文件夹。当导入包时，实际上就是导入 `_package.ail` 。 
+包是又一个 AIL 组织代码的方式，包由一个个模块组成，一般来说，包是一个带有 `_package.ail` 的文件夹。当导入包时，实际上就是导入 `_package.ail` 。
 
 ```swift
 // mypkg/_package.ail
 
 
 print '_package.ail loading...'
-date = 20190726
+date = 20200726
 ```
 
 ```python

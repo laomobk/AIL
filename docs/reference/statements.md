@@ -304,6 +304,12 @@ namespace NAME {
 
 名称空间定义语句属于显式定义语句。
 
+### ShadowAssign 语句
+
+```
+NAME ':=' expression ';'
+```
+
 ## 加载语句和导入语句
 
 ### import 语句
