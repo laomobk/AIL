@@ -133,3 +133,31 @@ Traceback (most recent call last):
 ail.core.exceptions.UnhandledMatchError: unhandled match value
 ```
 
+## 自定义 pattern 匹配
+通常情况下，pattern 可以是任意对象如字符串、数字、某个对象，pattern 的匹配也使用普通的 `==` 比较符。当需要自定义匹配的过程时，需要对象提供 `__match__` 方法，若检测到 pattern 拥有此方法，则优先调用该方法，并对该方法的返回值进行布尔判断。
+
+`__match__` 方法具有如下的形式：
+```swift
+func __match__(self, target: object): bool { ... }
+```
+
+例如 AIL 提供的 `ObjectPattern` 类型就提供了如下的 `__match__` 方法：
+```python
+# ail/core/objects.py
+
+class ObjectPattern:
+    ...
+
+    def __match__(self, target) -> bool:
+        if not isinstance(target, self.__type):
+            return False
+
+        for k, v in self.__kv_dict.items():
+            if not hasattr(target, k) or getattr(target, k) != v:
+                return False
+
+        return True
+
+    ...
+```
+
