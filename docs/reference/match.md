@@ -108,3 +108,21 @@ match num {
 
 不难发现，when 后面的内容会被直接作为 if 表达式的 condition 部分。
 
+#### else case
+
+else case 通常情况下是放到 case 列表的最后一位，当前面所有的 case 都未被执行时，else case 就会被执行（前提是给出）。
+
+```python
+print match err {
+    TypeError: 'wrong type!',
+    NameError: 'name not found!',
+    else: 'an error occured: %s' % err,
+}
+```
+
+else case 在模式匹配中相当于匹配任何对象。
+
+### 异常的抛出
+
+当没有能与之相匹配的 match case 时候，match 表达式会抛出 `UnhandledMatchError`。因此在大多数情况下，在 match 中加入 else case 是聪明的选择。
+
