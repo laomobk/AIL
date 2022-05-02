@@ -122,7 +122,14 @@ print match err {
 
 else case 在模式匹配中相当于匹配任何对象。
 
-### 异常的抛出
+## 异常的抛出
 
 当没有能与之相匹配的 match case 时候，match 表达式会抛出 `UnhandledMatchError`。因此在大多数情况下，在 match 中加入 else case 是聪明的选择。
+
+```python
+>> match 0 { 1: 0,}
+Traceback (most recent call last):
+    File "<shell>", line 1, in <module>
+ail.core.exceptions.UnhandledMatchError: unhandled match value
+```
 
