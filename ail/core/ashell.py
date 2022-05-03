@@ -123,8 +123,23 @@ class Shell:
 
         self.__pyc_globals = {}
         self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
-
+        
+        self.__try_read_history_file()
         self.__setup_readline_completer()
+
+    def __try_read_history_file(self):
+        try:
+            if _readline_availble:
+                readline.read_history_file()
+        except Exception as _:
+            pass
+
+    def __try_write_history_file(self):
+        try:
+            if _readline_availble:
+                readline.write_history_file()
+        except Exception as _:
+            pass
 
     def __setup_readline_completer(self):
         if _readline_availble:
@@ -203,6 +218,7 @@ class Shell:
                     continue
 
                 line = input(ps)
+                self.__try_write_history_file()
 
                 if not in_edit:
                     more = self.__get_more_line_state(line)
