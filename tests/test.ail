@@ -1,3 +1,4 @@
 match num {
-    when num == 2: 100
+    when num == 2: 100,
+    when num > 2: 20,
 }

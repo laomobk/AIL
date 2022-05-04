@@ -105,7 +105,7 @@ foreach i in range(100) {
 
 ### namespace 名称空间
 
-```C#
+```python
 namespace Vegetables {
     cabbage = 'cabbage';
     leaf_mustard = 'mustard';
@@ -123,7 +123,7 @@ print 'An %s a day keeps the doctor away' % Fruits.apple;
 
 ### 强大的 match 表达式
 
-```swift
+```python
 name = match lang_name {
     'Python': 'py',
     'Java': 'java',

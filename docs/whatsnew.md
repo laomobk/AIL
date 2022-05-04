@@ -205,8 +205,12 @@ AttributeError: 'AIL Module [maptools]' object has no attribute 'x'
 
 0. 当前模块的目录 (在 AIL Shell 模式下无此搜寻位置)
 1. 当前工作目录，在 AIL Shell 模式下为 `.`
-2. AIL 原生模块 ($(AIL_ROOT)/module/)
-3. AIL 标准库 ($(AIL_ROOT)/lib/)
+2. AIL 原生模块 ($(AIL\_ROOT)/module/)
+3. AIL 标准库 ($(AIL\_ROOT)/lib/)
+
+### 二、内置函数变更
+
+- 【名称变更】：`eval` -> `evaluate`
 
 
 ***最后，希望大家玩的愉快！***
