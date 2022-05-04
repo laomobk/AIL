@@ -61,6 +61,8 @@ error.THROW_ERROR_TO_PYTHON = True
 
 DISABLE_WORD_BLOCK = True
 
+AIL_HISTORY_FILE = '~/.ail_history'
+
 _MORE_KEYWORD = ('is', 'then', 'do', 'try', 'finally')
 _END_KEYWORD = ('loop', 'end', 'endif', 'wend', 'catch')
 
