@@ -199,7 +199,7 @@ AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再�
 运行 AIL 事先准备好的 **setup.py** 可以非常快速地在您的电脑上配置好 AIL。
 
 ```sh
-python setup.py install
+python3 setup.py install
 ```
 
 在终端中输入:
