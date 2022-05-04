@@ -42,7 +42,7 @@ AIL_PY_GLOBAL.update({
     'false': False,
     'system': SYSTEM_OBJECT,
     'UnhandledMatchError': _exception.UnhandledMatchError,
-    'aeval': _func.ail_eval,
+    'evaluate': _func.ail_eval,
     '_corecom': CORE_COM_OBJ,
     'AILSyntaxError': AILSyntaxError,
     'BuiltinAILRuntimeError': BuiltinAILRuntimeError,

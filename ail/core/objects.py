@@ -284,7 +284,8 @@ class Namespace:
         cell_dict = {}
         for k, v in ns.items():
             closure = getattr(v, '__closure__', None)
-            if closure is not None and isinstance(closure, tuple):
+            if isfunction(v) and closure is not None and \
+                    isinstance(closure, tuple):
                 free_vars = v.__code__.co_freevars
                 for i, cell in enumerate(closure):
                     if not isinstance(cell, _CELL_TYPE):
