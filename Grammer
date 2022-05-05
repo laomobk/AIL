@@ -68,7 +68,7 @@ shadow_assign_stmt := 'NAME' ':=' expression EOL
 
 stmt := while_stmt | if_expr | if_else_stmt | do_loop_stmt | func_def |
 	print_stmt | input_stmt | load_stmt | import_stmt | assign_stmt | struct_def |
-    class_def | for_stmt | try_catch_stmt | shadow_assign_stmt | foreach_stm |
+    class_def | for_stmt | try_catch_stmt | shadow_assign_stmt | foreach_stmt |
     yield_fromt
 
 block := '{' stmt* '}'
