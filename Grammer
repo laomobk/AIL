@@ -1,3 +1,7 @@
+# Grammy for AIL
+# grammar version: 3
+# date: May 6 2022
+
 
 EOL := ';' | NEWLINE
 
@@ -12,9 +16,11 @@ do_loop_stmt := 'do' block 'loop' 'until' expression EOL
 
 func_def := ['fun' | 'func'] [bind] NAME '(' param_list ')' [':' expression] block
 
+bind := '(' NAME ')'
+
 expression := match_expr | tuple_expr
 
-tuple_expr := or_test [',' or_test]
+tuple_expr := or_test [',' or_test]*
 
 or_test := and_test ['or' and_test]*
 and_test := not_test ['and' not_test]*
@@ -54,12 +60,16 @@ param_list := param [',' param]* [',' star_param]
 param := NAME [':' expression]
 star_param := '*' NAME [':' expression]
 
-assign_stmt := call_subscript_member_access_expr | tuple_expr [':' expression] assi_op expression
+assign_stmt := ['yield' expression] | 
+               [call_subscript_member_access_expr | tuple_expr [':' expression] assi_op expression] EOL
 assi_op := '=' | '+=' | '-=' | '*=' | '/=' | '**=' | '<<=' | '>>=' | '^='
+
+shadow_assign_stmt := 'NAME' ':=' expression EOL
 
 stmt := while_stmt | if_expr | if_else_stmt | do_loop_stmt | func_def |
 	print_stmt | input_stmt | load_stmt | import_stmt | assign_stmt | struct_def |
-    class_def | for_stmt | try_catch_stmt
+    class_def | for_stmt | try_catch_stmt | shadow_assign_stmt | foreach_stm |
+    yield_fromt
 
 block := '{' stmt* '}'
 
@@ -70,16 +80,21 @@ break_stmt := 'break' EOL
 return_stmt := 'return' [expression] EOL
 
 load_stmt := 'load' STRING
-import_stmt := 'import' [NAME] STRING ['(' NAME [',' NAME]* ')']
+import_stmt := 'import' py_import_body | ail_import_body EOL
+ail_import_body := [NAME] STRING ['(' NAME [',' NAME]* ')']
+py_import_body := '!' py_import_item [',' py_import_item]
+py_import_item := NAME ['.' NAME] ['as' NAME]
 
-struct_def := 'struct' NAME 'is' '{' [['protected' NAME] | NAME]* '}'
+struct_def := 'struct' NAME '{' [['protected' NAME] | NAME]* '}'
 
-class_def := 'class' NAME ['extends' [expression [',' expression]*]] block
+class_def := 'class' NAME [':' expression] ['extends' [expression [',' expression]*]] block
 
-for_stmt := 'for' ['('] [for_init] ';' [for_test] ';' [for_update] [')'] block
+for_stmt := 'for' [['('] [for_init] ';' [for_test] ';' [for_update] [')']] | expression block
 for_init := expression [',' expression]
 for_test := expression
 for_update := expression [',' expression]
+
+foreach_stmt := 'foreach' NAME ['NAME] 'in' expression block
 
 throw_stmt := 'throw' [expression] EOL
 assert_stmt := 'assert' expression EOL
@@ -89,7 +104,10 @@ try_catch_stmt := try block catch_case* ['finally' block]
 
 match_stmt := 'match' ([NAME [',' NAME]*] '=') expression '{' match_case [',' match_case]* '}'
 match_case := match_pattern ':' expression
-match_pattern := 'else' | expression
+match_pattern := 'else' | expression | 'when' expression
 
 object_pattern_right := '!' '{' [object_pattern_key_value [',' object_pattern_key_value]*] '}'
 object_pattern_key_value := NAME '=' expression
+
+yield_stmt := 'yield' ['from'] [expression] EOL
+
