@@ -73,7 +73,7 @@ stmt := while_stmt | if_expr | if_else_stmt | do_loop_stmt | func_def |
 
 block := '{' stmt* '}'
 
-program := block 'end'
+program := stmt*
 
 continue_stmt := 'continue' EOL
 break_stmt := 'break' EOL
