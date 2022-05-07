@@ -11,8 +11,6 @@
 
 AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语言。支持 Python 的大多数特性的同时，还额外增加了如 match 表达式，匿名函数，名称空间等 AIL 自身的特性。
 
-***注意：从 2.1 版本开始，AIL 自带的虚拟机和编译器已经被禁用，默认启用 Python 兼容模式***
-
 ## 环境需求
 
 **具有完整标准库的 Python3.6+, 最好是 3.7 ~ 3.8 版本**
@@ -150,7 +148,7 @@ func f() {
 }
 ```
 
-## 与 Python 协作
+### 与 Python 协作
 
 在 AIL 中可以直接导入 Python 模块，使用类似 Python 的 import 语句：
 ```python
@@ -174,25 +172,6 @@ func gen(n) {
 
 print gen(5);
 ```
-
-
-## VIM 语法高亮支持
-
-AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再也不会担心敲错关键字了！
-
-提供了如下高亮支持：
-
-- 关键字
-- 字符串、数字
-- 基本类型注解
-- AIL 内置函数、常量 （并未高亮 Python 的内置函数与常量）
-
-![vim highlight](https://gitee.com/LaomoBK/ail/raw/2.3/misc/vim_highlight.jpg)
-
-#### 配置
-
-1. 将 **plugin/vim/syntax/ail.vim** 与 **plugin/vim/ftdetect/ail.vim** 分别复制到 **{VIM_HOME}/syntax/** 和 **{VIM_HOME}/ftdetect/**
-2. 重新启动 vim 即可
 
 ## 安装 AIL
 
@@ -232,6 +211,25 @@ AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
 想要了解 AIL 代码是如何转换成 Python 语法树的，可以查看：
 
  [ail_in_python](./docs/developer/ail_in_python.md)
+
+
+## VIM 语法高亮支持
+
+AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再也不会担心敲错关键字了！
+
+提供了如下高亮支持：
+
+- 关键字
+- 字符串、数字
+- 基本类型注解
+- AIL 内置函数、常量 （并未高亮 Python 的内置函数与常量）
+
+![vim highlight](https://gitee.com/LaomoBK/ail/raw/2.3/misc/vim_highlight.jpg)
+
+#### 配置
+
+1. 将 **plugin/vim/syntax/ail.vim** 与 **plugin/vim/ftdetect/ail.vim** 分别复制到 **{VIM_HOME}/syntax/** 和 **{VIM_HOME}/ftdetect/**
+2. 重新启动 vim 即可
 
 ## tree.txt
 

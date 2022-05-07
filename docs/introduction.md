@@ -1,0 +1,44 @@
+
+# AIL 介绍
+
+欢迎使用 AIL ！
+
+## AIL 是什么
+
+AIL 是运行于 Python 虚拟机之上的编程语言。支持绝大部分来自 Python 的特性，同时在此基础上加入了如*匿名函数*、*名称空间*等特性。
+
+## 友好的语法
+
+AIL 采用了自由格式的语法，使用 *大括号* 来组织代码，并可使用分号作为语句的结束：
+
+```python
+
+func fib(n) {
+    if n == 1 or n == 2 {
+        return 1;
+    } else {
+        return fib(n - 2) + fib(n - 1);
+    }
+}
+
+```
+
+## 互操作性
+
+你可以在 AIL 中使用任何的 Python 模块，包括 requests, flask, numpy...
+
+```go
+import! numpy as np;  /* 使用 import! 导入 python 模块 */
+import! matplotlib.pyplot as plt;
+
+N = 50;
+x = np.random.rand(N);
+y = np.random.rand(N);
+colors = np.random.rand(N);
+area = (30 * np.random.rand(N)) ** 2;
+
+plt.scatter(x, y, s=area, c=colors, alpha=0.5);
+
+plt.show();
+```
+
