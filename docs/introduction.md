@@ -24,19 +24,18 @@ func fib(n) {
 
 ## 互操作性
 
-你可以在 AIL 中使用任何的 Python 模块，包括 requests, flask, numpy...
+你可以在 AIL 中使用任何的 Python 模块，包括 requests, flask, numpy，同时，AIL 还兼容大部分来自 Python 的语法，如关键字参数，解包操作等。
 
 ```go
 import! numpy as np;  /* 使用 import! 导入 python 模块 */
 import! matplotlib.pyplot as plt;
 
 N = 50;
-x = np.random.rand(N);
-y = np.random.rand(N);
+xy_data = np.random.rand(N), np.random.rand(N);
 colors = np.random.rand(N);
 area = (30 * np.random.rand(N)) ** 2;
 
-plt.scatter(x, y, s=area, c=colors, alpha=0.5);
+plt.scatter(*xy_data, s=area, c=colors, alpha=0.5);
 
 plt.show();
 ```
