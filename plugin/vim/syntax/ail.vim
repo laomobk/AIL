@@ -16,7 +16,7 @@ syn keyword ailStmt	return assert
 syn keyword ailStmt	print input
 syn keyword ailStmt try catch finally
 syn keyword ailStmt break continue throw
-syn keyword ailStmt import load
+syn keyword ailStmt import load as from
 syn keyword ailStmt global nonlocal
 syn keyword ailStmt get set init new getattr setattr delattr getitem setitem delitem del
 syn keyword ailStmt mod and not or
