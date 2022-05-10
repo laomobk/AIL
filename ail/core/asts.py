@@ -1,7 +1,6 @@
 # AST
 from ast import Expr
 from typing import List, Tuple
-from unicodedata import name
 
 
 class AST:

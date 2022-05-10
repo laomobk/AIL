@@ -22,7 +22,7 @@ func fib(n) {
 
 ```
 
-## 互操作性
+## 优秀的互操作性
 
 你可以在 AIL 中使用任何的 Python 模块，包括 requests, flask, numpy，同时，AIL 还兼容大部分来自 Python 的语法，如关键字参数，解包操作等。
 
@@ -39,4 +39,25 @@ plt.scatter(*xy_data, s=area, c=colors, alpha=0.5);
 
 plt.show();
 ```
+
+## 极低的依赖
+
+***「有 Python 的地方就能运行 AIL！」***
+
+AIL 的实现几乎没有引用其他第三方库（除了 astunparse，但也是非必须的）。这意味着您可以直接在一个有完整的 Python3.7 （或以上的版本）运行时中直接运行 AIL 。
+
+AIL 主要用到了以下来自标准库的模块：
+- os
+- os.path
+- sys
+- traceback
+- importlib
+- typing
+- inspect
+- time
+- types
+
+## 多版本支持
+
+AIL 支持最低到 Python 3.7 版本。在 Python 3.6 版本中亦可支持大部分的 AIL 特性。目前 AIL 已经经过在 Python 3.10 的运行测试。
 
