@@ -188,7 +188,7 @@ y: int;
 >>
 ```
 
-可以使用这种特性去完成一些操作，如可以使用 Python 的 dataclass 装饰器：
+可以使用这种特性去完成一些操作，如可以使用 Python 的 `dataclass` 装饰器来定义一个 dataclass：
 ```python
 from dataclasses import dataclass;
 
