@@ -265,3 +265,11 @@ def py_import_stmt(names: List[_ast.alias]) -> _ast.Import:
 def py_import_from(
         module: str, names: List[_ast.alias], level: int) -> _ast.ImportFrom:
     return _ast.ImportFrom(module=module, names=names, level=level)
+
+
+def ann_assign_stmt(
+        target: _ast.expr, annotation: _ast.expr, value: _ast.expr, 
+        simple: int = 1):
+    return _ast.AnnAssign(
+            target=target, annotation=annotation, value=value, simple=simple)
+

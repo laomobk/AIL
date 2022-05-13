@@ -1304,7 +1304,10 @@ class Parser:
                             for_dict_key: bool = False,
                             allow_yield: bool = False) -> ast.AssignExprAST:
         ln = self.__now_ln
+        ofs = self.__now_tok.offset
         left = self.__parse_tuple_expr(do_tuple, True)
+
+        have_annotation = False
         
         if for_dict_key:
             return left
@@ -1316,7 +1319,6 @@ class Parser:
                 self.__syntax_error(
                     'only single target (not tuple) can be annotated')
                 return None
-            type_comment_tree = self.__parse_type_comment()
         elif self.__now_tok == ':' and not ignore_type_comment:
             self.__syntax_error('type comment is not available here')
 
@@ -1329,9 +1331,21 @@ class Parser:
         if left is None:
             self.__syntax_error()
 
+        if self.__now_tok.ttype == AIL_COLON:
+            type_comment_tree = self.__parse_type_comment()
+
+            if self.__now_tok.ttype == AIL_ENTER:
+                if type(left) not in (ast.MemberAccessAST, ast.CellAST):
+                    self.__syntax_error('invalid target to annotating', left.ln, ofs)
+                return ast.AnnAssignStmt(left, type_comment_tree, None, ln)
+
+            have_annotation = True
+
         ttype = self.__now_tok.ttype
         
         if self.__now_tok.ttype == AIL_REASSI:
+            if have_annotation:
+                self.__syntax_error('the target of shadow assign cannot be annotated')
             self.__next_tok()  # eat ':='
             if not isinstance(left, ast.CellAST):
                 self.__syntax_error('the target of re-assign must be one name')
@@ -1355,6 +1369,9 @@ class Parser:
             self.__syntax_error(ln=left.ln)
 
         if isinstance(left, ast.TupleAST):
+            if have_annotation:
+                self.__syntax_error(
+                        'type annotation cannot be used in multiple-target assignment')
             for elt in left.items:
                 if type(elt) not in (
                         ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST,
@@ -1381,9 +1398,16 @@ class Parser:
 
         if ttype in range(AIL_INP_PLUS, AIL_INP_BIN_AND + 1) or \
                 ttype == AIL_INP_POW:
+            if have_annotation:
+                self.__syntax_error('type annotation cannot be used here')
             r = self.__convert_inplace_assign_expr_for_right(
                 left, r, ttype, self.__now_ln)
             aug_assign = True
+        
+        if have_annotation:
+            if type(left) not in (ast.MemberAccessAST, ast.CellAST):
+                self.__syntax_error('invalid target to annotating', left.ln, ofs)
+            return ast.AnnAssignStmt(left, type_comment_tree, r, ln)
 
         tree = ast.AssignExprAST(left, r, ln, aug_assign)
         tree.type_comment = type_comment_tree
@@ -2019,7 +2043,7 @@ class Parser:
 
         return ast.PyCodeBlock(doc_string, ln)
 
-    def __parse_func_def_with_decorator_stmt(self,
+    def __parse_def_with_decorator_stmt(self,
                                              parsed: list = None,
                                              doc_string='') -> ast.FunctionDefineAST:
         ln = self.__now_ln
@@ -2027,7 +2051,6 @@ class Parser:
 
         if parsed is None:
             parsed = list()
-
         decorator = self.__parse_member_access_expr()
 
         parsed.append(decorator)
@@ -2040,14 +2063,23 @@ class Parser:
                     raise
             else:
                 self.__next_tok()  # eat enter
+        else:
+            self.__next_tok()  # eat enter
+
+        self.__skip_newlines()
 
         if self.__now_tok == '@':
-            return self.__parse_func_def_with_decorator_stmt(parsed)
+            return self.__parse_def_with_decorator_stmt(parsed)
         elif self.__now_tok == 'fun' or self.__now_tok == 'func':
             func = self.__parse_func_def_stmt(doc_string=doc_string)
             func.decorator.extend(parsed)
 
             return func
+        elif self.__now_tok == 'class':
+            cls = self.__parse_class_def_stmt(doc_string=doc_string)
+            cls.decorator.extend(parsed)
+
+            return cls
         else:
             try:
                 self.__syntax_error('unexcepted token %s' % repr(self.__now_tok.value))
@@ -2836,7 +2868,7 @@ class Parser:
             a = self.__parse_doc_string_object()
 
         elif nt == '@':
-            a = self.__parse_func_def_with_decorator_stmt()
+            a = self.__parse_def_with_decorator_stmt()
 
         elif nt == 'load':
             a = self.__parse_load_stmt()
@@ -3733,7 +3765,7 @@ class ASTConverter:
     def _convert_class_def_stmt(self, cls: ast.ClassDefineAST) -> pyast.ClassDef:
         bases = [self.convert(b) for b in cls.bases]
         name = cls.name
-        decorators = [self.convert(d) for d in cls.func.decorator]
+        decorators = [self.convert(d) for d in cls.decorator]
         body = self._convert_block(cls.func.block, True)
         keywords = []
 
@@ -3879,6 +3911,16 @@ class ASTConverter:
             stmt.ln,
         )), stmt.ln)
 
+    def _convert_ann_assign_stmt(self, stmt: ast.AnnAssignStmt) -> pyast.AnnAssign:
+        target = self.convert(stmt.target)
+        target.ctx = store_ctx()
+        return _set_lineno(ann_assign_stmt(
+            target,
+            self.convert(stmt.annotation),
+            self.convert(stmt.value),
+            0 if isinstance(target, pyast.Attribute) else 1,
+        ), stmt.ln)
+
     def _convert_py_import_stmt(self, stmt: ast.PyImportStmt) -> pyast.Import:
         names = stmt.names
         py_names = []
@@ -3899,7 +3941,7 @@ class ASTConverter:
                 import_alias(name.name, name.alias), name.ln))
         
         return _set_lineno(
-            import_from_stmt(stmt.module, names, stmt.level), stmt.ln)
+            import_from_stmt(stmt.module, py_names, stmt.level), stmt.ln)
 
     def _convert_py_code_block(self, code: ast.PyCodeBlock) -> List[pyast.stmt]:
         module_node = pyast.parse(code.code)
@@ -4061,6 +4103,9 @@ class ASTConverter:
 
         elif isinstance(a, ast.ReAssignStmt):
             return self._convert_reassign_stmt(a)
+
+        elif isinstance(a, ast.AnnAssignStmt):
+            return self._convert_ann_assign_stmt(a)
 
         elif isinstance(a, ast.StarredExpr):
             return _set_lineno(starred_expr(

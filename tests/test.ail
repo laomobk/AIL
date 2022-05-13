@@ -1,4 +1,15 @@
-match num {
-    when num == 2: 100,
-    when num > 2: 20,
+
+from dataclasses import dataclass;
+
+x.y: int = 0;
+
+@dataclass;
+class Student {
+    name: str;
+    class_: str;
+    score: int;
+    level: int;
+    class_rank: int;
+    rank: int;
 }
+

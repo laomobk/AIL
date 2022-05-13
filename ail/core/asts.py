@@ -152,6 +152,16 @@ class AssignExprAST(Expression):
         self.ln = ln
 
 
+class AnnAssignStmt(Statement):
+    def __init__(self, 
+            target: Expression, annotation: Expression, value: Expression,
+            ln: int):
+        self.target = target
+        self.annotation = annotation
+        self.value = value
+        self.ln = ln
+
+
 class ReAssignStmt(Statement):
     def __init__(self, target: str, value: Expression, ln: int):
         self.target = target
@@ -263,6 +273,7 @@ class ClassDefineAST(Statement):
         self.bases = bases
         self.meta = meta
         self.doc_str = doc_str
+        self.decorator: list = []
         self.ln = ln
 
 
