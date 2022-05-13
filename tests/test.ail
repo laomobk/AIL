@@ -1,15 +1,16 @@
 
 from dataclasses import dataclass;
 
-x.y: int = 0;
 
 @dataclass;
 class Student {
     name: str;
     class_: str;
     score: int;
-    level: int;
-    class_rank: int;
     rank: int;
 }
+
+
+std = Student('Klee', '1910', 750, 1);
+print std;
 

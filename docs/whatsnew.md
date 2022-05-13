@@ -164,6 +164,50 @@ $ ail bar.ail
 
 更多有关 shadow assign 的内容可以查看[shadow assign 说明文档](./reference/shadow-assign.md)
 
+
+### 六、带类型注解的赋值语句
+
+在 AIL 2.3 版本中，用户可以对赋值操作加上类型注解：
+
+```
+x: int = 10;
+```
+
+亦或是单纯地*声明*某个变量：
+
+```
+y: int;
+```
+
+在上面的例子中，`y` 是有意义的，在一些情况下，`y` 会被 Python 运行时存储到 `__annotations__` 中：
+
+```python
+>> class C { y: int; }
+>> C.__annotations__
+{'y': <class 'int'>}
+>>
+```
+
+可以使用这种特性去完成一些操作，如可以使用 Python 的 dataclass 装饰器：
+```python
+from dataclasses import dataclass;
+
+@dataclass;
+class Student {
+    name: str;
+    class_: str;
+    score: int;
+    rank: int;
+}
+
+std = Student('Klee', '1910', 750, 1);
+print std;
+```
+```
+Student(name='Klee', class_='1910', score=750, rank=1)
+```
+
+
 ## == 修复内容 ==
 
 *暂无*
