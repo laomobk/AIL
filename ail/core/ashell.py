@@ -85,7 +85,6 @@ _SH_HELP_STR = \
     $help   get commands help
     $exit   exit shell forcibly
     $break  break more mode forcibly
-    $edit   editor mode
 '''
 
 
@@ -234,14 +233,6 @@ class Shell:
                     in_more = False
                     ps = self.ps1
                     continue
-
-                elif line == '$edit':
-                    self.__buffer.clear()
-                    self.__more_level = 0
-                    in_edit = True
-                    in_more = True
-                    ps = self.ps3
-                    print('(editor mode, ^C - cancel, ^D - run code.)')
 
                 elif line == '$help':
                     print(_SH_HELP_STR)
