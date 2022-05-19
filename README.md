@@ -5,7 +5,7 @@
 [AIL 2.2 Klee 版本更新内容](./docs/versions/2_2.md)
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
-![python badge](https://img.shields.io/badge/python-3.6%2B-blue)
+![python badge](https://img.shields.io/badge/python-3.7%2B-blue)
 ![version badge](https://img.shields.io/badge/version-2.3%20alpha-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
@@ -13,7 +13,7 @@ AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语�
 
 ## 环境需求
 
-**具有完整标准库的 Python3.6+, 最好是 3.7 ~ 3.8 版本**
+**具有完整标准库的 Python3.7+, 最好是 3.7 ~ 3.8 版本**
 
 AIL 需要运行在具有完整标准库的 Python 环境上，版本最低不低于3.5，3.5 ~ 3.6 之间的 Python 版本不确保有正常的 AIL 使用体验。若要取得最好的 AIL 体验，请使用 3.7 ~ 3.8 版本的 Python, 3.9+ 的 Python 版本运行 AIL 并不稳定。
 
