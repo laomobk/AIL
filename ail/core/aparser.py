@@ -3703,7 +3703,8 @@ class ASTConverter:
     def _convert_function_def(
             self,
             func: ast.FunctionDefineAST,
-            as_stmt: bool) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
+            as_stmt: bool, for_namespace: bool = False,
+            ) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
         if not as_stmt:
             if func.is_lambda:
                 return self._convert_lambda_expr(func)
@@ -3712,11 +3713,16 @@ class ASTConverter:
 
         func_stmt = self._convert_function_def_stmt(func)
 
-        if as_stmt:
+        if as_stmt and not for_namespace:
             return func_stmt
 
         self.__append_stmt_to_top_block(func_stmt)
-        return self._new_name(func.name, func.arg_list.ln)
+
+        if not for_namespace:
+            return self._new_name(func.name, func.arg_list.ln)
+        return self._new_call_name(
+            'ail::_register_function', 
+            [self._new_name(func.name, func.ln)], func.ln)
 
     def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
         return assign_stmt([self._new_name(struct.name, struct.ln, store_ctx())],
@@ -3849,13 +3855,14 @@ class ASTConverter:
 
     def _convert_block(
             self, block: ast.BlockAST,
-            for_module: bool = True) -> List[pyast.stmt]:
+            for_module: bool = True,
+            for_namespace: bool = False) -> List[pyast.stmt]:
         stmts = []
 
         try:
             self.__block_stmt_append_func_stack.append(stmts.append)
             for stmt in block.stmts:
-                s = self.convert(stmt, for_module)
+                s = self.convert(stmt, for_module, for_namespace=for_namespace)
                 if isinstance(s, pyast.expr):
                     s = _set_lineno(expr_stmt(s), stmt.ln)
                 elif isinstance(s, list):
@@ -3888,7 +3895,7 @@ class ASTConverter:
         """
         ln = stmt.ln
 
-        block = self.convert(stmt.block, as_stmt=True)
+        block = self._convert_block(stmt.block, for_namespace=True)
         block.append(
             _set_lineno(return_stmt(
                 self._new_call_name('py::locals', [], ln),
@@ -3897,7 +3904,8 @@ class ASTConverter:
 
         return _set_lineno(function_def_stmt(
             stmt.name,
-            arguments([], None, None), block,
+            arguments([_set_lineno(argument('ail::_register_function'), ln)], 
+            None, None), block,
             [self._new_name('ail::namespace', ln)],
         ), ln)
 
@@ -3947,7 +3955,9 @@ class ASTConverter:
         module_node = pyast.parse(code.code)
         return _increase_all_lineno(code.ln - 1, module_node.body)
 
-    def convert(self, a, as_stmt: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
+    def convert(
+            self, a, as_stmt: bool = False,
+            for_namespace: bool = False) -> Union[pyast.AST, List[pyast.stmt]]:
         if isinstance(a, ast.CellAST):
             return self._convert_cell(a)
 
@@ -3988,7 +3998,7 @@ class ASTConverter:
             return self._convert_do_loop_stmt(a)
 
         elif isinstance(a, ast.FunctionDefineAST):
-            return self._convert_function_def(a, as_stmt)
+            return self._convert_function_def(a, as_stmt, for_namespace)
 
         elif isinstance(a, ast.ClassDefineAST):
             return self._convert_class_def_stmt(a)

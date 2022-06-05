@@ -1,16 +1,6 @@
 
-from dataclasses import dataclass;
-
-
-@dataclass;
-class Student {
-    name: str;
-    class_: str;
-    score: int;
-    rank: int;
+namespace x {
+    func f() {}
 }
 
-
-std = Student('Klee', '1910', 750, 1);
-print std;
-
+print x.f

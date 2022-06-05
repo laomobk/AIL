@@ -14,7 +14,13 @@ def raise_exception(err_obj):
 
 
 def convert_to_namespace(namespace_func):
-    func_locals = namespace_func()
+    inside_functions = []
+    func_locals = namespace_func(inside_functions.append)
+
+    namespace_name = namespace_func.__name__
+    for func in inside_functions:
+        func.__qualname__ = '%s::%s' % (namespace_name, func.__name__)
+
     namespace_class = copy(Namespace)
     namespace_class.__name__ = 'Namespace::%s' % namespace_func.__name__
     ns = namespace_class(namespace_func.__name__, func_locals)
