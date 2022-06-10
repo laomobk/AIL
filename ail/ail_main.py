@@ -1,5 +1,6 @@
 # AIL Launcher
 
+import argparse
 import os.path
 import sys
 from importlib import import_module
@@ -18,8 +19,6 @@ from ._config import (
 
 from . import _config
 
-_HELP = r''' ail [filename] [--help | -h]'''
-
 
 class _Option:
     def __init__(self):
@@ -30,107 +29,6 @@ class _Option:
         self.cmd = None
 
 
-class ArgParser:
-    def __init__(self):
-        self.__now_arg_list = list()
-        self.__now_arg_iter = None
-        self.__has_next_arg = True
-        self.__ok = True
-        self.__now_single_arg = None
-
-    def __next_arg(self) -> str:
-        try:
-            n = next(self.__now_arg_iter)
-            self.__now_single_arg = n
-
-            return n
-        except StopIteration:
-            self.__has_next_arg = False
-            return None
-
-    def _do_help(self, _):
-        print(_HELP)
-        self.__ok = -1
-
-    def _do_v(self, _):
-        _config.REMOVE_PY_RUNTIME_TRACEBACK = False
-        self.__ok = True
-
-    _do_h = _do_help
-
-    def _do_s(self, opt: _Option):
-        self.__ok = True
-        opt.source = True
-
-    def _do_literal(self, opt: _Option):
-        n = self.__now_single_arg
-        if n is not None:
-            opt.shell_mode = False
-            opt.filename = n
-
-            return True
-        self.__ok = False
-        return False
-
-    def _do_c(self, opt: _Option):
-        n = self.__next_arg()
-        opt.shell_mode = False
-        opt.cmd = n
-        self.__ok = True
-
-    def _do_debug(self, opt: _Option):
-        n = self.__next_arg()
-        if n == 'show_syntax_error_frame':
-            aconfig.DEBUG_SHOW_FRAME = True
-        else:
-            print('--debug: invalid debug setting')
-            self.__ok = False
-            return
-        self.__ok = True
-
-    _do_d = _do_debug
-
-    def _do_old(self, _):
-        aconfig.OLD_PRINT = True
-        self.__ok = True
-
-    def parse(self, arg_list: list) -> _Option:
-        option = _Option()
-        self.__now_arg_list = arg_list
-        self.__now_arg_iter = iter(arg_list)
-
-        if len(arg_list) == 0:
-            return option
-
-        arg = self.__next_arg()
-
-        while self.__has_next_arg:
-            if arg[:2] == '--':
-                handler = getattr(
-                    self, '_do_%s' % arg[2:], self._do_h)
-                handler(option)
-            elif arg[:1] == '-':
-                handler = getattr(
-                    self, '_do_%s' % arg[1:], self._do_h)
-                handler(option)
-            else:
-                if self._do_literal(option):
-                    break
-
-            if self.__ok == -1:
-                return None
-
-            if not self.__ok:
-                self._do_help(option)
-                return None
-
-            arg = self.__next_arg()
-
-        option.rest_args = list(self.__now_arg_iter)
-
-        return option
-
-
 # load AIL_PATH in environ
 shared.GLOBAL_SHARED_DATA.cwd = CURRENT_WORK_PATH
 shared.GLOBAL_SHARED_DATA.ail_path = AIL_DIR_PATH
@@ -139,6 +37,27 @@ shared.GLOBAL_SHARED_DATA.boot_dir = os.getcwd()
 shared.GLOBAL_SHARED_DATA.find_path = [
      CURRENT_WORK_PATH, BUILTINS_MODULE_PATH, LIB_PATH
 ]
+
+
+def parse_arg(args) -> _Option:
+    parser = argparse.ArgumentParser(
+        'ail', description='AIL Programming Language'
+    )
+    parser.add_argument('file', nargs='?')
+    parser.add_argument(
+        '-s', help='dump to python source code', action='store_true',
+        dest='source')
+    parser.add_argument('args', nargs=argparse.REMAINDER)
+
+    namespace = parser.parse_args(args)
+
+    opt = _Option()
+    opt.filename = namespace.file
+    opt.source = namespace.source
+    opt.rest_args = namespace.args
+    opt.shell_mode = namespace.file is None
+
+    return opt
 
 
 def launch_py_test(test_name):
@@ -155,7 +74,9 @@ def launch_py_test(test_name):
 def _launch_main(argv: list) -> int:
     init_builtins()
 
-    option = ArgParser().parse(argv)
+    option = parse_arg(argv)
+    # print(option.filename, option.source, option.rest_args)
+
     option.rest_args.insert(0, option.filename)
     shared.GLOBAL_SHARED_DATA.prog_argv = option.rest_args
     sys.argv = option.rest_args
