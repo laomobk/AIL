@@ -1,4 +1,4 @@
-# AIL 2.3 alpha 3
+# AIL 3.0 alpha 0
 
 [AIL 3.0 Lumine 版本更新内容](./docs/whatsnew.md)
 [AIL 2.3 Diona 版本更新内容](./docs/versions/2_3.md)
