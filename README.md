@@ -17,6 +17,7 @@ AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语�
 ## 环境需求
 
 **具有完整标准库的 Python3.8**
+
 推荐使用 **cpython** 解释器，其他 Python 解释器并未进行过测试。
 
 ## Hello World
