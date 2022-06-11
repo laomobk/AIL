@@ -222,7 +222,7 @@ AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再�
 - 关键字
 - 字符串、数字
 - 基本类型注解
-- AIL 内置函数、常量 （并未高亮 Python 的内置函数与常量）
+- AIL 与 Python 内置函数、常量
 
 ![vim highlight](https://gitee.com/LaomoBK/ail/raw/2.3/misc/vim_highlight.jpg)
 
