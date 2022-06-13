@@ -167,6 +167,9 @@ class GenericPyCodeCompiler:
                 load_instr = opcode.LOAD_FAST
             else:
                 load_instr = opcode.LOAD_DEREF
+        elif self.__general_state == 1:
+            if name not in self.__state.defined_name:
+                load_instr = opcode.LOAD_GLOBAL
 
     def _compile_node(self, node: ast.AST):
         if isinstance(node, ast.CellAST):
