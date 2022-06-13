@@ -110,16 +110,16 @@ class CompilerState:
         self.block_stack: List[Block] = []
         self.cobj_buffer: CodeObjectBuffer = None
         self.defined_name: List[str] = []
+        self.symbol_table_index = 0
 
 
-@dataclass
 class GeneralCompileState:
     def __init__(self):
         # level = 0: global
         # level = 1: inside single level function
         # level > 1: inside a function which inside a function
-        level: int
-        symbol_table = SymbolTable()
+        self.level: int = 0
+        self.symbol_table = SymbolTable()
 
 
 class GenericPyCodeCompiler:
@@ -167,7 +167,7 @@ class GenericPyCodeCompiler:
                 load_instr = opcode.LOAD_FAST
             else:
                 load_instr = opcode.LOAD_DEREF
-        elif self.__general_state == 1:
+        elif self.__general_state.level == 1:
             if name not in self.__state.defined_name:
                 load_instr = opcode.LOAD_GLOBAL
 
@@ -176,7 +176,11 @@ class GenericPyCodeCompiler:
             pass
 
     def compile(self, node: ast.AST, firstlineno=1) -> CodeType:
+        if self.__general_state.level == 1:
+            pass
+
         self.__state.cobj_buffer = CodeObjectBuffer(firstlineno=firstlineno)
+        self.__state.symbol_table_index = self.__general_state.symbol_table.new_scope()
 
         self._compile_node(node)
 

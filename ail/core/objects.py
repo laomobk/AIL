@@ -14,8 +14,10 @@ _NONE = object()
 
 def __get_cell_type():
     x = 0
+
     def ___():
         return x
+
     return type(___.__closure__[0])
 
 
