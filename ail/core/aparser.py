@@ -3061,7 +3061,7 @@ class Parser:
               source: str, filename: str,
               pyc_mode: bool = True,
               eval_mode: bool = False, lsp_mode: bool = False,
-              flags: int=0) -> ast.BlockAST:
+              flags: int=0) -> ast.ProgramBlock:
 
         if flags & CONTINUE_WHEN_SYNTAX_ERROR:
             print(
@@ -3096,10 +3096,13 @@ class Parser:
         if eval_mode:
             return self.__parse_binary_expr(type_comment=False, no_assign=True)
 
-        return self.__parse_block('begin', 'end',
+        block = self.__parse_block('begin', 'end',
                                   'A program should starts with \'begin\'',
                                   "A program should ends with 'end'",
                                   for_program=True, lsp_mode=lsp_mode)
+
+        prog_block = ast.ProgramBlock(block.stmts, block.ln, block.new)
+        return prog_block
 
     def test(self, ts, source):
         self.__init__()

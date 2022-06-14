@@ -216,11 +216,15 @@ class TestExprAST(Expression):
         self.ln = ln
 
 
-class BlockAST(Expression):
+class BlockAST(AST):
     def __init__(self, stmts: list, ln: int, new: bool = False):
         self.stmts = stmts
         self.ln = ln
         self.new = new
+
+
+class ProgramBlock(BlockAST):
+    pass
 
 
 class IfStmtAST(Statement):
