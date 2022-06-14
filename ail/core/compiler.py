@@ -9,6 +9,10 @@ from .symbol import SymbolTable
 from .tokentype import AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER
 
 
+COMPILE_FLAG_GLOBAL = 0x1
+COMPILE_FLAG_FUNC = 0x2
+
+
 class CompilerError(Exception):
     pass
 
@@ -175,9 +179,10 @@ class GenericPyCodeCompiler:
         if isinstance(node, ast.CellAST):
             pass
 
-    def compile(self, node: ast.AST, firstlineno=1) -> CodeType:
-        if self.__general_state.level == 1:
-            pass
+    def compile(self,
+            node: ast.ProgramBlock, firstlineno=1) -> CodeType:
+        if not isinstance(node, ast.ProgramBlock):
+            raise TypeError('compile() of AIL must be given a ProgramBlock node')
 
         self.__state.cobj_buffer = CodeObjectBuffer(firstlineno=firstlineno)
         self.__state.symbol_table_index = self.__general_state.symbol_table.new_scope()
