@@ -37,6 +37,7 @@ class CellAST(Expression):
         self.value = value
         self.type = _type
         self.ln = ln
+        self.symbol = None
 
     def __str__(self):
         return '<Cell value = \'%s\'>' % self.value

@@ -7,7 +7,8 @@ from .error import error_msg
 
 SYM_FREE = 0x1
 SYM_LOCAL = 0x2
-SYM_GLOBAL = 0x3
+SYM_GLOBAL = 0x4
+SYM_REFERENCE = 0x8
 
 CTX_LOAD = 0x1
 CTX_STORE = 0x2
@@ -23,15 +24,28 @@ def _do_mangle(cls_name: str, name: str) -> str:
     return name
 
 
+def _get_first_cell(expr) -> ast.CellAST:
+    if type(expr) not in (
+            ast.CellAST, ast.SubscriptExprAST, ast.MemberAccessAST):
+        return expr
+    if isinstance(expr, ast.CellAST):
+        return expr
+    return _get_first_cell(expr.left)
+
+
 class Symbol:
     def __init__(self, name):
         self.name: str = name
         self.flag: int = 0
         self.namespace: 'SymbolTable' = None
-        self.ln = 0
 
     def __eq__(self, other: 'Symbol'):
         return other.name == self.name
+
+    def __str__(self):
+        return '<Symbol %s>' % repr(self.name)
+
+    __repr__ = __str__
 
 
 class SymbolTable:
@@ -94,7 +108,8 @@ class SymbolAnalyzer:
             return Symbol
         assert ctx == CTX_LOAD
 
-        if self.__symbol_table.is_free(symbol):
+        if isinstance(self.__symbol_table, FunctionSymbolTable) and \
+                self.__symbol_table.is_free(symbol):
             symbol.flag |= SYM_FREE
         elif self.__symbol_table.is_global(symbol):
             symbol.flag |= SYM_GLOBAL
@@ -115,15 +130,46 @@ class SymbolAnalyzer:
 
         for target in left:
             if isinstance(target, ast.CellAST):
-                self.__add_symbol(
-                    self._analyze_and_fill_symbol(Symbol(target.value), CTX_STORE))
+                s = self._analyze_and_fill_symbol(
+                        Symbol(target.value), CTX_STORE)
+                self.__add_symbol(s)
+                target.symbol = s
+            elif isinstance(target, ast.MemberAccessAST) or \
+                 isinstance(target, ast.SubscriptExprAST):
+                name = _get_first_cell(target)
+                s = self._analyze_and_fill_symbol(
+                        Symbol(name.value), CTX_LOAD)
+                name.symbol = s
+                self.__add_symbol(s)
+            else:
+                raise TypeError('invalid target type: %s' % type(target))
+
+    def _visit_block(self, block: ast.BlockAST):
+        stmts = block.stmts
+
+        for stmt in stmts:
+            self._visit(stmt)
 
     def _visit(self, node: ast.AST):
-        if isinstance(node, ast.AssignExprAST):
+        if isinstance(node, ast.BlockAST):
+            self._visit_block(node)
+        elif isinstance(node, ast.AssignExprAST):
             self._visit_assign_expr(node)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
 
-    def visit_and_make_symbol_table(self, source: str, filename: str):
-        pass
+    def visit_and_make_symbol_table(
+            self, source: str, filename: str, top_ast: ast.ProgramBlock, 
+            symbol_table: SymbolTable = None) -> SymbolTable:
+        self.__source = source
+        self.__filename = filename
+
+        if symbol_table is None:
+            symbol_table = SymbolTable()
+        self.__symbol_table = symbol_table
+
+        self._visit(top_ast)
+        
+        return self.__symbol_table
+
