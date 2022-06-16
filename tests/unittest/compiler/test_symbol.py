@@ -5,9 +5,15 @@ from ail.core import symbol, aparser, alex
 from unittest import TestCase
 
 
-SOURCE = '''
-x.b = 1
+SOURCE_1 = '''
+x.y[3] = 1
 '''
+
+SOURCE_2 = '''
+x(1, 2, a, b)
+'''
+
+SOURCE = SOURCE_2
 
 
 class TestSymbol(TestCase):
@@ -19,4 +25,3 @@ class TestSymbol(TestCase):
                 SOURCE, '<string>', tree)
 
         print(tab.symbols)
-

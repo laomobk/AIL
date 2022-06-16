@@ -355,6 +355,7 @@ class Parser:
         p_ofs = self.__now_tok.offset
 
         if self.__now_tok.ttype != AIL_SRBASKET:
+            self.__skip_newlines()
             if self.__now_tok.ttype in (AIL_MRBASKET, AIL_LRBASKET):
                 self.__parenthesis_not_match(
                     '(', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
@@ -3669,7 +3670,7 @@ class ASTConverter:
     def _convert_function_def_stmt(
             self, func: ast.FunctionDefineAST) -> pyast.FunctionDef:
         name = func.name
-        args = self._convert_arguments(func.arg_list)
+        args = self._convert_arguments(func.param_list)
         body = self._convert_block(func.block, True)
         decorators = [self.convert(expr) for expr in func.decorator]
 
@@ -3700,7 +3701,7 @@ class ASTConverter:
 
     def _convert_lambda_expr(self, func: ast.FunctionDefineAST) -> pyast.Lambda:
         expr = self.convert(func.lambda_return)
-        args = self._convert_arguments(func.arg_list)
+        args = self._convert_arguments(func.param_list)
         return _set_lineno(lambda_expr(args, expr), func.ln)
 
     def _convert_function_def(
@@ -3722,7 +3723,7 @@ class ASTConverter:
         self.__append_stmt_to_top_block(func_stmt)
 
         if not for_namespace:
-            return self._new_name(func.name, func.arg_list.ln)
+            return self._new_name(func.name, func.param_list.ln)
         return self._new_call_name(
             'ail::_register_function', 
             [self._new_name(func.name, func.ln)], func.ln)

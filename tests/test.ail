@@ -1,2 +1,2 @@
 
-x.a[0].x = c
+func f(x, b, a) {}

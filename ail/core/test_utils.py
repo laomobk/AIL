@@ -139,7 +139,7 @@ def make_ast_tree(a) -> dict:
             'FunctionDefAST':
                 {
                     'name': a.name,
-                    'arg_list': make_ast_tree(a.arg_list),
+                    'arg_list': make_ast_tree(a.param_list),
                     'block': make_ast_tree(a.block),
                     'bindto': make_ast_tree(a.bindto),
                     'decorator': make_ast_tree(a.decorator),

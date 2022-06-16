@@ -1,14 +1,15 @@
-
 from typing import List
 
 from . import asts as ast
-from .error import error_msg
 
+from .error import error_msg
+from .tokentype import AIL_IDENTIFIER
 
 SYM_FREE = 0x1
 SYM_LOCAL = 0x2
 SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
+SYM_NONLOCAL = 0x10
 
 CTX_LOAD = 0x1
 CTX_STORE = 0x2
@@ -33,17 +34,29 @@ def _get_first_cell(expr) -> ast.CellAST:
     return _get_first_cell(expr.left)
 
 
+def _visit_param_list(
+        symbol_table: 'SymbolTable', param_list: ast.ArgListAST):
+
+    for param in param_list.arg_list:
+        assert isinstance(param.expr, ast.CellAST) and \
+               param.expr.type == AIL_IDENTIFIER
+
+        symbol = Symbol(param.expr.value)
+        symbol.flag |= SYM_LOCAL
+        symbol_table.add_symbol(symbol)
+
+
 class Symbol:
-    def __init__(self, name):
+    def __init__(self, name, flag=0, namespace: 'SymbolTable' = None):
         self.name: str = name
-        self.flag: int = 0
-        self.namespace: 'SymbolTable' = None
+        self.flag: int = flag
+        self.namespace: 'SymbolTable' = namespace
 
     def __eq__(self, other: 'Symbol'):
         return other.name == self.name
 
     def __str__(self):
-        return '<Symbol %s>' % repr(self.name)
+        return '<Symbol %s flag %s>' % (repr(self.name), bin(self.flag))
 
     __repr__ = __str__
 
@@ -76,6 +89,15 @@ class SymbolTable:
         if self.prev_table is not None:
             return self.prev_table._check_free(symbol)
 
+    def add_symbol(self, symbol: Symbol):
+        symbols = self.symbols
+
+        for sym in symbols:
+            if sym.flag == symbol.flag and sym.name == symbol.name:
+                return
+
+        symbols.append(symbol)
+
 
 class FunctionSymbolTable(SymbolTable):
     pass
@@ -90,9 +112,10 @@ class SymbolAnalyzer:
         self.__symbol_table: SymbolTable = None
         self.__filename = ''
         self.__source = ''
+        self.__block_queue = []
 
     def __add_symbol(self, symbol: Symbol):
-        self.__symbol_table.symbols.append(symbol)
+        self.__symbol_table.add_symbol(symbol)
 
     def __syntax_error(self, msg: str, ln: int):
         error_msg(ln, msg, self.__filename, source=self.__source)
@@ -102,10 +125,17 @@ class SymbolAnalyzer:
 
         if ctx == CTX_STORE:
             if isinstance(self.__symbol_table, FunctionSymbolTable):
-                symbol.flag |= SYM_LOCAL
+                if name in self.__symbol_table.global_directives:
+                    symbol.flag |= SYM_GLOBAL
+                elif name in self.__symbol_table.nonlocal_directives:
+                    symbol.flag |= SYM_NONLOCAL
+                else:
+                    symbol.flag |= SYM_LOCAL
+                return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
             symbol.flag |= SYM_GLOBAL
-            return Symbol
+            return symbol
+
         assert ctx == CTX_LOAD
 
         if isinstance(self.__symbol_table, FunctionSymbolTable) and \
@@ -131,14 +161,14 @@ class SymbolAnalyzer:
         for target in left:
             if isinstance(target, ast.CellAST):
                 s = self._analyze_and_fill_symbol(
-                        Symbol(target.value), CTX_STORE)
+                    Symbol(target.value), CTX_STORE)
                 self.__add_symbol(s)
                 target.symbol = s
             elif isinstance(target, ast.MemberAccessAST) or \
-                 isinstance(target, ast.SubscriptExprAST):
+                    isinstance(target, ast.SubscriptExprAST):
                 name = _get_first_cell(target)
                 s = self._analyze_and_fill_symbol(
-                        Symbol(name.value), CTX_LOAD)
+                    Symbol(name.value), CTX_STORE)
                 name.symbol = s
                 self.__add_symbol(s)
             else:
@@ -150,17 +180,79 @@ class SymbolAnalyzer:
         for stmt in stmts:
             self._visit(stmt)
 
+    def _visit_binary_expr(self, expr):
+        self._visit(expr.left)
+        self._visit(expr.right)
+
+    def _visit_cell(self, cell: ast.CellAST):
+        if cell.type != AIL_IDENTIFIER:
+            return
+
+        s = self._analyze_and_fill_symbol(Symbol(cell.value), CTX_LOAD)
+        cell.symbol = s
+        self.__add_symbol(s)
+
+    def _visit_call_expr(self, expr: ast.CallExprAST):
+        self._visit(expr.left)
+
+        for arg in expr.arg_list.arg_list:
+            self._visit(arg.expr)
+
+    def _visit_queue(self):
+        for node in self.__block_queue:
+            if isinstance(node, ast.FunctionDefineAST):
+                node: ast.FunctionDefineAST
+
+                body: ast.BlockAST = node.block
+                table = FunctionSymbolTable()
+                table.prev_table = self.__symbol_table
+
+                analyzer = SymbolAnalyzer()
+                table = analyzer.visit_and_make_symbol_table(
+                    self.__source, self.__filename, body, table
+                )
+
     def _visit(self, node: ast.AST):
         if isinstance(node, ast.BlockAST):
             self._visit_block(node)
+
         elif isinstance(node, ast.AssignExprAST):
             self._visit_assign_expr(node)
+
+        elif isinstance(node, ast.CellAST):
+            self._visit_cell(node)
+
+        elif isinstance(node, ast.CallExprAST):
+            self._visit_call_expr(node)
+
+        elif type(node) in ast.BINARY_AST_TYPES:
+            self._visit_binary_expr(node)
+
+        elif isinstance(node, ast.NamespaceStmt):
+            s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
+            self.__add_symbol(s)
+            self.__block_queue.append(node)
+
+        elif isinstance(node, ast.FunctionDefineAST):
+            name_symbol = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
+            self.__add_symbol(name_symbol)
+            bandto_symbol = self._analyze_and_fill_symbol(Symbol(node.bindto), CTX_LOAD)
+            self.__add_symbol(bandto_symbol)
+            self.__block_queue.append(node)
+
+        elif isinstance(node, ast.ClassDefineAST):
+            self._visit(node.meta)
+            for base in node.bases:
+                self._visit(base)
+            s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
+            self.__add_symbol(s)
+            self.__block_queue.append(node)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
 
     def visit_and_make_symbol_table(
-            self, source: str, filename: str, top_ast: ast.ProgramBlock, 
+            self, source: str, filename: str, node: ast.BlockAST,
             symbol_table: SymbolTable = None) -> SymbolTable:
         self.__source = source
         self.__filename = filename
@@ -169,7 +261,6 @@ class SymbolAnalyzer:
             symbol_table = SymbolTable()
         self.__symbol_table = symbol_table
 
-        self._visit(top_ast)
-        
-        return self.__symbol_table
+        self._visit(node)
 
+        return self.__symbol_table

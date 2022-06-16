@@ -27,7 +27,7 @@ class ArgItemAST:
 
 class ArgListAST:
     def __init__(self, item_list: List[ArgItemAST], ln: int):
-        self.arg_list = item_list  # TODO: refactor exp_list -> item_list
+        self.arg_list = item_list
         self.may_tuple = False
         self.ln = ln
 
@@ -253,11 +253,11 @@ class DoLoopStmtAST(Statement):
 
 
 class FunctionDefineAST(Statement):
-    def __init__(self, name: str, arg_list: ArgListAST,
+    def __init__(self, name: str, param_list: ArgListAST,
                  block: BlockAST, bindto: str, ln: int,
                  doc_str=''):
         self.name = name
-        self.arg_list = arg_list
+        self.param_list = param_list
         self.block = block
         self.bindto = bindto
         self.decorator = list()
