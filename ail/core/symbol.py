@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 
 from . import asts as ast
 
@@ -10,6 +10,8 @@ SYM_LOCAL = 0x2
 SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
 SYM_NONLOCAL = 0x10
+SYM_STORE = 0x20
+SYM_PARAMETER = 0x40
 
 CTX_LOAD = 0x1
 CTX_STORE = 0x2
@@ -42,7 +44,7 @@ def _visit_param_list(
                param.expr.type == AIL_IDENTIFIER
 
         symbol = Symbol(param.expr.value)
-        symbol.flag |= SYM_LOCAL
+        symbol.flag |= SYM_LOCAL | SYM_PARAMETER
         symbol_table.add_symbol(symbol)
 
 
@@ -56,23 +58,33 @@ class Symbol:
         return other.name == self.name
 
     def __str__(self):
-        return '<Symbol %s flag %s>' % (repr(self.name), bin(self.flag))
+        return '<Symbol %s flag %s at %s>' % (
+                repr(self.name), bin(self.flag), hex(id(self)))
 
     __repr__ = __str__
 
 
 class SymbolTable:
-    def __init__(self):
+    def __init__(self, name: str = 'top'):
         self.symbols: List[Symbol] = []
         self.global_directives: List[str] = []
         self.nonlocal_directives: List[str] = []
-        self.cur_class: str = ''
         self.prev_table: 'SymbolTable' = None
+        self.name = name
+
+    def is_local(self, symbol: Symbol) -> bool:
+        for s in self.symbols:
+            if s.name == symbol.name and s.flag & SYM_STORE:
+                return True
+        return False
 
     def is_global(self, symbol: Symbol) -> bool:
         if self.prev_table is None:
             # so this is the symbol table for global scope
-            return symbol in self.symbols
+            for s in self.symbols:
+                if s.name == symbol.name and s.flag & SYM_STORE:
+                    return True
+            return False
         return self.prev_table.is_global(symbol)
 
     def _check_free(self, symbol: Symbol):
@@ -80,8 +92,9 @@ class SymbolTable:
             # the global scope cannot check free variable
             return False
 
-        if symbol in self.symbols:
-            return True
+        for s in self.symbols:
+            if s.name == symbol.name and s.flag & SYM_STORE:
+                return True
         return False
 
     def is_free(self, symbol: Symbol) -> int:
@@ -98,13 +111,32 @@ class SymbolTable:
 
         symbols.append(symbol)
 
+    def __str__(self):
+        return '<SymbolTable of %s>' % self.name
+
+    __repr__ = __str__
+
 
 class FunctionSymbolTable(SymbolTable):
-    pass
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.freevars: Set[str] = []
+
+    def __str__(self):
+        return '<Function SymbolTable of %s>' % self.name
+
+    __repr__ = __str__
 
 
 class ClassSymbolTable(SymbolTable):
-    pass
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.cur_class: str = ''
+
+    def __str__(self):
+        return '<Class SymbolTable of %s>' % self.name
+
+    __repr__ = __str__
 
 
 class SymbolAnalyzer:
@@ -126,22 +158,25 @@ class SymbolAnalyzer:
         if ctx == CTX_STORE:
             if isinstance(self.__symbol_table, FunctionSymbolTable):
                 if name in self.__symbol_table.global_directives:
-                    symbol.flag |= SYM_GLOBAL
+                    symbol.flag |= SYM_GLOBAL | SYM_STORE
                 elif name in self.__symbol_table.nonlocal_directives:
-                    symbol.flag |= SYM_NONLOCAL
+                    symbol.flag |= SYM_NONLOCAL | SYM_STORE
+                    self.__symbol_table.freevars.add(name)
                 else:
-                    symbol.flag |= SYM_LOCAL
+                    symbol.flag |= SYM_LOCAL | SYM_STORE
                 return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
-            symbol.flag |= SYM_GLOBAL
+            symbol.flag |= SYM_GLOBAL | SYM_STORE
             return symbol
 
         assert ctx == CTX_LOAD
 
-        if isinstance(self.__symbol_table, FunctionSymbolTable) and \
+        if type(self.__symbol_table) is FunctionSymbolTable and \
                 self.__symbol_table.is_free(symbol):
             symbol.flag |= SYM_FREE
-        elif self.__symbol_table.is_global(symbol):
+            self.__symbol_table.freevars.add(name)
+        elif type(self.__symbol_table) is not SymbolTable and \
+                not self.__symbol_table.is_local(symbol):
             symbol.flag |= SYM_GLOBAL
         else:
             symbol.flag |= SYM_LOCAL
@@ -199,18 +234,21 @@ class SymbolAnalyzer:
             self._visit(arg.expr)
 
     def _visit_queue(self):
-        for node in self.__block_queue:
+        for symbol, node in self.__block_queue:
             if isinstance(node, ast.FunctionDefineAST):
                 node: ast.FunctionDefineAST
 
                 body: ast.BlockAST = node.block
-                table = FunctionSymbolTable()
+                table = FunctionSymbolTable(node.name)
                 table.prev_table = self.__symbol_table
+                _visit_param_list(table, node.param_list)
 
                 analyzer = SymbolAnalyzer()
                 table = analyzer.visit_and_make_symbol_table(
                     self.__source, self.__filename, body, table
                 )
+
+                symbol.namespace = table
 
     def _visit(self, node: ast.AST):
         if isinstance(node, ast.BlockAST):
@@ -228,25 +266,32 @@ class SymbolAnalyzer:
         elif type(node) in ast.BINARY_AST_TYPES:
             self._visit_binary_expr(node)
 
+        elif isinstance(node, ast.ReturnStmtAST):
+            self._visit(node.expr)
+
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             self.__add_symbol(s)
-            self.__block_queue.append(node)
+            self.__block_queue.append((s, node))
 
         elif isinstance(node, ast.FunctionDefineAST):
-            name_symbol = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
-            self.__add_symbol(name_symbol)
-            bandto_symbol = self._analyze_and_fill_symbol(Symbol(node.bindto), CTX_LOAD)
-            self.__add_symbol(bandto_symbol)
-            self.__block_queue.append(node)
-
-        elif isinstance(node, ast.ClassDefineAST):
-            self._visit(node.meta)
-            for base in node.bases:
-                self._visit(base)
+            if node.bindto is not None:
+                bandto_symbol = self._analyze_and_fill_symbol(
+                        Symbol(node.bindto), CTX_LOAD)
+                self.__add_symbol(bandto_symbol)
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             self.__add_symbol(s)
-            self.__block_queue.append(node)
+            self.__block_queue.append((s, node))
+
+        elif isinstance(node, ast.ClassDefineAST):
+            if node.meta is not None:
+                self._visit(node.meta)
+            if node.bases:
+                for base in node.bases:
+                    self._visit(base)
+            s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
+            self.__add_symbol(s)
+            self.__block_queue.append((s, node))
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
@@ -262,5 +307,6 @@ class SymbolAnalyzer:
         self.__symbol_table = symbol_table
 
         self._visit(node)
+        self._visit_queue()
 
         return self.__symbol_table

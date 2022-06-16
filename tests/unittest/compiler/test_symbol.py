@@ -13,15 +13,34 @@ SOURCE_2 = '''
 x(1, 2, a, b)
 '''
 
-SOURCE = SOURCE_2
+SOURCE_3 = '''
+func f(a) {
+    x = 1;
+    func inf() {
+        return x;
+    }
+}
+'''
 
 
 class TestSymbol(TestCase):
-    def test(self):
-        ts = alex.Lex().lex(SOURCE)
-        tree = aparser.Parser().parse(ts, SOURCE, '<string>')
+    def __get_table(self, source: str):
+        ts = alex.Lex().lex(source)
+        tree = aparser.Parser().parse(ts, source, '<string>')
         analyzer = symbol.SymbolAnalyzer()
-        tab = analyzer.visit_and_make_symbol_table(
-                SOURCE, '<string>', tree)
+        return analyzer.visit_and_make_symbol_table(
+                source, '<string>', tree)
 
+    def _test_global_assign(self):
+        tab = self.__get_table(SOURCE_1)
         print(tab.symbols)
+
+    def _test_param(self):
+        tab = self.__get_table(SOURCE_2)
+        print(tab.symbols)
+
+    def test_local(self):
+        tab = self.__get_table(SOURCE_3)
+        print(tab.symbols)
+        print(tab.symbols[0].namespace.symbols[2].namespace)
+
