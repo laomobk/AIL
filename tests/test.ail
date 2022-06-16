@@ -1,6 +1,2 @@
 
-namespace x {
-    func f() {}
-}
-
-print x.f
+a.b, b.c = c

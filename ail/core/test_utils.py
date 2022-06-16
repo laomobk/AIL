@@ -255,6 +255,11 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.BlankNode):
         return {'<blank node>'}
 
+    elif isinstance(a, ast.TupleAST):
+        return {
+            'items': make_ast_tree(a.items),
+        }
+
     elif isinstance(a, list):
         return unpack_list(a)
 

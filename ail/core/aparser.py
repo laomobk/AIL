@@ -4155,7 +4155,7 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True # and False
+TEST_CONVERT_PYAST = True and False
 
 
 def test_parse():
