@@ -266,6 +266,8 @@ class FunctionDefineAST(Statement):
         self.is_lambda = False
         self.lambda_return = None
         self.type_comment = None
+        self.scope_effect = True  # influence the scope or not
+        self.symbol = None
 
 
 class ClassDefineAST(Statement):
@@ -279,6 +281,7 @@ class ClassDefineAST(Statement):
         self.meta = meta
         self.doc_str = doc_str
         self.decorator: list = []
+        self.symbol = None
         self.ln = ln
 
 
@@ -513,6 +516,7 @@ class NamespaceStmt(Statement):
         self.block = block
         self.ln = ln
         self.name = name
+        self.symbol = None
 
 
 class UsingStmt(Statement):
@@ -606,7 +610,7 @@ class BlankNode(AST):
         self.ln = ln
 
 
-BINARY_AST_TYPES = (
+EXPR_AST_TYPES = (
     CellAST,
     PowerExprAST,
     ModExprAST,
@@ -616,6 +620,7 @@ BINARY_AST_TYPES = (
     CallExprAST,
     ArrayAST,
     DictAST,
+    TupleAST,
     SubscriptExprAST,
     MemberAccessAST,
     AssignExprAST,

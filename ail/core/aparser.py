@@ -898,6 +898,7 @@ class Parser:
             self.__parenthesis_level = 0
 
             expr = self.__parse_func_def_stmt(anonymous_function=True)
+            expr.scope_effect = False
 
             self.__parenthesis_level = ph_lev
 
@@ -922,7 +923,6 @@ class Parser:
                         p_ln, p_ofs)
                 else:
                     self.__syntax_error()
-                
 
             self.__next_tok()  # eat ')'
 
@@ -958,6 +958,7 @@ class Parser:
                 a = ast.FunctionDefineAST(
                     aconfig.ANONYMOUS_FUNC_NAME,
                     expr_or_param, block, None, self.__now_ln)
+                a.scope_effect = False
                 return a
 
             expr = self.__parse_binary_expr()
