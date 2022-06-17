@@ -1155,7 +1155,7 @@ class Parser:
         if do_star and self.__now_tok.ttype == AIL_MULT:
             ln = self.__now_ln
             self.__next_tok()  # eat '*'
-            expr = parse_func()
+            expr = parse_func() 
             expr = ast.StarredExpr(expr, True, ln)
         else:
             expr = parse_func()

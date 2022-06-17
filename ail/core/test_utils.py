@@ -253,11 +253,59 @@ def make_ast_tree(a) -> dict:
         }
 
     elif isinstance(a, ast.BlankNode):
-        return {'<blank node>'}
+        return {'<blank node>': '<none>'}
 
     elif isinstance(a, ast.TupleAST):
-        return {
+        return {'TupleExpr': {
             'items': make_ast_tree(a.items),
+        }}
+
+    elif isinstance(a, ast.StarredExpr):
+        return {
+            'StarredExpr': {
+                'value': make_ast_tree(a.value),
+                'store': a.store,
+            }
+        }
+
+    elif isinstance(a, ast.WithStmt):
+        return {
+            'WithStmt': {
+                'items': make_ast_tree(a.items),
+                'body': make_ast_tree(a.body),
+            }
+        }
+
+    elif isinstance(a, ast.WithItem):
+        return {
+            'WithItem': {
+                'context_expr': make_ast_tree(a.context_expr),
+                'optional_var': make_ast_tree(a.optional_var),
+            }
+        }
+
+    elif isinstance(a, ast.PyImportStmt):
+        return {
+            'PyImportStmt': {
+                'names': make_ast_tree(a.names),
+            }
+        }
+
+    elif isinstance(a, ast.PyImportAlias):
+        return {
+            'PyImportAlias': {
+                'name': a.name,
+                'alias': a.alias,
+            }
+        }
+
+    elif isinstance(a, ast.PyImportFromStmt):
+        return {
+            'PyImportFrom': {
+                'module': a.module,
+                'names': make_ast_tree(a.names),
+                'level': a.level,
+            }
         }
 
     elif isinstance(a, list):
