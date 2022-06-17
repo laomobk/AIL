@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+
 from typing import List
 from types import CodeType
 
@@ -6,7 +6,6 @@ from . import asts as ast
 from . import pyopcode as opcode
 
 from .symbol import SymbolTable
-from .tokentype import AIL_NUMBER, AIL_STRING, AIL_IDENTIFIER
 
 
 COMPILE_FLAG_GLOBAL = 0x1
@@ -113,8 +112,6 @@ class CompilerState:
     def __init__(self):
         self.block_stack: List[Block] = []
         self.cobj_buffer: CodeObjectBuffer = None
-        self.defined_name: List[str] = []
-        self.symbol_table_index = 0
 
 
 class GeneralCompileState:
@@ -135,45 +132,8 @@ class GenericPyCodeCompiler:
     def cobj_buffer(self) -> CodeObjectBuffer:
         return self.__state.cobj_buffer
 
-    def _get_defined_names(self, body: ast.BlockAST, names: List[str]):
-        for stmt in body.stmts:
-            name = None
-            if isinstance(stmt, ast.FunctionDefineAST):
-                name = stmt.name
-            elif isinstance(stmt, ast.ClassDefineAST):
-                name = stmt.name
-            elif isinstance(stmt, ast.NamespaceStmt):
-                name = stmt.name
-            elif isinstance(stmt, ast.StructDefineAST):
-                name = stmt.name
-            else:
-                continue
-
-            names.append(name)
-
-    def _visit_and_get_freevars(
-            self, body: ast.BlockAST, freevars: List[str]) -> List[str]:
-        defined_names = []
-        self._get_defined_names(body, defined_names)
-
-        for stmt in body.stmts:
-            stmt
-
     def _compile_cell(self, cell: ast.CellAST):
-        if cell.type in (AIL_STRING, AIL_NUMBER):
-            ci = self.cobj_buffer.add_const(cell.value)
-            self.cobj_buffer.add_bytecode(opcode.LOAD_CONST, ci, cell.ln)
-            return
-        name = cell.value
-        load_instr = opcode.LOAD_NAME
-        if self.__general_state.level > 1:
-            if name in self.__state.defined_name:
-                load_instr = opcode.LOAD_FAST
-            else:
-                load_instr = opcode.LOAD_DEREF
-        elif self.__general_state.level == 1:
-            if name not in self.__state.defined_name:
-                load_instr = opcode.LOAD_GLOBAL
+        pass
 
     def _compile_node(self, node: ast.AST):
         if isinstance(node, ast.CellAST):

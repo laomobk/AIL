@@ -18,8 +18,8 @@ if x {}
 '''
 
 S_IMPORT = '''
-import! os
-import! sys, dis
+import 'os'
+import 'a/b'
 '''
 
 

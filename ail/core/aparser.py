@@ -3483,7 +3483,7 @@ class ASTConverter:
             '!': not_uop,
         }[expr.op]()
 
-        operand = self.convert(expr.right_expr)
+        operand = self.convert(expr.expr)
 
         return _set_lineno(unary_op_expr(op, operand), expr.ln)
 

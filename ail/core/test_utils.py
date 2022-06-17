@@ -1,4 +1,3 @@
-
 from . import asts as ast
 
 
@@ -19,7 +18,7 @@ def unparse_pyast(tree):
         print(astunparse.unparse(tree))
     except ModuleNotFoundError:
         print('unparse_pyast: module \'astunparse\' not found.')
-    
+
 
 def unpack_list(l: list):
     rl = []
@@ -36,7 +35,7 @@ def make_ast_tree(a) -> dict:
         return {'Cell': {'value': a.value, 'type': a.type}}
 
     elif isinstance(a, ast.UnaryExprAST):
-        return {'UnaryAST': {'op': a.op, 'right': make_ast_tree(a.right_expr)}}
+        return {'UnaryAST': {'op': a.op, 'right': make_ast_tree(a.expr)}}
 
     elif isinstance(a, ast.PowerExprAST):
         return {'PowerAST': {'left': make_ast_tree(a.left), 'right': make_ast_tree(a.right)}}
@@ -61,8 +60,8 @@ def make_ast_tree(a) -> dict:
 
     elif isinstance(a, ast.CallExprAST):
         return {'CallAST': {
-                    'left': make_ast_tree(a.left),
-                    'arg_list': make_ast_tree(a.arg_list)}}
+            'left': make_ast_tree(a.left),
+            'arg_list': make_ast_tree(a.arg_list)}}
 
     elif isinstance(a, ast.PrintStmtAST):
         return {'PrintAST': {'value': unpack_list(a.value_list)}}
@@ -70,9 +69,9 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.InputStmtAST):
         return {'InputAST': {
             'msg': make_ast_tree(a.msg), 'list': make_ast_tree(a.value_list)}}
-    
+
     elif isinstance(a, ast.ArgItemAST):
-        return {'ArgItem': {'expr': make_ast_tree(a.expr), 
+        return {'ArgItem': {'expr': make_ast_tree(a.expr),
                             'star': a.star,
                             'type_comment': make_ast_tree(a.type_comment)}}
 
@@ -146,12 +145,12 @@ def make_ast_tree(a) -> dict:
                     'type_comment': make_ast_tree(a.type_comment)}}
 
     elif isinstance(a, ast.ClassDefineAST):
-        return {'ClassDefAST': 
-                {
-                    'name': a.name,
-                    'bases': make_ast_tree(a.bases),
-                    'func': make_ast_tree(a.func),
-                }}
+        return {'ClassDefAST':
+            {
+                'name': a.name,
+                'bases': make_ast_tree(a.bases),
+                'func': make_ast_tree(a.func),
+            }}
 
     elif isinstance(a, ast.ReturnStmtAST):
         return {'ReturnAST': {'expr': make_ast_tree(a.expr)}}
@@ -172,7 +171,7 @@ def make_ast_tree(a) -> dict:
         return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 
     elif isinstance(a, ast.DictAST):
-        return {'MapAST': {'keys': make_ast_tree(a.keys), 
+        return {'MapAST': {'keys': make_ast_tree(a.keys),
                            'values': make_ast_tree(a.values)}}
 
     elif isinstance(a, ast.ItemListAST):
@@ -232,16 +231,25 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.TryCatchStmtAST):
         return {'TryCatchExprAST':
                     {'try_block': make_ast_tree(a.try_block),
-                     'catch_block': make_ast_tree(a.catch_block),
+                     'catch_case': make_ast_tree(a.catch_cases),
                      'finally_block': make_ast_tree(a.finally_block),
-                     'error_name': make_ast_tree(a.name)}}
+                     }}
+
+    elif isinstance(a, ast.CatchCase):
+        return {
+            'CatchCase': {
+                'exc_expr': make_ast_tree(a.exc_expr),
+                'alias': make_ast_tree(a.alias),
+                'block': make_ast_tree(a.block),
+            }
+        }
 
     elif isinstance(a, ast.ObjectPatternExpr):
-        return {'ObjectPatternAST': 
-                    {
-                        'left': make_ast_tree(a.left),
-                        'keys': make_ast_tree(a.keys),
-                        'values': make_ast_tree(a.values)}}
+        return {'ObjectPatternAST':
+            {
+                'left': make_ast_tree(a.left),
+                'keys': make_ast_tree(a.keys),
+                'values': make_ast_tree(a.values)}}
 
     elif isinstance(a, ast.ForeachStmt):
         return {

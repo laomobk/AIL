@@ -53,9 +53,9 @@ class MemberAccessAST(Expression):
 
 
 class UnaryExprAST(Expression):
-    def __init__(self, op: str, right_expr: MemberAccessAST, ln: int):
+    def __init__(self, op: str, expr: MemberAccessAST, ln: int):
         self.op = op
-        self.right_expr = right_expr
+        self.expr = expr
         self.ln = ln
 
 
@@ -643,3 +643,7 @@ BIN_OP_AST = (
     CmpTestAST,
 )
 
+UNARY_EXPR_ASTS = (
+    NotTestAST,
+    UnaryExprAST,
+)
