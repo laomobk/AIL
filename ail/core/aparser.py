@@ -969,6 +969,7 @@ class Parser:
                 aconfig.LAMBDA_FUNC_NAME, expr_or_param, block, None, expr.ln)
             a.is_lambda = True
             a.lambda_return = expr
+            a.scope_effect = False
             return a
 
         nt = self.__now_tok
