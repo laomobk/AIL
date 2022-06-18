@@ -20,14 +20,12 @@ CTX_LOAD = 0x1
 CTX_STORE = 0x2
 
 
-def _do_mangle(cls_name: str, name: str) -> str:
-    if cls_name == '':
-        return name
+def do_mangle(cls_name: str, name: str) -> str:
+    return '_%s%s' % (cls_name, name)
 
-    if name[:2] == '__' and name[-2:] != '__':
-        return '__%s_%s' % (cls_name, name)
 
-    return name
+def check_mangle(name: str):
+    return name[:2] == '__' and name[-2:] != '__'
 
 
 def _get_first_cell(expr) -> ast.CellAST:
@@ -117,6 +115,21 @@ class SymbolTable:
 
         symbols.append(symbol)
 
+    def mangle(self, symbol: Symbol):
+        name = symbol.name
+        if not check_mangle(name):
+            return
+
+        cur_tab = self
+        while cur_tab is not None:
+            if isinstance(cur_tab, ClassSymbolTable):
+                break
+            cur_tab = cur_tab.prev_table
+        else:
+            return  # no class symbol table found
+
+        symbol.name = do_mangle(cur_tab.name, symbol.name)
+
     def __str__(self):
         return '<SymbolTable of %s>' % self.name
 
@@ -127,6 +140,7 @@ class FunctionSymbolTable(SymbolTable):
     def __init__(self, name: str):
         super().__init__(name)
         self.freevars: Set[str] = set()
+        self.is_namespace = False
 
     def __str__(self):
         return '<Function SymbolTable of %s>' % self.name
@@ -137,7 +151,7 @@ class FunctionSymbolTable(SymbolTable):
 class ClassSymbolTable(SymbolTable):
     def __init__(self, name: str):
         super().__init__(name)
-        self.cur_class: str = ''
+        self.freevars: Set[str] = set()
 
     def __str__(self):
         return '<Class SymbolTable of %s>' % self.name
@@ -160,10 +174,11 @@ class SymbolAnalyzer:
 
     def _analyze_and_fill_symbol(
             self, symbol: Symbol, ctx: int, ignore_nonlocal: bool = False) -> Symbol:
+        self.__symbol_table.mangle(symbol)
         name = symbol.name
 
         if ctx == CTX_STORE:
-            if isinstance(self.__symbol_table, FunctionSymbolTable):
+            if type(self.__symbol_table) is not SymbolTable:
                 if name in self.__symbol_table.global_directives:
                     symbol.flag |= SYM_GLOBAL | SYM_STORE
                 elif name in self.__symbol_table.nonlocal_directives and not ignore_nonlocal:
@@ -178,8 +193,10 @@ class SymbolAnalyzer:
 
         assert ctx == CTX_LOAD
 
-        if type(self.__symbol_table) is FunctionSymbolTable and \
-                self.__symbol_table.is_free(symbol):
+        if type(self.__symbol_table) is not SymbolTable and \
+                (self.__symbol_table.is_free(symbol) or
+                 name in self.__symbol_table.nonlocal_directives) and \
+                not ignore_nonlocal:
             symbol.flag |= SYM_FREE
             self.__symbol_table.freevars.add(name)
         elif type(self.__symbol_table) is not SymbolTable and \
@@ -210,6 +227,7 @@ class SymbolAnalyzer:
                     Symbol(target.value), CTX_STORE, ignore_nonlocal)
                 self.__add_symbol(s)
                 target.symbol = s
+
             elif isinstance(target, ast.MemberAccessAST) or \
                     isinstance(target, ast.SubscriptExprAST):
                 name = _get_first_cell(target)
@@ -247,19 +265,42 @@ class SymbolAnalyzer:
     def _visit_queue(self):
         for symbol, node in self.__block_queue:
             if isinstance(node, ast.FunctionDefineAST):
-                node: ast.FunctionDefineAST
+                self._visit_func_def(node, symbol)
+            elif isinstance(node, ast.ClassDefineAST):
+                self._visit_class_def(node, symbol)
+            elif isinstance(node, ast.NamespaceStmt):
+                self._visit_namespace_def(node, symbol)
 
-                body: ast.BlockAST = node.block
-                table = FunctionSymbolTable(node.name)
-                table.prev_table = self.__symbol_table
-                _visit_param_list(table, node.param_list)
+    def _visit_func_def(self, node: ast.FunctionDefineAST, symbol: Symbol):
+        table = FunctionSymbolTable(node.name)
+        table.prev_table = self.__symbol_table
+        _visit_param_list(table, node.param_list)
 
-                analyzer = SymbolAnalyzer()
-                table = analyzer.visit_and_make_symbol_table(
-                    self.__source, self.__filename, body, table
-                )
+        analyzer = SymbolAnalyzer()
+        table = analyzer.visit_and_make_symbol_table(
+            self.__source, self.__filename, node.block, table
+        )
+        symbol.namespace = table
 
-                symbol.namespace = table
+    def _visit_class_def(self, node: ast.ClassDefineAST, symbol: Symbol):
+        table = ClassSymbolTable(node.name)
+        table.prev_table = self.__symbol_table
+
+        analyzer = SymbolAnalyzer()
+        table = analyzer.visit_and_make_symbol_table(
+            self.__source, self.__filename, node.func.block, table
+        )
+        symbol.namespace = table
+
+    def _visit_namespace_def(self, node: ast.NamespaceStmt, symbol: Symbol):
+        table = FunctionSymbolTable(node.name)
+        table.is_namespace = True
+
+        analyzer = SymbolAnalyzer()
+        table = analyzer.visit_and_make_symbol_table(
+            self.__source, self.__filename, node.block, table
+        )
+        symbol.namespace = table
 
     def _visit_member_access_expr(self, expr: ast.MemberAccessAST):
         left = _get_first_cell(expr)
@@ -344,6 +385,29 @@ class SymbolAnalyzer:
     def _visit_try_stmt(self, stmt: ast.TryCatchStmtAST):
         self._visit(stmt.try_block)
         self._visit(stmt.finally_block)
+
+        for case in stmt.catch_cases:
+            self._visit(case.block)
+            self._visit(case.exc_expr)
+            self.__add_symbol(
+                self._analyze_and_fill_symbol(Symbol(case.alias), CTX_STORE, True)
+            )
+
+    def _visit_match_expr(self, expr: ast.MatchExpr):
+        self._visit(expr.target)
+
+        for case in expr.cases:
+            if case.when_test is not None:
+                self._visit(case.when_test)
+            else:
+                for pattern in case.patterns:
+                    self._visit(pattern)
+            self._visit(case.expr)
+
+    def _visit_obj_pattern_expr(self, expr: ast.ObjectPatternExpr):
+        self._visit(expr.left)
+        for val in expr.values:
+            self._visit(val)
 
     def _visit(self, node: ast.AST):
         if node is None:
@@ -476,6 +540,15 @@ class SymbolAnalyzer:
         elif isinstance(node, ast.AssertStmtAST):
             self._visit(node.expr)
             self._visit(node.msg)
+
+        elif isinstance(node, ast.TryCatchStmtAST):
+            self._visit_try_stmt(node)
+
+        elif isinstance(node, ast.MatchExpr):
+            self._visit_match_expr(node)
+
+        elif isinstance(node, ast.ObjectPatternExpr):
+            self._visit_obj_pattern_expr(node)
 
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)

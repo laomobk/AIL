@@ -1,4 +1,5 @@
 
-try {
-
-} catch e e {}
+C! {
+    x: 1,
+    b: d
+}

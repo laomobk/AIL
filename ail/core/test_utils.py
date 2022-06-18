@@ -130,6 +130,7 @@ def make_ast_tree(a) -> dict:
             'MatchCase': {
                 'patterns': make_ast_tree(a.patterns),
                 'expr': make_ast_tree(a.expr),
+                'when': make_ast_tree(a.when_test)
             }
         }
 
