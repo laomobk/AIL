@@ -13,6 +13,9 @@ SYM_NONLOCAL = 0x10
 SYM_STORE = 0x20
 SYM_PARAMETER = 0x40
 
+FROM_STORE = 0x1
+FROM_IMPORT = 0x2
+
 CTX_LOAD = 0x1
 CTX_STORE = 0x2
 
@@ -49,9 +52,12 @@ def _visit_param_list(
 
 
 class Symbol:
-    def __init__(self, name, flag=0, namespace: 'SymbolTable' = None):
+    def __init__(
+            self, name, flag=0,
+            namespace: 'SymbolTable' = None, from_flag=FROM_STORE):
         self.name: str = name
         self.flag: int = flag
+        self.from_flag: int = from_flag
         self.namespace: 'SymbolTable' = namespace
 
     def __eq__(self, other: 'Symbol'):
@@ -67,8 +73,8 @@ class Symbol:
 class SymbolTable:
     def __init__(self, name: str = 'top'):
         self.symbols: List[Symbol] = []
-        self.global_directives: List[str] = []
-        self.nonlocal_directives: List[str] = []
+        self.global_directives: Set[str] = set()
+        self.nonlocal_directives: Set[str] = set()
         self.prev_table: 'SymbolTable' = None
         self.name = name
 
@@ -324,7 +330,25 @@ class SymbolAnalyzer:
             s = self._analyze_and_fill_symbol(Symbol(name), CTX_STORE, True)
             self.__add_symbol(s)
 
+    def _visit_import_stmt(self, stmt: ast.ImportStmtAST):
+        if not stmt.members:
+            s = self._analyze_and_fill_symbol(Symbol(stmt.name), CTX_STORE, True)
+            self.__add_symbol(s)
+            return
+
+        for m in stmt.members:
+            s = self._analyze_and_fill_symbol(Symbol(m), CTX_STORE, True)
+            self.__add_symbol(s)
+            return
+
+    def _visit_try_stmt(self, stmt: ast.TryCatchStmtAST):
+        self._visit(stmt.try_block)
+        self._visit(stmt.finally_block)
+
     def _visit(self, node: ast.AST):
+        if node is None:
+            return
+
         if isinstance(node, ast.BlockAST):
             self._visit_block(node)
 
@@ -344,13 +368,10 @@ class SymbolAnalyzer:
             self._visit_member_access_expr(node)
 
         elif isinstance(node, ast.UnaryExprAST):
-            self._visit(node.right_expr)
+            self._visit(node.expr)
 
         elif isinstance(node, ast.TestExprAST):
             self._visit(node.test)
-
-        elif type(node) in ast.EXPR_AST_TYPES:
-            self._visit_binary_expr(node)
 
         elif isinstance(node, ast.ReturnStmtAST):
             self._visit(node.expr)
@@ -407,6 +428,55 @@ class SymbolAnalyzer:
         elif isinstance(node, ast.PyImportFromStmt):
             self._visit_py_import_from_stmt(node)
 
+        elif isinstance(node, ast.ImportStmtAST):
+            self._visit_import_stmt(node)
+
+        elif isinstance(node, ast.PrintStmtAST):
+            for val in node.value_list:
+                self._visit(val)
+
+        elif isinstance(node, ast.InputStmtAST):
+            self._visit(node.msg)
+            for val in node.value_list.value_list:
+                val: ast.CellAST
+                s = self._analyze_and_fill_symbol(Symbol(val.value), CTX_LOAD, True)
+                self.__add_symbol(s)
+
+        elif isinstance(node, ast.DoLoopStmtAST):
+            self._visit(node.test)
+            self._visit(node.block)
+
+        elif isinstance(node, ast.GlobalStmtAST):
+            if node.name in self.__symbol_table.nonlocal_directives:
+                self.__syntax_error(
+                    'name \'%s\' is nonlocal and global' % node.name, node.ln)
+            self.__symbol_table.global_directives.add(node.name)
+
+        elif isinstance(node, ast.NonlocalStmtAST):
+            if node.name in self.__symbol_table.global_directives:
+                self.__syntax_error(
+                    'name \'%s\' is nonlocal and global' % node.name, node.ln)
+            self.__symbol_table.nonlocal_directives.add(node.name)
+
+        elif isinstance(node, ast.StructDefineAST):
+            s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE, True)
+            self.__add_symbol(s)
+
+        elif isinstance(node, ast.AssignExprListAST):
+            for expr in node.expr_list:
+                self._visit(expr)
+
+        elif isinstance(node, ast.BinaryExprListAST):
+            for expr in node.expr_list:
+                self._visit(expr)
+
+        elif isinstance(node, ast.ThrowStmtAST):
+            self._visit(node.expr)
+
+        elif isinstance(node, ast.AssertStmtAST):
+            self._visit(node.expr)
+            self._visit(node.msg)
+
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             self.__add_symbol(s)
@@ -440,6 +510,12 @@ class SymbolAnalyzer:
             self.__add_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
+
+        elif type(node) in ast.UNARY_EXPR_ASTS:
+            self._visit(node.expr)
+
+        elif type(node) in ast.EXPR_AST_TYPES:
+            self._visit_binary_expr(node)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
