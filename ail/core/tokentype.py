@@ -69,3 +69,4 @@ AIL_INP_POW         = 610   #   **
 
 AIL_EDITOR_CURSOR   = 71    #   (ascii = 5)
 
+AIL_CONSTANTS = ('True', 'true', 'False', 'false')

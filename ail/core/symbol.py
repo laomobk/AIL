@@ -3,7 +3,7 @@ from typing import List, Set
 from . import asts as ast
 
 from .error import error_msg
-from .tokentype import AIL_IDENTIFIER
+from .tokentype import AIL_IDENTIFIER, AIL_CONSTANTS
 
 SYM_FREE = 0x1
 SYM_LOCAL = 0x2
@@ -11,10 +11,10 @@ SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
 SYM_NONLOCAL = 0x10
 SYM_STORE = 0x20
-SYM_PARAMETER = 0x40
 
 FROM_STORE = 0x1
 FROM_IMPORT = 0x2
+FROM_PARAMETER = 0x4
 
 CTX_LOAD = 0x1
 CTX_STORE = 0x2
@@ -45,7 +45,8 @@ def _visit_param_list(
                param.expr.type == AIL_IDENTIFIER
 
         symbol = Symbol(param.expr.value)
-        symbol.flag |= SYM_LOCAL | SYM_PARAMETER
+        symbol.flag |= SYM_LOCAL | SYM_STORE
+        symbol.from_flag = FROM_PARAMETER
         symbol_table.add_symbol(symbol)
 
 
@@ -110,7 +111,7 @@ class SymbolTable:
         symbols = self.symbols
 
         for sym in symbols:
-            if sym.flag == symbol.flag and sym.name == symbol.name:
+            if sym.name == symbol.name:
                 return
 
         symbols.append(symbol)
@@ -249,7 +250,7 @@ class SymbolAnalyzer:
         self._visit(expr.right)
 
     def _visit_cell(self, cell: ast.CellAST):
-        if cell.type != AIL_IDENTIFIER:
+        if cell.type != AIL_IDENTIFIER or cell.value in AIL_CONSTANTS:
             return
 
         s = self._analyze_and_fill_symbol(Symbol(cell.value), CTX_LOAD)
@@ -607,3 +608,13 @@ class SymbolAnalyzer:
         self._visit_queue()
 
         return self.__symbol_table
+
+
+def symtable(source, filename) -> SymbolTable:
+    from ail.core import aparser, alex
+
+    ts = alex.Lex().lex(source)
+    tree = aparser.Parser().parse(ts, source, filename)
+    analyzer = SymbolAnalyzer()
+    return analyzer.visit_and_make_symbol_table(
+            source, filename, tree)
