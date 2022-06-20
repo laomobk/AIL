@@ -1,7 +1,7 @@
 
 from unittest import TestCase
 
-from ail.core.compiler import CodeObjectBuffer
+from ail.core.acompiler import CodeObjectBuffer
 from ail.core.pyopcode import EXTENDED_ARG
 
 

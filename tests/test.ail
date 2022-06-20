@@ -1,8 +1,7 @@
 
-func f() {
-    x = 1;
-    func f() {
-        return x;
-    }
+if a {
+
+} elif x {
+
 }
 

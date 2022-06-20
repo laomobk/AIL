@@ -42,11 +42,11 @@ def _visit_param_list(
     for param in param_list.arg_list:
         assert isinstance(param.expr, ast.CellAST) and \
                param.expr.type == AIL_IDENTIFIER
-
         symbol = Symbol(param.expr.value)
-        symbol.flag |= SYM_LOCAL | SYM_STORE
+        symbol.flag |= SYM_LOCAL
         symbol.from_flag = FROM_PARAMETER
         symbol_table.add_symbol(symbol)
+        param.expr.symbol = symbol
 
 
 class Symbol:

@@ -1,12 +1,17 @@
 
-from typing import List
+from typing import List, Tuple
 from types import CodeType
 
 from . import asts as ast
 from . import pyopcode as opcode
 
-from .symbol import SymbolTable
+from .symbol import (
+    SymbolTable,
+    SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE
+)
 
+CTX_LOAD = 0x1
+CTX_STORE = 0x2
 
 COMPILE_FLAG_GLOBAL = 0x1
 COMPILE_FLAG_FUNC = 0x2
@@ -103,11 +108,6 @@ class CodeObjectBuffer:
         return size
 
 
-class Block:
-    def __init__(self, block_type: int):
-        self.block_type = block_type
-
-
 class CompilerState:
     def __init__(self):
         self.block_stack: List[Block] = []
@@ -132,8 +132,13 @@ class GenericPyCodeCompiler:
     def cobj_buffer(self) -> CodeObjectBuffer:
         return self.__state.cobj_buffer
 
-    def _compile_cell(self, cell: ast.CellAST):
-        pass
+    def _compile_name(self, cell: ast.CellAST, ctx: int):
+        sym = cell.symbol
+
+        if ctx == CTX_STORE:
+            if sym.flag & SYM_LOCAL:
+                self.cobj_buffer.add_bytecode(
+                    opcode.STORE_FAST, )
 
     def _compile_node(self, node: ast.AST):
         if isinstance(node, ast.CellAST):
