@@ -10,7 +10,6 @@ SYM_LOCAL = 0x2
 SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
 SYM_NONLOCAL = 0x10
-SYM_STORE = 0x20
 
 FROM_STORE = 0x1
 FROM_IMPORT = 0x2
@@ -71,6 +70,7 @@ class Symbol:
 
 class SymbolTable:
     def __init__(self, name: str = 'top'):
+        self.store_symbols: List[Symbol] = []
         self.symbols: List[Symbol] = []
         self.global_directives: Set[str] = set()
         self.nonlocal_directives: Set[str] = set()
@@ -78,16 +78,16 @@ class SymbolTable:
         self.name = name
 
     def is_local(self, symbol: Symbol) -> bool:
-        for s in self.symbols:
-            if s.name == symbol.name and s.flag & SYM_STORE:
+        for s in self.store_symbols:
+            if s.name == symbol.name:
                 return True
         return False
 
     def is_global(self, symbol: Symbol) -> bool:
         if self.prev_table is None:
             # so this is the symbol table for global scope
-            for s in self.symbols:
-                if s.name == symbol.name and s.flag & SYM_STORE:
+            for s in self.store_symbols:
+                if s.name == symbol.name:
                     return True
             return False
         return self.prev_table.is_global(symbol)
@@ -97,8 +97,8 @@ class SymbolTable:
             # the global scope cannot check free variable
             return False
 
-        for s in self.symbols:
-            if s.name == symbol.name and s.flag & SYM_STORE:
+        for s in self.store_symbols:
+            if s.name == symbol.name:
                 return True
         return False
 
@@ -107,14 +107,20 @@ class SymbolTable:
         if self.prev_table is not None:
             return self.prev_table._check_free(symbol)
 
+    def add_store_symbol(self, symbol: Symbol):
+        for sym in self.store_symbols:
+            if sym.name == symbol.name and sym.flag == symbol.flag:
+                return
+        self.store_symbols.insert(0, symbol)
+
     def add_symbol(self, symbol: Symbol):
         symbols = self.symbols
 
         for sym in symbols:
-            if sym.name == symbol.name:
+            if sym.name == symbol.name and sym.flag == symbol.flag:
                 return
 
-        symbols.append(symbol)
+        symbols.insert(0, symbol)
 
     def mangle(self, symbol: Symbol):
         name = symbol.name
@@ -170,6 +176,9 @@ class SymbolAnalyzer:
     def __add_symbol(self, symbol: Symbol):
         self.__symbol_table.add_symbol(symbol)
 
+    def __add_store_symbol(self, symbol: Symbol):
+        self.__symbol_table.add_store_symbol(symbol)
+
     def __syntax_error(self, msg: str, ln: int):
         error_msg(ln, msg, self.__filename, source=self.__source)
 
@@ -181,15 +190,16 @@ class SymbolAnalyzer:
         if ctx == CTX_STORE:
             if type(self.__symbol_table) is not SymbolTable:
                 if name in self.__symbol_table.global_directives:
-                    symbol.flag |= SYM_GLOBAL | SYM_STORE
-                elif name in self.__symbol_table.nonlocal_directives and not ignore_nonlocal:
-                    symbol.flag |= SYM_NONLOCAL | SYM_STORE
+                    symbol.flag |= SYM_GLOBAL
+                elif name in self.__symbol_table.nonlocal_directives and \
+                        not ignore_nonlocal:
+                    symbol.flag |= SYM_NONLOCAL
                     self.__symbol_table.freevars.add(name)
                 else:
-                    symbol.flag |= SYM_LOCAL | SYM_STORE
+                    symbol.flag |= SYM_LOCAL
                 return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
-            symbol.flag |= SYM_GLOBAL | SYM_STORE
+            symbol.flag |= SYM_GLOBAL
             return symbol
 
         assert ctx == CTX_LOAD
@@ -226,7 +236,7 @@ class SymbolAnalyzer:
             if isinstance(target, ast.CellAST):
                 s = self._analyze_and_fill_symbol(
                     Symbol(target.value), CTX_STORE, ignore_nonlocal)
-                self.__add_symbol(s)
+                self.__add_store_symbol(s)
                 target.symbol = s
 
             elif isinstance(target, ast.MemberAccessAST) or \
@@ -235,7 +245,7 @@ class SymbolAnalyzer:
                 s = self._analyze_and_fill_symbol(
                     Symbol(name.value), CTX_STORE, ignore_nonlocal)
                 name.symbol = s
-                self.__add_symbol(s)
+                self.__add_store_symbol(s)
             else:
                 raise TypeError('invalid target type: %s' % type(target))
 
@@ -361,7 +371,7 @@ class SymbolAnalyzer:
             else:
                 name = item.alias
             s = self._analyze_and_fill_symbol(Symbol(name), CTX_STORE, True)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
 
     def _visit_py_import_from_stmt(self, stmt: ast.PyImportFromStmt):
         for item in stmt.names:
@@ -370,17 +380,17 @@ class SymbolAnalyzer:
             else:
                 name = item.alias
             s = self._analyze_and_fill_symbol(Symbol(name), CTX_STORE, True)
-            self.__add_symbol(s)
+            self.__add_store_symboll(s)
 
     def _visit_import_stmt(self, stmt: ast.ImportStmtAST):
         if not stmt.members:
             s = self._analyze_and_fill_symbol(Symbol(stmt.name), CTX_STORE, True)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
             return
 
         for m in stmt.members:
             s = self._analyze_and_fill_symbol(Symbol(m), CTX_STORE, True)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
             return
 
     def _visit_try_stmt(self, stmt: ast.TryCatchStmtAST):
@@ -390,7 +400,7 @@ class SymbolAnalyzer:
         for case in stmt.catch_cases:
             self._visit(case.block)
             self._visit(case.exc_expr)
-            self.__add_symbol(
+            self.__add_store_symbol(
                 self._analyze_and_fill_symbol(Symbol(case.alias), CTX_STORE, True)
             )
 
@@ -525,7 +535,7 @@ class SymbolAnalyzer:
 
         elif isinstance(node, ast.StructDefineAST):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE, True)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
 
         elif isinstance(node, ast.AssignExprListAST):
             for expr in node.expr_list:
@@ -553,7 +563,7 @@ class SymbolAnalyzer:
 
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
 
@@ -570,7 +580,7 @@ class SymbolAnalyzer:
 
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             if node.scope_effect:
-                self.__add_symbol(s)
+                self.__add_store_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
 
@@ -581,7 +591,7 @@ class SymbolAnalyzer:
                 for base in node.bases:
                     self._visit(base)
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
-            self.__add_symbol(s)
+            self.__add_store_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
 

@@ -32,7 +32,11 @@ def unpack_list(l: list):
 
 def make_ast_tree(a) -> dict:
     if isinstance(a, ast.CellAST):
-        return {'Cell': {'value': a.value, 'type': a.type}}
+        return {'Cell': {
+                'value': a.value, 'type': a.type,
+                'symbol': a.symbol,
+            }
+        }
 
     elif isinstance(a, ast.UnaryExprAST):
         return {'UnaryAST': {'op': a.op, 'right': make_ast_tree(a.expr)}}
@@ -143,7 +147,10 @@ def make_ast_tree(a) -> dict:
                     'block': make_ast_tree(a.block),
                     'bindto': make_ast_tree(a.bindto),
                     'decorator': make_ast_tree(a.decorator),
-                    'type_comment': make_ast_tree(a.type_comment)}}
+                    'type_comment': make_ast_tree(a.type_comment),
+                    'symbol': a.symbol
+                }
+        }
 
     elif isinstance(a, ast.ClassDefineAST):
         return {'ClassDefAST':
@@ -151,6 +158,7 @@ def make_ast_tree(a) -> dict:
                 'name': a.name,
                 'bases': make_ast_tree(a.bases),
                 'func': make_ast_tree(a.func),
+                'symbol': a.symbol,
             }}
 
     elif isinstance(a, ast.ReturnStmtAST):

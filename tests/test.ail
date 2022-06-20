@@ -1,5 +1,8 @@
 
-C! {
-    x: 1,
-    b: d
+func f() {
+    x = 1;
+    func f() {
+        return x;
+    }
 }
+

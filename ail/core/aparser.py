@@ -4162,6 +4162,7 @@ TEST_CONVERT_PYAST = True and False
 
 def test_parse():
     import pprint
+    from .symbol import SymbolAnalyzer
 
     source = open('./tests/test.ail').read()
     l = Lex()
@@ -4171,6 +4172,8 @@ def test_parse():
     t = p.parse(ts, source, '<test>', TEST_CONVERT_PYAST)
 
     if not TEST_CONVERT_PYAST:
+        SymbolAnalyzer().visit_and_make_symbol_table(
+                source, '<test>', t)
         pt = test_utils.make_ast_tree(t)
         pprint.pprint(pt)
     else:
