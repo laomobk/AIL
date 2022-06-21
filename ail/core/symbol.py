@@ -76,6 +76,7 @@ class SymbolTable:
         self.nonlocal_directives: Set[str] = set()
         self.prev_table: 'SymbolTable' = None
         self.name = name
+        self.freevars: Set[str] = set()
 
     def is_local(self, symbol: Symbol) -> bool:
         for s in self.store_symbols:
@@ -146,7 +147,6 @@ class SymbolTable:
 class FunctionSymbolTable(SymbolTable):
     def __init__(self, name: str):
         super().__init__(name)
-        self.freevars: Set[str] = set()
         self.is_namespace = False
 
     def __str__(self):
@@ -158,7 +158,6 @@ class FunctionSymbolTable(SymbolTable):
 class ClassSymbolTable(SymbolTable):
     def __init__(self, name: str):
         super().__init__(name)
-        self.freevars: Set[str] = set()
 
     def __str__(self):
         return '<Class SymbolTable of %s>' % self.name
@@ -601,6 +600,19 @@ class SymbolAnalyzer:
         elif type(node) in ast.EXPR_AST_TYPES:
             self._visit_binary_expr(node)
 
+    def _check_freevars(self):
+        if type(self.__symbol_table) is SymbolTable:
+            return
+
+        self.__symbol_table: FunctionSymbolTable
+
+        freevars = self.__symbol_table.freevars
+
+        for symbol in self.__symbol_table.symbols:
+            if symbol.namespace is not None:
+                assert type(symbol.namespace) is not SymbolTable
+                freevars.update(symbol.namespace.freevars)
+
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
 
@@ -616,6 +628,7 @@ class SymbolAnalyzer:
 
         self._visit(node)
         self._visit_queue()
+        self._check_freevars()
 
         return self.__symbol_table
 

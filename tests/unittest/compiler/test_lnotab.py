@@ -1,6 +1,6 @@
 
 from unittest import TestCase
-from ail.core.acompiler import CodeObjectBuffer
+from ail.core.acompile import CodeObjectBuffer
 
 
 class TestLnoTab(TestCase):
