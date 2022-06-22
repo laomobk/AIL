@@ -132,17 +132,38 @@ class BasicBlock:
         return len(self.instructions) - 1
 
 
+FB_TRY = 0x1
+FB_LOOP = 0x2
+FB_WITH = 0x4
+
+
+class FrameBlock:
+    def __init__(self, fb_type: int):
+        self.fb_type = fb_type
+
+    
+class CompileUnit:
+    def __init__(self):
+        self.block: BasicBlock = None
+        self.scope: SymbolTable = None
+
+        self.name: str = '<unknown>'
+        self.varnames: List[str] = []
+        self.consts: List[object] = []
+        self.varname: List[str] = []
+        self.freevars = List[str] = []
+        self.cellvars = List[str] = []
+        self.stack_size = 0
+
+        self.prev_unit: CompileUnit = None
+        self.firstlineno: int = 1
+
+        self.fb_stack: List[FrameBlock] = []
+
+
 class Compiler:
     def __init__(self):
-        self._current_block: BasicBlock = None
-        self._current_scope: SymbolTable = None
-
-        self._varnames: List[str] = []
-        self._consts: List[object] = []
-        self._varname: List[str] = []
-        self._freevars = List[str] = []
-        self._cellvars = List[str] = []
-        self._stack_size = 0
+        self._unit: CompileUnit = None
 
     def _check_oparg(self, arg: int, ln: int) -> int:
         final = arg & 0xff
@@ -161,27 +182,27 @@ class Compiler:
             arg = self._check_oparg(arg, ln)
 
         effect = OPCODE_STACK_EFFECT[op]
-        stack_size = self._stack_size
+        stack_size = self._unit.stack_size
         if stack_size + effect > stack_size:
-            self._stack_size = stack_size + effect
+            self._unit.stack_size = stack_size + effect
 
         instr = Instruction()
         instr.line = ln
         instr.arg = arg
 
-        return self._current_block.add_instruction(instr)
+        return self._unit.block.add_instruction(instr)
 
     def _add_const(self, const: object) -> int:
-        if const in self._consts:
-            return self._consts.index(const)
-        self._consts.append(const)
-        return len(self._consts) - 1
+        if const in self._unit.consts:
+            return self._unit.consts.index(const)
+        self._unit.consts.append(const)
+        return len(self._unit.consts) - 1
 
     def _add_varname(self, name: str) -> int:
-        if name in self._varnames:
-            return self._varnames.index(name)
-        self._varnames.append(name)
-        return len(self._varnames) - 1
+        if name in self._unit.varnames:
+            return self._unit.varnames.index(name)
+        self._unit.varnames.append(name)
+        return len(self._unit.varnames) - 1
 
     def _compile_const(self, cell: ast.CellAST):
         value = cell.value
@@ -214,10 +235,28 @@ class Compiler:
             self._add_instruction(LOAD_GLOBAL, ni, ln)
 
     def _compile_cell(self, cell: ast.CellAST):
-        pass
+        if cell.type == AIL_IDENTIFIER:
+            return self._compile_name(cell)
+        return self._compile_const(cell)
 
     def _compile_if(self, stmt: ast.IfStmtAST):
         pass
 
+    def _enter_next_block(self, leader: Instruction):
+        b = BasicBlock(leader)
+        self._unit.block.next_block = b
+        self._unit.block = b
+
+    def enter_new_scope(
+            self, symbol_table: SymbolTable, name: str, firstlineno: int=1):
+        unit = CompileUnit()
+        unit.prev_unit = self._unit
+        unit.scope = symbol_table
+        unit.name = name
+        unit.firstlineno = firstlineno
+
+        self._unit = unit
+
     def compile(self, node: ast.AST):
-        self._current_block = BasicBlock(Instruction())
+        b = BasicBlock(Instruction())
+        self._unit.block = b

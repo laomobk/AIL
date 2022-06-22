@@ -77,6 +77,7 @@ class SymbolTable:
         self.prev_table: 'SymbolTable' = None
         self.name = name
         self.freevars: Set[str] = set()
+        self.cellvars: Set[str] = set()
 
     def is_local(self, symbol: Symbol) -> bool:
         for s in self.store_symbols:
@@ -110,7 +111,7 @@ class SymbolTable:
 
     def add_store_symbol(self, symbol: Symbol):
         for sym in self.store_symbols:
-            if sym.name == symbol.name and sym.flag == symbol.flag:
+            if sym.name == symbol.name:
                 return
         self.store_symbols.insert(0, symbol)
 
@@ -118,7 +119,7 @@ class SymbolTable:
         symbols = self.symbols
 
         for sym in symbols:
-            if sym.name == symbol.name and sym.flag == symbol.flag:
+            if sym.name == symbol.name:
                 return
 
         symbols.insert(0, symbol)
@@ -192,7 +193,7 @@ class SymbolAnalyzer:
                     symbol.flag |= SYM_GLOBAL
                 elif name in self.__symbol_table.nonlocal_directives and \
                         not ignore_nonlocal:
-                    symbol.flag |= SYM_NONLOCAL
+                    symbol.flag |= SYM_FREE
                     self.__symbol_table.freevars.add(name)
                 else:
                     symbol.flag |= SYM_LOCAL
@@ -607,11 +608,12 @@ class SymbolAnalyzer:
         self.__symbol_table: FunctionSymbolTable
 
         freevars = self.__symbol_table.freevars
+        cellvars = self.__symbol_table.cellvars
 
-        for symbol in self.__symbol_table.symbols:
+        for symbol in self.__symbol_table.store_symbols:
             if symbol.namespace is not None:
                 assert type(symbol.namespace) is not SymbolTable
-                freevars.update(symbol.namespace.freevars)
+                cellvars.update(symbol.namespace.freevars)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
