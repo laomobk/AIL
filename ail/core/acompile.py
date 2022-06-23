@@ -125,7 +125,7 @@ class Instruction:
     def __init__(self,
                  opcode=0, arg=0,
                  is_jabs=False, is_jrel=False, target=None,
-                 line=0):
+                 line=-1):
         self.opcode = opcode
         self.arg = arg
 
@@ -144,6 +144,11 @@ class BasicBlock:
     def add_instruction(self, instr: Instruction) -> int:
         self.instructions.append(instr)
         return len(self.instructions) - 1
+
+    def __str__(self):
+        return '<BasicBlock %s>' % hex(id(self))
+
+    __repr__ = __str__
 
 
 FB_TRY = 0x1
@@ -193,17 +198,24 @@ class Compiler:
             self._add_instruction(EXTENDED_ARG, arg >> 8, ln, False)
         return final
 
+    def _check_stack_effect(self, op):
+        if op in OPCODE_STACK_EFFECT:
+            effect = OPCODE_STACK_EFFECT[op]
+        else:
+            effect = 0
+
+        stack_size = self._unit.stack_size
+        if stack_size + effect > stack_size:
+            self._unit.stack_size = stack_size + effect
+
     def _add_instruction(self, op: int, arg: int, ln: int, check=True) -> int:
         """
         :returns: returns the offset from head of this instruction
         """
-        if check:
-            arg = self._check_oparg(arg, ln)
 
-        effect = OPCODE_STACK_EFFECT[op]
-        stack_size = self._unit.stack_size
-        if stack_size + effect > stack_size:
-            self._unit.stack_size = stack_size + effect
+        if check:
+            self._check_oparg(arg, ln)
+        self._check_stack_effect(op)
 
         instr = Instruction()
         instr.line = ln
@@ -211,6 +223,17 @@ class Compiler:
         instr.opcode = op
 
         return self._unit.block.add_instruction(instr)
+
+    def _add_jump_op(self, op: int, target: BasicBlock, ln: int):
+        instr = Instruction()
+        instr.is_jabs = op != JUMP_FORWARD
+        instr.is_jrel = op == JUMP_FORWARD
+        instr.target = target
+        instr.line = ln
+        instr.arg = 0
+        instr.opcode = op
+
+        self._unit.block.add_instruction(instr)
 
     def _add_const(self, const: object) -> int:
         if const in self._unit.consts:
@@ -262,30 +285,47 @@ class Compiler:
             return self._compile_name(cell)
         return self._compile_const(cell)
 
+    def _compile_and_expr(self, expr: ast.AndTestAST):
+        self._compile(expr.left)
+        for e in expr.right:
+            next = BasicBlock()
+            self._add_jump_op(JUMP_IF_FALSE_OR_POP, next, -1)
+            self._enter_next_block(next)
+            self._compile(e)
+
     def _compile_if_jump(
             self, expr: ast.Expression, condition: int, target: BasicBlock):
+        if isinstance(expr, ast.TestExprAST):
+            expr = expr.test
+
+        if isinstance(expr, ast.NotTestAST):
+            return self._compile_if_jump(expr.expr, not condition, target)
+        elif isinstance(expr, ast):
+            pass
+
         self._compile(expr)
 
         instr = Instruction()
         instr.is_jabs = True
         instr.target = target
-        self._add_instruction(
-            JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP,
-            0, expr.ln
-        )
+        instr.opcode = JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP
+        instr.line = expr.ln
+
+        self._unit.block.add_instruction(instr)
 
     def _compile_if(self, stmt: ast.IfStmtAST):
         if_block = BasicBlock()
-        else_block: BasicBlock = BasicBlock()
         next_block: BasicBlock = BasicBlock()
-
-        if len(stmt.else_block.stmts) != 0:
-            pass
 
         self._compile_if_jump(stmt.test, 0, next_block)
         self._enter_next_block(if_block)
-
         self._compile(stmt.block)
+
+        if len(stmt.else_block.stmts) != 0:
+            self._add_jump_op(JUMP_FORWARD, next_block, -1)
+
+        self._enter_next_block(next_block)
+        self._compile_block(stmt.else_block)
 
     def _compile_binary_expr(self, expr):
         self._compile_expr(expr.left)
@@ -310,6 +350,12 @@ class Compiler:
     def _compile(self, node: ast.AST):
         if isinstance(node, ast.BlockAST):
             self._compile_block(node)
+        elif isinstance(node, ast.IfStmtAST):
+            self._compile_if(node)
+        elif isinstance(node, ast.AndTestAST):
+            self._compile_and_expr(node)
+        elif isinstance(node, ast.TestExprAST):
+            self._compile(node.test)
         else:
             self._compile_expr(node)
 

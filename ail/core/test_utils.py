@@ -349,11 +349,22 @@ class CFGDisassembler:
         pyop.LOAD_CONST,
     )
 
+    _OP_JMP = (
+        pyop.JUMP_FORWARD,
+        pyop.JUMP_IF_FALSE_OR_POP,
+        pyop.JUMP_IF_TRUE_OR_POP,
+        pyop.JUMP_ABSOLUTE,
+        pyop.POP_JUMP_IF_FALSE,
+        pyop.POP_JUMP_IF_TRUE,
+    )
+
     def __init__(self):
         self._unit: acompile.CompileUnit = None
         self._counter = 0
 
-    def _get_description(self, opcode: int, arg: int) -> str:
+    def _get_description(self, instr: acompile.Instruction) -> str:
+        opcode, arg = instr.opcode, instr.arg
+
         if self._unit is None:
             return ''
 
@@ -364,6 +375,9 @@ class CFGDisassembler:
         elif opcode in self._OP_CONST:
             c = unit.consts[arg]
             return repr(c)
+        elif opcode in self._OP_JMP:
+            target = instr.target
+            return 'to %s' % target
 
         return ''
 
@@ -373,7 +387,7 @@ class CFGDisassembler:
         for instr in instr_seq:
             opcode = instr.opcode
             text = opname[opcode]
-            desc = self._get_description(opcode, instr.arg)
+            desc = self._get_description(instr)
 
             line = '%03d %s\t\t%s %s' % (
                 self._counter, text, instr.arg, ('(%s)' % desc) if desc else ''
@@ -381,6 +395,7 @@ class CFGDisassembler:
 
             print('\t' + line)
             self._counter += 2
+        print()
 
     def _disassemble(self, block: acompile.BasicBlock):
         instr = block.instructions
@@ -389,7 +404,7 @@ class CFGDisassembler:
         self.print_instructions_sequence(instr)
 
         if block.next_block is not None:
-            self._disassemble(block)
+            self._disassemble(block.next_block)
 
     def disassemble(
             self, block: acompile.BasicBlock, unit: acompile.CompileUnit=None):
