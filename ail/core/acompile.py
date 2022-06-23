@@ -8,7 +8,7 @@ from .pyopcode import *
 from .tokentype import AIL_IDENTIFIER, AIL_NUMBER, AIL_STRING
 
 from .symbol import (
-    SymbolTable, FunctionSymbolTable, ClassSymbolTable,
+    SymbolTable, FunctionSymbolTable, ClassSymbolTable, SymbolAnalyzer,
     SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE
 )
 
@@ -17,6 +17,20 @@ CTX_STORE = 0x2
 
 COMPILE_FLAG_GLOBAL = 0x1
 COMPILE_FLAG_FUNC = 0x2
+
+
+BIN_OP_MAP = {
+    '+': BINARY_ADD,
+    '-': BINARY_SUBTRACT,
+    '*': BINARY_MULTIPLY,
+    '/': BINARY_TRUE_DIVIDE,
+    '%': BINARY_MODULO,
+    '//': BINARY_FLOOR_DIVIDE, 
+    '^': BINARY_XOR,
+    '|': BINARY_OR,
+    '&': BINARY_AND,
+    '**': BINARY_POWER,
+}
 
 
 class CompilerError(Exception):
@@ -109,22 +123,21 @@ class CompilerState:
 class Instruction:
     def __init__(self,
                  opcode=0, arg=0,
-                 is_jabs=False, is_jrel=False, target=0,
+                 is_jabs=False, is_jrel=False, target=None,
                  line=0):
         self.opcode = opcode
         self.arg = arg
 
         self.is_jabs = is_jabs
         self.is_jrel = is_jrel
-        self.target = target
+        self.target: 'BasicBlock' = target
 
         self.line = line
 
 
 class BasicBlock:
-    def __init__(self, leader: Instruction):
-        self.leader: Instruction = leader
-        self.instructions = [leader]
+    def __init__(self):
+        self.instructions = []
         self.next_block: 'BasicBlock' = None
 
     def add_instruction(self, instr: Instruction) -> int:
@@ -144,6 +157,7 @@ class FrameBlock:
     
 class CompileUnit:
     def __init__(self):
+        self.top_block: BasicBlock = None
         self.block: BasicBlock = None
         self.scope: SymbolTable = None
 
@@ -151,8 +165,8 @@ class CompileUnit:
         self.varnames: List[str] = []
         self.consts: List[object] = []
         self.varname: List[str] = []
-        self.freevars = List[str] = []
-        self.cellvars = List[str] = []
+        self.freevars: List[str] = []
+        self.cellvars: List[str] = []
         self.stack_size = 0
 
         self.prev_unit: CompileUnit = None
@@ -164,6 +178,10 @@ class CompileUnit:
 class Compiler:
     def __init__(self):
         self._unit: CompileUnit = None
+    
+    @property
+    def unit(self) -> CompileUnit:
+        return self._unit
 
     def _check_oparg(self, arg: int, ln: int) -> int:
         final = arg & 0xff
@@ -240,12 +258,31 @@ class Compiler:
         return self._compile_const(cell)
 
     def _compile_if(self, stmt: ast.IfStmtAST):
+        self._compile_expr(stmt.test)
+
+    def _compile_binary_expr(self, expr):
+        self._compile_expr(expr.left)
+
+        for op, right in expr.right:
+            self._compile_expr(right)
+            opc = BIN_OP_MAP[op]
+            self._add_instruction(opc, 0, right.ln)
+
+    def _compile_expr(self, expr: ast.Expression):
+        if isinstance(expr, ast.CellAST):
+            return self._compile_cell(expr)
+        elif type(expr) in ast.BIN_OP_AST:
+            self._compile_binary_expr(expr)
+
+    def _compile_block(self, block):
         pass
 
-    def _enter_next_block(self, leader: Instruction):
-        b = BasicBlock(leader)
-        self._unit.block.next_block = b
-        self._unit.block = b
+    def _compile(self, node: ast.AST):
+        self._compile_expr(node)
+
+    def _enter_next_block(self, block: BasicBlock):
+        self._unit.block.next_block = block
+        self._unit.block = block
 
     def enter_new_scope(
             self, symbol_table: SymbolTable, name: str, firstlineno: int=1):
@@ -257,6 +294,35 @@ class Compiler:
 
         self._unit = unit
 
-    def compile(self, node: ast.AST):
-        b = BasicBlock(Instruction())
+    def compile(
+            self, node: ast.AST, source: str, filename: str, firstlineno=1):
+        st = SymbolAnalyzer().visit_and_make_symbol_table(
+                source, filename, node)
+        self.enter_new_scope(st, filename, firstlineno)
+
+        b = BasicBlock()
+        self._unit.top_block = b
         self._unit.block = b
+
+        self._compile(node)
+
+
+def test():
+    from .alex import Lex
+    from .aparser import Parser
+    from .test_utils import CFGDisassembler
+
+    source = open('tests/test.ail').read()
+    ts = Lex().lex(source, '<test>')
+    node = Parser().parse(ts, source, '<test>')
+    
+    compiler = Compiler()
+    compiler.compile(node, source, '<test>')
+    
+    disassembler = CFGDisassembler()
+    disassembler.disassemble(compiler.unit.top_block)
+
+
+if __name__ == '__main__':
+    test()
+

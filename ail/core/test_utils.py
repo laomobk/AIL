@@ -1,4 +1,9 @@
+
+from dis import opmap
+from typing import List
+
 from . import asts as ast
+from . import acompile
 
 
 def print_pyast(tree):
@@ -329,3 +334,21 @@ def make_ast_tree(a) -> dict:
         return unpack_list(a)
 
     return a
+
+
+class CFGDisassembler:
+    def __init__(self):
+        pass
+
+    def print_instructions_sequence(
+            self, instr_seq: List[acompile.Instruction]):
+        for instr in instr_seq:
+            text = opmap[instr.opcode]
+            print(text)
+
+    def disassemble(self, top_block: acompile.BasicBlock):
+        instr = top_block.instructions
+
+        print('top block:')
+        self.print_instructions_sequence(instr)
+
