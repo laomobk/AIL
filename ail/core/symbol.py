@@ -10,6 +10,7 @@ SYM_LOCAL = 0x2
 SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
 SYM_NONLOCAL = 0x10
+SYM_NORMAL = 0x20
 
 FROM_STORE = 0x1
 FROM_IMPORT = 0x2
@@ -199,7 +200,7 @@ class SymbolAnalyzer:
                     symbol.flag |= SYM_LOCAL
                 return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
-            symbol.flag |= SYM_GLOBAL
+            symbol.flag |= SYM_NORMAL
             return symbol
 
         assert ctx == CTX_LOAD
@@ -214,7 +215,7 @@ class SymbolAnalyzer:
                 self.__symbol_table.is_local(symbol):
             symbol.flag |= SYM_LOCAL
         else:
-            symbol.flag |= SYM_GLOBAL
+            symbol.flag |= SYM_NORMAL
 
         return symbol
 
@@ -257,7 +258,9 @@ class SymbolAnalyzer:
 
     def _visit_binary_expr(self, expr):
         self._visit(expr.left)
-        self._visit(expr.right)
+
+        for _, e in expr.right:
+            self._visit(e)
 
     def _visit_cell(self, cell: ast.CellAST):
         if cell.type != AIL_IDENTIFIER or cell.value in AIL_CONSTANTS:

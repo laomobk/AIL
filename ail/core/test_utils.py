@@ -1,9 +1,11 @@
-
-from dis import opmap
+from dis import opname
 from typing import List
 
 from . import asts as ast
 from . import acompile
+from . import pyopcode as pyop
+
+from .version import AIL_VERSION
 
 
 def print_pyast(tree):
@@ -38,9 +40,9 @@ def unpack_list(l: list):
 def make_ast_tree(a) -> dict:
     if isinstance(a, ast.CellAST):
         return {'Cell': {
-                'value': a.value, 'type': a.type,
-                'symbol': a.symbol,
-            }
+            'value': a.value, 'type': a.type,
+            'symbol': a.symbol,
+        }
         }
 
     elif isinstance(a, ast.UnaryExprAST):
@@ -337,18 +339,65 @@ def make_ast_tree(a) -> dict:
 
 
 class CFGDisassembler:
+    _OP_VARNAME = (
+        pyop.LOAD_NAME,
+        pyop.LOAD_FAST,
+        pyop.LOAD_GLOBAL
+    )
+
+    _OP_CONST = (
+        pyop.LOAD_CONST,
+    )
+
     def __init__(self):
-        pass
+        self._unit: acompile.CompileUnit = None
+        self._counter = 0
+
+    def _get_description(self, opcode: int, arg: int) -> str:
+        if self._unit is None:
+            return ''
+
+        unit = self._unit
+
+        if opcode in self._OP_VARNAME:
+            return unit.varnames[arg]
+        elif opcode in self._OP_CONST:
+            c = unit.consts[arg]
+            return repr(c)
+
+        return ''
 
     def print_instructions_sequence(
             self, instr_seq: List[acompile.Instruction]):
+
         for instr in instr_seq:
-            text = opmap[instr.opcode]
-            print(text)
+            opcode = instr.opcode
+            text = opname[opcode]
+            desc = self._get_description(opcode, instr.arg)
 
-    def disassemble(self, top_block: acompile.BasicBlock):
-        instr = top_block.instructions
+            line = '%03d %s\t\t%s %s' % (
+                self._counter, text, instr.arg, ('(%s)' % desc) if desc else ''
+            )
 
-        print('top block:')
+            print('\t' + line)
+            self._counter += 2
+
+    def _disassemble(self, block: acompile.BasicBlock):
+        instr = block.instructions
+
+        print('disassemble %s' % block)
         self.print_instructions_sequence(instr)
 
+        if block.next_block is not None:
+            self._disassemble(block)
+
+    def disassemble(
+            self, block: acompile.BasicBlock, unit: acompile.CompileUnit=None):
+        print('CFG disassemble')
+        print('AIL version: %s' % AIL_VERSION)
+
+        self._counter = 0
+        self._unit = unit
+        self._disassemble(block)
+
+        print()

@@ -1,4 +1,5 @@
 
+from ast import literal_eval
 from typing import List, Tuple
 from types import CodeType
 
@@ -9,7 +10,7 @@ from .tokentype import AIL_IDENTIFIER, AIL_NUMBER, AIL_STRING
 
 from .symbol import (
     SymbolTable, FunctionSymbolTable, ClassSymbolTable, SymbolAnalyzer,
-    SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE
+    SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE, SYM_NORMAL
 )
 
 CTX_LOAD = 0x1
@@ -24,7 +25,7 @@ BIN_OP_MAP = {
     '-': BINARY_SUBTRACT,
     '*': BINARY_MULTIPLY,
     '/': BINARY_TRUE_DIVIDE,
-    '%': BINARY_MODULO,
+    'mod': BINARY_MODULO,
     '//': BINARY_FLOOR_DIVIDE, 
     '^': BINARY_XOR,
     '|': BINARY_OR,
@@ -207,6 +208,7 @@ class Compiler:
         instr = Instruction()
         instr.line = ln
         instr.arg = arg
+        instr.opcode = op
 
         return self._unit.block.add_instruction(instr)
 
@@ -223,7 +225,7 @@ class Compiler:
         return len(self._unit.varnames) - 1
 
     def _compile_const(self, cell: ast.CellAST):
-        value = cell.value
+        value = literal_eval(cell.value)
         ci = self._add_const(value)
         self._add_instruction(LOAD_CONST, ci, cell.ln)
 
@@ -251,14 +253,39 @@ class Compiler:
         elif symbol.flag & SYM_GLOBAL:
             ni = self._add_varname(name)
             self._add_instruction(LOAD_GLOBAL, ni, ln)
+        elif symbol.flag & SYM_NORMAL:
+            ni = self._add_varname(name)
+            self._add_instruction(LOAD_NAME, ni, ln)
 
     def _compile_cell(self, cell: ast.CellAST):
         if cell.type == AIL_IDENTIFIER:
             return self._compile_name(cell)
         return self._compile_const(cell)
 
+    def _compile_if_jump(
+            self, expr: ast.Expression, condition: int, target: BasicBlock):
+        self._compile(expr)
+
+        instr = Instruction()
+        instr.is_jabs = True
+        instr.target = target
+        self._add_instruction(
+            JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP,
+            0, expr.ln
+        )
+
     def _compile_if(self, stmt: ast.IfStmtAST):
-        self._compile_expr(stmt.test)
+        if_block = BasicBlock()
+        else_block: BasicBlock = BasicBlock()
+        next_block: BasicBlock = BasicBlock()
+
+        if len(stmt.else_block.stmts) != 0:
+            pass
+
+        self._compile_if_jump(stmt.test, 0, next_block)
+        self._enter_next_block(if_block)
+
+        self._compile(stmt.block)
 
     def _compile_binary_expr(self, expr):
         self._compile_expr(expr.left)
@@ -274,11 +301,17 @@ class Compiler:
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
-    def _compile_block(self, block):
-        pass
+    def _compile_block(self, block: ast.BlockAST):
+        stmts = block.stmts
+
+        for stmt in stmts:
+            self._compile(stmt)
 
     def _compile(self, node: ast.AST):
-        self._compile_expr(node)
+        if isinstance(node, ast.BlockAST):
+            self._compile_block(node)
+        else:
+            self._compile_expr(node)
 
     def _enter_next_block(self, block: BasicBlock):
         self._unit.block.next_block = block
@@ -320,7 +353,7 @@ def test():
     compiler.compile(node, source, '<test>')
     
     disassembler = CFGDisassembler()
-    disassembler.disassemble(compiler.unit.top_block)
+    disassembler.disassemble(compiler.unit.top_block, compiler.unit)
 
 
 if __name__ == '__main__':
