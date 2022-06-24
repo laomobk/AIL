@@ -564,6 +564,9 @@ class SymbolAnalyzer:
         elif isinstance(node, ast.ObjectPatternExpr):
             self._visit_obj_pattern_expr(node)
 
+        elif isinstance(node, ast.TestExprAST):
+            self._visit(node.test)
+
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             self.__add_store_symbol(s)
@@ -597,6 +600,11 @@ class SymbolAnalyzer:
             self.__add_store_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
+
+        elif type(node) in (ast.AndTestAST, ast.OrTestAST):
+            self._visit(node.left)
+            for e in node.right:
+                self._visit(e)
 
         elif type(node) in ast.UNARY_EXPR_ASTS:
             self._visit(node.expr)

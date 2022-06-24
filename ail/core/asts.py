@@ -629,6 +629,7 @@ EXPR_AST_TYPES = (
     BitShiftExprAST,
     BitOpExprAST,
     TestExprAST,
+    CmpTestAST,
 )
 
 BIN_OP_AST = (

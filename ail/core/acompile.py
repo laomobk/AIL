@@ -287,11 +287,27 @@ class Compiler:
 
     def _compile_and_expr(self, expr: ast.AndTestAST):
         self._compile(expr.left)
+        end = BasicBlock()
+
         for e in expr.right:
-            next = BasicBlock()
-            self._add_jump_op(JUMP_IF_FALSE_OR_POP, next, -1)
-            self._enter_next_block(next)
+            temp_block = BasicBlock()
+            self._add_jump_op(JUMP_IF_FALSE_OR_POP, end, -1)
+            self._enter_next_block(temp_block)
             self._compile(e)
+
+        self._enter_next_block(end)
+
+    def _compile_or_expr(self, expr: ast.OrTestAST):
+        self._compile(expr.left)
+        end = BasicBlock()
+
+        for e in expr.right:
+            temp_block = BasicBlock()
+            self._add_jump_op(JUMP_IF_TRUE_OR_POP, end, -1)
+            self._enter_next_block(temp_block)
+            self._compile(e)
+
+        self._enter_next_block(end)
 
     def _compile_if_jump(
             self, expr: ast.Expression, condition: int, target: BasicBlock):
@@ -300,8 +316,11 @@ class Compiler:
 
         if isinstance(expr, ast.NotTestAST):
             return self._compile_if_jump(expr.expr, not condition, target)
-        elif isinstance(expr, ast):
-            pass
+        elif isinstance(expr, ast.AndTestAST):
+            self._compile(expr.left)
+            for e in expr.right:
+                self._add_jump_op(POP_JUMP_IF_FALSE, )
+                self._enter_next_block(BasicBlock())
 
         self._compile(expr)
 
@@ -350,12 +369,19 @@ class Compiler:
     def _compile(self, node: ast.AST):
         if isinstance(node, ast.BlockAST):
             self._compile_block(node)
+
         elif isinstance(node, ast.IfStmtAST):
             self._compile_if(node)
+
         elif isinstance(node, ast.AndTestAST):
             self._compile_and_expr(node)
+
+        elif isinstance(node, ast.OrTestAST):
+            self._compile_or_expr(node)
+
         elif isinstance(node, ast.TestExprAST):
             self._compile(node.test)
+
         else:
             self._compile_expr(node)
 
