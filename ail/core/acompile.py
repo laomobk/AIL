@@ -34,7 +34,18 @@ BIN_OP_MAP = {
 }
 
 CMP_OP_MAP = {
-
+    '<': 0,
+    '<=': 1,
+    '==': 2,
+    '!=': 3,
+    '>': 4,
+    '>=': 5,
+    'in': 6,
+    'not in': 7,
+    'is': 8,
+    'is not': 9,
+    'exception match': 10,
+    'BAD': 11,
 }
 
 
@@ -362,7 +373,22 @@ class Compiler:
         self._compile(expr.left)
         n = len(expr.right)
         if n == 1:
-            op
+            op, exp = expr.right[0]
+            op = CMP_OP_MAP[op]
+            self._compile(exp)
+            self._add_instruction(COMPARE_OP, op, expr.ln)
+        else:
+            # a > b > c  -> a > b and b > c
+            end = None
+            for op, exp in expr.right:
+                if end is not None:
+                    self._enter_next_block(end)
+                self._compile(exp)
+                self._add_instruction(COMPARE_OP, CMP_OP_MAP[op], exp.ln)
+                next_ = BasicBlock()
+                end = BasicBlock()
+                self._add_jump_op(JUMP_IF_FALSE_OR_POP, end, -1)
+                self._enter_next_block(next_)
 
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
@@ -391,6 +417,9 @@ class Compiler:
 
         elif isinstance(node, ast.TestExprAST):
             self._compile(node.test)
+
+        elif isinstance(node, ast.CmpTestAST):
+            self._compile_compare_expr(node)
 
         else:
             self._compile_expr(node)

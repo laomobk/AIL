@@ -1,4 +1,4 @@
-from dis import opname
+from dis import opname, cmp_op
 from typing import List
 
 from . import asts as ast
@@ -378,6 +378,8 @@ class CFGDisassembler:
         elif opcode in self._OP_JMP:
             target = instr.target
             return 'to %s' % target
+        elif opcode == pyop.COMPARE_OP:
+            return cmp_op[arg]
 
         return ''
 
