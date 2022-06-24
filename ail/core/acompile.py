@@ -33,6 +33,10 @@ BIN_OP_MAP = {
     '**': BINARY_POWER,
 }
 
+CMP_OP_MAP = {
+
+}
+
 
 class CompilerError(Exception):
     pass
@@ -353,6 +357,12 @@ class Compiler:
             self._compile_expr(right)
             opc = BIN_OP_MAP[op]
             self._add_instruction(opc, 0, right.ln)
+
+    def _compile_compare_expr(self, expr: ast.CmpTestAST):
+        self._compile(expr.left)
+        n = len(expr.right)
+        if n == 1:
+            op
 
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
