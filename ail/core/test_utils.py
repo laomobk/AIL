@@ -339,6 +339,8 @@ def make_ast_tree(a) -> dict:
 
 
 class CFGDisassembler:
+    _WIDE = 25
+
     _OP_VARNAME = (
         pyop.LOAD_NAME,
         pyop.LOAD_FAST,
@@ -391,8 +393,9 @@ class CFGDisassembler:
             text = opname[opcode]
             desc = self._get_description(instr)
 
-            line = '%03d %s\t\t%s %s' % (
-                self._counter, text, instr.arg, ('(%s)' % desc) if desc else ''
+            line = '%03d %s%s%s %s' % (
+                self._counter, text, ' ' * (CFGDisassembler._WIDE - len(text)),
+                instr.arg, ('(%s)' % desc) if desc else ''
             )
 
             print('\t' + line)

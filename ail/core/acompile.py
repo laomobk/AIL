@@ -379,16 +379,27 @@ class Compiler:
             self._add_instruction(COMPARE_OP, op, expr.ln)
         else:
             # a > b > c  -> a > b and b > c
-            end = None
+            end = BasicBlock()
+            count = 0
+
             for op, exp in expr.right:
-                if end is not None:
-                    self._enter_next_block(end)
-                self._compile(exp)
-                self._add_instruction(COMPARE_OP, CMP_OP_MAP[op], exp.ln)
+                count += 1
+
                 next_ = BasicBlock()
-                end = BasicBlock()
-                self._add_jump_op(JUMP_IF_FALSE_OR_POP, end, -1)
+
+                self._compile(exp)
+                
+                if count < n:
+                    self._add_instruction(DUP_TOP, 0, -1)
+                    self._add_instruction(ROT_THREE, 0, -1)
+
+                self._add_instruction(COMPARE_OP, CMP_OP_MAP[op], exp.ln)
+
+                if count < n:
+                    self._add_jump_op(JUMP_IF_FALSE_OR_POP, end, -1)
                 self._enter_next_block(next_)
+
+            self._enter_next_block(end)
 
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
