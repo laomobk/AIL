@@ -300,28 +300,18 @@ class Compiler:
             return self._compile_name(cell)
         return self._compile_const(cell)
 
-    def _compile_and_expr(self, expr: ast.AndTestAST):
-        self._compile(expr.left)
+    def _compile_bool_expr(self, expr: ast.AndTestAST):
+        cond = isinstance(expr, ast.OrTestAST)
         end = BasicBlock()
 
-        for e in expr.right:
-            temp_block = BasicBlock()
-            self._add_jump_op(JUMP_IF_FALSE_OR_POP, end, -1)
-            self._enter_next_block(temp_block)
+        for e in [expr.left] + expr.right[:-1]:
             self._compile(e)
+            self._add_jump_op(
+                    JUMP_IF_TRUE_OR_POP if cond else JUMP_IF_FALSE_OR_POP,
+                    end, -1
+            )
 
-        self._enter_next_block(end)
-
-    def _compile_or_expr(self, expr: ast.OrTestAST):
-        self._compile(expr.left)
-        end = BasicBlock()
-
-        for e in expr.right:
-            temp_block = BasicBlock()
-            self._add_jump_op(JUMP_IF_TRUE_OR_POP, end, -1)
-            self._enter_next_block(temp_block)
-            self._compile(e)
-
+        self._compile(expr.right[-1])
         self._enter_next_block(end)
 
     def _compile_if_jump(
@@ -420,11 +410,8 @@ class Compiler:
         elif isinstance(node, ast.IfStmtAST):
             self._compile_if(node)
 
-        elif isinstance(node, ast.AndTestAST):
-            self._compile_and_expr(node)
-
-        elif isinstance(node, ast.OrTestAST):
-            self._compile_or_expr(node)
+        elif type(node) in (ast.OrTestAST, ast.AndTestAST):
+            self._compile_bool_expr(node)
 
         elif isinstance(node, ast.TestExprAST):
             self._compile(node.test)
