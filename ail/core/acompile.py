@@ -1,6 +1,6 @@
 
 from ast import literal_eval
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from types import CodeType
 
 from . import asts as ast
@@ -153,8 +153,9 @@ class Instruction:
 
 class BasicBlock:
     def __init__(self):
-        self.instructions = []
+        self.instructions: List[Instruction] = []
         self.next_block: 'BasicBlock' = None
+        self.offset: int = -1
 
     def add_instruction(self, instr: Instruction) -> int:
         self.instructions.append(instr)
@@ -321,11 +322,18 @@ class Compiler:
 
         if isinstance(expr, ast.NotTestAST):
             return self._compile_if_jump(expr.expr, not condition, target)
-        elif isinstance(expr, ast.AndTestAST):
-            self._compile(expr.left)
-            for e in expr.right:
-                self._add_jump_op(POP_JUMP_IF_FALSE, )
-                self._enter_next_block(BasicBlock())
+        elif type(expr) in (ast.OrTestAST, ast.AndTestAST):
+            cond2 = isinstance(expr, ast.OrTestAST)
+            if cond2 == condition:
+                target2 = BasicBlock()
+            else:
+                target2 = target
+            for e in [expr.left] + expr.right[:-1]:
+                self._compile_if_jump(e, cond2, target2)
+            self._compile_if_jump(expr.right[-1], condition, target)
+            if target2 is not target:
+                self._enter_next_block(target2)
+            return
 
         self._compile(expr)
 
@@ -447,6 +455,73 @@ class Compiler:
         self._unit.block = b
 
         self._compile(node)
+
+
+class AssembleTask:
+    def __init__(self):
+        self.bytecode = bytearray()
+        self.lnotab = bytearray()
+        self.block: BasicBlock = None
+
+
+class Assembler:
+    def __init__(self):
+        self._task: AssembleTask = None
+        self._wish_table: Dict[BasicBlock, List[Instruction]] = {}
+
+    def __set_wish(self, instr: Instruction):
+        assert instr.target is not None
+
+        wish = self._wish_table
+        block = instr.target
+
+        if block not in wish:
+            followers = []
+            wish[block] = followers
+        else:
+            followers = wish[block]
+
+        followers.append(instr)
+
+    def _set_jump_instr_argument(
+            self, instr: Instruction, offset: int, now_offset: int):
+        if instr.is_jabs:
+            instr.arg = offset
+        if instr.is_jrel:
+            instr.arg = offset - now_offset
+
+    def _assemble_jump_offset(self):
+        block = self._task.block
+        total_offset = 0
+
+        while block is not None:
+            instructions = block.instructions
+            block.offset = total_offset
+
+            if block in self._wish_table:
+                for follower in self._wish_table[block]:
+                    self._set_jump_instr_argument(
+                        follower, block.offset, total_offset)
+
+            for instr in instructions:
+                if instr.opcode in OPCODE_JUMP:
+                    if instr.target.offset == -1:
+                        self.__set_wish(instr)
+                    else:
+                        self._set_jump_instr_argument(
+                            instr, instr.target.offset, total_offset)
+                total_offset += 2
+
+            block = block.next_block
+
+    def _assemble_block(self):
+        pass
+
+    def assemble(self, block: BasicBlock):
+        self._task = AssembleTask()
+        self._wish_table.clear()
+
+        self._task.block = block
 
 
 def test():

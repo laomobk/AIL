@@ -141,4 +141,14 @@ CALL_FINALLY = _stack_effect(_register_opcode(162, 'CALL_FINALLY'), 1)
 POP_FINALLY = _stack_effect(_register_opcode(163, 'POP_FINALLY'), EFCT_DYNAMIC_EFFECT)
 
 
+OPCODE_JUMP = (
+    JUMP_ABSOLUTE,
+    JUMP_FORWARD,
+    JUMP_IF_TRUE_OR_POP,
+    JUMP_IF_FALSE_OR_POP,
+    POP_JUMP_IF_FALSE,
+    POP_JUMP_IF_TRUE,
+)
+
+
 del _register_opcode
