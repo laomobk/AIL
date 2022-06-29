@@ -183,13 +183,19 @@ class CompileUnit:
         self.block: BasicBlock = None
         self.scope: SymbolTable = None
 
+        self.filename: str = '<unknown>'
         self.name: str = '<unknown>'
         self.varnames: List[str] = []
         self.consts: List[object] = []
-        self.varname: List[str] = []
+        self.names: List[str] = []
         self.freevars: List[str] = []
         self.cellvars: List[str] = []
         self.stack_size = 0
+        self.argcount = 0
+        self.posonlyargcount = 0
+        self.kwonlyargcount = 0
+        self.nlocals = 0
+        self.flags = 0
 
         self.prev_unit: CompileUnit = None
         self.firstlineno: int = 1
@@ -263,6 +269,12 @@ class Compiler:
         self._unit.varnames.append(name)
         return len(self._unit.varnames) - 1
 
+    def _add_name(self, name: str) -> int:
+        if name in self._unit.names:
+            return self._unit.names.index(name)
+        self._unit.names.append(name)
+        return len(self._unit.names) - 1
+
     def _compile_const(self, cell: ast.CellAST):
         value = literal_eval(cell.value)
         ci = self._add_const(value)
@@ -293,7 +305,7 @@ class Compiler:
             ni = self._add_varname(name)
             self._add_instruction(LOAD_GLOBAL, ni, ln)
         elif symbol.flag & SYM_NORMAL:
-            ni = self._add_varname(name)
+            ni = self._add_name(name)
             self._add_instruction(LOAD_NAME, ni, ln)
 
     def _compile_cell(self, cell: ast.CellAST):
@@ -546,6 +558,28 @@ class Assembler:
                 ofs_inc += 2
 
         return bytes(lnotab)
+
+    def _make_code(self, code_str: bytes, lnotab: bytes) -> CodeType:
+        unit = self._task.compiler.unit
+
+        return CodeType(
+            argcount=unit.argcount,
+            posonlyargcount=unit.posonlyargcount,
+            kwonlyargcount=unit.kwonlyargcount,
+            nlocals=unit.nlocals,
+            stacksize=unit.stack_size,
+            flags=unit.flags,
+            codestring=code_str,
+            constants=tuple(unit.consts),
+            names=tuple(unit.names),
+            varnames=tuple(unit.varnames),
+            filename=unit.filename,
+            name=unit.name,
+            firstlineno=unit.firstlineno,
+            lnotab=lnotab,
+            freevars=tuple(unit.freevars),
+            cellvars=tuple(unit.cellvars),
+        )
 
     def _assemble_block(self):
         self._assemble_jump_offset()
