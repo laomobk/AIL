@@ -220,24 +220,33 @@ class Compiler:
             self._add_instruction(EXTENDED_ARG, arg >> 8, ln, False)
         return final
 
-    def _check_stack_effect(self, op):
+    def _check_stack_effect(self, op, stack_effect=None):
         if op in OPCODE_STACK_EFFECT:
             effect = OPCODE_STACK_EFFECT[op]
         else:
             effect = 0
 
+        if effect is EFCT_DYNAMIC_EFFECT:
+            if stack_effect is None:
+                raise CompilerError(
+                        'dynamic stack effect must be provided explicitly')
+            else:
+                effect = stack_effect
+
         stack_size = self._unit.stack_size
         if stack_size + effect > stack_size:
             self._unit.stack_size = stack_size + effect
 
-    def _add_instruction(self, op: int, arg: int, ln: int, check=True) -> int:
+    def _add_instruction(
+            self, op: int, arg: int, ln: int, 
+            check=True, stack_effect=None) -> int:
         """
         :returns: returns the offset from head of this instruction
         """
 
         if check:
             self._check_oparg(arg, ln)
-        self._check_stack_effect(op)
+        self._check_stack_effect(op, stack_effect)
 
         instr = Instruction()
         instr.line = ln
@@ -276,7 +285,12 @@ class Compiler:
         return len(self._unit.names) - 1
 
     def _compile_const(self, cell: ast.CellAST):
-        value = literal_eval(cell.value)
+        if cell.type == AIL_NUMBER:
+            value = literal_eval(cell.value)
+        else:
+            value = cell.value
+            assert isinstance(value, str)
+
         ci = self._add_const(value)
         self._add_instruction(LOAD_CONST, ci, cell.ln)
 
@@ -411,9 +425,29 @@ class Compiler:
 
             self._enter_next_block(end)
 
+    def _compile_call_expr(self, expr: ast.CallExprAST):
+        self._compile(expr.left)
+
+        for arg in expr.arg_list.arg_list:
+            self._compile(arg.expr)
+
+        self._add_instruction(
+            CALL_FUNCTION, len(expr.arg_list.arg_list), expr.ln,
+            stack_effect=-(len(expr.arg_list.arg_list) - 1),
+        )
+
+    def _compile_print_stmt(self, stmt: ast.PrintStmtAST):
+        for expr in stmt.value_list:
+            self._compile(expr)
+            self._add_instruction(PRINT_EXPR, 0, -1)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
+
+        elif isinstance(expr, ast.CallExprAST):
+            return self._compile_call_expr(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
@@ -438,6 +472,9 @@ class Compiler:
 
         elif isinstance(node, ast.CmpTestAST):
             self._compile_compare_expr(node)
+
+        elif isinstance(node, ast.PrintStmtAST):
+            self._compile_print_stmt(node)
 
         else:
             self._compile_expr(node)
@@ -467,6 +504,11 @@ class Compiler:
         self._unit.block = b
 
         self._compile(node)
+
+        self._add_instruction(
+            LOAD_CONST, self._add_const(None), -1
+        )
+        self._add_instruction(RETURN_VALUE, 0, -1)
 
 
 class AssembleTask:
@@ -533,10 +575,10 @@ class Assembler:
         sequence = bytearray()
 
         while block is not None:
-            block = block.next_block
             for instr in block.instructions:
                 sequence.append(instr.opcode)
                 sequence.append(instr.arg)
+            block = block.next_block
 
         return bytes(sequence)
 
@@ -556,6 +598,7 @@ class Assembler:
                     ofs_inc = 0
                     line = instr.line
                 ofs_inc += 2
+            block = block.next_block
 
         return bytes(lnotab)
 
@@ -563,22 +606,22 @@ class Assembler:
         unit = self._task.compiler.unit
 
         return CodeType(
-            argcount=unit.argcount,
-            posonlyargcount=unit.posonlyargcount,
-            kwonlyargcount=unit.kwonlyargcount,
-            nlocals=unit.nlocals,
-            stacksize=unit.stack_size,
-            flags=unit.flags,
-            codestring=code_str,
-            constants=tuple(unit.consts),
-            names=tuple(unit.names),
-            varnames=tuple(unit.varnames),
-            filename=unit.filename,
-            name=unit.name,
-            firstlineno=unit.firstlineno,
-            lnotab=lnotab,
-            freevars=tuple(unit.freevars),
-            cellvars=tuple(unit.cellvars),
+            unit.argcount,
+            unit.posonlyargcount,
+            unit.kwonlyargcount,
+            unit.nlocals,
+            unit.stack_size,
+            unit.flags,
+            code_str,
+            tuple(unit.consts),
+            tuple(unit.names),
+            tuple(unit.varnames),
+            unit.filename,
+            unit.name,
+            unit.firstlineno,
+            lnotab,
+            tuple(unit.freevars),
+            tuple(unit.cellvars),
         )
 
     def _assemble_block(self) -> CodeType:
@@ -603,6 +646,7 @@ def test():
     from .alex import Lex
     from .aparser import Parser
     from .test_utils import CFGDisassembler
+    from .version import AIL_VERSION
 
     mode = argv[-1] if len(argv) > 1 else 'd'
 
@@ -616,13 +660,33 @@ def test():
     if mode == 'd':
         disassembler = CFGDisassembler()
         disassembler.disassemble(compiler.unit.top_block, compiler.unit)
+        
     elif mode == 'c':
         from dis import dis
 
         assembler = Assembler()
         code = assembler.assemble(compiler.unit.top_block, compiler)
+        
+        print('using \'dis\' module to perform disassemble: ')
+        print('code object: %s' % code)
+        print('AIL version: %s\n' % AIL_VERSION)
 
         dis(code)
+
+    elif mode == 'r':
+        assembler = Assembler()
+        code = assembler.assemble(compiler.unit.top_block, compiler)
+
+        print('executing the code object generated by AIL')
+        print('code object: %s' % code)
+        print('AIL version: %s' % AIL_VERSION)
+        print('--------------------\n')
+        exec(
+            code, 
+            {
+                'write': print,
+            },
+        )
 
 
 if __name__ == '__main__':
