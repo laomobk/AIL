@@ -462,6 +462,7 @@ class AssembleTask:
         self.bytecode = bytearray()
         self.lnotab = bytearray()
         self.block: BasicBlock = None
+        self.compiler: Compiler = None
 
 
 class Assembler:
@@ -514,14 +515,49 @@ class Assembler:
 
             block = block.next_block
 
-    def _assemble_block(self):
-        pass
+    def _make_bytecode_sequence(self) -> bytes:
+        block = self._task.block
 
-    def assemble(self, block: BasicBlock):
+        sequence = bytearray()
+
+        while block is not None:
+            block = block.next_block
+            for instr in block.instructions:
+                sequence.append(instr.opcode)
+                sequence.append(instr.arg)
+
+        return bytes(sequence)
+
+    def _make_lnotab(self, firstlineno=1) -> bytes:
+        line = firstlineno
+        ofs_inc = 0
+        block = self._task.block
+
+        lnotab = bytearray()
+
+        while block is not None:
+            for instr in block.instructions:
+                if instr.line > line:
+                    inc = instr.line - line
+                    lnotab.append(ofs_inc)
+                    lnotab.append(inc)
+                    ofs_inc = 0
+                    line = instr.line
+                ofs_inc += 2
+
+        return bytes(lnotab)
+
+    def _assemble_block(self):
+        self._assemble_jump_offset()
+        bytecode_seq = self._make_bytecode_sequence()
+        lnotab = self._make_lnotab(self._task.compiler.unit.firstlineno)
+
+    def assemble(self, block: BasicBlock, compiler: Compiler):
         self._task = AssembleTask()
         self._wish_table.clear()
 
         self._task.block = block
+        self._task.compiler = compiler
 
 
 def test():
