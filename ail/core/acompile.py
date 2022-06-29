@@ -581,33 +581,48 @@ class Assembler:
             cellvars=tuple(unit.cellvars),
         )
 
-    def _assemble_block(self):
+    def _assemble_block(self) -> CodeType:
         self._assemble_jump_offset()
-        bytecode_seq = self._make_bytecode_sequence()
+        code_str = self._make_bytecode_sequence()
         lnotab = self._make_lnotab(self._task.compiler.unit.firstlineno)
 
-    def assemble(self, block: BasicBlock, compiler: Compiler):
+        return self._make_code(code_str, lnotab)
+
+    def assemble(self, block: BasicBlock, compiler: Compiler) -> CodeType:
         self._task = AssembleTask()
         self._wish_table.clear()
 
         self._task.block = block
         self._task.compiler = compiler
 
+        return self._assemble_block()
+
 
 def test():
+    from sys import argv
     from .alex import Lex
     from .aparser import Parser
     from .test_utils import CFGDisassembler
 
+    mode = argv[-1] if len(argv) > 1 else 'd'
+
     source = open('tests/test.ail').read()
     ts = Lex().lex(source, '<test>')
     node = Parser().parse(ts, source, '<test>')
-    
+
     compiler = Compiler()
     compiler.compile(node, source, '<test>')
-    
-    disassembler = CFGDisassembler()
-    disassembler.disassemble(compiler.unit.top_block, compiler.unit)
+
+    if mode == 'd':
+        disassembler = CFGDisassembler()
+        disassembler.disassemble(compiler.unit.top_block, compiler.unit)
+    elif mode == 'c':
+        from dis import dis
+
+        assembler = Assembler()
+        code = assembler.assemble(compiler.unit.top_block, compiler)
+
+        dis(code)
 
 
 if __name__ == '__main__':
