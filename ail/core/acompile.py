@@ -237,6 +237,11 @@ class Compiler:
         if stack_size + effect > stack_size:
             self._unit.stack_size = stack_size + effect
 
+    def _new_call_name(self, name: str, args: list, ln: int):
+        self._add_instruction(LOAD_GLOBAL)
+        for expr in args:
+            self._compile(expr)
+
     def _add_instruction(
             self, op: int, arg: int, ln: int, 
             check=True, stack_effect=None) -> int:
