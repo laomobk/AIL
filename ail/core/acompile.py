@@ -433,13 +433,11 @@ class Compiler:
     def _compile_call_expr(self, expr: ast.CallExprAST):
         self._compile(expr.left)
 
-        for arg in expr.arg_list.arg_list:
-            self._compile(arg.expr)
+        call_i = CALL_FUNCTION
 
-        self._add_instruction(
-            CALL_FUNCTION, len(expr.arg_list.arg_list), expr.ln,
-            stack_effect=-(len(expr.arg_list.arg_list) - 1),
-        )
+        pos_arg = []
+        star_arg = []
+        kw_arg = []
 
     def _compile_print_stmt(self, stmt: ast.PrintStmtAST):
         for expr in stmt.value_list:
@@ -488,6 +486,11 @@ class Compiler:
         self._unit.block.next_block = block
         self._unit.block = block
 
+    def _get_firstlineno(self, source: str) -> int:
+        for no, ln in enumerate(source.split('\n')):
+            if ln:
+                return no + 1
+
     def enter_new_scope(
             self, symbol_table: SymbolTable, name: str, firstlineno: int=1):
         unit = CompileUnit()
@@ -499,9 +502,13 @@ class Compiler:
         self._unit = unit
 
     def compile(
-            self, node: ast.AST, source: str, filename: str, firstlineno=1):
+            self, node: ast.AST, source: str, filename: str, firstlineno=-1):
         st = SymbolAnalyzer().visit_and_make_symbol_table(
                 source, filename, node)
+
+        if firstlineno < 0:
+            firstlineno = self._get_firstlineno(source)
+
         self.enter_new_scope(st, filename, firstlineno)
 
         b = BasicBlock()
