@@ -261,10 +261,28 @@ class Parser:
     def __check_as_arg_list(self, args: ast.ArgListAST):
         args = args.arg_list
 
+        kw_unpacking_seen = False
+        kw_seen = False
+
         for arg in args:
             if arg.default and \
                     not (isinstance(arg.expr, ast.CellAST) and arg.expr.type == AIL_IDENTIFIER):
                 self.__syntax_error(ln=arg.ln)
+
+            if arg.kw_star:
+                kw_unpacking_seen = True
+            if arg.default:
+                kw_seen = True
+
+            if arg.is_positional():
+                if kw_unpacking_seen:
+                    self.__syntax_error(
+                        'positional argument follows keyword argument'
+                    )
+                if kw_seen:
+                    self.__syntax_error(
+                        'positional argument follows keyword argument'
+                    )
 
     def __parse_param_list(self) -> ast.ArgListAST:
         ln = self.__now_ln
