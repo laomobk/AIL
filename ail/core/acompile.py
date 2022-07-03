@@ -202,6 +202,8 @@ class CompileUnit:
 
         self.fb_stack: List[FrameBlock] = []
 
+        self._cur_stack_size = 0
+
 
 class Compiler:
     def __init__(self):
@@ -232,10 +234,13 @@ class Compiler:
                         'dynamic stack effect must be provided explicitly')
             else:
                 effect = stack_effect
+        
+        self._unit._cur_stack_size = self._unit._cur_stack_size + effect
+        cur_stack_size = self._unit._cur_stack_size
 
         stack_size = self._unit.stack_size
-        if stack_size + effect > stack_size:
-            self._unit.stack_size = stack_size + effect
+        if cur_stack_size > stack_size:
+            self._unit.stack_size = cur_stack_size
 
     def _new_call_name(self, name: str, args: list, ln: int):
         self._add_instruction(LOAD_GLOBAL)
@@ -472,6 +477,7 @@ class Compiler:
             seen_kw_part = False
             kw_arg_segment = []
             map_unpack_count = 0
+            build_map_unpack = False
 
             build_tuple_unpack = False
             tuple_unpack_count = 0
@@ -480,7 +486,6 @@ class Compiler:
                 if arg.is_positional():
                     self._compile(arg.expr)
                     pos_arg_count += 1
-                    tuple_unpack_count += 1
                     in_pos_arg = True
 
                 if arg.star:
@@ -491,6 +496,7 @@ class Compiler:
                         )
                         in_pos_arg = False
                         pos_arg_count = 0
+                        tuple_unpack_count += 1
                     self._compile(arg.expr)
                     build_tuple_unpack = True
                     tuple_unpack_count += 1
@@ -535,12 +541,22 @@ class Compiler:
 
                     self._compile(arg.expr)
                     map_unpack_count += 1
+                    build_map_unpack = True
 
-                    if ai == len(args) - 1:
-                        self._add_instruction(
-                            BUILD_MAP_UNPACK_WITH_CALL, map_unpack_count, -1,
-                            stack_effect=-map_unpack_count
-                        )
+                if ai == len(args) - 1 and build_map_unpack and map_unpack_count > 1:
+                    self._add_instruction(
+                        BUILD_MAP_UNPACK_WITH_CALL, map_unpack_count, -1,
+                        stack_effect=-map_unpack_count
+                    )
+
+            if flags:
+                effect = -2
+            else:
+                effect = -1
+            self._add_instruction(
+                CALL_FUNCTION_EX, flags, -1,
+                stack_effect=effect,
+            )
 
     def _compile_call_expr(self, expr: ast.CallExprAST):
         self._compile(expr.left)
@@ -566,9 +582,9 @@ class Compiler:
         stmts = block.stmts
 
         for stmt in stmts:
-            self._compile(stmt)
+            self._compile(stmt, as_stmt=True)
 
-    def _compile(self, node: ast.AST):
+    def _compile(self, node: ast.AST, as_stmt: bool = False):
         if isinstance(node, ast.BlockAST):
             self._compile_block(node)
 
@@ -589,6 +605,8 @@ class Compiler:
 
         else:
             self._compile_expr(node)
+            if as_stmt:
+                self._add_instruction(POP_TOP, 0, -1)
 
     def _enter_next_block(self, block: BasicBlock):
         self._unit.block.next_block = block
@@ -764,7 +782,7 @@ class Assembler:
 def test():
     from sys import argv
     from .alex import Lex
-    from .aparser import Parser
+    from .aparser import Parser, ASTConverter
     from .test_utils import CFGDisassembler
     from .version import AIL_VERSION
 
@@ -773,24 +791,32 @@ def test():
     source = open('tests/test.ail').read()
     ts = Lex().lex(source, '<test>')
     node = Parser().parse(ts, source, '<test>')
-
-    compiler = Compiler()
-    compiler.compile(node, source, '<test>')
+    
+    if mode != 'cp':
+        compiler = Compiler()
+        compiler.compile(node, source, '<test>')
 
     if mode == 'd':
         disassembler = CFGDisassembler()
         disassembler.disassemble(compiler.unit.top_block, compiler.unit)
         
-    elif mode == 'c':
+    elif mode in ('c', 'cp'):
         from dis import dis
-
-        assembler = Assembler()
-        code = assembler.assemble(compiler.unit.top_block, compiler)
         
-        print('using \'dis\' module to perform disassemble: ')
-        print('code object: %s' % code)
-        print('AIL version: %s\n' % AIL_VERSION)
+        if mode == 'c':
+            assembler = Assembler()
+            code = assembler.assemble(compiler.unit.top_block, compiler)
 
+            print('using \'dis\' module to perform disassemble: ')
+            print('AIL version: %s' % AIL_VERSION)
+        else:
+            print('using python builtin compiler')
+            converter = ASTConverter()
+            py_node = converter.convert_module(node)
+            code = compile(py_node, '<test>', 'exec')
+        
+        print('code object: %s' % code)
+        print('code: [stack size = %s]' % code.co_stacksize)
         dis(code)
 
     elif mode == 'r':
