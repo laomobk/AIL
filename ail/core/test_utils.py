@@ -84,7 +84,8 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.ArgItemAST):
         return {'ArgItem': {'expr': make_ast_tree(a.expr),
                             'star': a.star,
-                            'type_comment': make_ast_tree(a.type_comment)}}
+                            'type_comment': make_ast_tree(a.type_comment),
+                            'kw_star': a.kw_star,}}
 
     elif isinstance(a, ast.ArgListAST):
         return {'ArgList': unpack_list(a.arg_list)}
@@ -341,8 +342,11 @@ def make_ast_tree(a) -> dict:
 class CFGDisassembler:
     _WIDE = 25
 
-    _OP_VARNAME = (
+    _OP_NAME = (
         pyop.LOAD_NAME,
+    )
+
+    _OP_VARNAME = (
         pyop.LOAD_FAST,
         pyop.LOAD_GLOBAL
     )
@@ -374,6 +378,8 @@ class CFGDisassembler:
 
         if opcode in self._OP_VARNAME:
             return unit.varnames[arg]
+        elif opcode in self._OP_NAME:
+            return unit.names[arg]
         elif opcode in self._OP_CONST:
             c = unit.consts[arg]
             return repr(c)

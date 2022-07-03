@@ -24,6 +24,9 @@ class ArgItemAST:
         self.ln = ln
         self.type_comment = None
 
+    def is_positional(self) -> bool:
+        return not self.star and self.default is None and not self.kw_star
+
 
 class ArgListAST:
     def __init__(self, item_list: List[ArgItemAST], ln: int):

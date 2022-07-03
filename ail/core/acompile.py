@@ -430,14 +430,122 @@ class Compiler:
 
             self._enter_next_block(end)
 
+    def _compile_call_arg(self, arg_list: ast.ArgListAST):
+        args = arg_list.arg_list
+
+        kwarg = [arg for arg in args if arg.default is not None]
+        posarg = [arg for arg in args
+                  if arg.default is None and not arg.star and not arg.kw_star]
+        kw_extra = len([arg for arg in args if arg.kw_star]) > 0
+        extra = len([arg for arg in args if arg.star]) > 0
+
+        if not kw_extra and not extra:
+            if kwarg:
+                key_tuple = tuple((arg.expr.value for arg in kwarg))
+                instr_arg = len(kwarg) + len(posarg)
+                for arg in posarg:
+                    self._compile(arg.expr)
+                for arg in kwarg:
+                    self._compile(arg.default)
+                ci = self._add_const(key_tuple)
+                self._add_instruction(LOAD_CONST, ci, -1)
+                self._add_instruction(
+                    CALL_FUNCTION_KW, instr_arg, arg_list.ln,
+                    stack_effect=-instr_arg - 1
+                    # effect = arg len + func + key tuple - return
+                )
+                return
+            for arg in posarg:
+                self._compile(arg.expr)
+            self._add_instruction(
+                CALL_FUNCTION, len(posarg), arg_list.ln,
+                stack_effect=-len(posarg) + 1,
+            )
+            return
+        else:
+            flags = int(len(kwarg) > 0 or kw_extra > 0)
+
+            in_pos_arg = False
+            pos_arg_count = 0
+            in_kw_arg = False
+
+            seen_kw_part = False
+            kw_arg_segment = []
+            map_unpack_count = 0
+
+            build_tuple_unpack = False
+            tuple_unpack_count = 0
+
+            for ai, arg in enumerate(args):
+                if arg.is_positional():
+                    self._compile(arg.expr)
+                    pos_arg_count += 1
+                    tuple_unpack_count += 1
+                    in_pos_arg = True
+
+                if arg.star:
+                    if pos_arg_count > 0 and in_pos_arg:
+                        self._add_instruction(
+                            BUILD_TUPLE, pos_arg_count, -1,
+                            stack_effect=-pos_arg_count
+                        )
+                        in_pos_arg = False
+                        pos_arg_count = 0
+                    self._compile(arg.expr)
+                    build_tuple_unpack = True
+                    tuple_unpack_count += 1
+
+                if (arg.kw_star or arg.default is not None
+                        and not seen_kw_part) or ai == len(args) - 1:
+                    if arg.kw_star or arg.default is not None:
+                        seen_kw_part = True
+                    if pos_arg_count > 0 and in_pos_arg:
+                        self._add_instruction(
+                            BUILD_TUPLE, pos_arg_count, -1,
+                            stack_effect=-pos_arg_count
+                        )
+                        in_pos_arg = False
+                        pos_arg_count = 0
+                        tuple_unpack_count += 1
+
+                    if build_tuple_unpack:
+                        self._add_instruction(
+                            BUILD_TUPLE_UNPACK_WITH_CALL, tuple_unpack_count, -1,
+                            stack_effect=-tuple_unpack_count
+                        )
+
+                if arg.default is not None:
+                    kw_arg_segment.append(arg)
+                    in_kw_arg = True
+
+                if arg.kw_star or (ai == len(args) - 1 and seen_kw_part):
+                    if in_kw_arg is True and kw_arg_segment:
+                        in_kw_arg = False
+                        for karg in kw_arg_segment:
+                            self._compile(karg.expr)
+                        keys = tuple((arg.expr.value for arg in kw_arg_segment))
+                        self._add_instruction(
+                            LOAD_CONST, self._add_const(keys), -1
+                        )
+                        self._add_instruction(
+                            BUILD_MAP, len(keys), -1, stack_effect=-len(keys) - 1,
+                        )
+                        kw_arg_segment.clear()
+                        map_unpack_count += 1
+
+                    self._compile(arg.expr)
+                    map_unpack_count += 1
+
+                    if ai == len(args) - 1:
+                        self._add_instruction(
+                            BUILD_MAP_UNPACK_WITH_CALL, map_unpack_count, -1,
+                            stack_effect=-map_unpack_count
+                        )
+
     def _compile_call_expr(self, expr: ast.CallExprAST):
         self._compile(expr.left)
 
-        call_i = CALL_FUNCTION
-
-        pos_arg = []
-        star_arg = []
-        kw_arg = []
+        self._compile_call_arg(expr.arg_list)
 
     def _compile_print_stmt(self, stmt: ast.PrintStmtAST):
         for expr in stmt.value_list:

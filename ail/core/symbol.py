@@ -275,6 +275,8 @@ class SymbolAnalyzer:
 
         for arg in expr.arg_list.arg_list:
             self._visit(arg.expr)
+            if arg.default is not None:
+                self._visit(arg.default)
 
     def _visit_queue(self):
         for symbol, node in self.__block_queue:
