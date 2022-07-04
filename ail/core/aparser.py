@@ -3274,7 +3274,6 @@ class ASTConverter:
             self.convert(stmt.value)
         ), stmt.ln)
 
-
     def _convert_call_expr(self, expr: ast.CallExprAST) -> pyast.Call:
         func = self.convert(expr.left)
 
