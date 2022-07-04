@@ -810,7 +810,10 @@ def test():
             print('using \'dis\' module to perform disassemble: ')
             print('AIL version: %s' % AIL_VERSION)
         else:
-            print('using python builtin compiler')
+            print('using AIL Convertor to convert AIL code:')
+            print('AIL version: %s' % AIL_VERSION)
+            print('using python builtin compiler to compile AIL code:')
+            print('using \'dis\' module to perform disassemble: ')
             converter = ASTConverter()
             py_node = converter.convert_module(node)
             code = compile(py_node, '<test>', 'exec')
