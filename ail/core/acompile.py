@@ -492,7 +492,7 @@ class Compiler:
                     if pos_arg_count > 0 and in_pos_arg:
                         self._add_instruction(
                             BUILD_TUPLE, pos_arg_count, -1,
-                            stack_effect=-pos_arg_count
+                            stack_effect=-pos_arg_count+1
                         )
                         in_pos_arg = False
                         pos_arg_count = 0
@@ -508,7 +508,7 @@ class Compiler:
                     if pos_arg_count > 0 and in_pos_arg:
                         self._add_instruction(
                             BUILD_TUPLE, pos_arg_count, -1,
-                            stack_effect=-pos_arg_count
+                            stack_effect=-pos_arg_count+1
                         )
                         in_pos_arg = False
                         pos_arg_count = 0
