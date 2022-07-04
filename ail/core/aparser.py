@@ -3292,6 +3292,12 @@ class ASTConverter:
                     keyword_expr(arg.expr.value, self.convert(arg.default)), arg.ln)
                 keywords.append(value)
                 continue
+            elif arg.kw_star:
+                value = _set_lineno(
+                    keyword_expr(None, self.convert(arg.expr)), arg.ln
+                )
+                keywords.append(value)
+                continue
 
             args.append(value)
 
@@ -4175,21 +4181,21 @@ class ASTConverter:
         return m
 
 
-TEST_CONVERT_PYAST = True and False
-
-
 def test_parse():
     import pprint
     from .symbol import SymbolAnalyzer
+    from sys import argv
+
+    test_convert = argv[-1] == 'c'
 
     source = open('./tests/test.ail').read()
     l = Lex()
     ts = l.lex(source)
 
     p = Parser()
-    t = p.parse(ts, source, '<test>', TEST_CONVERT_PYAST)
+    t = p.parse(ts, source, '<test>', test_convert)
 
-    if not TEST_CONVERT_PYAST:
+    if not test_convert:
         SymbolAnalyzer().visit_and_make_symbol_table(
                 source, '<test>', t)
         pt = test_utils.make_ast_tree(t)
