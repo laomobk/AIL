@@ -831,6 +831,11 @@ def test():
             code, 
             {
                 'write': print,
+                'fx': lambda a, b, c, d: print(a, b, c, d),
+                'd': {'d': 4},
+                'a': 1,
+                'b': 2,
+                'c': 3,
             },
         )
 
