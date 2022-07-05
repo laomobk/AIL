@@ -534,7 +534,7 @@ class Compiler:
                             LOAD_CONST, self._add_const(keys), -1
                         )
                         self._add_instruction(
-                            BUILD_MAP, len(keys), -1, stack_effect=-len(keys) - 1,
+                            BUILD_MAP, len(keys), -1, stack_effect=-len(keys),
                         )
                         kw_arg_segment.clear()
                         map_unpack_count += 1
