@@ -10,6 +10,7 @@ from ail.core.exceptions import print_py_traceback
 
 from . import aconfig
 
+from .feature import FEATURE_CLASSICAL_BLOCK, parse_feature_flag
 from .alex import Token, TokenStream, Lex
 from . import asts as ast, test_utils
 from .error import AILSyntaxError, error_msg, is_ail_syntax_error
@@ -20,10 +21,10 @@ __author__ = 'LaomoBK'
 
 _keywords_uc = (
     'PRINT', 'INPUT',
-    'IF', 'THEN', 'BEGIN',
-    'END', 'WHILE', 'DO',
-    'UNTIL', 'LOOP', 'WEND',
-    'FUN', 'IS', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT',
+    'IF', 'THEN',
+    'WHILE', 'DO',
+    'UNTIL', 'LOOP',
+    'FUN', 'ELSE', 'ENDIF', 'ELIF', 'LOAD', 'IMPORT',
     'FUNC',
     'STRUCT', 'MOD', 'FOR', 'PROTECTED',
     'ASSERT', 'THROW', 'TRY', 'CATCH', 'FINALLY',
@@ -32,7 +33,7 @@ _keywords_uc = (
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
     'MATCH', 'NAMESPACE', 'FOREACH', 'IN', 'USING'
-    'AS', 'MATCH',
+                                           'AS', 'MATCH',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -80,7 +81,6 @@ _special_method_map = {
     'delitem': '__delitem__',
 }
 
-
 # it's a experimental feture
 CONTINUE_WHEN_SYNTAX_ERROR = 1
 
@@ -111,7 +111,8 @@ class Parser:
         self.__pyc_mode = True
         self.__for_lsp = False
 
-        self.__flags = 0        
+        self.__flags = 0
+        self.__feature_flag = 0
 
     def get_state(self) -> ParserState:
         return ParserState(self.__tc, self.__level, self.__parenthesis_level, self)
@@ -122,8 +123,8 @@ class Parser:
 
     def __can_continue_when_syntax_error(self, e: SyntaxError) -> bool:
         return self.__now_tok.ttype != AIL_EOF and \
-             is_ail_syntax_error(e) and \
-                 self.__flags & CONTINUE_WHEN_SYNTAX_ERROR
+               is_ail_syntax_error(e) and \
+               self.__flags & CONTINUE_WHEN_SYNTAX_ERROR
 
     def __mov_tp(self, step=1):
         self.__tc += step
@@ -304,8 +305,8 @@ class Parser:
 
             if self.__now_tok.ttype == AIL_SRBASKET:
                 break
-            
-            try:    
+
+            try:
                 if self.__now_tok.ttype != AIL_COMMA:
                     self.__syntax_error()
 
@@ -464,9 +465,9 @@ class Parser:
                 self.__parenthesis_not_match(
                     '[', self.__now_tok.value, self.__now_ln, self.__now_tok.offset,
                     start_tok.ln, start_tok.offset)
-            
+
             if self.__now_tok.ttype not in (AIL_COMMA, AIL_MRBASKET):
-                self.__syntax_error('invalid syntax. Perhaps you forgot a comma?') 
+                self.__syntax_error('invalid syntax. Perhaps you forgot a comma?')
 
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()
@@ -544,7 +545,7 @@ class Parser:
         name = self.__now_tok.value
 
         self.__next_tok()  # eat NAME
-        
+
         try:
             self.__level += 1
             block = self.__parse_block(start='is')
@@ -561,7 +562,7 @@ class Parser:
         self.__next_tok()
 
         items = []
-        
+
         while True:
             item = self.__parse_with_item()
             items.append(item)
@@ -581,7 +582,7 @@ class Parser:
         if isinstance(item, ast.AssignExprAST):
             if item.aug_assign:
                 self.__syntax_error(ln=item.ln)
-                
+
             var = item.left
             expr = item.right
 
@@ -598,7 +599,7 @@ class Parser:
             self.__syntax_error('match body cannot be empty')
 
         cases = list()
-        
+
         self.__skip_newlines()
         cases.append(self.__parse_match_case())
         self.__skip_newlines()
@@ -673,7 +674,7 @@ class Parser:
         if self.__now_tok == 'from':
             self.__next_tok()  # eat 'from'
             typ = ast.YieldFromExpr
-        
+
         value = self.__parse_binary_expr()
 
         return typ(value, ln)
@@ -695,10 +696,10 @@ class Parser:
         if self.__now_tok.ttype == AIL_LRBASKET:
             self.__next_tok()
             return ast.DictAST(keys, values, ln)
-        
+
         if self.__now_tok.ttype in (AIL_SRBASKET, AIL_MRBASKET):
             self.__parenthesis_not_match(
-                '{', self.__now_tok.value, self.__now_ln, 
+                '{', self.__now_tok.value, self.__now_ln,
                 self.__now_tok.offset, ln, s_ofs)
 
         if self.__now_tok.ttype == AIL_EOF:
@@ -734,7 +735,7 @@ class Parser:
 
             if self.__now_tok.ttype in (AIL_MRBASKET, AIL_SRBASKET):
                 self.__parenthesis_not_match(
-                    '{', self.__now_tok.value, self.__now_ln, 
+                    '{', self.__now_tok.value, self.__now_ln,
                     self.__now_tok.offset, ln, s_ofs)
 
             key = self.__parse_binary_expr(
@@ -744,7 +745,7 @@ class Parser:
             if self.__now_tok.ttype != AIL_COLON:
                 self.__syntax_error('excepted \':\'')
             self.__next_tok()  # eat ':'
-            
+
             if self.__now_tok.ttype == AIL_EOF:
                 self.__syntax_error('\'{\' was never closed. (at line %s)' % ln)
 
@@ -754,10 +755,10 @@ class Parser:
 
             keys.append(key)
             values.append(value)
-        
+
         if self.__now_tok.ttype in (AIL_MRBASKET, AIL_SRBASKET):
             self.__parenthesis_not_match(
-                '{', self.__now_tok.value, self.__now_ln, 
+                '{', self.__now_tok.value, self.__now_ln,
                 self.__now_tok.offset, ln, s_ofs)
 
         if self.__now_tok.ttype != AIL_LRBASKET:
@@ -795,9 +796,8 @@ class Parser:
         map_tree = self.__parse_dict_expr()
 
         for key_node in map_tree.keys:
-            if not isinstance(key_node, ast.CellAST) or  \
+            if not isinstance(key_node, ast.CellAST) or \
                     key_node.type != AIL_IDENTIFIER:
-                    
                 self.__syntax_error(ln=key_node.ln)
 
         keys = [k.value for k in map_tree.keys]
@@ -816,7 +816,7 @@ class Parser:
                 type_comment=False, do_tuple=True)
             if self.__now_tok.ttype == AIL_MRBASKET:
                 return start
-        
+
         if self.__now_tok.ttype != AIL_COLON:
             self.__syntax_error()
 
@@ -830,7 +830,7 @@ class Parser:
                 type_comment=False, do_tuple=True)
             if self.__now_tok.ttype == AIL_MRBASKET:
                 return ast.SliceExpr(start, stop, step, ln)
-        
+
         if self.__now_tok.ttype != AIL_COLON:
             self.__syntax_error()
 
@@ -887,9 +887,9 @@ class Parser:
             elif nt == AIL_DOT:
                 self.__next_tok()  # eat '.'
                 right = self.__parse_low_cell_expr()
-                if not (isinstance(right, ast.CellAST) and 
+                if not (isinstance(right, ast.CellAST) and
                         right.type == AIL_IDENTIFIER):
-                    self.__syntax_error()    
+                    self.__syntax_error()
                 left = ast.MemberAccessAST(left, right, ln)
 
         return left
@@ -1004,7 +1004,7 @@ class Parser:
             self.__syntax_error('unexcepted token %s' % repr(self.__now_tok.value))
         name = nt.value  # it can be sub, string, number or identifier
 
-        if self.__now_tok.ttype == AIL_IDENTIFIER and  \
+        if self.__now_tok.ttype == AIL_IDENTIFIER and \
                 self.__now_tok.value in _keywords:
             self.__syntax_error()
 
@@ -1126,8 +1126,8 @@ class Parser:
             self, as_stmt: bool = False, do_tuple: bool = False,
             no_assign: bool = False, type_comment: bool = False,
             ignore_type_comment=True, for_dict_key: bool = False,
-            ) -> ast.BitOpExprAST:
-            
+    ) -> ast.BitOpExprAST:
+
         expr = self.__parse_assign_expr(
             do_tuple, no_assign=no_assign, type_comment=type_comment,
             ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key,
@@ -1329,7 +1329,7 @@ class Parser:
         left = self.__parse_tuple_expr(do_tuple, True)
 
         have_annotation = False
-        
+
         if for_dict_key:
             return left
 
@@ -1363,7 +1363,7 @@ class Parser:
             have_annotation = True
 
         ttype = self.__now_tok.ttype
-        
+
         if self.__now_tok.ttype == AIL_REASSI:
             if have_annotation:
                 self.__syntax_error('the target of shadow assign cannot be annotated')
@@ -1392,7 +1392,7 @@ class Parser:
         if isinstance(left, ast.TupleAST):
             if have_annotation:
                 self.__syntax_error(
-                        'type annotation cannot be used in multiple-target assignment')
+                    'type annotation cannot be used in multiple-target assignment')
             for elt in left.items:
                 if type(elt) not in (
                         ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST,
@@ -1424,7 +1424,7 @@ class Parser:
             r = self.__convert_inplace_assign_expr_for_right(
                 left, r, ttype, self.__now_ln)
             aug_assign = True
-        
+
         if have_annotation:
             if type(left) not in (ast.MemberAccessAST, ast.CellAST):
                 self.__syntax_error('invalid target to annotating', left.ln, ofs)
@@ -1836,7 +1836,7 @@ class Parser:
                     [ast.BlankNode(self.__now_ln)], self.__now_ln)
 
             self.__skip_newlines()
-            
+
             if len(init.expr_list) == 1 and \
                     (self.__now_tok == '{' or self.__now_tok == 'then'):
                 body = self.__parse_block(loop_body=True)
@@ -1845,7 +1845,7 @@ class Parser:
             init = ast.AssignExprListAST(init.expr_list, ln)
 
             self.__skip_newlines()
-        
+
             try:
                 if self.__now_tok != ';':
                     self.__syntax_error('except \';\'')
@@ -1854,12 +1854,12 @@ class Parser:
                 if not self.__can_continue_when_syntax_error(e):
                     raise
                 print_py_traceback()
-                    
+
         else:
             self.__next_tok()  # eat ';'
 
         self.__skip_newlines()
-        
+
         if self.__now_tok != ';':
             try:
                 test = self.__parse_test_expr()
@@ -1870,7 +1870,7 @@ class Parser:
                 test = ast.BlankNode(self.__now_ln)
 
             self.__skip_newlines()
-        
+
             try:
                 if self.__now_tok != ';':
                     self.__syntax_error('except \';\'')
@@ -1883,7 +1883,7 @@ class Parser:
             self.__next_tok()
 
         self.__skip_newlines()
-        
+
         if self.__now_tok != '{' and self.__now_tok != 'then':
             try:
                 update = self.__parse_binary_expr_list()
@@ -2065,8 +2065,8 @@ class Parser:
         return ast.PyCodeBlock(doc_string, ln)
 
     def __parse_def_with_decorator_stmt(self,
-                                             parsed: list = None,
-                                             doc_string='') -> ast.FunctionDefineAST:
+                                        parsed: list = None,
+                                        doc_string='') -> ast.FunctionDefineAST:
         ln = self.__now_ln
         self.__next_tok()  # eat '@'
 
@@ -2107,7 +2107,7 @@ class Parser:
             except SyntaxError as e:
                 if not self.__can_continue_when_syntax_error(e):
                     raise
-        
+
         return ast.BlankNode(self.__now_ln)
 
     def __parse_class_bases(self) -> list:
@@ -2230,7 +2230,7 @@ class Parser:
                 except SyntaxError as e:
                     if not self.__can_continue_when_syntax_error(e):
                         raise
-                    
+
             bindto = self.__now_tok.value
             bindto_tok_line = self.__now_ln
 
@@ -2443,7 +2443,7 @@ class Parser:
 
     def __parse_py_import_from_stmt(self) -> ast.PyImportFromStmt:
         ln = self.__now_ln
-        
+
         if self.__now_tok != 'from':
             self.__syntax_error()
         self.__next_tok()  # eat 'from'
@@ -2483,7 +2483,7 @@ class Parser:
         names: List[ast.PyImportAlias] = []
         while True:
             self.__skip_newlines()
-            
+
             alias = None
 
             if not self.__is_name(self.__now_tok):
@@ -2491,7 +2491,7 @@ class Parser:
             name_ln = self.__now_tok.ln
             name = self.__now_tok.value
             self.__next_tok()  # eat NAME
-            
+
             self.__skip_newlines()
 
             if self.__now_tok == 'as':
@@ -2520,7 +2520,7 @@ class Parser:
         names: List[ast.PyImportAlias] = []
         while True:
             self.__skip_newlines()
-            
+
             alias = None
             name = ''
             while True:
@@ -2536,11 +2536,11 @@ class Parser:
 
                     if not self.__is_name(self.__now_tok):
                         self.__syntax_error('except module name')
-                    
+
                     continue
-                
+
                 break
-            
+
             self.__skip_newlines()
 
             if self.__now_tok == 'as':
@@ -2555,7 +2555,7 @@ class Parser:
             if self.__now_tok.ttype != AIL_COMMA:
                 break
             self.__next_tok()  # eat ','
-        
+
         return ast.PyImportStmt(names, ln)
 
     def __parse_import_stmt(self) -> ast.ImportStmtAST:
@@ -2613,7 +2613,7 @@ class Parser:
         while self.__now_tok.ttype != AIL_SRBASKET:
             if m_ln is None:
                 m_ln = self.__now_tok.ln
-                
+
             if not self.__is_name(self.__now_tok):
                 self.__syntax_error()
             members.append(self.__now_tok.value)
@@ -2628,7 +2628,7 @@ class Parser:
 
         if len(members) > 0 and alias is not None:
             self.__syntax_error(
-                    msg='alias and members in one import statement', ln=m_ln)
+                msg='alias and members in one import statement', ln=m_ln)
 
         self.__next_tok()  # eat ')'
 
@@ -2790,13 +2790,13 @@ class Parser:
                 if case.exc_expr is None and i != len(cases) - 1:
                     # the catch {...} must be last.
                     self.__syntax_error(ln=case.ln)
-        
+
         finally_block = None
-        
+
         if self.__now_tok == 'finally':
             self.__next_tok()  # eat 'finally'
             finally_block = self.__parse_block()
-        
+
         return ast.TryCatchStmtAST(try_block, cases, finally_block, ln)
 
     def __parse_special_method(self) -> ast.FunctionDefineAST:
@@ -2809,9 +2809,9 @@ class Parser:
 
     def __parse_stmt(
             self, limit: tuple = (), class_body: bool = False,
-            ) -> ast.Expression:
+    ) -> ast.Expression:
         nt = self.__now_tok
-        
+
         if nt == 'print':
             a = self.__parse_print_stmt()
 
@@ -2989,8 +2989,8 @@ class Parser:
                 stmt_list.append(s)
 
             if isinstance(s, ast.EOFAST):
-                self.__syntax_error('block was never closed. (at line %s, col %s)' % 
-                        (start_token.ln, start_token.offset + 1))
+                self.__syntax_error('block was never closed. (at line %s, col %s)' %
+                                    (start_token.ln, start_token.offset + 1))
 
         self.__next_tok()  # eat '}'
 
@@ -3008,7 +3008,8 @@ class Parser:
             if loop_body:
                 self.__loop_level += 1
 
-            if self.__now_tok.ttype == AIL_LLBASKET and not for_program:
+            if (self.__now_tok.ttype == AIL_LLBASKET or
+                    self.__feature_flag & FEATURE_CLASSICAL_BLOCK) and not for_program:
                 return self.__parse_new_block(class_body=class_body)
 
             ln = self.__now_ln
@@ -3081,14 +3082,13 @@ class Parser:
               source: str, filename: str,
               pyc_mode: bool = True,
               eval_mode: bool = False, lsp_mode: bool = False,
-              flags: int=0) -> ast.ProgramBlock:
+              feature_flags=-1) -> ast.ProgramBlock:
 
-        if flags & CONTINUE_WHEN_SYNTAX_ERROR:
-            print(
-                'Parser: flag CONTINUE_WHEN_SYNTAX_ERROR was setted, '
-                'it may cause some exception while parsing file')
-        
         self.__init__()
+
+        if feature_flags == -1:
+            self.__feature_flag = parse_feature_flag(source)
+
         self.__tok_stream = ts
         self.__filename = filename
         self.__source = source
@@ -3096,7 +3096,6 @@ class Parser:
 
         self.__tc = 0
         self.__level = 0  # level 0
-        self.__flags = flags
 
         self.__pyc_mode = pyc_mode
 
@@ -3117,9 +3116,9 @@ class Parser:
             return self.__parse_binary_expr(type_comment=False, no_assign=True)
 
         block = self.__parse_block('begin', 'end',
-                                  'A program should starts with \'begin\'',
-                                  "A program should ends with 'end'",
-                                  for_program=True, lsp_mode=lsp_mode)
+                                   'A program should starts with \'begin\'',
+                                   "A program should ends with 'end'",
+                                   for_program=True, lsp_mode=lsp_mode)
 
         prog_block = ast.ProgramBlock(block.stmts, block.ln, block.new)
         return prog_block
@@ -3257,20 +3256,20 @@ class ASTConverter:
         var_names = self._new_constant(stmt.target, stmt.ln)
 
         real_assign = _set_lineno(
-                assign_stmt(
-                    [self._new_name(target_name, stmt.ln, store_ctx())], 
-                    _set_lineno(call_expr(
-                        self._new_name('ail::get_var', stmt.ln,),
-                        [
-                            var_names,
-                            self._new_call_name('py::globals', [], stmt.ln),
-                            self._new_call_name('py::locals', [], stmt.ln),
-                        ]
-                    ), stmt.ln), ), stmt.ln)
+            assign_stmt(
+                [self._new_name(target_name, stmt.ln, store_ctx())],
+                _set_lineno(call_expr(
+                    self._new_name('ail::get_var', stmt.ln, ),
+                    [
+                        var_names,
+                        self._new_call_name('py::globals', [], stmt.ln),
+                        self._new_call_name('py::locals', [], stmt.ln),
+                    ]
+                ), stmt.ln), ), stmt.ln)
         self.__append_stmt_to_top_block(real_assign)
 
         return _set_lineno(assign_stmt(
-            [self._new_name(stmt.target, stmt.ln, store_ctx())], 
+            [self._new_name(stmt.target, stmt.ln, store_ctx())],
             self.convert(stmt.value)
         ), stmt.ln)
 
@@ -3356,7 +3355,7 @@ class ASTConverter:
 
     def _convert_subscript_expr(self, expr: ast.SubscriptExprAST) -> pyast.Subscript:
         left = self.convert(expr.left)
-        
+
         if isinstance(expr.expr, ast.SliceExpr):
             slice = self._convert_slice_expr(expr.expr)
         else:
@@ -3396,7 +3395,7 @@ class ASTConverter:
             result = True if ail::match(x, (1,)) else \
                      False if ail::match(x, (2,)) else py::raise(...)
         """
-        
+
         target = expr.target
         if isinstance(target, ast.AssignExprAST):
             assi = self._convert_assign_expr(target, as_stmt=True)
@@ -3416,7 +3415,7 @@ class ASTConverter:
             target = self._new_name(match_name, expr.ln)
 
         return self.__make_if_expr_from_match_expr(
-                        target, expr.cases, 0, expr.ln)
+            target, expr.cases, 0, expr.ln)
 
     def _convert_with_stmt(self, stmt: ast.WithStmt) -> pyast.With:
         items = []
@@ -3564,13 +3563,13 @@ class ASTConverter:
         def _necessary_stmt_hook(stmt):
             necessary_stmts.append(stmt)
             top_hook(stmt)
-        
+
         try:
             self.__block_stmt_append_func_stack.append(_necessary_stmt_hook)
             test = self.convert(stmt.test)
         finally:
             self.__block_stmt_append_func_stack.pop()
-        
+
         block = self._convert_block(stmt.block, True)
         if necessary_stmts:
             block = _set_lineno(
@@ -3632,7 +3631,7 @@ class ASTConverter:
         def _necessary_stmt_hook(stmt):
             necessary_stmts.append(stmt)
             top_hook(stmt)
-    
+
         for expr in stmt.init_list.expr_list:
             py_expr = self.convert(expr, True)
             self.__append_stmt_to_top_block(py_expr)
@@ -3645,12 +3644,12 @@ class ASTConverter:
                 test = self.convert(stmt.test)
         finally:
             self.__block_stmt_append_func_stack.pop()
-        
+
         update_block = ast.BlockAST(
             stmt.update_list.expr_list + necessary_stmts, stmt.update_list.ln
         )
         body = self._convert_block(stmt.block)
-        
+
         body_with_try = body
         if update_block.stmts:
             body_with_try = [_set_lineno(
@@ -3732,7 +3731,7 @@ class ASTConverter:
             self,
             func: ast.FunctionDefineAST,
             as_stmt: bool, for_namespace: bool = False,
-            ) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
+    ) -> Union[pyast.FunctionDef, pyast.Name, pyast.Lambda]:
         if not as_stmt:
             if func.is_lambda:
                 return self._convert_lambda_expr(func)
@@ -3749,7 +3748,7 @@ class ASTConverter:
         if not for_namespace:
             return self._new_name(func.name, func.param_list.ln)
         return self._new_call_name(
-            'ail::_register_function', 
+            'ail::_register_function',
             [self._new_name(func.name, func.ln)], func.ln)
 
     def _convert_struct_def(self, struct: ast.StructDefineAST) -> pyast.Assign:
@@ -3838,10 +3837,10 @@ class ASTConverter:
             target = self._new_name(imp.name, ln, store_ctx())
         else:
             target = _set_lineno(tuple_expr(
-                [self._new_name(x, ln, store_ctx()) for x in imp.members], 
+                [self._new_name(x, ln, store_ctx()) for x in imp.members],
                 store_ctx()
             ), ln)
-        
+
         # 2021.8.9: import stmt will be convert to an assign stmt
         assi = _set_lineno(
             assign_stmt(
@@ -3855,15 +3854,15 @@ class ASTConverter:
                         self._new_constant(imp.name, ln),
                         _set_lineno(
                             list_expr(
-                                [self._new_constant(m, ln) 
-                                    for m in members], load_ctx()), ln),
+                                [self._new_constant(m, ln)
+                                 for m in members], load_ctx()), ln),
                     ],
                     ln
                 )
             ),
             ln,
         )
-        
+
         # 2021.8.9: the 'call' form of import is not used
         call = self._new_call_name(
             '__ail_import__',
@@ -3932,8 +3931,8 @@ class ASTConverter:
 
         return _set_lineno(function_def_stmt(
             stmt.name,
-            arguments([_set_lineno(argument('ail::_register_function'), ln)], 
-            None, None), block,
+            arguments([_set_lineno(argument('ail::_register_function'), ln)],
+                      None, None), block,
             [self._new_name('ail::namespace', ln)],
         ), ln)
 
@@ -3964,7 +3963,7 @@ class ASTConverter:
         for name in names:
             py_names.append(_set_lineno(
                 import_alias(name.name, name.alias), name.ln))
-        
+
         return _set_lineno(py_import_stmt(py_names), stmt.ln)
 
     def _convert_py_import_from_stmt(
@@ -3975,7 +3974,7 @@ class ASTConverter:
         for name in names:
             py_names.append(_set_lineno(
                 import_alias(name.name, name.alias), name.ln))
-        
+
         return _set_lineno(
             import_from_stmt(stmt.module, py_names, stmt.level), stmt.ln)
 
@@ -4091,8 +4090,8 @@ class ASTConverter:
 
         elif isinstance(a, ast.AssertStmtAST):
             return _set_lineno(assert_stmt(
-                        self.convert(a.expr), self.convert(a.msg)), 
-                    a.ln)
+                self.convert(a.expr), self.convert(a.msg)),
+                a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
             return _set_lineno(raise_stmt(self.convert(a.expr)), a.ln)
@@ -4196,7 +4195,7 @@ def test_parse():
 
     if not test_convert:
         SymbolAnalyzer().visit_and_make_symbol_table(
-                source, '<test>', t)
+            source, '<test>', t)
         pt = test_utils.make_ast_tree(t)
         pprint.pprint(pt)
     else:
@@ -4219,8 +4218,7 @@ def test_parsing_recovery():
 
     p = Parser()
     t = p.parse(
-        ts, source, '<test>', TEST_CONVERT_PYAST, 
-        flags=CONTINUE_WHEN_SYNTAX_ERROR
+        ts, source, '<test>', False,
     )
 
     pt = test_utils.make_ast_tree(t)
@@ -4229,6 +4227,7 @@ def test_parsing_recovery():
 
 if __name__ == '__main__':
     import sys
+
     if sys.argv[-1] == '-r':
         test_parsing_recovery()
     else:

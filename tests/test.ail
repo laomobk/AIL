@@ -1,2 +1,2 @@
 
-fx(a, c, *b, **d);
+a and b or c

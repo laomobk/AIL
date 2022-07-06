@@ -338,6 +338,14 @@ class Compiler:
         return self._compile_const(cell)
 
     def _compile_bool_expr(self, expr: ast.AndTestAST):
+        """
+        special: complex bool op:
+        e.g. a and b or c
+        0 LOAD a
+        2 JUMP_IF_FALSE_OR_POP
+        4 LOAD b
+        6
+        """
         cond = isinstance(expr, ast.OrTestAST)
         end = BasicBlock()
 
