@@ -285,6 +285,32 @@ class Parser:
                         'positional argument follows keyword argument'
                     )
 
+    def __behind_parenthesis(self) -> Token:
+        state = self.get_state()
+        level = 1
+
+        if not self.__now_tok.ttype == AIL_SLBASKET:
+            return None
+
+        self.__next_tok()  # eat '('
+
+        while True:
+            if self.__now_tok.ttype == AIL_EOF:
+                self.__syntax_error('unexpected EOF while parsing')
+
+            if self.__now_tok.ttype == AIL_SLBASKET:
+                level += 1
+
+            if self.__now_tok.ttype == AIL_SRBASKET:
+                level -= 1
+                if level == 0:
+                    self.__next_tok()
+                    tok = self.__now_tok
+                    self.set_state(state)
+                    return tok
+
+            self.__next_tok()
+
     def __parse_param_list(self) -> ast.ArgListAST:
         ln = self.__now_ln
 
@@ -925,6 +951,7 @@ class Parser:
         if self.__now_tok == '(':
             p_ln = self.__now_ln
             p_ofs = self.__now_tok.offset
+
             self.__next_tok()
 
             if self.__now_tok == ')':
@@ -950,6 +977,7 @@ class Parser:
                 for exp in exp_list:
                     if exp.star or exp.kw_star:
                         self.__syntax_error()
+
                 if len(exp_list) == 1:
                     if expr_or_param.may_tuple:
                         return ast.TupleAST([exp_list[0].expr], False, exp_list[0].ln)
@@ -1542,7 +1570,8 @@ class Parser:
 
         return ast.OrTestAST(left, rl, self.__now_ln)
 
-    def __parse_test_expr(self, as_stmt: bool = True) -> ast.TestExprAST:
+    def __parse_test_expr(
+            self, as_stmt: bool = True) -> ast.TestExprAST:
         t = self.__parse_or_test_expr()
 
         if type(t) not in (
@@ -1625,7 +1654,7 @@ class Parser:
         self.__next_tok()  # eat 'if'
 
         try:
-            if_test = self.__parse_binary_expr()
+            if_test = self.__parse_test_expr()
         except SyntaxError as e:
             if not self.__can_continue_when_syntax_error(e):
                 raise
