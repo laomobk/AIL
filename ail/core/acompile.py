@@ -326,11 +326,31 @@ class Compiler:
             ni = self._add_varname(name)
             self._add_instruction(LOAD_FAST, ni, ln)
         elif symbol.flag & SYM_GLOBAL:
-            ni = self._add_varname(name)
+            ni = self._add_name(name)
             self._add_instruction(LOAD_GLOBAL, ni, ln)
         elif symbol.flag & SYM_NORMAL:
             ni = self._add_name(name)
             self._add_instruction(LOAD_NAME, ni, ln)
+
+    def _compile_call_name(
+            self, name: str, args: List[ast.Expression], ln: int, ctx=None):
+        if ctx is None:
+            ctx = SYM_GLOBAL
+
+        left = ast.CellAST(name, AIL_IDENTIFIER, ln)
+        left.symbol = Symbol(name, ctx)
+
+        self._compile_call_expr(
+            ast.CallExprAST(
+                left, 
+                ast.ArgListAST(
+                    [ast.ArgItemAST(e, False, e.ln) 
+                        for e in args],
+                    ln
+                ),
+                ln
+            )
+        )
 
     def _compile_cell(self, cell: ast.CellAST):
         if cell.type == AIL_IDENTIFIER:
@@ -469,7 +489,7 @@ class Compiler:
                 self._compile(arg.expr)
             self._add_instruction(
                 CALL_FUNCTION, len(posarg), arg_list.ln,
-                stack_effect=-len(posarg) + 1,
+                stack_effect=-len(posarg),
             )
             return
         else:
@@ -569,9 +589,9 @@ class Compiler:
         self._compile_call_arg(expr.arg_list)
 
     def _compile_print_stmt(self, stmt: ast.PrintStmtAST):
-        for expr in stmt.value_list:
-            self._compile(expr)
-            self._add_instruction(PRINT_EXPR, 0, -1)
+        self._compile_call_name(
+            'print', stmt.value_list, stmt.ln,
+        )
 
     def _compile_assign_expr(self, expr: ast.AssignExprAST, as_stmt=False):
         left = expr.left

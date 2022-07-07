@@ -1161,9 +1161,8 @@ class Parser:
             ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key,
             allow_yield=as_stmt)
 
-        # if isinstance(expr, ast.AssignExprAST) and not as_stmt:
-        #     self.__syntax_error('cannot assign in a expression')
-        # assign expr is available in AIL 3.x
+        if isinstance(expr, ast.AssignExprAST) and not as_stmt:
+            self.__syntax_error('cannot assign in a expression')
 
         return expr
 

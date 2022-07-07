@@ -1,2 +1,3 @@
 
-write((name = 'Klee'))
+print 'Hello Klee'
+
