@@ -1133,8 +1133,9 @@ class Parser:
             ignore_type_comment=ignore_type_comment, for_dict_key=for_dict_key,
             allow_yield=as_stmt)
 
-        if isinstance(expr, ast.AssignExprAST) and not as_stmt:
-            self.__syntax_error('cannot assign in a expression')
+        # if isinstance(expr, ast.AssignExprAST) and not as_stmt:
+        #     self.__syntax_error('cannot assign in a expression')
+        # assign expr is available in AIL 3.x
 
         return expr
 
@@ -1389,6 +1390,8 @@ class Parser:
                               ast.TupleAST):
             self.__syntax_error(ln=left.ln)
 
+        star_seen = False
+
         if isinstance(left, ast.TupleAST):
             if have_annotation:
                 self.__syntax_error(
@@ -1398,6 +1401,14 @@ class Parser:
                         ast.MemberAccessAST, ast.CellAST, ast.SubscriptExprAST,
                         ast.StarredExpr):
                     self.__syntax_error()
+                if isinstance(elt, ast.StarredExpr):
+                    if star_seen:
+                        self.__syntax_error(
+                            'two starred expressions in assignment',
+                            ln=elt.ln
+                        )
+                    else:
+                        star_seen = True
 
         # check cell is valid or not
         if isinstance(left, ast.CellAST):
@@ -1614,7 +1625,7 @@ class Parser:
         self.__next_tok()  # eat 'if'
 
         try:
-            if_test = self.__parse_test_expr()
+            if_test = self.__parse_binary_expr()
         except SyntaxError as e:
             if not self.__can_continue_when_syntax_error(e):
                 raise
@@ -3375,10 +3386,10 @@ class ASTConverter:
 
     def _convert_member_access_expr(
             self, expr: ast.MemberAccessAST) -> pyast.Attribute:
-        assert isinstance(expr.members, ast.CellAST)
+        assert isinstance(expr.member, ast.CellAST)
 
         left = self.convert(expr.left)
-        right = self.convert(expr.members.value)
+        right = self.convert(expr.member.value)
         attr = _set_lineno(attribute_expr(left, right, load_ctx()), expr.ln)
 
         return attr

@@ -209,7 +209,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.MemberAccessAST):
         return {'MemberAccessAST': {
             'left': make_ast_tree(a.left),
-            'members': make_ast_tree(a.members)}}
+            'members': make_ast_tree(a.member)}}
 
     elif isinstance(a, ast.AssignExprAST):
         return {'AssignExprAST': {

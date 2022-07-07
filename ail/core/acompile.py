@@ -9,7 +9,7 @@ from .pyopcode import *
 from .tokentype import AIL_IDENTIFIER, AIL_NUMBER, AIL_STRING
 
 from .symbol import (
-    SymbolTable, FunctionSymbolTable, ClassSymbolTable, SymbolAnalyzer,
+    SymbolTable, FunctionSymbolTable, ClassSymbolTable, SymbolAnalyzer, Symbol,
     SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE, SYM_NORMAL
 )
 
@@ -215,10 +215,10 @@ class Compiler:
 
     def _check_oparg(self, arg: int, ln: int) -> int:
         final = arg & 0xff
-        if arg > 1 << 16:
+        if arg >= 1 << 16:
             self._add_instruction(EXTENDED_ARG, arg >> 16, ln, False)
             self._add_instruction(EXTENDED_ARG, (arg >> 8) & 0xff, ln, False)
-        elif arg > 1 << 8:
+        elif arg >= 1 << 8:
             self._add_instruction(EXTENDED_ARG, arg >> 8, ln, False)
         return final
 
@@ -255,7 +255,7 @@ class Compiler:
         """
 
         if check:
-            self._check_oparg(arg, ln)
+            arg = self._check_oparg(arg, ln)
         self._check_stack_effect(op, stack_effect)
 
         instr = Instruction()
@@ -338,14 +338,6 @@ class Compiler:
         return self._compile_const(cell)
 
     def _compile_bool_expr(self, expr: ast.AndTestAST):
-        """
-        special: complex bool op:
-        e.g. a and b or c
-        0 LOAD a
-        2 JUMP_IF_FALSE_OR_POP
-        4 LOAD b
-        6
-        """
         cond = isinstance(expr, ast.OrTestAST)
         end = BasicBlock()
 
@@ -367,6 +359,10 @@ class Compiler:
         if isinstance(expr, ast.NotTestAST):
             return self._compile_if_jump(expr.expr, not condition, target)
         elif type(expr) in (ast.OrTestAST, ast.AndTestAST):
+            # these code below is not available,
+            # simply use the _compile_bool_expr to compile it.
+            # TODO: simplify the code of if stmt with a bool expr as its condition
+            """
             cond2 = isinstance(expr, ast.OrTestAST)
             if cond2 == condition:
                 target2 = BasicBlock()
@@ -378,6 +374,7 @@ class Compiler:
             if target2 is not target:
                 self._enter_next_block(target2)
             return
+            """
 
         self._compile(expr)
 
@@ -576,6 +573,66 @@ class Compiler:
             self._compile(expr)
             self._add_instruction(PRINT_EXPR, 0, -1)
 
+    def _compile_assign_expr(self, expr: ast.AssignExprAST, as_stmt=False):
+        left = expr.left
+        if not isinstance(left, ast.TupleAST):
+            left = [left]
+        else:
+            left = left.items
+
+        self._compile(expr.right)
+        if not as_stmt:
+            self._add_instruction(DUP_TOP, 0, -1)
+
+        # check left star
+        before_star_count = 0
+        seen_star = False
+        for elt in left:
+            if isinstance(elt, ast.StarredExpr):
+                seen_star = True
+
+            if not seen_star:
+                before_star_count += 1
+
+        if seen_star:
+            arg = before_star_count + ((len(left) - before_star_count - 1) << 8)
+            self._add_instruction(
+                UNPACK_EX, arg, -1, check=True,
+                stack_effect=len(left) - 1
+            )
+
+        elif len(left) > 1:
+            self._add_instruction(
+                UNPACK_SEQUENCE, len(left), -1,
+                stack_effect=-len(left) - 1
+            )
+
+        for elt in left:
+            if isinstance(elt, ast.StarredExpr):
+                elt = elt.value
+            self._compile_store(elt)
+
+    def _compile_store(self, target: ast.Expression):
+        if isinstance(target, ast.CellAST):
+            name: str = target.value
+            sym: Symbol = target.symbol
+            if sym.flag & SYM_NORMAL:
+                ni = self._add_name(name)
+                self._add_instruction(STORE_NAME, ni, target.ln)
+
+            elif sym.flag & SYM_LOCAL:
+                ni = self._add_varname(name)
+                self._add_instruction(STORE_FAST, ni, target.ln)
+
+            elif sym.flag & SYM_GLOBAL:
+                ni = self._add_name(name)
+                self._add_instruction(STORE_GLOBAL, ni, target.ln)
+
+        elif isinstance(target, ast.MemberAccessAST):
+            self._compile(target.left)
+            self._add_instruction(
+                STORE_ATTR, self._add_name(target.member.value), target.ln)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
@@ -610,6 +667,9 @@ class Compiler:
 
         elif isinstance(node, ast.PrintStmtAST):
             self._compile_print_stmt(node)
+
+        elif isinstance(node, ast.AssignExprAST):
+            self._compile_assign_expr(node, as_stmt)
 
         else:
             self._compile_expr(node)

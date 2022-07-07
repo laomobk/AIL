@@ -49,9 +49,9 @@ class CellAST(Expression):
 
 
 class MemberAccessAST(Expression):
-    def __init__(self, left: CellAST, members: CellAST, ln: int):
+    def __init__(self, left: CellAST, member: CellAST, ln: int):
         self.left = left
-        self.members = members
+        self.member = member
         self.ln = ln
 
 
