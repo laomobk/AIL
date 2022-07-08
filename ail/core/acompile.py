@@ -167,14 +167,15 @@ class BasicBlock:
     __repr__ = __str__
 
 
-FB_TRY = 0x1
-FB_LOOP = 0x2
-FB_WITH = 0x4
-
-
 class FrameBlock:
-    def __init__(self, fb_type: int):
-        self.fb_type = fb_type
+    pass
+
+
+class WhileFrameBlock(FrameBlock):
+    def __init__(self, start: BasicBlock, body: BasicBlock, next_: BasicBlock):
+        self.start = start
+        self.body = body
+        self.next = next_
 
     
 class CompileUnit:
@@ -206,12 +207,34 @@ class CompileUnit:
 
 
 class Compiler:
+    class __FrameStackManager:
+        def __init__(self, compiler: 'Compiler', frame: FrameBlock):
+            self._compiler = compiler
+            self._frame = frame
+
+        def __enter__(self):
+            self._compiler.push_frame(self._frame)
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self._compiler.pop_frame()
+            return False
+
     def __init__(self):
         self._unit: CompileUnit = None
+        self._frame_stack: List[FrameBlock] = []
     
     @property
     def unit(self) -> CompileUnit:
         return self._unit
+
+    def push_frame(self, frame: FrameBlock):
+        self._frame_stack.append(frame)
+
+    def pop_frame(self) -> FrameBlock:
+        return self._frame_stack.pop()
+
+    def _frame(self, frame: FrameBlock):
+        return Compiler.__FrameStackManager(self, frame)
 
     def _check_oparg(self, arg: int, ln: int) -> int:
         final = arg & 0xff
@@ -653,6 +676,29 @@ class Compiler:
             self._add_instruction(
                 STORE_ATTR, self._add_name(target.member.value), target.ln)
 
+    def _compile_while_stmt(self, stmt: ast.WhileStmtAST):
+        start = BasicBlock()
+        body = BasicBlock()
+        next_ = BasicBlock()
+
+        frame = WhileFrameBlock(start, body, next_)
+
+        with self._frame(frame):
+            self._enter_next_block(start)
+            self._compile_if_jump(stmt.test, 0, next_)
+
+            self._enter_next_block(body)
+            self._compile(stmt.block)
+            self._add_jump_op(JUMP_ABSOLUTE, start, -1)
+
+        self._enter_next_block(next_)
+
+    def _compile_break_stmt(self, stmt: ast.BreakStmtAST):
+        top_frame = self._frame_stack[-1]
+
+        if isinstance(top_frame, WhileFrameBlock):
+            self._add_jump_op(JUMP_ABSOLUTE, top_frame.next, stmt.ln)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
@@ -690,6 +736,12 @@ class Compiler:
 
         elif isinstance(node, ast.AssignExprAST):
             self._compile_assign_expr(node, as_stmt)
+
+        elif isinstance(node, ast.WhileStmtAST):
+            self._compile_while_stmt(node)
+
+        elif isinstance(node, ast.BreakStmtAST):
+            self._compile_break_stmt(node)
 
         else:
             self._compile_expr(node)

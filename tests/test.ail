@@ -1,3 +1,7 @@
 
-print 'Hello Klee'
-
+while 1 {
+    if 0 {
+        break
+    }
+    print 'Hello klee'
+}
