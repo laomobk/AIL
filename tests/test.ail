@@ -1,7 +1,4 @@
 
-while 1 {
-    if 0 {
-        break
-    }
-    print 'Hello klee'
+while true {
+    continue
 }

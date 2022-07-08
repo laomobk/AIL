@@ -317,6 +317,9 @@ class Compiler:
         self._unit.names.append(name)
         return len(self._unit.names) - 1
 
+    def _unwind_frame_block(self, block: FrameBlock):
+        pass
+
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
             value = literal_eval(cell.value)
@@ -694,10 +697,28 @@ class Compiler:
         self._enter_next_block(next_)
 
     def _compile_break_stmt(self, stmt: ast.BreakStmtAST):
-        top_frame = self._frame_stack[-1]
+        frame = self._frame_stack[-1]
 
-        if isinstance(top_frame, WhileFrameBlock):
-            self._add_jump_op(JUMP_ABSOLUTE, top_frame.next, stmt.ln)
+        index = len(self._frame_stack) - 2
+        while type(frame) not in (WhileFrameBlock, ):
+            self._unwind_frame_block(frame)
+            frame = self._frame_stack[index]
+            index -= 1
+
+        if isinstance(frame, WhileFrameBlock):
+            self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
+
+    def _compile_continue_stmt(self, stmt: ast.BreakStmtAST):
+        frame = self._frame_stack[-1]
+
+        index = len(self._frame_stack) - 2
+        while type(frame) not in (WhileFrameBlock,):
+            self._unwind_frame_block(frame)
+            frame = self._frame_stack[index]
+            index -= 1
+
+        if isinstance(frame, WhileFrameBlock):
+            self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
