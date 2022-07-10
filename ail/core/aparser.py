@@ -3013,11 +3013,12 @@ class Parser:
         if self.__now_tok.ttype != AIL_LLBASKET:
             self.__syntax_error()
 
-        ln = self.__now_ln
-
         start_token = self.__now_tok
 
         self.__next_tok()
+        self.__skip_newlines()
+
+        ln = self.__now_ln
 
         stmt_list = []
 

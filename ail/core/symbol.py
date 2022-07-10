@@ -626,7 +626,12 @@ class SymbolAnalyzer:
         for symbol in self.__symbol_table.store_symbols:
             if symbol.namespace is not None:
                 assert type(symbol.namespace) is not SymbolTable
-                cellvars.update(symbol.namespace.freevars)
+                for var in symbol.namespace.freevars:
+                    if var in [
+                            sym.name for sym in self.__symbol_table.store_symbols]:
+                        cellvars.add(var)
+                    else:
+                        freevars.add(var)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table

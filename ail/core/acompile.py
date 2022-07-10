@@ -708,6 +708,13 @@ class Compiler:
         if isinstance(frame, WhileFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
+    def _compile_function(self, func: ast.FunctionDefineAST):
+        sym: SymbolTable = func.symbol
+
+        cells, frees = sym.cellvars, sym.freevars
+
+        self.enter_new_scope(sym, func.name, func.block.ln)
+
     def _compile_continue_stmt(self, stmt: ast.BreakStmtAST):
         frame = self._frame_stack[-1]
 
