@@ -708,12 +708,40 @@ class Compiler:
         if isinstance(frame, WhileFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
-    def _compile_function(self, func: ast.FunctionDefineAST):
-        sym: SymbolTable = func.symbol
+    def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
+        sym: SymbolTable = func.symbol.namespace
 
         cells, frees = sym.cellvars, sym.freevars
+        unit = self._unit
 
+        b = BasicBlock()
         self.enter_new_scope(sym, func.name, func.block.ln)
+        self._unit.block = b
+        self._unit.top_block = b
+
+        self._compile_block(func.block)
+
+        self._add_instruction(
+            LOAD_CONST, self._add_const(None), -1
+        )
+        self._add_instruction(RETURN_VALUE, 0, -1)
+
+        assembler = Assembler()
+        code = assembler.assemble(self._unit.top_block, self)
+
+        self._unit = unit
+
+        self._add_instruction(LOAD_CONST, self._add_const(code), -1)
+        self._add_instruction(LOAD_CONST, self._add_const(func.name), -1)
+        self._add_instruction(
+            MAKE_FUNCTION, 0, -1,
+            stack_effect=-1,
+        )
+
+        if as_stmt:
+            cell = ast.CellAST(func.name, AIL_IDENTIFIER, func.ln)
+            cell.symbol = func.symbol
+            self._compile_store(cell)
 
     def _compile_continue_stmt(self, stmt: ast.BreakStmtAST):
         frame = self._frame_stack[-1]
@@ -770,6 +798,9 @@ class Compiler:
 
         elif isinstance(node, ast.BreakStmtAST):
             self._compile_break_stmt(node)
+
+        elif isinstance(node, ast.FunctionDefineAST):
+            self._compile_function(node, True)
 
         else:
             self._compile_expr(node)

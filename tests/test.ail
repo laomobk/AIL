@@ -1,4 +1,8 @@
 
-while true {
-    continue
+func f() {
+    print 'Hello Klee';
 }
+
+
+f();
+
