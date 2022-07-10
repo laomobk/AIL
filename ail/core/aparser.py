@@ -32,8 +32,7 @@ _keywords_uc = (
     'GLOBAL', 'NONLOCAL',
     'EXTENDS', 'AND', 'OR', 'NOT',
     'STATIC', 'PROTECTED', 'PRIVATE', 'IS',
-    'MATCH', 'NAMESPACE', 'FOREACH', 'IN', 'USING'
-                                           'AS', 'MATCH',
+    'NAMESPACE', 'FOREACH', 'IN', 'USING', 'AS',
 )
 
 _end_signs_uc = ('WEND', 'END', 'ENDIF', 'ELSE', 'ELIF', 'CATCH')
@@ -912,7 +911,11 @@ class Parser:
 
             elif nt == AIL_DOT:
                 self.__next_tok()  # eat '.'
-                right = self.__parse_low_cell_expr()
+                if self.__now_tok.ttype != AIL_IDENTIFIER:
+                    self.__syntax_error()
+                right = ast.CellAST(
+                    self.__now_tok.value, self.__now_tok.ttype, self.__now_ln)
+                self.__next_tok()
                 if not (isinstance(right, ast.CellAST) and
                         right.type == AIL_IDENTIFIER):
                     self.__syntax_error()
