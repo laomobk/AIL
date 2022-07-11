@@ -189,8 +189,8 @@ class CompileUnit:
         self.varnames: List[str] = []
         self.consts: List[object] = []
         self.names: List[str] = []
-        self.freevars: List[str] = []
-        self.cellvars: List[str] = []
+        self.freevars: Tuple[str] = ()
+        self.cellvars: Tuple[str] = ()
         self.stack_size = 0
         self.argcount = 0
         self.posonlyargcount = 0
@@ -348,7 +348,17 @@ class Compiler:
             self._add_instruction(LOAD_CONST, ni, ln)
             return
 
-        if symbol.flag & SYM_LOCAL:
+        if name in self._unit.cellvars:
+            self._add_instruction(
+                LOAD_DEREF, self._unit.cellvars.index(name), cell.ln,
+            )
+        elif name in self._unit.freevars:
+            self._add_instruction(
+                LOAD_DEREF,
+                self._unit.freevars.index(name) + len(self._unit.cellvars),
+                cell.ln,
+            )
+        elif symbol.flag & SYM_LOCAL:
             ni = self._add_varname(name)
             self._add_instruction(LOAD_FAST, ni, ln)
         elif symbol.flag & SYM_GLOBAL:
@@ -618,6 +628,7 @@ class Compiler:
         self._compile_call_name(
             'print', stmt.value_list, stmt.ln,
         )
+        self._add_instruction(POP_TOP, 0, -1)
 
     def _compile_assign_expr(self, expr: ast.AssignExprAST, as_stmt=False):
         left = expr.left
@@ -662,7 +673,20 @@ class Compiler:
         if isinstance(target, ast.CellAST):
             name: str = target.value
             sym: Symbol = target.symbol
-            if sym.flag & SYM_NORMAL:
+
+            if name in self._unit.cellvars:
+                self._add_instruction(
+                    STORE_DEREF, self._unit.cellvars.index(name), target.ln,
+                )
+
+            elif name in self._unit.freevars:
+                self._add_instruction(
+                    STORE_DEREF,
+                    self._unit.freevars.index(name) + len(self._unit.cellvars),
+                    target.ln,
+                )
+
+            elif sym.flag & SYM_NORMAL:
                 ni = self._add_name(name)
                 self._add_instruction(STORE_NAME, ni, target.ln)
 
@@ -711,7 +735,7 @@ class Compiler:
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
 
-        cells, frees = sym.cellvars, sym.freevars
+        frees = sym.freevars
         unit = self._unit
 
         b = BasicBlock()
@@ -731,11 +755,36 @@ class Compiler:
 
         self._unit = unit
 
-        self._add_instruction(LOAD_CONST, self._add_const(code), -1)
+        effect = -1
+        flag = 0
+
+        if frees:
+            for name in frees:
+                if name in self._unit.cellvars:
+                    self._add_instruction(
+                        LOAD_CLOSURE,
+                        self._unit.cellvars.index(name),
+                        func.ln
+                    )
+                elif name in self._unit.freevars:
+                    self._add_instruction(
+                        LOAD_CLOSURE,
+                        self._unit.freevars.index(name) + len(self._unit.cellvars),
+                        func.ln
+                    )
+                else:
+                    raise CompilerError('closure name neither in freevars nor cellvars')
+            self._add_instruction(
+                BUILD_TUPLE, len(frees), -1, stack_effect=-len(frees)+1,
+            )
+            flag = 0x8
+            effect = -2
+
+        self._add_instruction(LOAD_CONST, self._add_const(code), func.ln)
         self._add_instruction(LOAD_CONST, self._add_const(func.name), -1)
         self._add_instruction(
-            MAKE_FUNCTION, 0, -1,
-            stack_effect=-1,
+            MAKE_FUNCTION, flag, func.ln,
+            stack_effect=effect,
         )
 
         if as_stmt:
@@ -755,12 +804,22 @@ class Compiler:
         if isinstance(frame, WhileFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
+    def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
+        self._compile_expr(expr.left)
+        self._add_instruction(
+            LOAD_ATTR, self._add_name(expr.member.value), expr.ln,
+            stack_effect=1,
+        )
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
 
         elif isinstance(expr, ast.CallExprAST):
             return self._compile_call_expr(expr)
+
+        elif isinstance(expr, ast.MemberAccessAST):
+            return self._compile_member_access_expr(expr)
 
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
@@ -823,6 +882,9 @@ class Compiler:
         unit.scope = symbol_table
         unit.name = name
         unit.firstlineno = firstlineno
+        unit.freevars = tuple(symbol_table.freevars)
+        unit.cellvars = tuple(symbol_table.cellvars)
+        unit.nlocals = symbol_table.nlocals
 
         self._unit = unit
 
@@ -1000,7 +1062,7 @@ def test():
         disassembler.disassemble(compiler.unit.top_block, compiler.unit)
         
     elif mode in ('c', 'cp'):
-        from dis import dis
+        from ..debug.dis import dis
         
         if mode == 'c':
             assembler = Assembler()
@@ -1016,17 +1078,23 @@ def test():
             converter = ASTConverter()
             py_node = converter.convert_module(node)
             code = compile(py_node, '<test>', 'exec')
-        
-        print('code object: %s' % code)
-        print('code: [stack size = %s]' % code.co_stacksize)
+
         dis(code)
 
-    elif mode == 'r':
-        assembler = Assembler()
-        code = assembler.assemble(compiler.unit.top_block, compiler)
+    elif mode in ('r', 'rp'):
+        if mode == 'r':
+            assembler = Assembler()
+            code = assembler.assemble(compiler.unit.top_block, compiler)
 
-        print('executing the code object generated by AIL')
-        print('code object: %s' % code)
+            print('executing the code object generated by AIL')
+            print('code object: %s' % code)
+        else:
+            converter = ASTConverter()
+            py_node = converter.convert_module(node)
+            code = compile(py_node, '<test>', 'exec')
+            print('executing the code object generated by Python')
+            print('code object: %s' % code)
+
         print('AIL version: %s' % AIL_VERSION)
         print('--------------------\n')
         exec(
@@ -1040,6 +1108,42 @@ def test():
                 'c': 3,
             },
         )
+
+    elif mode == 'x':
+        converter = ASTConverter()
+        py_node = converter.convert_module(node)
+        code_py = compile(py_node, '<test>', 'exec').co_consts[0]
+
+        assembler = Assembler()
+        code_ail = assembler.assemble(compiler.unit.top_block, compiler).co_consts[0]
+
+        print('compare code object: %s and %s' % (code_py, code_ail))
+
+        attrs = (
+            'co_argcount',
+            'co_posonlyargcount',
+            'co_kwonlyargcount',
+            'co_nlocals',
+            'co_stacksize',
+            'co_flags',
+            'co_code',
+            'co_consts',
+            'co_names',
+            'co_varnames',
+            'co_freevars',
+            'co_cellvars',
+            'co_filename',
+            'co_name',
+            'co_firstlineno',
+            'co_lnotab',
+        )
+
+        for attr in attrs:
+            print('comparing attribute: %s' % attr)
+            print('  ail:')
+            print('    ' + repr(getattr(code_ail, attr)))
+            print('  python:')
+            print('    ' + repr(getattr(code_py, attr)))
 
 
 if __name__ == '__main__':

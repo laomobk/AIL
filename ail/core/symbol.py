@@ -48,6 +48,7 @@ def _visit_param_list(
         symbol.from_flag = FROM_PARAMETER
         symbol_table.add_symbol(symbol)
         param.expr.symbol = symbol
+        symbol_table.nlocals += 1
 
 
 class Symbol:
@@ -79,6 +80,7 @@ class SymbolTable:
         self.name = name
         self.freevars: Set[str] = set()
         self.cellvars: Set[str] = set()
+        self.nlocals = 0
 
     def is_local(self, symbol: Symbol) -> bool:
         for s in self.store_symbols:
@@ -198,6 +200,7 @@ class SymbolAnalyzer:
                     self.__symbol_table.freevars.add(name)
                 else:
                     symbol.flag |= SYM_LOCAL
+                    self.__symbol_table.nlocals += 1
                 return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
             symbol.flag |= SYM_NORMAL
@@ -211,9 +214,11 @@ class SymbolAnalyzer:
                 not ignore_nonlocal:
             symbol.flag |= SYM_FREE
             self.__symbol_table.freevars.add(name)
-        elif type(self.__symbol_table) is not SymbolTable and \
-                self.__symbol_table.is_local(symbol):
-            symbol.flag |= SYM_LOCAL
+        elif type(self.__symbol_table) is not SymbolTable:
+            if self.__symbol_table.is_local(symbol):
+                symbol.flag |= SYM_LOCAL
+            else:
+                symbol.flag |= SYM_GLOBAL
         else:
             symbol.flag |= SYM_NORMAL
 
