@@ -1112,10 +1112,10 @@ def test():
     elif mode == 'x':
         converter = ASTConverter()
         py_node = converter.convert_module(node)
-        code_py = compile(py_node, '<test>', 'exec').co_consts[0]
+        code_py = compile(py_node, '<test>', 'exec')
 
         assembler = Assembler()
-        code_ail = assembler.assemble(compiler.unit.top_block, compiler).co_consts[0]
+        code_ail = assembler.assemble(compiler.unit.top_block, compiler)
 
         print('compare code object: %s and %s' % (code_py, code_ail))
 

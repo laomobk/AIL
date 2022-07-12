@@ -1,7 +1,12 @@
 
 func f() {
-    x = 'Klee'
-    print x
+    x = 'Klee';
+    func inf() {
+        print 'Hello', x;
+    }
+    inf();
 }
 
-f()
+
+f();
+
