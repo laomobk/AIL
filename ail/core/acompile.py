@@ -48,6 +48,26 @@ CMP_OP_MAP = {
     'BAD': 11,
 }
 
+CO_OPTIMIZED = 0x0001
+CO_NEWLOCALS = 0x0002
+CO_VARARGS = 0x0004
+CO_VARKEYWORDS = 0x0008
+CO_NESTED = 0x0010
+CO_GENERATOR = 0x0020
+CO_NOFREE = 0x0040
+CO_COROUTINE = 0x0080
+CO_ITERABLE_COROUTINE = 0x0100
+CO_ASYNC_GENERATOR = 0x0200
+
+CO_FUTURE_DIVISION = 0x20000
+CO_FUTURE_ABSOLUTE_IMPORT = 0x40000
+CO_FUTURE_WITH_STATEMENT = 0x80000
+CO_FUTURE_PRINT_FUNCTION = 0x100000
+CO_FUTURE_UNICODE_LITERALS = 0x200000
+CO_FUTURE_BARRY_AS_BDFL = 0x400000
+CO_FUTURE_GENERATOR_STOP = 0x800000
+CO_FUTURE_ANNOTATIONS = 0x1000000
+
 
 class CompilerError(Exception):
     pass
@@ -1001,6 +1021,14 @@ class Assembler:
 
         return bytes(lnotab)
 
+    def _compute_flags(self) -> int:
+        sym = self._task.compiler.unit.scope
+        flags = 0
+        if isinstance(sym, FunctionSymbolTable):
+            flags |= CO_NEWLOCALS | CO_OPTIMIZED
+
+        return flags
+
     def _make_code(self, code_str: bytes, lnotab: bytes) -> CodeType:
         unit = self._task.compiler.unit
 
@@ -1112,10 +1140,10 @@ def test():
     elif mode == 'x':
         converter = ASTConverter()
         py_node = converter.convert_module(node)
-        code_py = compile(py_node, '<test>', 'exec')
+        code_py = compile(py_node, '<test>', 'exec').co_consts[0]
 
         assembler = Assembler()
-        code_ail = assembler.assemble(compiler.unit.top_block, compiler)
+        code_ail = assembler.assemble(compiler.unit.top_block, compiler).co_consts[0]
 
         print('compare code object: %s and %s' % (code_py, code_ail))
 
