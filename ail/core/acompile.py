@@ -881,6 +881,9 @@ class Compiler:
         elif isinstance(node, ast.FunctionDefineAST):
             self._compile_function(node, True)
 
+        elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
+            pass  # do not compile
+
         else:
             self._compile_expr(node)
             if as_stmt:

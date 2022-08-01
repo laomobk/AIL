@@ -3,7 +3,7 @@ func f() {
     x = 'Klee';
     func inf() {
         nonlocal x;
-        x = "可莉";
+        x = '可莉';
         print 'Hello', x;
     }
     inf();
