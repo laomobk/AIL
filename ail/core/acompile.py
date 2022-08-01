@@ -1077,7 +1077,7 @@ def test():
 
     mode = argv[-1] if len(argv) > 1 else 'd'
 
-    source = open('tests/test.ail').read()
+    source = open('tests/test.ail', encoding='UTF-8').read()
     ts = Lex().lex(source, '<test>')
     node = Parser().parse(ts, source, '<test>')
     

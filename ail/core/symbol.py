@@ -81,6 +81,7 @@ class SymbolTable:
         self.freevars: Set[str] = set()
         self.cellvars: Set[str] = set()
         self.nlocals = 0
+        self.local_maybe: Set[str] = set()
 
     def is_local(self, symbol: Symbol) -> bool:
         for s in self.store_symbols:
@@ -200,7 +201,7 @@ class SymbolAnalyzer:
                     self.__symbol_table.freevars.add(name)
                 else:
                     symbol.flag |= SYM_LOCAL
-                    self.__symbol_table.nlocals += 1
+                    self.__symbol_table.local_maybe.add(symbol.name)
                 return symbol
             assert isinstance(self.__symbol_table, SymbolTable)
             symbol.flag |= SYM_NORMAL
@@ -627,6 +628,7 @@ class SymbolAnalyzer:
 
         freevars = self.__symbol_table.freevars
         cellvars = self.__symbol_table.cellvars
+        local_maybe = self.__symbol_table.local_maybe
 
         for symbol in self.__symbol_table.store_symbols:
             if symbol.namespace is not None:
@@ -637,6 +639,9 @@ class SymbolAnalyzer:
                         cellvars.add(var)
                     else:
                         freevars.add(var)
+
+                    if var in local_maybe:
+                        local_maybe.remove(var)
 
     def set_symbol_table(self, symbol_table: SymbolTable):
         self.__symbol_table = symbol_table
@@ -654,6 +659,8 @@ class SymbolAnalyzer:
         self._visit(node)
         self._visit_queue()
         self._check_freevars()
+
+        self.__symbol_table.nlocals = len(self.__symbol_table.local_maybe)
 
         return self.__symbol_table
 
