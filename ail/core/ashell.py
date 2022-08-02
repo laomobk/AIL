@@ -2,6 +2,7 @@ import sys
 import os
 
 from os.path import exists, join
+from pprint import pprint
 
 from .alex import Lex
 from .aparser import Parser, ASTConverter
@@ -10,6 +11,7 @@ from .version import (
     AIL_VERSION_NAME, AIL_VERSION_FULL_STRING
 )
 
+from ail.core.test_utils import make_ast_tree
 from ail.core.namespace import fill_namespace
 from ail.core.exceptions import print_py_traceback
 
@@ -117,6 +119,7 @@ class Shell:
         self.ps3 = '> '
 
         self.__more_level = 0
+        self.__ast_inspect_mode = 0
 
         self.__lexer = Lex()
         self.__parser = Parser()
@@ -184,6 +187,11 @@ class Shell:
             t = self.__lexer.lex(line, '<shell>')
             t = self.__parser.parse(t, line, '<shell>', True)
             n = self.__converter.convert_single(t)
+
+            if self.__ast_inspect_mode:
+                pprint(make_ast_tree(t))
+                print()
+
             c = compile(n, '<shell>', 'single')
 
             exec(c, self.__pyc_globals)
@@ -236,6 +244,11 @@ class Shell:
 
                 elif line == '$help':
                     print(_SH_HELP_STR)
+                    continue
+
+                elif line == '$ast_inspect':
+                    self.__ast_inspect_mode = not self.__ast_inspect_mode
+                    print('$ ast_inspect mode: %s' % self.__ast_inspect_mode)
                     continue
 
                 if more:

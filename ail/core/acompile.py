@@ -752,6 +752,13 @@ class Compiler:
         if isinstance(frame, WhileFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
+    def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
+        while self._frame_stack:
+            self._unwind_frame_block(self._frame_stack.pop())
+
+        self._compile(stmt.expr)
+        self._add_instruction(RETURN_VALUE, 0, stmt.ln)
+
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
 
@@ -778,6 +785,15 @@ class Compiler:
         effect = -1
         flag = 0
 
+        defaults = [x.default for x in func.param_list.arg_list if x.default is not None]
+        if defaults:
+            for default in defaults:
+                self._compile(default)
+            self._add_instruction(
+                BUILD_TUPLE, len(defaults), func.ln, stack_effect=-len(defaults) + 1)
+            flag |= 0x1
+            effect -= 1
+
         if frees:
             for name in frees:
                 if name in self._unit.cellvars:
@@ -793,12 +809,13 @@ class Compiler:
                         func.ln
                     )
                 else:
-                    raise CompilerError('closure name neither in freevars nor cellvars')
+                    raise CompilerError(
+                        'closure name neither in freevars nor cellvars')
             self._add_instruction(
                 BUILD_TUPLE, len(frees), -1, stack_effect=-len(frees)+1,
             )
-            flag = 0x8
-            effect = -2
+            flag |= 0x8
+            effect -= -1
 
         self._add_instruction(LOAD_CONST, self._add_const(code), func.ln)
         self._add_instruction(LOAD_CONST, self._add_const(func.name), -1)
@@ -831,6 +848,38 @@ class Compiler:
             stack_effect=1,
         )
 
+    def _compile_subscript_expr(self, expr: ast.SubscriptExprAST):
+        self._compile(expr.left)
+
+        exp = expr.expr
+
+        if isinstance(exp, ast.SliceExpr):
+            exp_count = 2
+
+            if exp.start is not None:
+                self._compile(exp.start)
+            else:
+                ci = self._add_const(None)
+                self._add_instruction(LOAD_CONST, ci, exp.ln)
+
+            if exp.stop is not None:
+                self._compile(exp.stop)
+            else:
+                ci = self._add_const(None)
+                self._add_instruction(LOAD_CONST, ci, exp.ln)
+
+            if exp.step is not None:
+                exp_count += 1
+                self._compile(exp.step)
+
+            self._add_instruction(
+                BUILD_SLICE, exp_count, exp.ln,
+                stack_effect=-exp_count+1)
+        else:
+            self._compile(exp)
+
+        self._add_instruction(BINARY_SUBSCR, 0, expr.ln)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
@@ -840,6 +889,9 @@ class Compiler:
 
         elif isinstance(expr, ast.MemberAccessAST):
             return self._compile_member_access_expr(expr)
+
+        elif isinstance(expr, ast.SubscriptExprAST):
+            return self._compile_subscript_expr(expr)
 
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
@@ -880,6 +932,9 @@ class Compiler:
 
         elif isinstance(node, ast.FunctionDefineAST):
             self._compile_function(node, True)
+
+        elif isinstance(node, ast.ReturnStmtAST):
+            self._compile_return_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

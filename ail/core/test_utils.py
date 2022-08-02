@@ -85,7 +85,9 @@ def make_ast_tree(a) -> dict:
         return {'ArgItem': {'expr': make_ast_tree(a.expr),
                             'star': a.star,
                             'type_comment': make_ast_tree(a.type_comment),
-                            'kw_star': a.kw_star,}}
+                            'kw_star': a.kw_star,
+                            'default': a.default,
+                            }}
 
     elif isinstance(a, ast.ArgListAST):
         return {'ArgList': unpack_list(a.arg_list)}
@@ -330,6 +332,15 @@ def make_ast_tree(a) -> dict:
                 'module': a.module,
                 'names': make_ast_tree(a.names),
                 'level': a.level,
+            }
+        }
+
+    elif isinstance(a, ast.SliceExpr):
+        return {
+            'Slice': {
+                'start': make_ast_tree(a.start),
+                'stop': make_ast_tree(a.stop),
+                'step': make_ast_tree(a.step),
             }
         }
 

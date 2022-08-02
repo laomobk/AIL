@@ -48,7 +48,7 @@ def _visit_param_list(
         symbol.from_flag = FROM_PARAMETER
         symbol_table.add_symbol(symbol)
         param.expr.symbol = symbol
-        symbol_table.nlocals += 1
+        symbol_table.local_maybe.add(param.expr.value)
 
 
 class Symbol:
@@ -208,6 +208,15 @@ class SymbolAnalyzer:
             return symbol
 
         assert ctx == CTX_LOAD
+
+        sym_name = symbol.name
+
+        for sym in self.__symbol_table.symbols:
+            if sym.name == sym_name:
+                if ignore_nonlocal and sym.flag & SYM_NONLOCAL:
+                    pass
+                else:
+                    return sym
 
         if type(self.__symbol_table) is not SymbolTable and \
                 (self.__symbol_table.is_free(symbol) or
