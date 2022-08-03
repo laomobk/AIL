@@ -355,11 +355,11 @@ class CFGDisassembler:
 
     _OP_NAME = (
         pyop.LOAD_NAME,
+        pyop.LOAD_GLOBAL
     )
 
     _OP_VARNAME = (
         pyop.LOAD_FAST,
-        pyop.LOAD_GLOBAL
     )
 
     _OP_CONST = (

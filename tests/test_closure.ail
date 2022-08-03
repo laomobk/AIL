@@ -1,0 +1,17 @@
+func create(pos=[0, 0]) {
+    func go(direction, step) {
+        new_x = pos[0]+direction[0]*step
+        new_y = pos[1]+direction[1]*step
+
+        pos[0] = new_x
+        pos[1] = new_y
+
+        return pos
+    }
+    return go
+}
+
+player = create()
+print(player([1,0],10))
+print(player([0,1],20))
+print(player([-1,0],10))

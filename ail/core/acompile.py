@@ -769,6 +769,16 @@ class Compiler:
             BUILD_LIST, len(item_list), expr.ln,
             stack_effect=-len(item_list) + 1)
 
+    def _compile_tuple(self, expr: ast.TupleAST):
+        item_list = expr.items
+
+        for elt in item_list:
+            self._compile(elt)
+
+        self._add_instruction(
+            BUILD_TUPLE, len(item_list), expr.ln,
+            stack_effect=-len(item_list) + 1)
+
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
 
@@ -905,6 +915,9 @@ class Compiler:
 
         elif isinstance(expr, ast.ListAST):
             return self._compile_list(expr)
+
+        elif isinstance(expr, ast.TupleAST):
+            self._compile_tuple(expr)
 
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
