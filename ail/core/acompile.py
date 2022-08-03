@@ -763,9 +763,11 @@ class Compiler:
         item_list = expr.items.item_list
 
         for elt in item_list:
-            self._compile(elt.value)
+            self._compile(elt)
 
-        self._add_instruction(BUILD_LIST, len(item_list), -len(item_list) + 1)
+        self._add_instruction(
+            BUILD_LIST, len(item_list), expr.ln,
+            stack_effect=-len(item_list) + 1)
 
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
