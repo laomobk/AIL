@@ -49,6 +49,7 @@ def _visit_param_list(
         symbol_table.add_symbol(symbol)
         param.expr.symbol = symbol
         symbol_table.local_maybe.add(param.expr.value)
+        symbol_table.argcount += 1
 
 
 class Symbol:
@@ -81,6 +82,7 @@ class SymbolTable:
         self.freevars: Set[str] = set()
         self.cellvars: Set[str] = set()
         self.nlocals = 0
+        self.argcount = 0
         self.local_maybe: Set[str] = set()
 
     def is_local(self, symbol: Symbol) -> bool:
@@ -471,7 +473,7 @@ class SymbolAnalyzer:
         elif isinstance(node, ast.ReturnStmtAST):
             self._visit(node.expr)
 
-        elif isinstance(node, ast.ArrayAST):
+        elif isinstance(node, ast.ListAST):
             for elt in node.items.item_list:
                 self._visit(elt)
 

@@ -348,7 +348,7 @@ class ItemListAST(AST):
         self.ln = ln
 
 
-class ArrayAST(Expression):
+class ListAST(Expression):
     def __init__(self, items: ItemListAST, ln: int):
         self.items = items
         self.ln = ln
@@ -621,7 +621,7 @@ EXPR_AST_TYPES = (
     AddSubExprAST,
     DefineExprAST,
     CallExprAST,
-    ArrayAST,
+    ListAST,
     DictAST,
     TupleAST,
     SubscriptExprAST,

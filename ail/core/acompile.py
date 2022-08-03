@@ -759,6 +759,14 @@ class Compiler:
         self._compile(stmt.expr)
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
 
+    def _compile_list(self, expr: ast.ListAST):
+        item_list = expr.items.item_list
+
+        for elt in item_list:
+            self._compile(elt.value)
+
+        self._add_instruction(BUILD_LIST, len(item_list), -len(item_list) + 1)
+
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
 
@@ -893,6 +901,9 @@ class Compiler:
         elif isinstance(expr, ast.SubscriptExprAST):
             return self._compile_subscript_expr(expr)
 
+        elif isinstance(expr, ast.ListAST):
+            return self._compile_list(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
@@ -963,6 +974,7 @@ class Compiler:
         unit.freevars = tuple(symbol_table.freevars)
         unit.cellvars = tuple(symbol_table.cellvars)
         unit.nlocals = symbol_table.nlocals
+        unit.argcount = symbol_table.argcount
 
         self._unit = unit
 

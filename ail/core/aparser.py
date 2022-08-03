@@ -501,7 +501,7 @@ class Parser:
 
         return ast.ItemListAST(il, self.__now_ln)
 
-    def __parse_array_expr(self) -> ast.ArrayAST:
+    def __parse_array_expr(self) -> ast.ListAST:
         ln = self.__now_ln
 
         start_tok = self.__now_tok
@@ -514,7 +514,7 @@ class Parser:
 
         if self.__now_tok.ttype == AIL_MRBASKET:
             self.__next_tok()  # eat ']'
-            return ast.ArrayAST(ast.ItemListAST([], self.__now_ln), ln)
+            return ast.ListAST(ast.ItemListAST([], self.__now_ln), ln)
 
         items = self.__parse_item_list(start_tok)
 
@@ -526,7 +526,7 @@ class Parser:
         if items is None:
             self.__syntax_error()
 
-        return ast.ArrayAST(items, ln)
+        return ast.ListAST(items, ln)
 
     def __parse_match_expr(self) -> ast.MatchExpr:
         ln = self.__now_ln
@@ -3754,7 +3754,7 @@ class ASTConverter:
         return _set_lineno(function_def_stmt(
             name, args, body, decorators), func.ln)
 
-    def _convert_array_expr(self, array: ast.ArrayAST) -> pyast.List:
+    def _convert_array_expr(self, array: ast.ListAST) -> pyast.List:
         items = [self.convert(item) for item in array.items.item_list]
 
         return _set_lineno(list_expr(items, load_ctx()), array.ln)
@@ -4088,7 +4088,7 @@ class ASTConverter:
         elif isinstance(a, ast.NonlocalStmtAST):
             return _set_lineno(nonlocal_stmt([a.name]), a.ln)
 
-        elif isinstance(a, ast.ArrayAST):
+        elif isinstance(a, ast.ListAST):
             return self._convert_array_expr(a)
 
         elif isinstance(a, ast.TupleAST):

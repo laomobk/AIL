@@ -186,7 +186,7 @@ def make_ast_tree(a) -> dict:
     elif isinstance(a, ast.NonlocalStmtAST):
         return {'NonlocalAST': {'name': a.name}}
 
-    elif isinstance(a, ast.ArrayAST):
+    elif isinstance(a, ast.ListAST):
         return {'ArrayAST': {'items': make_ast_tree(a.items)}}
 
     elif isinstance(a, ast.DictAST):
