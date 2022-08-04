@@ -1,8 +1,13 @@
 
-names = ('Klee', 'Qiqi')
+chars = {
+    'Mondstadt': ('Klee', 'Diona'),
+    'Liyue': 'Qiqi',
+    'Inazuma': 'Sayo'
+}
 
-i = 0
-while i < len(names) {
-    print names[i]
-    i = i + 1
+
+keys = iter(chars.keys())
+for {
+    v = chars[next(keys)];
+    print v;
 }

@@ -779,6 +779,21 @@ class Compiler:
             BUILD_TUPLE, len(item_list), expr.ln,
             stack_effect=-len(item_list) + 1)
 
+    def _compile_dict(self, expr: ast.DictAST):
+        keys = expr.keys
+        values = expr.values
+
+        for k, v in zip(keys, values):
+            self._compile(k)
+            self._compile(v)
+
+        self._add_instruction(
+            BUILD_MAP,
+            len(keys),
+            expr.ln,
+            stack_effect=-2*len(keys)+1,
+        )
+
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
         sym: SymbolTable = func.symbol.namespace
 
@@ -919,8 +934,14 @@ class Compiler:
         elif isinstance(expr, ast.TupleAST):
             self._compile_tuple(expr)
 
+        elif isinstance(expr, ast.DictAST):
+            self._compile_dict(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
+
+        else:
+            raise Warning('Compiler: Node %s cannot be compiled' % type(expr))
 
     def _compile_block(self, block: ast.BlockAST):
         stmts = block.stmts
