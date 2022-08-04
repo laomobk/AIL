@@ -1,4 +1,3 @@
-
 from ast import literal_eval
 from typing import List, Tuple, Dict
 from types import CodeType
@@ -19,14 +18,13 @@ CTX_STORE = 0x2
 COMPILE_FLAG_GLOBAL = 0x1
 COMPILE_FLAG_FUNC = 0x2
 
-
 BIN_OP_MAP = {
     '+': BINARY_ADD,
     '-': BINARY_SUBTRACT,
     '*': BINARY_MULTIPLY,
     '/': BINARY_TRUE_DIVIDE,
     'mod': BINARY_MODULO,
-    '//': BINARY_FLOOR_DIVIDE, 
+    '//': BINARY_FLOOR_DIVIDE,
     '^': BINARY_XOR,
     '|': BINARY_OR,
     '&': BINARY_AND,
@@ -170,6 +168,13 @@ class Instruction:
 
         self.line = line
 
+    def __str__(self):
+        if self.target is not None:
+            return '<instr %s arg = %s target: %s>' % \
+                   (OPCODE_TO_NAME_MAP[self.opcode], self.arg, self.target)
+        return '<instr %s arg = %s>' % \
+               (OPCODE_TO_NAME_MAP[self.opcode], self.arg)
+
 
 class BasicBlock:
     def __init__(self):
@@ -191,13 +196,12 @@ class FrameBlock:
     pass
 
 
-class WhileFrameBlock(FrameBlock):
-    def __init__(self, start: BasicBlock, body: BasicBlock, next_: BasicBlock):
+class LoopFrameBlock(FrameBlock):
+    def __init__(self, start: BasicBlock, next_: BasicBlock):
         self.start = start
-        self.body = body
         self.next = next_
 
-    
+
 class CompileUnit:
     def __init__(self):
         self.top_block: BasicBlock = None
@@ -242,7 +246,7 @@ class Compiler:
     def __init__(self):
         self._unit: CompileUnit = None
         self._frame_stack: List[FrameBlock] = []
-    
+
     @property
     def unit(self) -> CompileUnit:
         return self._unit
@@ -274,10 +278,10 @@ class Compiler:
         if effect is EFCT_DYNAMIC_EFFECT:
             if stack_effect is None:
                 raise CompilerError(
-                        'dynamic stack effect must be provided explicitly')
+                    'dynamic stack effect must be provided explicitly')
             else:
                 effect = stack_effect
-        
+
         self._unit._cur_stack_size = self._unit._cur_stack_size + effect
         cur_stack_size = self._unit._cur_stack_size
 
@@ -291,7 +295,7 @@ class Compiler:
             self._compile(expr)
 
     def _add_instruction(
-            self, op: int, arg: int, ln: int, 
+            self, op: int, arg: int, ln: int,
             check=True, stack_effect=None) -> int:
         """
         :returns: returns the offset from head of this instruction
@@ -310,8 +314,8 @@ class Compiler:
 
     def _add_jump_op(self, op: int, target: BasicBlock, ln: int):
         instr = Instruction()
-        instr.is_jabs = op != JUMP_FORWARD
-        instr.is_jrel = op == JUMP_FORWARD
+        instr.is_jabs = op not in OPCODE_JUMP_REL
+        instr.is_jrel = not instr.is_jabs
         instr.target = target
         instr.line = ln
         instr.arg = 0
@@ -398,10 +402,10 @@ class Compiler:
 
         self._compile_call_expr(
             ast.CallExprAST(
-                left, 
+                left,
                 ast.ArgListAST(
-                    [ast.ArgItemAST(e, False, e.ln) 
-                        for e in args],
+                    [ast.ArgItemAST(e, False, e.ln)
+                     for e in args],
                     ln
                 ),
                 ln
@@ -420,8 +424,8 @@ class Compiler:
         for e in [expr.left] + expr.right[:-1]:
             self._compile(e)
             self._add_jump_op(
-                    JUMP_IF_TRUE_OR_POP if cond else JUMP_IF_FALSE_OR_POP,
-                    end, -1
+                JUMP_IF_TRUE_OR_POP if cond else JUMP_IF_FALSE_OR_POP,
+                end, -1
             )
 
         self._compile(expr.right[-1])
@@ -503,7 +507,7 @@ class Compiler:
                 next_ = BasicBlock()
 
                 self._compile(exp)
-                
+
                 if count < n:
                     self._add_instruction(DUP_TOP, 0, -1)
                     self._add_instruction(ROT_THREE, 0, -1)
@@ -573,7 +577,7 @@ class Compiler:
                     if pos_arg_count > 0 and in_pos_arg:
                         self._add_instruction(
                             BUILD_TUPLE, pos_arg_count, -1,
-                            stack_effect=-pos_arg_count+1
+                            stack_effect=-pos_arg_count + 1
                         )
                         in_pos_arg = False
                         pos_arg_count = 0
@@ -583,13 +587,13 @@ class Compiler:
                     tuple_unpack_count += 1
 
                 if (arg.kw_star or arg.default is not None
-                        and not seen_kw_part) or ai == len(args) - 1:
+                    and not seen_kw_part) or ai == len(args) - 1:
                     if arg.kw_star or arg.default is not None:
                         seen_kw_part = True
                     if pos_arg_count > 0 and in_pos_arg:
                         self._add_instruction(
                             BUILD_TUPLE, pos_arg_count, -1,
-                            stack_effect=-pos_arg_count+1
+                            stack_effect=-pos_arg_count + 1
                         )
                         in_pos_arg = False
                         pos_arg_count = 0
@@ -725,18 +729,33 @@ class Compiler:
 
     def _compile_while_stmt(self, stmt: ast.WhileStmtAST):
         start = BasicBlock()
-        body = BasicBlock()
         next_ = BasicBlock()
 
-        frame = WhileFrameBlock(start, body, next_)
+        frame = LoopFrameBlock(start, next_)
 
         with self._frame(frame):
             self._enter_next_block(start)
             self._compile_if_jump(stmt.test, 0, next_)
 
-            self._enter_next_block(body)
             self._compile(stmt.block)
             self._add_jump_op(JUMP_ABSOLUTE, start, -1)
+
+        self._enter_next_block(next_)
+
+    def _compile_foreach_stmt(self, stmt: ast.ForeachStmt):
+        start = BasicBlock()
+        next_ = BasicBlock()
+
+        frame = LoopFrameBlock(start, next_)
+
+        with self._frame(frame):
+            self._compile(stmt.iter)
+            self._add_instruction(GET_ITER, 0, stmt.ln)
+            self._enter_next_block(start)
+            self._add_jump_op(FOR_ITER, next_, stmt.ln)
+            self._compile_store(stmt.target)
+            self._compile_block(stmt.body)
+            self._add_jump_op(JUMP_ABSOLUTE, start, stmt.ln)
 
         self._enter_next_block(next_)
 
@@ -744,13 +763,25 @@ class Compiler:
         frame = self._frame_stack[-1]
 
         index = len(self._frame_stack) - 2
-        while type(frame) not in (WhileFrameBlock, ):
+        while type(frame) not in (LoopFrameBlock,):
             self._unwind_frame_block(frame)
             frame = self._frame_stack[index]
             index -= 1
 
-        if isinstance(frame, WhileFrameBlock):
+        if isinstance(frame, LoopFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
+
+    def _compile_continue_stmt(self, stmt: ast.ContinueStmtAST):
+        frame = self._frame_stack[-1]
+
+        index = len(self._frame_stack) - 2
+        while type(frame) not in (LoopFrameBlock,):
+            self._unwind_frame_block(frame)
+            frame = self._frame_stack[index]
+            index -= 1
+
+        if isinstance(frame, LoopFrameBlock):
+            self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
         while self._frame_stack:
@@ -791,7 +822,7 @@ class Compiler:
             BUILD_MAP,
             len(keys),
             expr.ln,
-            stack_effect=-2*len(keys)+1,
+            stack_effect=-2 * len(keys) + 1,
         )
 
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
@@ -847,7 +878,7 @@ class Compiler:
                     raise CompilerError(
                         'closure name neither in freevars nor cellvars')
             self._add_instruction(
-                BUILD_TUPLE, len(frees), -1, stack_effect=-len(frees)+1,
+                BUILD_TUPLE, len(frees), -1, stack_effect=-len(frees) + 1,
             )
             flag |= 0x8
             effect -= -1
@@ -868,12 +899,12 @@ class Compiler:
         frame = self._frame_stack[-1]
 
         index = len(self._frame_stack) - 2
-        while type(frame) not in (WhileFrameBlock,):
+        while type(frame) not in (LoopFrameBlock,):
             self._unwind_frame_block(frame)
             frame = self._frame_stack[index]
             index -= 1
 
-        if isinstance(frame, WhileFrameBlock):
+        if isinstance(frame, LoopFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
@@ -909,7 +940,7 @@ class Compiler:
 
             self._add_instruction(
                 BUILD_SLICE, exp_count, exp.ln,
-                stack_effect=-exp_count+1)
+                stack_effect=-exp_count + 1)
         else:
             self._compile(exp)
 
@@ -977,11 +1008,17 @@ class Compiler:
         elif isinstance(node, ast.BreakStmtAST):
             self._compile_break_stmt(node)
 
+        elif isinstance(node, ast.ContinueStmtAST):
+            self._compile_continue_stmt(node)
+
         elif isinstance(node, ast.FunctionDefineAST):
             self._compile_function(node, True)
 
         elif isinstance(node, ast.ReturnStmtAST):
             self._compile_return_stmt(node)
+
+        elif isinstance(node, ast.ForeachStmt):
+            self._compile_foreach_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile
@@ -1001,7 +1038,7 @@ class Compiler:
                 return no + 1
 
     def enter_new_scope(
-            self, symbol_table: SymbolTable, name: str, firstlineno: int=1):
+            self, symbol_table: SymbolTable, name: str, firstlineno: int = 1):
         unit = CompileUnit()
         unit.prev_unit = self._unit
         unit.scope = symbol_table
@@ -1017,7 +1054,7 @@ class Compiler:
     def compile(
             self, node: ast.AST, source: str, filename: str, firstlineno=-1):
         st = SymbolAnalyzer().visit_and_make_symbol_table(
-                source, filename, node)
+            source, filename, node)
 
         if firstlineno < 0:
             firstlineno = self._get_firstlineno(source)
@@ -1049,7 +1086,7 @@ class Assembler:
         self._task: AssembleTask = None
         self._wish_table: Dict[BasicBlock, List[Instruction]] = {}
 
-    def __set_wish(self, instr: Instruction):
+    def __set_wish(self, instr: Instruction, offset: int):
         assert instr.target is not None
 
         wish = self._wish_table
@@ -1061,14 +1098,14 @@ class Assembler:
         else:
             followers = wish[block]
 
-        followers.append(instr)
+        followers.append((instr, offset))
 
     def _set_jump_instr_argument(
             self, instr: Instruction, offset: int, now_offset: int):
         if instr.is_jabs:
             instr.arg = offset
         if instr.is_jrel:
-            instr.arg = offset - now_offset
+            instr.arg = offset - now_offset - 2  # skip self
 
     def _assemble_jump_offset(self):
         block = self._task.block
@@ -1079,14 +1116,14 @@ class Assembler:
             block.offset = total_offset
 
             if block in self._wish_table:
-                for follower in self._wish_table[block]:
+                for follower, offset in self._wish_table[block]:
                     self._set_jump_instr_argument(
-                        follower, block.offset, total_offset)
+                        follower, block.offset, offset)
 
             for instr in instructions:
                 if instr.opcode in OPCODE_JUMP:
                     if instr.target.offset == -1:
-                        self.__set_wish(instr)
+                        self.__set_wish(instr, total_offset)
                     else:
                         self._set_jump_instr_argument(
                             instr, instr.target.offset, total_offset)
@@ -1186,7 +1223,7 @@ def test():
     source = open('tests/test.ail', encoding='UTF-8').read()
     ts = Lex().lex(source, '<test>')
     node = Parser().parse(ts, source, '<test>')
-    
+
     if mode != 'cp':
         compiler = Compiler()
         compiler.compile(node, source, '<test>')
@@ -1194,10 +1231,10 @@ def test():
     if mode == 'd':
         disassembler = CFGDisassembler()
         disassembler.disassemble(compiler.unit.top_block, compiler.unit)
-        
+
     elif mode in ('c', 'cp'):
         from ..debug.dis import dis
-        
+
         if mode == 'c':
             assembler = Assembler()
             code = assembler.assemble(compiler.unit.top_block, compiler)
@@ -1232,7 +1269,7 @@ def test():
         print('AIL version: %s' % AIL_VERSION)
         print('--------------------\n')
         exec(
-            code, 
+            code,
             {
                 'write': print,
                 'fx': lambda a, b, c, d: print(a, b, c, d),
@@ -1282,4 +1319,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-

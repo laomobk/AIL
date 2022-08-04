@@ -1,13 +1,6 @@
 
-chars = {
-    'Mondstadt': ('Klee', 'Diona'),
-    'Liyue': 'Qiqi',
-    'Inazuma': 'Sayo'
-}
-
-
-keys = iter(chars.keys())
-for {
-    v = chars[next(keys)];
-    print v;
+foreach i in 'hello world' {
+    break
+    continue
+    print i
 }
