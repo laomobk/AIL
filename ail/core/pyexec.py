@@ -38,7 +38,7 @@ def _test_run():
     exec(code, AIL_PY_GLOBAL)
 
 
-def exec_as_python(
+def exec_by_python(
         source: str, filename: str, globals: dict, main: bool = True) -> int:
     """
     :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
@@ -66,7 +66,7 @@ def exec_as_python(
 
 def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
     try:
-        return exec_as_python(source, filename, globals)
+        return exec_by_python(source, filename, globals)
     except Exception:
         print_py_traceback()
         return 1
