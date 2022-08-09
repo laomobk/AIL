@@ -66,25 +66,25 @@
 如函数中的 `a := a` 语句在 AIL 2 中被编译成一个复杂的函数调用和赋值的过程：
 
 ```
-              0 LOAD_GLOBAL              0 (ail::get_var)
-              2 LOAD_CONST               1 ('a')
-              4 LOAD_GLOBAL              1 (py::globals)
-              6 CALL_FUNCTION            0
-              8 LOAD_GLOBAL              2 (py::locals)
-             10 CALL_FUNCTION            0
-             12 CALL_FUNCTION            3
-             14 STORE_FAST               0 (a)
-             16 LOAD_FAST                0 (a)
-             18 STORE_FAST               0 (a)
-             20 LOAD_CONST               0 (None)
-             22 RETURN_VALUE
+  0 LOAD_GLOBAL              0 (ail::get_var)
+  2 LOAD_CONST               1 ('a')
+  4 LOAD_GLOBAL              1 (py::globals)
+  6 CALL_FUNCTION            0
+  8 LOAD_GLOBAL              2 (py::locals)
+ 10 CALL_FUNCTION            0
+ 12 CALL_FUNCTION            3
+ 14 STORE_FAST               0 (a)
+ 16 LOAD_FAST                0 (a)
+ 18 STORE_FAST               0 (a)
+ 20 LOAD_CONST               0 (None)
+ 22 RETURN_VALUE
 ```
 
 而在 AIL 3 版本中，将被直接编译为：
 
 ```
-              0 LOAD_GLOBAL              0 (a)
-              2 STORE_FAST               0 (a)
+  0 LOAD_GLOBAL              0 (a)
+  2 STORE_FAST               0 (a)
 ```
 
 大大提高了运行效率。
