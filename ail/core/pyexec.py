@@ -1,7 +1,8 @@
 # python compatible
-
+import dis
 from sys import stderr
 
+from .acompile import Compiler, Assembler
 from .alex import Lex
 from .aparser import ASTConverter, Parser
 from .error import AILSyntaxError
@@ -18,6 +19,11 @@ SIG_OK = 0
 SIG_EXCEPTION = 1
 SIG_STOP = 3
 SIG_SYSTEM_EXIT = 2
+
+
+CP_PY_AST = 0x1
+CP_PY_CODE = 0x2
+AIL_CP_MODES = ('exec', 'eval', 'single')
 
 
 class StopExec(BaseException):
@@ -75,6 +81,26 @@ def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
         return 0
 
 
+def ail_parse_ail_ast(source: str, filename: str, mode: str, flags: int):
+    if mode not in AIL_CP_MODES:
+        raise ValueError('compile mode must in (%s, %s %s)' %
+                         tuple((repr(x) for x in AIL_CP_MODES)))
+
+    ts = Lex().lex(source, filename)
+    return Parser().parse(ts, source, filename, flags & CP_PY_AST == 1, mode == 'eval')
+
+
+def ail_parse_pyast(source: str, filename: str, mode: str, flags: int):
+    converter = ASTConverter()
+    conv_func = {
+        'eval': converter.convert_eval,
+        'exec': converter.convert_module,
+        'single': converter.convert_single,
+    }.get(mode, None)
+
+    return conv_func(ail_parse_ail_ast(source, filename, mode, flags))
+
+
 def ail_eval(source, globals=None, locals=None):
     l = Lex()
     ts = l.lex(source, '<eval>')
@@ -88,6 +114,43 @@ def ail_eval(source, globals=None, locals=None):
     if globals is None:
         globals = {}
 
+    fill_namespace(globals)
+
+    return eval(code, globals, locals)
+
+
+def ail_compile(source: str, filename: str, mode: str, flags: int = 0, compiler: int = CP_PY_AST):
+    if mode not in AIL_CP_MODES:
+        raise ValueError('compile mode must in ()' % (repr(x) for x in AIL_CP_MODES))
+
+    eval_mode = mode == 'eval'
+    single_mode = mode == 'single'
+
+    ts = Lex().lex(source, filename)
+    node = Parser().parse(ts, source, filename, flags & CP_PY_AST == 1, eval_mode)
+
+    if compiler == CP_PY_AST:
+        converter = ASTConverter()
+        if single_mode:
+            code = compile(
+                converter.convert_single(node),
+                filename, 'single')
+        else:
+            code = compile(
+                converter.convert_module(node),
+                filename, 'eval' if eval_mode else 'exec')
+    elif compiler == CP_PY_CODE:
+        compiler = Compiler()
+        compiler.compile(node, source, filename, mode=mode)
+        code = Assembler().assemble(compiler.unit.top_block, compiler)
+    else:
+        raise ValueError('Invalid flag: %s' % flags)
+
+    return code
+
+
+def ail_exec(source: str, globals: dict = None, locals: dict = None):
+    code = ail_compile(source, '<exec>', 'exec')
     fill_namespace(globals)
 
     return eval(code, globals, locals)

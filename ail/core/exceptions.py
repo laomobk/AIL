@@ -116,10 +116,10 @@ def erase_py_runtime_stack_trace_in_exception(exception: BaseException):
     return erase_py_runtime_stack_trace_in_exception(context)
 
 
-def print_py_traceback():
+def print_py_traceback(erase_ail_runtime_exception=True):
     tb_type, tb_value, tb_traceback = _sys.exc_info()
 
-    if _config.REMOVE_PY_RUNTIME_TRACEBACK:
+    if erase_ail_runtime_exception and _config.REMOVE_PY_RUNTIME_TRACEBACK:
         erase_py_runtime_stack_trace_in_exception(tb_value)
 
     _sys.last_traceback = tb_value.__traceback__

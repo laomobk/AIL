@@ -246,6 +246,7 @@ class Compiler:
     def __init__(self):
         self._unit: CompileUnit = None
         self._frame_stack: List[FrameBlock] = []
+        self._mode = ''
 
     @property
     def unit(self) -> CompileUnit:
@@ -981,7 +982,7 @@ class Compiler:
             self._compile(stmt, as_stmt=True)
 
     def _compile(self, node: ast.AST, as_stmt: bool = False):
-        if isinstance(node, ast.BlockAST):
+        if isinstance(node, ast.BlockAST) or isinstance(node, ast.ProgramBlock):
             self._compile_block(node)
 
         elif isinstance(node, ast.IfStmtAST):
@@ -1026,7 +1027,10 @@ class Compiler:
         else:
             self._compile_expr(node)
             if as_stmt:
-                self._add_instruction(POP_TOP, 0, -1)
+                if self._mode == 'single':
+                    self._add_instruction(PRINT_EXPR, 0, -1)
+                else:
+                    self._add_instruction(POP_TOP, 0, -1)
 
     def _enter_next_block(self, block: BasicBlock):
         self._unit.block.next_block = block
@@ -1051,15 +1055,28 @@ class Compiler:
 
         self._unit = unit
 
+        return unit
+
     def compile(
-            self, node: ast.AST, source: str, filename: str, firstlineno=-1):
+            self, node: ast.AST, source: str, filename: str,
+            firstlineno=-1, mode: str = 'exec'):
+
+        from .pyexec import AIL_CP_MODES
+
+        if mode not in AIL_CP_MODES:
+            raise ValueError('compile mode must in (%s, %s %s)' %
+                             tuple((repr(x) for x in AIL_CP_MODES)))
+
+        self._mode = mode
+
         st = SymbolAnalyzer().visit_and_make_symbol_table(
             source, filename, node)
 
         if firstlineno < 0:
             firstlineno = self._get_firstlineno(source)
 
-        self.enter_new_scope(st, filename, firstlineno)
+        unit = self.enter_new_scope(st, filename, firstlineno)
+        unit.filename = filename
 
         b = BasicBlock()
         self._unit.top_block = b
@@ -1226,7 +1243,7 @@ def test():
 
     if mode != 'cp':
         compiler = Compiler()
-        compiler.compile(node, source, '<test>')
+        compiler.compile(node, source, '<test>', mode='single')
 
     if mode == 'd':
         disassembler = CFGDisassembler()

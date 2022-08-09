@@ -1,6 +1,2 @@
 
-foreach i in 'hello world' {
-    break
-    continue
-    print i
-}
+1 + 1
