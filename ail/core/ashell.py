@@ -1,9 +1,11 @@
+import dis
 import sys
 import os
 
 from os.path import exists, join
 from pprint import pprint
 
+from .pyexec import ail_compile, CP_PY_AST, CP_PY_CODE
 from .alex import Lex
 from .aparser import Parser, ASTConverter
 from .version import (
@@ -120,10 +122,7 @@ class Shell:
 
         self.__more_level = 0
         self.__ast_inspect_mode = 0
-
-        self.__lexer = Lex()
-        self.__parser = Parser()
-        self.__converter = ASTConverter()
+        self.__native_compile = False
 
         self.__pyc_globals = {}
         self.__pyc_globals.update(_SHELL_PYC_NAMESPACE)
@@ -184,19 +183,13 @@ class Shell:
 
     def __run_single_line_pyc(self, line: str, block: bool = False):
         try:
-            t = self.__lexer.lex(line, '<shell>')
-            t = self.__parser.parse(t, line, '<shell>', True)
-            n = self.__converter.convert_single(t)
-
-            if self.__ast_inspect_mode:
-                pprint(make_ast_tree(t))
-                print()
-
-            c = compile(n, '<shell>', 'single')
+            c = ail_compile(
+                line, '<shell>', 'single',
+                compiler=CP_PY_CODE if self.__native_compile else CP_PY_AST)
 
             exec(c, self.__pyc_globals)
         except Exception:
-            print_py_traceback()
+            print_py_traceback(False)
 
     __run_single_line = __run_single_line_pyc
 
@@ -205,10 +198,18 @@ class Shell:
 
         self.__buffer = []
 
-    def run_shell(self):
-        self.__run_shell()
+    def run_shell(self, native_compile_mode=False):
+        self.__run_shell(native_compile_mode)
 
-    def __run_shell(self):
+    def __run_shell(self, native_compile_mode=False):
+        self.__native_compile = native_compile_mode
+
+        if native_compile_mode:
+            print('(native compile mode)')
+            self.ps1 = '(n) >> '
+            self.ps2 = '(n) .. '
+            self.ps3 = '(n) > '
+
         self.__print_welcome_text()
 
         ps = self.ps1
