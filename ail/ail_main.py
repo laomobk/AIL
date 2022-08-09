@@ -27,6 +27,7 @@ class _Option:
         self.rest_args = []
         self.source = False
         self.cmd = None
+        self.native_compile = False
 
 
 # load AIL_PATH in environ
@@ -47,6 +48,9 @@ def parse_arg(args) -> _Option:
     parser.add_argument(
         '-s', help='dump to python source code', action='store_true',
         dest='source')
+    parser.add_argument(
+        '-n', help='dump to python source code', action='store_true',
+        dest='native')
     parser.add_argument('args', nargs=argparse.REMAINDER)
 
     namespace = parser.parse_args(args)
@@ -55,6 +59,7 @@ def parse_arg(args) -> _Option:
     opt.filename = namespace.file
     opt.source = namespace.source
     opt.rest_args = namespace.args
+    opt.native_compile = namespace.native
     opt.shell_mode = namespace.file is None
 
     return opt
@@ -86,10 +91,11 @@ def _launch_main(argv: list) -> int:
 
     if option.shell_mode:
         from .core import ashell
-        ashell.Shell().run_shell()
+        ashell.Shell().run_shell(option.native_compile)
         return 0
 
     source_mode = option.source
+    native_compile = option.native_compile
 
     file_path = option.filename
     file_dir = os.path.dirname(
@@ -112,6 +118,7 @@ def _launch_main(argv: list) -> int:
             return exec_pyc_main(source, file_path, dict())
 
         ast = Parser().parse(Lex().lex(source), source, file_path, source_mode)
+
         if source_mode:
             try:
                 import astunparse
