@@ -76,8 +76,6 @@
  14 STORE_FAST               0 (a)
  16 LOAD_FAST                0 (a)
  18 STORE_FAST               0 (a)
- 20 LOAD_CONST               0 (None)
- 22 RETURN_VALUE
 ```
 
 而在 AIL 3 版本中，将被直接编译为：
