@@ -910,10 +910,17 @@ class Compiler:
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
-        self._add_instruction(
-            LOAD_ATTR, self._add_name(expr.member.value), expr.ln,
-            stack_effect=1,
-        )
+
+        if expr.call_method:
+            self._add_instruction(
+                LOAD_METHOD, self._add_name(expr.member.value), expr.ln,
+                stack_effect=1,
+            )
+        else:
+            self._add_instruction(
+                LOAD_ATTR, self._add_name(expr.member.value), expr.ln,
+                stack_effect=1,
+            )
 
     def _compile_subscript_expr(self, expr: ast.SubscriptExprAST):
         self._compile(expr.left)
@@ -1243,7 +1250,7 @@ def test():
 
     if mode != 'cp':
         compiler = Compiler()
-        compiler.compile(node, source, '<test>', mode='single')
+        compiler.compile(node, source, '<test>', mode='exec')
 
     if mode == 'd':
         disassembler = CFGDisassembler()

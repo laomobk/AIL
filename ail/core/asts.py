@@ -52,6 +52,7 @@ class MemberAccessAST(Expression):
     def __init__(self, left: CellAST, member: CellAST, ln: int):
         self.left = left
         self.member = member
+        self.call_method = False
         self.ln = ln
 
 

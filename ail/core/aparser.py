@@ -901,8 +901,10 @@ class Parser:
                     argl = self.__parse_arg_list()
 
                 self.__check_as_arg_list(argl)
-
                 self.__next_tok()  # eat ')'
+
+                if isinstance(left, ast.MemberAccessAST):
+                    left.call_method = True
 
                 left = ast.CallExprAST(left, argl, ln)
 
