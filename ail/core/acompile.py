@@ -202,6 +202,11 @@ class LoopFrameBlock(FrameBlock):
         self.next = next_
 
 
+class TryFinallyFrameBlock(FrameBlock):
+    def __init__(self, ):
+        pass
+
+
 class CompileUnit:
     def __init__(self):
         self.top_block: BasicBlock = None
@@ -772,18 +777,6 @@ class Compiler:
         if isinstance(frame, LoopFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
-    def _compile_continue_stmt(self, stmt: ast.ContinueStmtAST):
-        frame = self._frame_stack[-1]
-
-        index = len(self._frame_stack) - 2
-        while type(frame) not in (LoopFrameBlock,):
-            self._unwind_frame_block(frame)
-            frame = self._frame_stack[index]
-            index -= 1
-
-        if isinstance(frame, LoopFrameBlock):
-            self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
-
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
         while self._frame_stack:
             self._unwind_frame_block(self._frame_stack.pop())
@@ -908,6 +901,33 @@ class Compiler:
         if isinstance(frame, LoopFrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
+    def _compile_try(self, stmt: ast.TryCatchStmtAST):
+        if stmt.finally_block is not None:
+            self._compile_try_finally_stmt(stmt)
+
+    # Code generated for try { T } finally { F }:
+    # (the top of value stack at the right)
+    #
+    # Value stack           Label       OP              Arg
+    # []                                SETUP_FINALLY   L
+    # []                                <code for T>
+    # []                                BEGIN_FINALLY
+    # [null?]               L1          <code for F>
+    # [null?]                           END_FINALLY
+    #
+    # P.S.
+    # There not always a NULL in value stack when executing END_FINALLY,
+    # for example, when the codes in T had raised an exception and spread to
+    # this Try Structure, the value stack will be pushed traceback info, and
+    # reraise them when finish the executing F.
+    def _compile_try_finally_stmt(self, stmt: ast.TryCatchStmtAST):
+        try_body = BasicBlock()
+        finally_body = BasicBlock()
+
+        self._enter_next_block(try_body)
+
+        self._add_jump_op(SETUP_FINALLY, finally_body)
+
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
 
@@ -954,6 +974,20 @@ class Compiler:
 
         self._add_instruction(BINARY_SUBSCR, 0, expr.ln)
 
+    def _compile_if_expr(self, expr: ast.IfExpr):
+        body = BasicBlock()
+        orelse = BasicBlock()
+        end = BasicBlock()
+
+        self._compile(expr.test)
+        self._add_jump_op(POP_JUMP_IF_FALSE, orelse, -1)
+        self._enter_next_block(body)
+        self._compile(expr.body)
+        self._add_jump_op(JUMP_FORWARD, end, -1)
+        self._enter_next_block(orelse)
+        self._compile(expr.orelse)
+        self._enter_next_block(end)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
@@ -975,6 +1009,9 @@ class Compiler:
 
         elif isinstance(expr, ast.DictAST):
             self._compile_dict(expr)
+
+        elif isinstance(expr, ast.IfExpr):
+            self._compile_if_expr(expr)
 
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)

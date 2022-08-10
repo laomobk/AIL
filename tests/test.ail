@@ -1,2 +1,19 @@
 
-a.b()
+while 1 {
+    try {
+        a;
+    } finally {
+        continue;
+    }
+}
+
+/*
+try {
+    a;
+} catch Exception1 e1 {
+    b;
+} catch Exception2 e2 {
+    c;
+}finally {
+    d;
+}*/
