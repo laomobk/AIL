@@ -421,10 +421,11 @@ class SymbolAnalyzer:
 
         for case in stmt.catch_cases:
             self._visit(case.block)
-            self._visit(case.exc_expr)
-            self.__add_store_symbol(
-                self._analyze_and_fill_symbol(Symbol(case.alias), CTX_STORE, True)
-            )
+            if case.exc_expr and case.alias:
+                self._visit(case.exc_expr)
+                self.__add_store_symbol(
+                    self._analyze_and_fill_symbol(Symbol(case.alias), CTX_STORE, True)
+                )
 
     def _visit_match_expr(self, expr: ast.MatchExpr):
         self._visit(expr.target)

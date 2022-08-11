@@ -1,10 +1,12 @@
-
-while 1 {
+while x {
     try {
         a;
     } finally {
-        continue;
+        x;
+        if x { break; }
+        y;
     }
+    end
 }
 
 /*

@@ -905,6 +905,19 @@ class Compiler:
         if stmt.finally_block is not None:
             self._compile_try_finally_stmt(stmt)
 
+    # Code generated for try { T } catch E1 V1 { C1 } catch E2 V2 { C2 }
+    # (the top of value stack at the right)
+    #
+    # Value Stack           Label       OP              Arg
+    # []                                SETUP_FINALLY   L1
+    # []                                <code for T>
+    # []                                POP_BLOCK
+    # []                                JUMP_FORWARD    L0
+    #
+    # []                    L0          <next statement>
+    def _compile_try_catch_stmt(self, stmt: ast.TryCatchStmtAST):
+        pass
+
     # Code generated for try { T } finally { F }:
     # (the top of value stack at the right)
     #
@@ -926,7 +939,8 @@ class Compiler:
 
         self._enter_next_block(try_body)
 
-        self._add_jump_op(SETUP_FINALLY, finally_body)
+        self._add_jump_op(SETUP_FINALLY, finally_body, -1)
+        self._compile(stmt.try_block)
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
