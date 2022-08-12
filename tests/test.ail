@@ -2,9 +2,9 @@ while x {
     try {
         a;
     } finally {
-        x;
-        if x { break; }
-        y;
+        b;
+        continue;
+        c;
     }
     end
 }

@@ -193,18 +193,10 @@ class BasicBlock:
 
 
 class FrameBlock:
-    pass
-
-
-class LoopFrameBlock(FrameBlock):
-    def __init__(self, start: BasicBlock, next_: BasicBlock):
+    def __init__(self, start: BasicBlock, next_: BasicBlock, exit_: BasicBlock = None):
         self.start = start
         self.next = next_
-
-
-class TryFinallyFrameBlock(FrameBlock):
-    def __init__(self, ):
-        pass
+        self.exit = exit_  # optional
 
 
 class CompileUnit:
@@ -737,7 +729,7 @@ class Compiler:
         start = BasicBlock()
         next_ = BasicBlock()
 
-        frame = LoopFrameBlock(start, next_)
+        frame = FrameBlock(start, next_)
 
         with self._frame(frame):
             self._enter_next_block(start)
@@ -752,7 +744,7 @@ class Compiler:
         start = BasicBlock()
         next_ = BasicBlock()
 
-        frame = LoopFrameBlock(start, next_)
+        frame = FrameBlock(start, next_)
 
         with self._frame(frame):
             self._compile(stmt.iter)
@@ -769,12 +761,12 @@ class Compiler:
         frame = self._frame_stack[-1]
 
         index = len(self._frame_stack) - 2
-        while type(frame) not in (LoopFrameBlock,):
+        while type(frame) not in (FrameBlock,):
             self._unwind_frame_block(frame)
             frame = self._frame_stack[index]
             index -= 1
 
-        if isinstance(frame, LoopFrameBlock):
+        if isinstance(frame, FrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
@@ -893,12 +885,12 @@ class Compiler:
         frame = self._frame_stack[-1]
 
         index = len(self._frame_stack) - 2
-        while type(frame) not in (LoopFrameBlock,):
+        while type(frame) not in (FrameBlock,):
             self._unwind_frame_block(frame)
             frame = self._frame_stack[index]
             index -= 1
 
-        if isinstance(frame, LoopFrameBlock):
+        if isinstance(frame, FrameBlock):
             self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
 
     def _compile_try(self, stmt: ast.TryCatchStmtAST):
