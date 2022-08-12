@@ -192,8 +192,16 @@ class BasicBlock:
     __repr__ = __str__
 
 
+FB_WHILE_LOOP = 1
+FB_FOR_LOOP = 2
+FB_FINALLY_END = 3
+
+
 class FrameBlock:
-    def __init__(self, start: BasicBlock, next_: BasicBlock, exit_: BasicBlock = None):
+    def __init__(
+            self, type_: int,
+            start: BasicBlock, next_: BasicBlock, exit_: BasicBlock = None):
+        self.type = type_
         self.start = start
         self.next = next_
         self.exit = exit_  # optional
@@ -242,7 +250,6 @@ class Compiler:
 
     def __init__(self):
         self._unit: CompileUnit = None
-        self._frame_stack: List[FrameBlock] = []
         self._mode = ''
 
     @property
@@ -250,10 +257,14 @@ class Compiler:
         return self._unit
 
     def push_frame(self, frame: FrameBlock):
-        self._frame_stack.append(frame)
+        self._unit.fb_stack.append(frame)
+
+    def push_new_frame(self, type_: int,
+                       start: BasicBlock, next_: BasicBlock, exit_: BasicBlock = None):
+        self.push_frame(FrameBlock(type_, start, next_, exit_))
 
     def pop_frame(self) -> FrameBlock:
-        return self._frame_stack.pop()
+        return self._unit.fb_stack.pop()
 
     def _frame(self, frame: FrameBlock):
         return Compiler.__FrameStackManager(self, frame)
@@ -340,7 +351,9 @@ class Compiler:
         return len(self._unit.names) - 1
 
     def _unwind_frame_block(self, block: FrameBlock):
-        pass
+        if block.type == FB_FINALLY_END:
+            self._add_instruction(POP_FINALLY, 0, -1)
+            self._add_instruction(POP_TOP, 0, -1)
 
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
@@ -729,7 +742,7 @@ class Compiler:
         start = BasicBlock()
         next_ = BasicBlock()
 
-        frame = FrameBlock(start, next_)
+        frame = FrameBlock(FB_WHILE_LOOP, start, next_)
 
         with self._frame(frame):
             self._enter_next_block(start)
@@ -744,7 +757,7 @@ class Compiler:
         start = BasicBlock()
         next_ = BasicBlock()
 
-        frame = FrameBlock(start, next_)
+        frame = FrameBlock(FB_FOR_LOOP, start, next_)
 
         with self._frame(frame):
             self._compile(stmt.iter)
@@ -758,20 +771,22 @@ class Compiler:
         self._enter_next_block(next_)
 
     def _compile_break_stmt(self, stmt: ast.BreakStmtAST):
-        frame = self._frame_stack[-1]
+        frame = self._unit.fb_stack[-1]
 
-        index = len(self._frame_stack) - 2
-        while type(frame) not in (FrameBlock,):
+        index = len(self._unit.fb_stack) - 2
+        while index >= 0:
             self._unwind_frame_block(frame)
-            frame = self._frame_stack[index]
+
+            if frame.type in (FB_WHILE_LOOP, FB_FOR_LOOP):
+                self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
+                return
+
+            frame = self._unit.fb_stack[index]
             index -= 1
 
-        if isinstance(frame, FrameBlock):
-            self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
-
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
-        while self._frame_stack:
-            self._unwind_frame_block(self._frame_stack.pop())
+        while self._unit.fb_stack:
+            self._unwind_frame_block(self._unit.fb_stack.pop())
 
         self._compile(stmt.expr)
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
@@ -882,16 +897,21 @@ class Compiler:
             self._compile_store(cell)
 
     def _compile_continue_stmt(self, stmt: ast.BreakStmtAST):
-        frame = self._frame_stack[-1]
+        frame = self._unit.fb_stack[-1]
 
-        index = len(self._frame_stack) - 2
-        while type(frame) not in (FrameBlock,):
+        index = len(self._unit.fb_stack) - 2
+        while index >= 0:
             self._unwind_frame_block(frame)
-            frame = self._frame_stack[index]
-            index -= 1
 
-        if isinstance(frame, FrameBlock):
-            self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
+            if frame.type == FB_FINALLY_END:
+                frame.exit = None
+
+            if frame.type in (FB_WHILE_LOOP, FB_FOR_LOOP):
+                self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
+                return
+
+            frame = self._unit.fb_stack[index]
+            index -= 1
 
     def _compile_try(self, stmt: ast.TryCatchStmtAST):
         if stmt.finally_block is not None:
@@ -929,10 +949,36 @@ class Compiler:
         try_body = BasicBlock()
         finally_body = BasicBlock()
 
+        cur_bblock = self._unit.block
+
+        # compile finally body first to determine if there have 'continue'
+        # statement to break the finally body
+
+        self._enter_next_block(finally_body)
+        finally_bblock = self._unit.block
+
+        self.push_new_frame(FB_FINALLY_END, None, finally_body, finally_body)
+        self._compile(stmt.finally_block)
+        print(self._unit.fb_stack)
+        break_finally = self._unit.fb_stack[-1].exit is None
+        self.pop_frame()
+        self._add_instruction(END_FINALLY, 0, -1)
+        if break_finally:
+            self._add_instruction(POP_TOP, 0, -1, )
+
         self._enter_next_block(try_body)
 
+        cur_bblock.next_block = self._unit.block
+        finally_bblock.next_block = None
+
+        if break_finally:
+            self._add_instruction(
+                LOAD_CONST, self._add_const(None), -1
+            )
         self._add_jump_op(SETUP_FINALLY, finally_body, -1)
         self._compile(stmt.try_block)
+        self._add_instruction(BEGIN_FINALLY, 0, -1)
+        self._enter_next_block(finally_bblock)
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
@@ -1070,6 +1116,9 @@ class Compiler:
 
         elif isinstance(node, ast.ForeachStmt):
             self._compile_foreach_stmt(node)
+
+        elif isinstance(node, ast.TryCatchStmtAST):
+            self._compile_try(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

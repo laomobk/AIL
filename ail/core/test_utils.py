@@ -373,6 +373,7 @@ class CFGDisassembler:
         pyop.JUMP_ABSOLUTE,
         pyop.POP_JUMP_IF_FALSE,
         pyop.POP_JUMP_IF_TRUE,
+        pyop.SETUP_FINALLY,
     )
 
     def __init__(self):

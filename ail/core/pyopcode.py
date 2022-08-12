@@ -45,7 +45,7 @@ INPLACE_TRUE_DIVIDE = _stack_effect(_register_opcode(29, 'INPLACE_TRUE_DIVIDE'),
 GET_AITER = _stack_effect(_register_opcode(50, 'GET_AITER'), 1)
 GET_ANEXT = _stack_effect(_register_opcode(51, 'GET_ANEXT'), 1)
 BEFORE_ASYNC_WITH = _register_opcode(52, 'BEFORE_ASYNC_WITH')
-BEGIN_FINALLY = _register_opcode(53, 'BEGIN_FINALLY')
+BEGIN_FINALLY = _stack_effect(_register_opcode(53, 'BEGIN_FINALLY'), 6)
 END_ASYNC_FOR = _register_opcode(54, 'END_ASYNC_FOR')
 INPLACE_ADD = _stack_effect(_register_opcode(55, 'INPLACE_ADD'), -1)
 INPLACE_SUBTRACT = _stack_effect(_register_opcode(56, 'INPLACE_SUBTRACT'), -1)
@@ -77,7 +77,7 @@ IMPORT_STAR = _stack_effect(_register_opcode(84, 'IMPORT_STAR'), -1)
 SETUP_ANNOTATIONS = _register_opcode(85, 'SETUP_ANNOTATIONS')
 YIELD_VALUE = _stack_effect(_register_opcode(86, 'YIELD_VALUE'), -1)
 POP_BLOCK = _register_opcode(87, 'POP_BLOCK')
-END_FINALLY = _register_opcode(88, 'END_FINALLY')
+END_FINALLY = _stack_effect(_register_opcode(88, 'END_FINALLY'), -6)
 POP_EXCEPT = _register_opcode(89, 'POP_EXCEPT')
 STORE_NAME = _stack_effect(_register_opcode(90, 'STORE_NAME'), -1)
 DELETE_NAME = _register_opcode(91, 'DELETE_NAME')
@@ -138,7 +138,7 @@ BUILD_TUPLE_UNPACK_WITH_CALL = _stack_effect(_register_opcode(158, 'BUILD_TUPLE_
 LOAD_METHOD = _stack_effect(_register_opcode(160, 'LOAD_METHOD'), 1)
 CALL_METHOD = _stack_effect(_register_opcode(161, 'CALL_METHOD'), EFCT_DYNAMIC_EFFECT)
 CALL_FINALLY = _stack_effect(_register_opcode(162, 'CALL_FINALLY'), 1)
-POP_FINALLY = _stack_effect(_register_opcode(163, 'POP_FINALLY'), EFCT_DYNAMIC_EFFECT)
+POP_FINALLY = _stack_effect(_register_opcode(163, 'POP_FINALLY'), -6)
 
 
 OPCODE_JUMP = (
@@ -149,6 +149,7 @@ OPCODE_JUMP = (
     POP_JUMP_IF_FALSE,
     POP_JUMP_IF_TRUE,
     FOR_ITER,
+    SETUP_FINALLY,
 )
 
 OPCODE_JUMP_REL = (
