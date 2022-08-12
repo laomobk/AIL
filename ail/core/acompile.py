@@ -746,7 +746,8 @@ class Compiler:
 
         with self._frame(frame):
             self._enter_next_block(start)
-            self._compile_if_jump(stmt.test, 0, next_)
+            self._compile(stmt.test)
+            self._add_jump_op(POP_JUMP_IF_FALSE, next_, -1)
 
             self._compile(stmt.block)
             self._add_jump_op(JUMP_ABSOLUTE, start, -1)
@@ -773,7 +774,7 @@ class Compiler:
     def _compile_break_stmt(self, stmt: ast.BreakStmtAST):
         frame = self._unit.fb_stack[-1]
 
-        index = len(self._unit.fb_stack) - 2
+        index = len(self._unit.fb_stack) - 1
         while index >= 0:
             self._unwind_frame_block(frame)
 
@@ -781,8 +782,8 @@ class Compiler:
                 self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
                 return
 
-            frame = self._unit.fb_stack[index]
             index -= 1
+            frame = self._unit.fb_stack[index]
 
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
         while self._unit.fb_stack:
@@ -896,10 +897,10 @@ class Compiler:
             cell.symbol = func.symbol
             self._compile_store(cell)
 
-    def _compile_continue_stmt(self, stmt: ast.BreakStmtAST):
+    def _compile_continue_stmt(self, stmt: ast.ContinueStmtAST):
         frame = self._unit.fb_stack[-1]
 
-        index = len(self._unit.fb_stack) - 2
+        index = len(self._unit.fb_stack) - 1
         while index >= 0:
             self._unwind_frame_block(frame)
 
@@ -910,8 +911,8 @@ class Compiler:
                 self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
                 return
 
-            frame = self._unit.fb_stack[index]
             index -= 1
+            frame = self._unit.fb_stack[index]
 
     def _compile_try(self, stmt: ast.TryCatchStmtAST):
         if stmt.finally_block is not None:
@@ -959,7 +960,6 @@ class Compiler:
 
         self.push_new_frame(FB_FINALLY_END, None, finally_body, finally_body)
         self._compile(stmt.finally_block)
-        print(self._unit.fb_stack)
         break_finally = self._unit.fb_stack[-1].exit is None
         self.pop_frame()
         self._add_instruction(END_FINALLY, 0, -1)
@@ -977,6 +977,7 @@ class Compiler:
             )
         self._add_jump_op(SETUP_FINALLY, finally_body, -1)
         self._compile(stmt.try_block)
+        self._add_instruction(POP_BLOCK, 0, -1)
         self._add_instruction(BEGIN_FINALLY, 0, -1)
         self._enter_next_block(finally_bblock)
 
