@@ -67,6 +67,13 @@ CO_FUTURE_GENERATOR_STOP = 0x800000
 CO_FUTURE_ANNOTATIONS = 0x1000000
 
 
+FB_WHILE_LOOP = 1
+FB_FOR_LOOP = 2
+FB_FINALLY_END = 3
+FB_FINALLY_TRY_WITH_BREAK = 4
+FB_FINALLY_TRY = 5
+
+
 class CompilerError(Exception):
     pass
 
@@ -166,6 +173,8 @@ class Instruction:
         self.is_jrel = is_jrel
         self.target: 'BasicBlock' = target
 
+        self.stack_effect: int = 0
+
         self.line = line
 
     def __str__(self):
@@ -190,11 +199,6 @@ class BasicBlock:
         return '<BasicBlock %s>' % hex(id(self))
 
     __repr__ = __str__
-
-
-FB_WHILE_LOOP = 1
-FB_FOR_LOOP = 2
-FB_FINALLY_END = 3
 
 
 class FrameBlock:
@@ -278,7 +282,7 @@ class Compiler:
             self._add_instruction(EXTENDED_ARG, arg >> 8, ln, False)
         return final
 
-    def _check_stack_effect(self, op, stack_effect=None):
+    def _get_stack_effect(self, op, stack_effect=None) -> int:
         if op in OPCODE_STACK_EFFECT:
             effect = OPCODE_STACK_EFFECT[op]
         else:
@@ -291,14 +295,10 @@ class Compiler:
             else:
                 effect = stack_effect
 
-        self._unit._cur_stack_size = self._unit._cur_stack_size + effect
-        cur_stack_size = self._unit._cur_stack_size
-
-        stack_size = self._unit.stack_size
-        if cur_stack_size > stack_size:
-            self._unit.stack_size = cur_stack_size
+        return effect
 
     def _new_call_name(self, name: str, args: list, ln: int):
+        # TODO: finish it.
         self._add_instruction(LOAD_GLOBAL)
         for expr in args:
             self._compile(expr)
@@ -312,16 +312,17 @@ class Compiler:
 
         if check:
             arg = self._check_oparg(arg, ln)
-        self._check_stack_effect(op, stack_effect)
 
         instr = Instruction()
+        instr.stack_effect = self._get_stack_effect(op, stack_effect)
         instr.line = ln
         instr.arg = arg
         instr.opcode = op
 
         return self._unit.block.add_instruction(instr)
 
-    def _add_jump_op(self, op: int, target: BasicBlock, ln: int):
+    def _add_jump_op(self,
+                     op: int, target: BasicBlock, ln: int, stack_effect=None):
         instr = Instruction()
         instr.is_jabs = op not in OPCODE_JUMP_REL
         instr.is_jrel = not instr.is_jabs
@@ -330,6 +331,7 @@ class Compiler:
         instr.arg = 0
         instr.opcode = op
 
+        instr.stack_effect = self._get_stack_effect(op, stack_effect)
         self._unit.block.add_instruction(instr)
 
     def _add_const(self, const: object) -> int:
@@ -354,6 +356,15 @@ class Compiler:
         if block.type == FB_FINALLY_END:
             self._add_instruction(POP_FINALLY, 0, -1)
             self._add_instruction(POP_TOP, 0, -1)
+
+        elif block.type == FB_FINALLY_TRY_WITH_BREAK:
+            self._add_instruction(POP_BLOCK, 0, -1)
+            self._add_jump_op(CALL_FINALLY, block.exit, -1)
+            self._add_instruction(POP_TOP, 0, -1)  # pop NULL
+
+        elif block.type == FB_FINALLY_TRY:
+            self._add_instruction(POP_BLOCK, 0, -1)
+            self._add_jump_op(CALL_FINALLY, block.exit, -1)
 
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
@@ -976,7 +987,14 @@ class Compiler:
                 LOAD_CONST, self._add_const(None), -1
             )
         self._add_jump_op(SETUP_FINALLY, finally_body, -1)
+
+        self.push_new_frame(
+            FB_FINALLY_TRY_WITH_BREAK if break_finally else FB_FINALLY_TRY,
+            None, None, finally_body,
+        )
         self._compile(stmt.try_block)
+        self.pop_frame()
+
         self._add_instruction(POP_BLOCK, 0, -1)
         self._add_instruction(BEGIN_FINALLY, 0, -1)
         self._enter_next_block(finally_bblock)
@@ -1253,11 +1271,21 @@ class Assembler:
 
         sequence = bytearray()
 
+        stack_size = 0
+
         while block is not None:
             for instr in block.instructions:
+                effect = instr.stack_effect
+                tmp_size = effect + stack_size
+                if tmp_size > stack_size:
+                    stack_size = tmp_size
+
                 sequence.append(instr.opcode)
                 sequence.append(instr.arg)
+
             block = block.next_block
+
+        self._task.compiler.unit.stack_size = stack_size
 
         return bytes(sequence)
 
@@ -1341,7 +1369,7 @@ def test():
     ts = Lex().lex(source, '<test>')
     node = Parser().parse(ts, source, '<test>')
 
-    if mode != 'cp':
+    if mode not in ('cp', 'rp'):
         compiler = Compiler()
         compiler.compile(node, source, '<test>', mode='exec')
 

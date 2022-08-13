@@ -1,12 +1,11 @@
-while x {
+while 1 {
     try {
-        a;
+        print 'break'
+        break;
     } finally {
-        b;
+        print 'finally'
         continue;
-        c;
     }
-    end
 }
 
 /*

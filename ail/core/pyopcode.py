@@ -105,7 +105,7 @@ JUMP_ABSOLUTE = _register_opcode(113, 'JUMP_ABSOLUTE')
 POP_JUMP_IF_FALSE = _stack_effect(_register_opcode(114, 'POP_JUMP_IF_FALSE'), -1)
 POP_JUMP_IF_TRUE = _stack_effect(_register_opcode(115, 'POP_JUMP_IF_TRUE'), -1)
 LOAD_GLOBAL = _stack_effect(_register_opcode(116, 'LOAD_GLOBAL'), 1)
-SETUP_FINALLY = _register_opcode(122, 'SETUP_FINALLY')
+SETUP_FINALLY = _stack_effect(_register_opcode(122, 'SETUP_FINALLY'), 6)
 LOAD_FAST = _stack_effect(_register_opcode(124, 'LOAD_FAST'), 1)
 STORE_FAST = _stack_effect(_register_opcode(125, 'STORE_FAST'), -1)
 DELETE_FAST = _register_opcode(126, 'DELETE_FAST')
@@ -150,12 +150,14 @@ OPCODE_JUMP = (
     POP_JUMP_IF_TRUE,
     FOR_ITER,
     SETUP_FINALLY,
+    CALL_FINALLY,
 )
 
 OPCODE_JUMP_REL = (
     FOR_ITER,
     JUMP_FORWARD,
     SETUP_FINALLY,
+    CALL_FINALLY,
 )
 
 
