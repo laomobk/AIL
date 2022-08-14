@@ -8,6 +8,9 @@ while 1 == 1 {
     }
 }
 
+
+print 'out';
+
 /*
 try {
     a;
