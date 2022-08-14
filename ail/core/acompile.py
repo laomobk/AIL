@@ -354,6 +354,7 @@ class Compiler:
 
     def _unwind_frame_block(self, block: FrameBlock):
         if block.type == FB_FINALLY_END:
+            block.exit = None
             self._add_instruction(POP_FINALLY, 0, -1)
             self._add_instruction(POP_TOP, 0, -1)
 
@@ -914,9 +915,6 @@ class Compiler:
         index = len(self._unit.fb_stack) - 1
         while index >= 0:
             self._unwind_frame_block(frame)
-
-            if frame.type == FB_FINALLY_END:
-                frame.exit = None
 
             if frame.type in (FB_WHILE_LOOP, FB_FOR_LOOP):
                 self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
