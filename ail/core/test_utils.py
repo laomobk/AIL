@@ -1,5 +1,6 @@
 from dis import opname, cmp_op
 from typing import List
+from types import FrameType
 
 from . import asts as ast
 from . import acompile
@@ -348,6 +349,28 @@ def make_ast_tree(a) -> dict:
         return unpack_list(a)
 
     return a
+
+
+def get_opcode_trader():
+    from dis import opname
+    def _opcode_trade(frame: FrameType, event: str, arg):
+        frame.f_trace_opcodes = True
+
+        if event == 'opcode':
+            print(
+                    'opcode %s %s' % 
+                    (
+                        frame.f_lasti,
+                        opname[frame.f_code.co_code[frame.f_lasti]],
+                    )
+            )
+
+        return _opcode_trade
+
+    return _opcode_trade
+
+
+
 
 
 class CFGDisassembler:
