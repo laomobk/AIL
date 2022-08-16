@@ -72,6 +72,7 @@ FB_FOR_LOOP = 2
 FB_FINALLY_END = 3
 FB_FINALLY_TRY_WITH_BREAK = 4
 FB_FINALLY_TRY = 5
+FB_EXCEPT = 6
 
 
 class CompilerError(Exception):
@@ -366,6 +367,9 @@ class Compiler:
         elif block.type == FB_FINALLY_TRY:
             self._add_instruction(POP_BLOCK, 0, -1)
             self._add_jump_op(CALL_FINALLY, block.exit, -1)
+
+        elif block.type == FB_EXCEPT:
+            self._add_instruction(POP_BLOCK)
 
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
@@ -926,19 +930,81 @@ class Compiler:
     def _compile_try(self, stmt: ast.TryCatchStmtAST):
         if stmt.finally_block is not None:
             self._compile_try_finally_stmt(stmt)
+        else:
+            self._compile_try_catch_stmt(stmt)
 
-    # Code generated for try { T } catch E1 V1 { C1 } catch E2 V2 { C2 }
+    # Code generated for try { T } catch E1 V1 { C1 } ... catch En Vn { Cn }
     # (the top of value stack at the right)
     #
-    # Value Stack           Label       OP              Arg
-    # []                                SETUP_FINALLY   L1
-    # []                                <code for T>
-    # []                                POP_BLOCK
-    # []                                JUMP_FORWARD    L0
+    # Value Stack               Label       OP                  Arg
+    # []                                    SETUP_FINALLY       L1
+    # []                                    <code for T>
+    # []                                    POP_BLOCK
+    # []                                    JUMP_FORWARD        L0
     #
-    # []                    L0          <next statement>
+    # --- if an exception occurred
+    #
+    # [tb, val, exc]            L1          DUP
+    # [tb, val, exc, exc]                   <eval E1>
+    # [tb, val, exc, exc, E1]               COMPARE_OP          <exception match>
+    # [tb, val, exc, 1 or 0]                POP_JUMP_IF_FALSE   L2
+    # [tb, val, exc]                        POP_TOP
+    # [tb, val]                             <assign to V1>
+    # [tb]                                  POP_TOP
+    # []                                    <code for C1>
+    # []                                    JUMP_FORWARD        L0
+    # ...
+    # [tb, val, exc]            Ln          DUP_TOP
+    # [tb, val, exc, exc]                   <eval En>
+    # [tb, val, exc, exc, E1]               COMPARE_OP          <exception match>
+    # [tb, val, exc, 1 or 0]                POP_JUMP_IF_FALSE   L(n + 1)
+    # [tb, val, exc]                        POP_TOP
+    # [tb, val]                             <assign to Vn>
+    # [tb]                                  POP_TOP
+    # []                                    <code for Cn>
+    # []                                    JUMP_FORWARD        L0
+    #
+    # []                        L(n + 1)    END_FINALLY
+    #
+    # []                        L0          <next statement>
     def _compile_try_catch_stmt(self, stmt: ast.TryCatchStmtAST):
-        pass
+        body = BasicBlock()
+        handler = BasicBlock()
+        next_handler = BasicBlock()
+        next_ = BasicBlock()
+
+        self._enter_next_block(body)
+
+        self.push_new_frame(FB_EXCEPT, None, None, None)
+
+        self._add_jump_op(SETUP_FINALLY, handler, -1)
+        self._compile(stmt.try_block)
+        self._add_instruction(POP_BLOCK, 0, -1)
+        self._add_jump_op(JUMP_FORWARD, next_, -1)
+
+        self.pop_frame()
+        self._enter_next_block(handler)
+        for case in stmt.catch_cases:
+            if case.exc_expr is not None:
+                self._add_instruction(DUP_TOP, 0, case.exc_expr.ln)
+                self._compile(case.exc_expr)
+                self._add_instruction(COMPARE_OP, 10, -1)
+                self._add_jump_op(POP_JUMP_IF_FALSE, next_handler, -1)
+                self._add_instruction(POP_TOP, 0, -1)
+                self._compile_store(case.alias_expr)
+                self._add_instruction(POP_TOP, 0, -1)
+            else:
+                self._add_instruction(POP_TOP, 0, case.ln)
+                self._add_instruction(POP_TOP, 0, -1)
+                self._add_instruction(POP_TOP, 0, -1)
+            self._compile(case.block)
+            handler = next_handler
+            self._enter_next_block(handler)
+            next_handler = BasicBlock()
+
+        self._add_instruction(END_FINALLY, 0, -1)
+
+        self._enter_next_block(next_)
 
     # Code generated for try { T } finally { F }:
     # (the top of value stack at the right)

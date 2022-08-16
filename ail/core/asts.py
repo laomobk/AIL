@@ -441,10 +441,11 @@ class AssertStmtAST(Statement):
 
 
 class CatchCase(AST):
-    def __init__(self, exc_expr, alias, block, ln: int):
+    def __init__(self, exc_expr, alias, block, alias_expr, ln: int):
         self.exc_expr = exc_expr
         self.alias = alias
         self.block = block
+        self.alias_expr: CellAST = alias_expr
         self.ln = ln
 
 

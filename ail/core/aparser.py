@@ -2819,15 +2819,18 @@ class Parser:
 
                 if not self.__is_name(self.__now_tok):
                     self.__syntax_error()
-                exc_alias = self.__now_tok.value
-                self.__next_tok()  # eat NAME
+                alias_expr: ast.CellAST = self.__parse_low_cell_expr()
+
+                if not isinstance(alias_expr, ast.CellAST):
+                    self.__syntax_error()
+
+                exc_alias = alias_expr.value
 
                 catch_block = self.__parse_block()
-
-                cases.append(ast.CatchCase(exc_expr, exc_alias, catch_block, c_ln))
+                cases.append(ast.CatchCase(exc_expr, exc_alias, catch_block, alias_expr, c_ln))
             else:
                 catch_block = self.__parse_block()
-                cases.append(ast.CatchCase(None, None, catch_block, c_ln))
+                cases.append(ast.CatchCase(None, None, catch_block, None, c_ln))
 
         if len(cases) > 1:
             for i, case in enumerate(cases):

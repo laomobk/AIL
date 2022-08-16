@@ -1,15 +1,12 @@
-while 1 == 1 {
-    try {
-        print 'continue'
-        continue;
-    } finally {
-        print 'finally'
-        break
-    }
+try {
+    a;
+} catch E1 e1 {
+    b;
+} catch E2 e2 {
+    b;
 }
 
 
-print 'out';
 
 /*
 try {

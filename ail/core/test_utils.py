@@ -260,6 +260,7 @@ def make_ast_tree(a) -> dict:
             'CatchCase': {
                 'exc_expr': make_ast_tree(a.exc_expr),
                 'alias': make_ast_tree(a.alias),
+                'alias_expr': make_ast_tree(a.alias_expr),
                 'block': make_ast_tree(a.block),
             }
         }
@@ -368,9 +369,6 @@ def get_opcode_trader():
         return _opcode_trade
 
     return _opcode_trade
-
-
-
 
 
 class CFGDisassembler:
