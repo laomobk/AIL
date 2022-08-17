@@ -1813,9 +1813,11 @@ class Parser:
         try:
             if self.__now_tok == 'in':
                 self.__syntax_error('except iteration receive target')
-            target = self.__parse_tuple_expr(do_tuple=True, name_list=True)
+            target = self.__parse_tuple_expr(do_tuple=True, name_list=True, do_star=True)
             if isinstance(target, ast.TupleAST):
                 for item in target.items:
+                    if isinstance(item, ast.StarredExpr):
+                        item = item.value
                     if not isinstance(item, ast.CellAST) or item.type != AIL_IDENTIFIER:
                         self.__syntax_error()
                 target.store = True

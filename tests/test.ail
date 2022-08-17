@@ -1,7 +1,5 @@
-try {
-    1 / 0;
-} catch Exception e1 {
-    print e1;
-} finally {
-    print 'finally';
+
+foreach a, *b in ('abc', 'def') {
+    print a, b;
 }
+

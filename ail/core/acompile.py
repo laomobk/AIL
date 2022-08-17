@@ -686,45 +686,44 @@ class Compiler:
         self._add_instruction(POP_TOP, 0, -1)
 
     def _compile_assign_expr(self, expr: ast.AssignExprAST, as_stmt=False):
-        left = expr.left
-        if not isinstance(left, ast.TupleAST):
-            left = [left]
-        else:
-            left = left.items
-
         self._compile(expr.right)
+
         if not as_stmt:
             self._add_instruction(DUP_TOP, 0, -1)
 
-        # check left star
-        before_star_count = 0
-        seen_star = False
-        for elt in left:
-            if isinstance(elt, ast.StarredExpr):
-                seen_star = True
-
-            if not seen_star:
-                before_star_count += 1
-
-        if seen_star:
-            arg = before_star_count + ((len(left) - before_star_count - 1) << 8)
-            self._add_instruction(
-                UNPACK_EX, arg, -1, check=True,
-                stack_effect=len(left) - 1
-            )
-
-        elif len(left) > 1:
-            self._add_instruction(
-                UNPACK_SEQUENCE, len(left), -1,
-                stack_effect=-len(left) - 1
-            )
-
-        for elt in left:
-            if isinstance(elt, ast.StarredExpr):
-                elt = elt.value
-            self._compile_store(elt)
+        self._compile_store(expr.left)
 
     def _compile_store(self, target: ast.Expression):
+        if isinstance(target, ast.TupleAST):
+            left = target.items
+            # check left star
+            before_star_count = 0
+            seen_star = False
+            for elt in left:
+                if isinstance(elt, ast.StarredExpr):
+                    seen_star = True
+
+                if not seen_star:
+                    before_star_count += 1
+
+            if seen_star:
+                arg = before_star_count + ((len(left) - before_star_count - 1) << 8)
+                self._add_instruction(
+                    UNPACK_EX, arg, -1, check=True,
+                    stack_effect=len(left) - 1
+                )
+
+            elif len(left) > 1:
+                self._add_instruction(
+                    UNPACK_SEQUENCE, len(left), -1,
+                    stack_effect=-len(left) - 1
+                )
+
+            for elt in left:
+                if isinstance(elt, ast.StarredExpr):
+                    elt = elt.value
+                self._compile_store(elt)
+
         if isinstance(target, ast.CellAST):
             name: str = target.value
             sym: Symbol = target.symbol
@@ -1008,7 +1007,9 @@ class Compiler:
             # self._enter_next_block(h_body)
             # self._add_jump_op(SETUP_FINALLY, h_finally, -1)
 
+            self.push_new_frame(FB_HANDLER_FINISH, None, None, None)
             self._compile(case.block)
+            self.pop_frame()
 
             # self._add_instruction(POP_TOP, 0, -1)
             # self._add_instruction(POP_BLOCK, 0, -1)
