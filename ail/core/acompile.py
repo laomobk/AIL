@@ -1017,6 +1017,7 @@ class Compiler:
             # self._enter_next_block(h_finally)
 
             self._add_instruction(POP_EXCEPT, 0, -1)
+            self._add_jump_op(JUMP_FORWARD, next_, -1)  # skip END_FINALLY
 
             handler = next_handler
             self._enter_next_block(handler)
