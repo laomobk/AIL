@@ -3663,6 +3663,8 @@ class ASTConverter:
             for name in target.elts:
                 if isinstance(name, pyast.Name):
                     name.ctx = store_ctx()
+                elif isinstance(name, pyast.Starred):
+                    name.value.ctx = store_ctx()
         target.ctx = store_ctx()
 
         return _set_lineno(
