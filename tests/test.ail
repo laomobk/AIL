@@ -1,9 +1,7 @@
 try {
-    a;
-} catch E1 e1 {
-    b;
-} catch E2 e2 {
-    b;
+    1 / 0;
+} catch Exception e1 {
+    print e1;
 }
 
 

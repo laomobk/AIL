@@ -73,6 +73,7 @@ FB_FINALLY_END = 3
 FB_FINALLY_TRY_WITH_BREAK = 4
 FB_FINALLY_TRY = 5
 FB_EXCEPT = 6
+FB_HANDLER_FINISH = 7
 
 
 class CompilerError(Exception):
@@ -369,7 +370,10 @@ class Compiler:
             self._add_jump_op(CALL_FINALLY, block.exit, -1)
 
         elif block.type == FB_EXCEPT:
-            self._add_instruction(POP_BLOCK)
+            self._add_instruction(POP_BLOCK, 0, -1)
+
+        elif block.type == FB_HANDLER_FINISH:
+            self._add_instruction(POP_EXCEPT, 0, -1)
 
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
@@ -997,13 +1001,28 @@ class Compiler:
                 self._add_instruction(POP_TOP, 0, case.ln)
                 self._add_instruction(POP_TOP, 0, -1)
                 self._add_instruction(POP_TOP, 0, -1)
+
+            # h_body = BasicBlock()
+            # h_finally = BasicBlock()
+
+            # self._enter_next_block(h_body)
+            # self._add_jump_op(SETUP_FINALLY, h_finally, -1)
+
             self._compile(case.block)
+
+            # self._add_instruction(POP_TOP, 0, -1)
+            # self._add_instruction(POP_BLOCK, 0, -1)
+
+            # self._add_instruction(BEGIN_FINALLY, 0, -1)
+            # self._enter_next_block(h_finally)
+
+            self._add_instruction(POP_EXCEPT, 0, -1)
+
             handler = next_handler
             self._enter_next_block(handler)
             next_handler = BasicBlock()
 
         self._add_instruction(END_FINALLY, 0, -1)
-
         self._enter_next_block(next_)
 
     # Code generated for try { T } finally { F }:
