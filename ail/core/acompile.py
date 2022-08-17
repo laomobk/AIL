@@ -1076,7 +1076,10 @@ class Compiler:
             FB_FINALLY_TRY_WITH_BREAK if break_finally else FB_FINALLY_TRY,
             None, None, finally_body,
         )
-        self._compile(stmt.try_block)
+        if len(stmt.catch_cases) == 0:
+            self._compile(stmt.try_block)
+        else:
+            self._compile_try_catch_stmt(stmt)
         self.pop_frame()
 
         self._add_instruction(POP_BLOCK, 0, -1)

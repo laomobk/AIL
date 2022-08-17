@@ -2,17 +2,6 @@ try {
     1 / 0;
 } catch Exception e1 {
     print e1;
+} finally {
+    print 'finally';
 }
-
-
-
-/*
-try {
-    a;
-} catch Exception1 e1 {
-    b;
-} catch Exception2 e2 {
-    c;
-}finally {
-    d;
-}*/
