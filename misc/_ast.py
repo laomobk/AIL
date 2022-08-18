@@ -11,47 +11,47 @@
 
 PyCF_ONLY_AST = 1024
 
+
 # no functions
 # classes
 
 class AST(object):
     # no doc
-    def __delattr__(self, *args, **kwargs): # real signature unknown
+    def __delattr__(self, *args, **kwargs):  # real signature unknown
         """ Implement delattr(self, name). """
         pass
 
-    def __getattribute__(self, *args, **kwargs): # real signature unknown
+    def __getattribute__(self, *args, **kwargs):  # real signature unknown
         """ Return getattr(self, name). """
         pass
 
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
-    @staticmethod # known case of __new__
-    def __new__(*args, **kwargs): # real signature unknown
+    @staticmethod  # known case of __new__
+    def __new__(*args, **kwargs):  # real signature unknown
         """ Create and return a new object.  See help(type) for accurate signature. """
         pass
 
-    def __reduce__(self, *args, **kwargs): # real signature unknown
+    def __reduce__(self, *args, **kwargs):  # real signature unknown
         pass
 
-    def __setattr__(self, *args, **kwargs): # real signature unknown
+    def __setattr__(self, *args, **kwargs):  # real signature unknown
         """ Implement setattr(self, name, value). """
         pass
 
     _attributes = ()
     _fields = ()
-    __dict__ = None # (!) real value is "mappingproxy({'__getattribute__': <slot wrapper '__getattribute__' of '_ast.AST' objects>, '__setattr__': <slot wrapper '__setattr__' of '_ast.AST' objects>, '__delattr__': <slot wrapper '__delattr__' of '_ast.AST' objects>, '__init__': <slot wrapper '__init__' of '_ast.AST' objects>, '__new__': <built-in method __new__ of type object at 0x3cc6a4>, '__reduce__': <method '__reduce__' of '_ast.AST' objects>, '__dict__': <attribute '__dict__' of '_ast.AST' objects>, '__doc__': None, '_fields': (), '_attributes': ()})"
+    __dict__ = None  # (!) real value is "mappingproxy({'__getattribute__': <slot wrapper '__getattribute__' of '_ast.AST' objects>, '__setattr__': <slot wrapper '__setattr__' of '_ast.AST' objects>, '__delattr__': <slot wrapper '__delattr__' of '_ast.AST' objects>, '__init__': <slot wrapper '__init__' of '_ast.AST' objects>, '__new__': <built-in method __new__ of type object at 0x3cc6a4>, '__reduce__': <method '__reduce__' of '_ast.AST' objects>, '__dict__': <attribute '__dict__' of '_ast.AST' objects>, '__doc__': None, '_fields': (), '_attributes': ()})"
 
 
 class operator(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -59,7 +59,7 @@ class operator(AST):
 
 class Add(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -67,12 +67,11 @@ class Add(operator):
 
 class alias(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = (
@@ -83,12 +82,11 @@ class alias(AST):
 
 class boolop(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -96,7 +94,7 @@ class boolop(AST):
 
 class And(boolop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -104,12 +102,11 @@ class And(boolop):
 
 class stmt(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = (
         'lineno',
@@ -120,7 +117,7 @@ class stmt(AST):
 
 class AnnAssign(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -133,12 +130,11 @@ class AnnAssign(stmt):
 
 class arg(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = (
         'lineno',
@@ -152,12 +148,11 @@ class arg(AST):
 
 class arguments(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = (
@@ -172,7 +167,7 @@ class arguments(AST):
 
 class Assert(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -183,7 +178,7 @@ class Assert(stmt):
 
 class Assign(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -194,7 +189,7 @@ class Assign(stmt):
 
 class AsyncFor(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -207,7 +202,7 @@ class AsyncFor(stmt):
 
 class AsyncFunctionDef(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -221,7 +216,7 @@ class AsyncFunctionDef(stmt):
 
 class AsyncWith(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -232,12 +227,11 @@ class AsyncWith(stmt):
 
 class expr(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = (
         'lineno',
@@ -248,7 +242,7 @@ class expr(AST):
 
 class Attribute(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -260,7 +254,7 @@ class Attribute(expr):
 
 class AugAssign(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -272,12 +266,11 @@ class AugAssign(stmt):
 
 class expr_context(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -285,7 +278,7 @@ class expr_context(AST):
 
 class AugLoad(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -293,7 +286,7 @@ class AugLoad(expr_context):
 
 class AugStore(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -301,7 +294,7 @@ class AugStore(expr_context):
 
 class Await(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -311,7 +304,7 @@ class Await(expr):
 
 class BinOp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -323,7 +316,7 @@ class BinOp(expr):
 
 class BitAnd(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -331,7 +324,7 @@ class BitAnd(operator):
 
 class BitOr(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -339,7 +332,7 @@ class BitOr(operator):
 
 class BitXor(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -347,7 +340,7 @@ class BitXor(operator):
 
 class BoolOp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -358,7 +351,7 @@ class BoolOp(expr):
 
 class Break(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -366,7 +359,7 @@ class Break(stmt):
 
 class Bytes(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -376,7 +369,7 @@ class Bytes(expr):
 
 class Call(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -388,7 +381,7 @@ class Call(expr):
 
 class ClassDef(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -402,12 +395,11 @@ class ClassDef(stmt):
 
 class cmpop(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -415,7 +407,7 @@ class cmpop(AST):
 
 class Compare(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -427,12 +419,11 @@ class Compare(expr):
 
 class comprehension(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = (
@@ -445,7 +436,7 @@ class comprehension(AST):
 
 class Constant(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -455,7 +446,7 @@ class Constant(expr):
 
 class Continue(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -463,7 +454,7 @@ class Continue(stmt):
 
 class Del(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -471,7 +462,7 @@ class Del(expr_context):
 
 class Delete(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -481,7 +472,7 @@ class Delete(stmt):
 
 class Dict(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -492,7 +483,7 @@ class Dict(expr):
 
 class DictComp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -504,7 +495,7 @@ class DictComp(expr):
 
 class Div(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -512,7 +503,7 @@ class Div(operator):
 
 class Ellipsis(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -520,7 +511,7 @@ class Ellipsis(expr):
 
 class Eq(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -528,12 +519,11 @@ class Eq(cmpop):
 
 class excepthandler(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = (
         'lineno',
@@ -544,7 +534,7 @@ class excepthandler(AST):
 
 class ExceptHandler(excepthandler):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -556,7 +546,7 @@ class ExceptHandler(excepthandler):
 
 class Expr(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -566,12 +556,11 @@ class Expr(stmt):
 
 class mod(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -579,7 +568,7 @@ class mod(AST):
 
 class Expression(mod):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -589,12 +578,11 @@ class Expression(mod):
 
 class slice(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -602,7 +590,7 @@ class slice(AST):
 
 class ExtSlice(slice):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -612,7 +600,7 @@ class ExtSlice(slice):
 
 class FloorDiv(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -620,7 +608,7 @@ class FloorDiv(operator):
 
 class For(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -633,7 +621,7 @@ class For(stmt):
 
 class FormattedValue(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -645,7 +633,7 @@ class FormattedValue(expr):
 
 class FunctionDef(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -659,7 +647,7 @@ class FunctionDef(stmt):
 
 class GeneratorExp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -670,7 +658,7 @@ class GeneratorExp(expr):
 
 class Global(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -680,7 +668,7 @@ class Global(stmt):
 
 class Gt(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -688,7 +676,7 @@ class Gt(cmpop):
 
 class GtE(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -696,7 +684,7 @@ class GtE(cmpop):
 
 class If(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -708,7 +696,7 @@ class If(stmt):
 
 class IfExp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -720,7 +708,7 @@ class IfExp(expr):
 
 class Import(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -730,7 +718,7 @@ class Import(stmt):
 
 class ImportFrom(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -742,7 +730,7 @@ class ImportFrom(stmt):
 
 class In(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -750,7 +738,7 @@ class In(cmpop):
 
 class Index(slice):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -760,7 +748,7 @@ class Index(slice):
 
 class Interactive(mod):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -770,12 +758,11 @@ class Interactive(mod):
 
 class unaryop(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = ()
@@ -783,7 +770,7 @@ class unaryop(AST):
 
 class Invert(unaryop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -791,7 +778,7 @@ class Invert(unaryop):
 
 class Is(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -799,7 +786,7 @@ class Is(cmpop):
 
 class IsNot(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -807,7 +794,7 @@ class IsNot(cmpop):
 
 class JoinedStr(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -817,12 +804,11 @@ class JoinedStr(expr):
 
 class keyword(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = (
@@ -833,7 +819,7 @@ class keyword(AST):
 
 class Lambda(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -844,7 +830,7 @@ class Lambda(expr):
 
 class List(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -855,7 +841,7 @@ class List(expr):
 
 class ListComp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -866,7 +852,7 @@ class ListComp(expr):
 
 class Load(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -874,7 +860,7 @@ class Load(expr_context):
 
 class LShift(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -882,7 +868,7 @@ class LShift(operator):
 
 class Lt(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -890,7 +876,7 @@ class Lt(cmpop):
 
 class LtE(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -898,7 +884,7 @@ class LtE(cmpop):
 
 class MatMult(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -906,7 +892,7 @@ class MatMult(operator):
 
 class Mod(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -914,7 +900,7 @@ class Mod(operator):
 
 class Module(mod):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -924,7 +910,7 @@ class Module(mod):
 
 class Mult(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -932,7 +918,7 @@ class Mult(operator):
 
 class Name(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -943,7 +929,7 @@ class Name(expr):
 
 class NameConstant(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -953,7 +939,7 @@ class NameConstant(expr):
 
 class Nonlocal(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -963,7 +949,7 @@ class Nonlocal(stmt):
 
 class Not(unaryop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -971,7 +957,7 @@ class Not(unaryop):
 
 class NotEq(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -979,7 +965,7 @@ class NotEq(cmpop):
 
 class NotIn(cmpop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -987,7 +973,7 @@ class NotIn(cmpop):
 
 class Num(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -997,7 +983,7 @@ class Num(expr):
 
 class Or(boolop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1005,7 +991,7 @@ class Or(boolop):
 
 class Param(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1013,7 +999,7 @@ class Param(expr_context):
 
 class Pass(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1021,7 +1007,7 @@ class Pass(stmt):
 
 class Pow(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1029,7 +1015,7 @@ class Pow(operator):
 
 class Raise(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1040,7 +1026,7 @@ class Raise(stmt):
 
 class Return(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1050,7 +1036,7 @@ class Return(stmt):
 
 class RShift(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1058,7 +1044,7 @@ class RShift(operator):
 
 class Set(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1068,7 +1054,7 @@ class Set(expr):
 
 class SetComp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1079,7 +1065,7 @@ class SetComp(expr):
 
 class Slice(slice):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1091,7 +1077,7 @@ class Slice(slice):
 
 class Starred(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1102,7 +1088,7 @@ class Starred(expr):
 
 class Store(expr_context):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1110,7 +1096,7 @@ class Store(expr_context):
 
 class Str(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1120,7 +1106,7 @@ class Str(expr):
 
 class Sub(operator):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1128,7 +1114,7 @@ class Sub(operator):
 
 class Subscript(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1140,7 +1126,7 @@ class Subscript(expr):
 
 class Suite(mod):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1150,7 +1136,7 @@ class Suite(mod):
 
 class Try(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1163,7 +1149,7 @@ class Try(stmt):
 
 class Tuple(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1174,7 +1160,7 @@ class Tuple(expr):
 
 class UAdd(unaryop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1182,7 +1168,7 @@ class UAdd(unaryop):
 
 class UnaryOp(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1193,7 +1179,7 @@ class UnaryOp(expr):
 
 class USub(unaryop):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = ()
@@ -1201,7 +1187,7 @@ class USub(unaryop):
 
 class While(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1213,7 +1199,7 @@ class While(stmt):
 
 class With(stmt):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1224,12 +1210,11 @@ class With(stmt):
 
 class withitem(AST):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
-
 
     _attributes = ()
     _fields = (
@@ -1240,7 +1225,7 @@ class withitem(AST):
 
 class Yield(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1250,7 +1235,7 @@ class Yield(expr):
 
 class YieldFrom(expr):
     # no doc
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     _fields = (
@@ -1265,18 +1250,19 @@ class __loader__(object):
         All methods are either class or static methods to avoid the need to
         instantiate the class.
     """
+
     @classmethod
-    def create_module(cls, *args, **kwargs): # real signature unknown
+    def create_module(cls, *args, **kwargs):  # real signature unknown
         """ Create a built-in module """
         pass
 
     @classmethod
-    def exec_module(cls, *args, **kwargs): # real signature unknown
+    def exec_module(cls, *args, **kwargs):  # real signature unknown
         """ Exec a built-in module """
         pass
 
     @classmethod
-    def find_module(cls, *args, **kwargs): # real signature unknown
+    def find_module(cls, *args, **kwargs):  # real signature unknown
         """
         Find the built-in module.
         
@@ -1287,26 +1273,26 @@ class __loader__(object):
         pass
 
     @classmethod
-    def find_spec(cls, *args, **kwargs): # real signature unknown
+    def find_spec(cls, *args, **kwargs):  # real signature unknown
         pass
 
     @classmethod
-    def get_code(cls, *args, **kwargs): # real signature unknown
+    def get_code(cls, *args, **kwargs):  # real signature unknown
         """ Return None as built-in modules do not have code objects. """
         pass
 
     @classmethod
-    def get_source(cls, *args, **kwargs): # real signature unknown
+    def get_source(cls, *args, **kwargs):  # real signature unknown
         """ Return None as built-in modules do not have source code. """
         pass
 
     @classmethod
-    def is_package(cls, *args, **kwargs): # real signature unknown
+    def is_package(cls, *args, **kwargs):  # real signature unknown
         """ Return False as built-in modules are never packages. """
         pass
 
     @classmethod
-    def load_module(cls, *args, **kwargs): # real signature unknown
+    def load_module(cls, *args, **kwargs):  # real signature unknown
         """
         Load the specified module into sys.modules and return it.
         
@@ -1314,7 +1300,7 @@ class __loader__(object):
         """
         pass
 
-    def module_repr(module): # reliably restored by inspect
+    def module_repr(module):  # reliably restored by inspect
         """
         Return repr for the module.
         
@@ -1322,17 +1308,15 @@ class __loader__(object):
         """
         pass
 
-    def __init__(self, *args, **kwargs): # real signature unknown
+    def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
     __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
     """list of weak references to the object (if defined)"""
 
-
-    __dict__ = None # (!) real value is "mappingproxy({'__module__': '_frozen_importlib', '__doc__': 'Meta path import for built-in modules.\\n\\n    All methods are either class or static methods to avoid the need to\\n    instantiate the class.\\n\\n    ', 'module_repr': <staticmethod object at 0xb66cfcd0>, 'find_spec': <classmethod object at 0xb66cfcf0>, 'find_module': <classmethod object at 0xb66cfd10>, 'create_module': <classmethod object at 0xb66cfd30>, 'exec_module': <classmethod object at 0xb66cfd50>, 'get_code': <classmethod object at 0xb66cfdb0>, 'get_source': <classmethod object at 0xb66cfe10>, 'is_package': <classmethod object at 0xb66cfe70>, 'load_module': <classmethod object at 0xb66cfe90>, '__dict__': <attribute '__dict__' of 'BuiltinImporter' objects>, '__weakref__': <attribute '__weakref__' of 'BuiltinImporter' objects>})"
+    __dict__ = None  # (!) real value is "mappingproxy({'__module__': '_frozen_importlib', '__doc__': 'Meta path import for built-in modules.\\n\\n    All methods are either class or static methods to avoid the need to\\n    instantiate the class.\\n\\n    ', 'module_repr': <staticmethod object at 0xb66cfcd0>, 'find_spec': <classmethod object at 0xb66cfcf0>, 'find_module': <classmethod object at 0xb66cfd10>, 'create_module': <classmethod object at 0xb66cfd30>, 'exec_module': <classmethod object at 0xb66cfd50>, 'get_code': <classmethod object at 0xb66cfdb0>, 'get_source': <classmethod object at 0xb66cfe10>, 'is_package': <classmethod object at 0xb66cfe70>, 'load_module': <classmethod object at 0xb66cfe90>, '__dict__': <attribute '__dict__' of 'BuiltinImporter' objects>, '__weakref__': <attribute '__weakref__' of 'BuiltinImporter' objects>})"
 
 
 # variables with complex values
 
-__spec__ = None # (!) real value is "ModuleSpec(name='_ast', loader=<class '_frozen_importlib.BuiltinImporter'>, origin='built-in')"
-
+__spec__ = None  # (!) real value is "ModuleSpec(name='_ast', loader=<class '_frozen_importlib.BuiltinImporter'>, origin='built-in')"
