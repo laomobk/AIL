@@ -1,5 +1,6 @@
 
-foreach a, *b in ('abc', 'def') {
-    print a, b;
+try {
+    1 / 0;
+} catch Exception e {
+    throw ValueError() from e;
 }
-

@@ -2458,17 +2458,21 @@ class Parser:
         self.__next_tok()  # eat 'throw'
 
         if self.__now_tok.ttype == AIL_ENTER:
-            return ast.ThrowStmtAST(None, ln)
+            return ast.ThrowStmtAST(None, None, ln)
 
         expr = self.__parse_binary_expr()
+        from_ = None
 
-        if expr is None or \
-                self.__now_tok.ttype != AIL_ENTER:
+        if self.__now_tok == 'from':
+            self.__next_tok()
+            from_ = self.__parse_binary_expr()
+
+        if self.__now_tok.ttype != AIL_ENTER:
             self.__syntax_error()
 
         self.__expect_newline()
 
-        return ast.ThrowStmtAST(expr, ln)
+        return ast.ThrowStmtAST(expr, from_, ln)
 
     def __parse_assert_stmt(self) -> ast.AssertStmtAST:
         if self.__now_tok != 'assert':
@@ -4146,7 +4150,8 @@ class ASTConverter:
                 a.ln)
 
         elif isinstance(a, ast.ThrowStmtAST):
-            return _set_lineno(raise_stmt(self.convert(a.expr)), a.ln)
+            return _set_lineno(
+                raise_stmt(self.convert(a.expr), a.from_), a.ln)
 
         elif isinstance(a, ast.TryCatchStmtAST):
             return self._convert_try_stmt(a)

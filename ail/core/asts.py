@@ -428,8 +428,9 @@ class ForStmtAST(Statement):
 
 
 class ThrowStmtAST(Statement):
-    def __init__(self, expr: AddSubExprAST, ln: int):
+    def __init__(self, expr: Expression, from_: Expression, ln: int):
         self.expr = expr
+        self.from_ = from_
         self.ln = ln
 
 

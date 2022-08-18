@@ -202,8 +202,8 @@ def pass_stmt() -> _ast.Pass:
     return _ast.Pass()
 
 
-def raise_stmt(exc: _ast.expr) -> _ast.Raise:
-    return _ast.Raise(exc=exc, cause=None)
+def raise_stmt(exc: _ast.expr, cause: _ast.expr) -> _ast.Raise:
+    return _ast.Raise(exc=exc, cause=cause)
 
 
 def return_stmt(value: _ast.expr) -> _ast.Return:

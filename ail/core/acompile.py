@@ -1101,6 +1101,20 @@ class Compiler:
                 stack_effect=1,
             )
 
+    def _compile_throw_stmt(self, stmt: ast.ThrowStmtAST):
+        if stmt.expr is None:
+            self._add_instruction(
+                RAISE_VARARGS, 0, -1,
+                stack_effect=0
+            )
+            return
+
+        self._compile(stmt.expr)
+        self._add_instruction(
+            RAISE_VARARGS, 1, -1,
+            stack_effect=-1,
+        )
+
     def _compile_subscript_expr(self, expr: ast.SubscriptExprAST):
         self._compile(expr.left)
 
@@ -1226,6 +1240,9 @@ class Compiler:
 
         elif isinstance(node, ast.TryCatchStmtAST):
             self._compile_try(node)
+
+        elif isinstance(node, ast.ThrowStmtAST):
+            self._compile_throw_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile
