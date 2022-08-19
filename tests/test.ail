@@ -1,6 +1,11 @@
 
-try {
-    1 / 0;
-} catch Exception e {
-    throw ValueError() from e;
+class Person: type extends object {
+    init (self, name: str) {
+        self.__name = name;
+    }
+
+    @property
+    func name(self): int {
+        #return [x for x in range(10)]
+    }
 }
