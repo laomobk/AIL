@@ -2,7 +2,7 @@
 func f() {
     while 1 {
         try {
-            return a;
+            a;
         } finally {
             return c;
         }

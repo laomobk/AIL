@@ -354,10 +354,12 @@ class Compiler:
         self._unit.names.append(name)
         return len(self._unit.names) - 1
 
-    def _unwind_frame_block(self, block: FrameBlock):
+    def _unwind_frame_block(self, block: FrameBlock, preserve_tos=False):
         if block.type == FB_FINALLY_END:
             block.exit = None
-            self._add_instruction(POP_FINALLY, 0, -1)
+            self._add_instruction(POP_FINALLY, int(preserve_tos), -1)
+            if preserve_tos:
+                self._add_instruction(ROT_TWO, 0, -1)
             self._add_instruction(POP_TOP, 0, -1)
 
         elif block.type == FB_FINALLY_TRY_WITH_BREAK:
@@ -805,16 +807,25 @@ class Compiler:
             frame = self._unit.fb_stack[index]
 
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
+        expr = stmt.expr
+        preserve_tos = \
+                isinstance(expr, ast.CellAST) and expr.type == AIL_IDENTIFIER
+
+        if preserve_tos:
+            self._compile(stmt.expr)
+
         if self._unit.fb_stack:
             frame = self._unit.fb_stack[-1]
 
             index = len(self._unit.fb_stack) - 1
             while index >= 0:
-                self._unwind_frame_block(frame)
+                self._unwind_frame_block(frame, preserve_tos)
                 index -= 1
                 frame = self._unit.fb_stack[index]
 
-        self._compile(stmt.expr)
+        if not preserve_tos:
+            self._compile(expr)
+
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
 
     def _compile_list(self, expr: ast.ListAST):
