@@ -1,11 +1,13 @@
 
-class Person: type extends object {
-    init (self, name: str) {
-        self.__name = name;
+func f() {
+    while 1 {
+        try {
+            return a;
+        } finally {
+            return c;
+        }
     }
-
-    @property
-    func name(self): int {
-        #return [x for x in range(10)]
-    }
+    return b
 }
+
+print f();

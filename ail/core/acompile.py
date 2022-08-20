@@ -805,8 +805,14 @@ class Compiler:
             frame = self._unit.fb_stack[index]
 
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
-        while self._unit.fb_stack:
-            self._unwind_frame_block(self._unit.fb_stack.pop())
+        if self._unit.fb_stack:
+            frame = self._unit.fb_stack[-1]
+
+            index = len(self._unit.fb_stack) - 1
+            while index >= 0:
+                self._unwind_frame_block(frame)
+                index -= 1
+                frame = self._unit.fb_stack[index]
 
         self._compile(stmt.expr)
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
