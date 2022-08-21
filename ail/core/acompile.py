@@ -66,7 +66,6 @@ CO_FUTURE_BARRY_AS_BDFL = 0x400000
 CO_FUTURE_GENERATOR_STOP = 0x800000
 CO_FUTURE_ANNOTATIONS = 0x1000000
 
-
 FB_WHILE_LOOP = 1
 FB_FOR_LOOP = 2
 FB_FINALLY_END = 3
@@ -427,6 +426,7 @@ class Compiler:
 
     def _compile_call_name(
             self, name: str, args: List[ast.Expression], ln: int, ctx=None):
+
         if ctx is None:
             ctx = SYM_GLOBAL
 
@@ -441,8 +441,8 @@ class Compiler:
                      for e in args],
                     ln
                 ),
-                ln
-            )
+                ln,
+            ),
         )
 
     def _compile_cell(self, cell: ast.CellAST):
@@ -676,8 +676,11 @@ class Compiler:
                 stack_effect=effect,
             )
 
-    def _compile_call_expr(self, expr: ast.CallExprAST):
-        self._compile(expr.left)
+    def _compile_call_expr(self, expr: ast.CallExprAST, build_class=False):
+        if build_class:
+            self._add_instruction(LOAD_BUILD_CLASS, 0, -1)
+        else:
+            self._compile(expr.left)
 
         self._compile_call_arg(expr.arg_list)
 
@@ -809,7 +812,7 @@ class Compiler:
     def _compile_return_stmt(self, stmt: ast.ReturnStmtAST):
         expr = stmt.expr
         preserve_tos = \
-                isinstance(expr, ast.CellAST) and expr.type == AIL_IDENTIFIER
+            isinstance(expr, ast.CellAST) and expr.type == AIL_IDENTIFIER
 
         if preserve_tos:
             self._compile(stmt.expr)
@@ -861,6 +864,73 @@ class Compiler:
             len(keys),
             expr.ln,
             stack_effect=-2 * len(keys) + 1,
+        )
+
+    def _compile_class(self, cls: ast.ClassDefineAST, as_stmt=False):
+        cls.func.block.stmts.insert(
+            0,
+            ast.AssignExprAST(
+                ast.CellAST(
+                    '__module__', AIL_IDENTIFIER, cls.ln,
+                    Symbol('__module__', SYM_LOCAL)
+                ),
+                ast.CellAST(
+                    '__name__', AIL_IDENTIFIER, cls.ln,
+                    Symbol('__name__', SYM_GLOBAL)
+                ),
+                cls.ln
+            ),
+        )
+
+        cls.func.block.stmts.insert(
+            1,
+            ast.AssignExprAST(
+                ast.CellAST(
+                    '__qualname__', AIL_IDENTIFIER, cls.ln,
+                    Symbol('__qualname__', SYM_LOCAL)
+                ),
+                ast.CellAST(
+                    cls.name, AIL_STRING, cls.ln
+                ),
+                cls.ln
+            ),
+        )
+
+        args = [
+            cls.func,
+            ast.CellAST(cls.name, AIL_STRING, cls.ln),
+        ]
+
+        for base in cls.bases:
+            args.append(base)
+
+        if cls.meta:
+            args.append(
+                ast.ArgItemAST(
+                    ast.CellAST('metaclass', AIL_IDENTIFIER, cls.ln),
+                    False, cls.ln,
+                    default=cls.meta,
+                )
+            )
+
+        self._compile_call_expr(
+            ast.CallExprAST(
+                None,
+                ast.ArgListAST(
+                    [
+                        arg if isinstance(arg, ast.ArgItemAST)
+                            else ast.ArgItemAST(arg, False, cls.ln)
+                        for arg in args
+                    ],
+                    cls.ln
+                ),
+                cls.ln
+            ), True
+        )
+
+        self._compile_store(
+            ast.CellAST(cls.name, AIL_IDENTIFIER, cls.ln,
+                        symbol=Symbol(cls.name, cls.symbol.flag))
         )
 
     def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
@@ -1207,7 +1277,8 @@ class Compiler:
             self._compile_binary_expr(expr)
 
         else:
-            raise Warning('Compiler: Node %s cannot be compiled' % type(expr))
+            raise Warning('Compiler: Node %s (value = %s) cannot be compiled' %
+                          (type(expr), expr))
 
     def _compile_block(self, block: ast.BlockAST):
         stmts = block.stmts
@@ -1247,7 +1318,7 @@ class Compiler:
             self._compile_continue_stmt(node)
 
         elif isinstance(node, ast.FunctionDefineAST):
-            self._compile_function(node, True)
+            self._compile_function(node, as_stmt)
 
         elif isinstance(node, ast.ReturnStmtAST):
             self._compile_return_stmt(node)
@@ -1260,6 +1331,9 @@ class Compiler:
 
         elif isinstance(node, ast.ThrowStmtAST):
             self._compile_throw_stmt(node)
+
+        elif isinstance(node, ast.ClassDefineAST):
+            self._compile_class(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

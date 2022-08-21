@@ -620,6 +620,7 @@ class SymbolAnalyzer:
             self.__add_store_symbol(s)
             self.__block_queue.append((s, node))
             node.symbol = s
+            node.func.symbol = s
 
         elif type(node) in (ast.AndTestAST, ast.OrTestAST):
             self._visit(node.left)

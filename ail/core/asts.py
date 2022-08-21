@@ -16,11 +16,13 @@ class Statement(AST):
 
 
 class ArgItemAST:
-    def __init__(self, expr: 'Expression', star: bool, ln: int):
+    def __init__(
+            self, expr: 'Expression', star: bool, ln: int,
+            default=None, kw_star=None):
         self.expr = expr
         self.star = star
-        self.kw_star = False
-        self.default = None
+        self.kw_star = kw_star
+        self.default = default
         self.ln = ln
         self.type_comment = None
 
@@ -36,11 +38,13 @@ class ArgListAST:
 
 
 class CellAST(Expression):
-    def __init__(self, value: object, _type: int, ln: int):
+    def __init__(self,
+                 value: object, _type: int, ln: int,
+                 symbol=None):
         self.value = value
         self.type = _type
         self.ln = ln
-        self.symbol = None
+        self.symbol = symbol
 
     def __str__(self):
         return '<Cell value = \'%s\'>' % self.value
@@ -148,7 +152,7 @@ class ValueListAST(AST):
 
 
 class AssignExprAST(Expression):
-    def __init__(self, left: BitOpExprAST, right: BitOpExprAST, ln: int,
+    def __init__(self, left: Expression, right: Expression, ln: int,
                  aug_assign: bool = False):
         self.right = right
         self.left = left
@@ -256,7 +260,7 @@ class DoLoopStmtAST(Statement):
         self.ln = ln
 
 
-class FunctionDefineAST(Statement):
+class FunctionDefineAST(Statement, Expression):
     def __init__(self, name: str, param_list: ArgListAST,
                  block: BlockAST, bindto: str, ln: int,
                  doc_str=''):

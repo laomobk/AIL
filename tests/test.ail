@@ -1,13 +1,9 @@
 
-func f() {
-    while 1 {
-        try {
-            return a;
-        } finally {
-            return c;
-        }
+class Person {
+    func __init__(self, name: str) {
+        self.name = name;
     }
-    return b
 }
 
-print f();
+
+print Person.__init__('x');
