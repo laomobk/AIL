@@ -194,7 +194,7 @@ class SymbolAnalyzer:
         name = symbol.name
 
         if ctx == CTX_STORE:
-            if type(self.__symbol_table) is not SymbolTable:
+            if isinstance(self.__symbol_table, FunctionSymbolTable):
                 if name in self.__symbol_table.global_directives:
                     symbol.flag |= SYM_GLOBAL
                 elif name in self.__symbol_table.nonlocal_directives and \

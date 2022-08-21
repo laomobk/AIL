@@ -872,7 +872,7 @@ class Compiler:
             ast.AssignExprAST(
                 ast.CellAST(
                     '__module__', AIL_IDENTIFIER, cls.ln,
-                    Symbol('__module__', SYM_LOCAL)
+                    Symbol('__module__', SYM_NORMAL)
                 ),
                 ast.CellAST(
                     '__name__', AIL_IDENTIFIER, cls.ln,
@@ -887,7 +887,7 @@ class Compiler:
             ast.AssignExprAST(
                 ast.CellAST(
                     '__qualname__', AIL_IDENTIFIER, cls.ln,
-                    Symbol('__qualname__', SYM_LOCAL)
+                    Symbol('__qualname__', SYM_NORMAL)
                 ),
                 ast.CellAST(
                     cls.name, AIL_STRING, cls.ln
