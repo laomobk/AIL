@@ -1,10 +1,10 @@
 
 class Person {
-    func __init__(self) {
+    func __init__(self, name) {
         self.name = 'x';
         print self;
     }
 }
 
 
-print Person();
+print Person(name);
