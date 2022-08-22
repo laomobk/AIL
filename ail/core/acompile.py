@@ -553,7 +553,7 @@ class Compiler:
 
             self._enter_next_block(end)
 
-    def _compile_call_arg(self, arg_list: ast.ArgListAST):
+    def _compile_call_arg(self, arg_list: ast.ArgListAST, call_method: bool):
         args = arg_list.arg_list
 
         kwarg = [arg for arg in args if arg.default is not None]
@@ -581,7 +581,8 @@ class Compiler:
             for arg in posarg:
                 self._compile(arg.expr)
             self._add_instruction(
-                CALL_FUNCTION, len(posarg), arg_list.ln,
+                CALL_METHOD if call_method else CALL_FUNCTION,
+                len(posarg), arg_list.ln,
                 stack_effect=-len(posarg),
             )
             return
@@ -682,7 +683,8 @@ class Compiler:
         else:
             self._compile(expr.left)
 
-        self._compile_call_arg(expr.arg_list)
+        self._compile_call_arg(
+            expr.arg_list, isinstance(expr.left, ast.MemberAccessAST))
 
     def _compile_print_stmt(self, stmt: ast.PrintStmtAST):
         self._compile_call_name(
@@ -943,6 +945,10 @@ class Compiler:
         self.enter_new_scope(sym, func.name, func.block.ln)
         self._unit.block = b
         self._unit.top_block = b
+
+        for param in func.param_list.arg_list:
+            assert isinstance(param.expr, ast.CellAST)
+            self._add_varname(param.expr.value)
 
         self._compile_block(func.block)
 

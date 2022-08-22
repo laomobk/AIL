@@ -1,10 +1,13 @@
 
 class Person {
     func __init__(self, name) {
-        self.name = 'x';
-        print self;
+        self.name = name;
+    }
+
+    func say(self) {
+        print self.name;
     }
 }
 
 
-print Person(name);
+print Person('Klee').say()

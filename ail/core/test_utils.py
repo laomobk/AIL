@@ -354,16 +354,18 @@ def make_ast_tree(a) -> dict:
 
 def get_opcode_trader():
     from dis import opname
+
     def _opcode_trade(frame: FrameType, event: str, arg):
         frame.f_trace_opcodes = True
 
         if event == 'opcode':
             print(
-                    'opcode %s %s' % 
-                    (
-                        frame.f_lasti,
-                        opname[frame.f_code.co_code[frame.f_lasti]],
-                    )
+                'opcode %s %s in %s' %
+                (
+                    frame.f_lasti,
+                    opname[frame.f_code.co_code[frame.f_lasti]],
+                    frame.f_code.co_name,
+                )
             )
 
         return _opcode_trade
@@ -451,7 +453,7 @@ class CFGDisassembler:
             self._disassemble(block.next_block)
 
     def disassemble(
-            self, block: acompile.BasicBlock, unit: acompile.CompileUnit=None):
+            self, block: acompile.BasicBlock, unit: acompile.CompileUnit = None):
         print('CFG disassemble')
         print('AIL version: %s' % AIL_VERSION)
 
