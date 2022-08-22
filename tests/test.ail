@@ -4,10 +4,10 @@ class Person {
         self.name = name;
     }
 
-    func say(self) {
-        print self.name;
+    func say(self, prompt='Hello') {
+        print prompt, self.name;
     }
 }
 
 
-print Person('Klee').say()
+Person('Klee').say()

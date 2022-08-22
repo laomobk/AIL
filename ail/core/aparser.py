@@ -904,7 +904,11 @@ class Parser:
                 self.__next_tok()  # eat ')'
 
                 if isinstance(left, ast.MemberAccessAST):
-                    left.call_method = True
+                    for arg in argl.arg_list:
+                        if arg.kw_star or arg.default is not None or arg.star:
+                            break
+                    else:
+                        left.call_method = True
 
                 left = ast.CallExprAST(left, argl, ln)
 

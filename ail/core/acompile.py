@@ -621,7 +621,7 @@ class Compiler:
                     tuple_unpack_count += 1
 
                 if (arg.kw_star or arg.default is not None
-                    and not seen_kw_part) or ai == len(args) - 1:
+                        and not seen_kw_part) or ai == len(args) - 1:
                     if arg.kw_star or arg.default is not None:
                         seen_kw_part = True
                     if pos_arg_count > 0 and in_pos_arg:
@@ -921,7 +921,7 @@ class Compiler:
                 ast.ArgListAST(
                     [
                         arg if isinstance(arg, ast.ArgItemAST)
-                            else ast.ArgItemAST(arg, False, cls.ln)
+                        else ast.ArgItemAST(arg, False, cls.ln)
                         for arg in args
                     ],
                     cls.ln
