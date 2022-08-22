@@ -10,4 +10,4 @@ class Person {
 }
 
 
-Person('Klee').say()
+Person('Klee').say(**{'prompt': '你好'})

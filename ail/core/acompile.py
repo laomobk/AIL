@@ -624,14 +624,15 @@ class Compiler:
                         and not seen_kw_part) or ai == len(args) - 1:
                     if arg.kw_star or arg.default is not None:
                         seen_kw_part = True
-                    if pos_arg_count > 0 and in_pos_arg:
-                        self._add_instruction(
-                            BUILD_TUPLE, pos_arg_count, -1,
-                            stack_effect=-pos_arg_count + 1
-                        )
-                        in_pos_arg = False
-                        pos_arg_count = 0
-                        tuple_unpack_count += 1
+                    
+                    # build an empty tuple if no pos arg.
+                    self._add_instruction(
+                        BUILD_TUPLE, pos_arg_count, -1,
+                        stack_effect=-pos_arg_count + 1
+                    )
+                    in_pos_arg = False
+                    pos_arg_count = 0
+                    tuple_unpack_count += 1
 
                     if build_tuple_unpack:
                         self._add_instruction(
