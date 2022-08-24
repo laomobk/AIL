@@ -4,10 +4,11 @@ class Person {
         self.name = name;
     }
 
-    func say(self, prompt='Hello') {
+    func say(self, prompt='Hello', ret=False) {
+        if ret { return '%s %s' % (prompt, self.name); }
         print prompt, self.name;
     }
 }
 
 
-Person('Klee').say(**{'prompt': '你好'})
+print Person('Klee').say(*('你好',), 1)
