@@ -980,6 +980,8 @@ class Compiler:
 
         for param in func.param_list.arg_list:
             assert isinstance(param.expr, ast.CellAST)
+            # param_name = self._do_mangle(param.expr.value)
+            # param.expr.value = param_name
             self._add_varname(param.expr.value)
 
         self._compile_block(func.block)
