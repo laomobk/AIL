@@ -5,6 +5,9 @@ class C {
     }
 
     func f(self) {
+        global __x;
+        __x;
+
         return self.__x;
     }
 }
