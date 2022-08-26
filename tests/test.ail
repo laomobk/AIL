@@ -1,13 +1,14 @@
 
-class Person {
-    func __init__(self, name) {
-        self.name = name;
+class C {
+    func __init__(self, x=1) {
+        self.__x = x;
     }
 
-    func say(self, prompt='Hello') {
-        print prompt, self.name;
+    func f(self) {
+        return self.__x;
     }
 }
 
 
-Person('Klee').say(**{'prompt': '你好'})
+print C().f()
+
