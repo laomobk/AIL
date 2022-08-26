@@ -11,6 +11,7 @@ SYM_GLOBAL = 0x4
 SYM_REFERENCE = 0x8
 SYM_NONLOCAL = 0x10
 SYM_NORMAL = 0x20
+SYM_GLOBAL_EXPLICIT = 0x40
 
 FROM_STORE = 0x1
 FROM_IMPORT = 0x2
@@ -548,6 +549,7 @@ class SymbolAnalyzer:
             if node.name in self.__symbol_table.nonlocal_directives:
                 self.__syntax_error(
                     'name \'%s\' is nonlocal and global' % node.name, node.ln)
+
             self.__symbol_table.global_directives.add(node.name)
 
         elif isinstance(node, ast.NonlocalStmtAST):

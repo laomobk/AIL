@@ -275,7 +275,7 @@ class Compiler:
     def _frame(self, frame: FrameBlock):
         return Compiler.__FrameStackManager(self, frame)
 
-    def _do_mangle(self, name: str) -> str:
+    def _do_mangle(self, name: str, check_global=True) -> str:
         cls = ''
         unit = self._unit
 
@@ -290,6 +290,11 @@ class Compiler:
             unit = unit.prev_unit
         else:
             return name
+
+        # if check_global and (
+        #     name in self._unit.scope.global_directives):
+            
+        #     return name
 
         return do_mangle(cls, name)
 
