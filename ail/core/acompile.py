@@ -9,7 +9,8 @@ from .tokentype import AIL_IDENTIFIER, AIL_NUMBER, AIL_STRING
 
 from .symbol import (
     SymbolTable, FunctionSymbolTable, ClassSymbolTable, SymbolAnalyzer, Symbol,
-    SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE, SYM_NORMAL
+    SYM_LOCAL, SYM_GLOBAL, SYM_NONLOCAL, SYM_FREE, SYM_NORMAL,
+    do_mangle
 )
 
 CTX_LOAD = 0x1
@@ -274,6 +275,24 @@ class Compiler:
     def _frame(self, frame: FrameBlock):
         return Compiler.__FrameStackManager(self, frame)
 
+    def _do_mangle(self, name: str) -> str:
+        cls = ''
+        unit = self._unit
+
+        if (name[:2] == '__' and name [-2:] == '__') or name[:2] != '__':
+            return name
+
+        while unit is not None:
+            if isinstance(unit.scope, ClassSymbolTable):
+                cls = unit.name
+                break
+
+            unit = unit.prev_unit
+        else:
+            return name
+
+        return do_mangle(cls, name)
+
     def _check_oparg(self, arg: int, ln: int) -> int:
         final = arg & 0xff
         if arg >= 1 << 16:
@@ -404,11 +423,17 @@ class Compiler:
             self._add_instruction(LOAD_CONST, ni, ln)
             return
 
-        if name in self._unit.cellvars:
+        cellvar = name in self._unit.cellvars
+        freevar = name in self._unit.freevars
+
+        if not cellvar or not freevar:
+            name = self._do_mangle(name)
+
+        if cellvar:
             self._add_instruction(
                 LOAD_DEREF, self._unit.cellvars.index(name), cell.ln,
             )
-        elif name in self._unit.freevars:
+        elif freevar:
             self._add_instruction(
                 LOAD_DEREF,
                 self._unit.freevars.index(name) + len(self._unit.cellvars),
@@ -762,8 +787,9 @@ class Compiler:
 
         elif isinstance(target, ast.MemberAccessAST):
             self._compile(target.left)
+            attr = self._do_mangle(target.member.value)
             self._add_instruction(
-                STORE_ATTR, self._add_name(target.member.value), target.ln)
+                STORE_ATTR, self._add_name(attr), target.ln)
 
     def _compile_while_stmt(self, stmt: ast.WhileStmtAST):
         start = BasicBlock()
@@ -1184,14 +1210,16 @@ class Compiler:
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
 
+        attr = self._do_mangle(expr.member.value)
+
         if expr.call_method:
             self._add_instruction(
-                LOAD_METHOD, self._add_name(expr.member.value), expr.ln,
+                LOAD_METHOD, self._add_name(attr), expr.ln,
                 stack_effect=1,
             )
         else:
             self._add_instruction(
-                LOAD_ATTR, self._add_name(expr.member.value), expr.ln,
+                LOAD_ATTR, self._add_name(attr), expr.ln,
                 stack_effect=1,
             )
 
