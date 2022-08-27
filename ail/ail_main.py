@@ -7,7 +7,7 @@ from importlib import import_module
 from .core import shared
 from .core import aconfig
 from .core.abuiltins import init_builtins
-from .core.pyexec import exec_pyc_main
+from .core.pyexec import ail_exec
 from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
 from .core.error import AILSyntaxError
@@ -115,7 +115,7 @@ def _launch_main(argv: list) -> int:
             source = open(file_path, encoding='UTF-8').read()
 
         if not source_mode:
-            return exec_pyc_main(source, file_path, dict())
+            return ail_exec(source, file_path, dict(), compiler=int(native_compile)+1)
 
         ast = Parser().parse(Lex().lex(source), source, file_path, source_mode)
 

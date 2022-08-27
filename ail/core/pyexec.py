@@ -44,20 +44,14 @@ def _test_run():
     exec(code, AIL_PY_GLOBAL)
 
 
-def exec_by_python(
-        source: str, filename: str, globals: dict, main: bool = True) -> int:
+def _ail_exec(
+        source: str, filename: str, globals: dict, main: bool = True,
+        compiler=CP_PY_AST) -> int:
     """
     :return: code: 0 -> ok | 1 -> exception occurred | 2 -> system exit
     """
 
-    l = Lex()
-    ts = l.lex(source, filename)
-
-    p = Parser()
-    node = p.parse(ts, source, filename, True)
-
-    converter = ASTConverter()
-    code = compile(converter.convert_module(node), filename, 'exec')
+    code = ail_compile(source, filename, 'exec', compiler=compiler)
 
     name = '__main__'
 
@@ -65,14 +59,17 @@ def exec_by_python(
         name = filename
 
     fill_namespace(globals, name, main, filename=filename)
-    
+
+    if compiler == CP_PY_CODE:
+        print('(native compile mode)')
+
     exec(code, globals)
     return 0
 
 
-def exec_pyc_main(source: str, filename: str, globals: dict) -> int:
+def ail_exec(source: str, filename: str, globals: dict, compiler=CP_PY_AST) -> int:
     try:
-        return exec_by_python(source, filename, globals)
+        return _ail_exec(source, filename, globals, compiler=compiler)
     except Exception:
         print_py_traceback()
         return 1
@@ -147,13 +144,6 @@ def ail_compile(source: str, filename: str, mode: str, flags: int = 0, compiler:
         raise ValueError('Invalid flag: %s' % flags)
 
     return code
-
-
-def ail_exec(source: str, globals: dict = None, locals: dict = None):
-    code = ail_compile(source, '<exec>', 'exec')
-    fill_namespace(globals)
-
-    return eval(code, globals, locals)
 
 
 if __name__ == '__main__':

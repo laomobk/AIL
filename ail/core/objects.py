@@ -141,7 +141,7 @@ class AILImporter:
             return ns
 
         # exec and get namespace
-        from ..core.pyexec import exec_by_python as _exec
+        from ..core.pyexec import _ail_exec as _exec
 
         cwd = getcwd()
 
