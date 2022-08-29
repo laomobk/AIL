@@ -68,7 +68,7 @@ CO_FUTURE_GENERATOR_STOP = 0x800000
 CO_FUTURE_ANNOTATIONS = 0x1000000
 
 FB_WHILE_LOOP = 1
-FB_FOR_LOOP = 2
+FB_FOREACH_LOOP = 2
 FB_FINALLY_END = 3
 FB_FINALLY_TRY_WITH_BREAK = 4
 FB_FINALLY_TRY = 5
@@ -812,11 +812,14 @@ class Compiler:
 
         self._enter_next_block(next_)
 
+    def _compile_for_stmt(self, stmt: ast.ForStmtAST):
+        pass
+
     def _compile_foreach_stmt(self, stmt: ast.ForeachStmt):
         start = BasicBlock()
         next_ = BasicBlock()
 
-        frame = FrameBlock(FB_FOR_LOOP, start, next_)
+        frame = FrameBlock(FB_FOREACH_LOOP, start, next_)
 
         with self._frame(frame):
             self._compile(stmt.iter)
@@ -836,7 +839,7 @@ class Compiler:
         while index >= 0:
             self._unwind_frame_block(frame)
 
-            if frame.type in (FB_WHILE_LOOP, FB_FOR_LOOP):
+            if frame.type in (FB_WHILE_LOOP, FB_FOREACH_LOOP):
                 self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
                 return
 
@@ -1050,7 +1053,7 @@ class Compiler:
         while index >= 0:
             self._unwind_frame_block(frame)
 
-            if frame.type in (FB_WHILE_LOOP, FB_FOR_LOOP):
+            if frame.type in (FB_WHILE_LOOP, FB_FOREACH_LOOP):
                 self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
                 return
 
