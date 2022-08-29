@@ -74,6 +74,7 @@ FB_FINALLY_TRY_WITH_BREAK = 4
 FB_FINALLY_TRY = 5
 FB_EXCEPT = 6
 FB_HANDLER_FINISH = 7
+FB_FOR_LOOP = 8
 
 
 class CompilerError(Exception):
@@ -531,17 +532,20 @@ class Compiler:
 
     def _compile_if(self, stmt: ast.IfStmtAST):
         if_block = BasicBlock()
-        next_block: BasicBlock = BasicBlock()
+        else_block = BasicBlock()
+        next_block = BasicBlock()
 
-        self._compile_if_jump(stmt.test, 0, next_block)
+        self._compile_if_jump(stmt.test, 0, else_block)
         self._enter_next_block(if_block)
         self._compile(stmt.block)
 
         if len(stmt.else_block.stmts) != 0:
             self._add_jump_op(JUMP_FORWARD, next_block, -1)
 
-        self._enter_next_block(next_block)
+        self._enter_next_block(else_block)
         self._compile_block(stmt.else_block)
+
+        self._enter_next_block(next_block)
 
     def _compile_binary_expr(self, expr):
         self._compile_expr(expr.left)
@@ -813,7 +817,29 @@ class Compiler:
         self._enter_next_block(next_)
 
     def _compile_for_stmt(self, stmt: ast.ForStmtAST):
-        pass
+        for expr in stmt.init_list.expr_list:
+            self._compile(expr, True)
+        
+        body = BasicBlock()
+        update = BasicBlock()
+        next_ = BasicBlock()
+
+        self.push_new_frame(FB_FOR_LOOP, update, next_, None)
+        
+        self._enter_next_block(body)
+        self._compile(stmt.test.test)
+        self._add_jump_op(POP_JUMP_IF_FALSE, next_, -1)
+
+        self._compile(stmt.block)
+        
+        self._enter_next_block(update)
+        for expr in stmt.update_list.expr_list:
+            self._compile(expr, True)
+        self._add_jump_op(JUMP_ABSOLUTE, body, -1)
+
+        self.pop_frame()
+
+        self._enter_next_block(next_)
 
     def _compile_foreach_stmt(self, stmt: ast.ForeachStmt):
         start = BasicBlock()
@@ -842,6 +868,8 @@ class Compiler:
             if frame.type in (FB_WHILE_LOOP, FB_FOREACH_LOOP):
                 self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
                 return
+            elif frame.type == FB_FOR_LOOP:
+                self._add_jump_op(JUMP_ABSOLUTE, frame.next, stmt.ln)
 
             index -= 1
             frame = self._unit.fb_stack[index]
@@ -867,6 +895,23 @@ class Compiler:
             self._compile(expr)
 
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
+
+    def _compile_unary_expr(self, expr: ast.UnaryExprAST):
+        right = expr.expr
+        
+        # check constant
+        if isinstance(right, ast.CellAST) and right.type == AIL_NUMBER:
+            right.value = expr.op + right.value
+            self._compile_const(right)
+            return
+
+        op = {
+            '+': UNARY_POSITIVE,
+            '-': UNARY_NEGATIVE,
+        }[expr.op]
+
+        self._compile(right)
+        self._add_instruction(op, 0, expr.ln)
 
     def _compile_list(self, expr: ast.ListAST):
         item_list = expr.items.item_list
@@ -1054,6 +1099,10 @@ class Compiler:
             self._unwind_frame_block(frame)
 
             if frame.type in (FB_WHILE_LOOP, FB_FOREACH_LOOP):
+                self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
+                return
+
+            elif frame.type == FB_FOR_LOOP:
                 self._add_jump_op(JUMP_ABSOLUTE, frame.start, stmt.ln)
                 return
 
@@ -1318,6 +1367,9 @@ class Compiler:
         elif isinstance(expr, ast.IfExpr):
             self._compile_if_expr(expr)
 
+        elif isinstance(expr, ast.UnaryExprAST):
+            self._compile_unary_expr(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
@@ -1367,6 +1419,9 @@ class Compiler:
 
         elif isinstance(node, ast.ReturnStmtAST):
             self._compile_return_stmt(node)
+
+        elif isinstance(node, ast.ForStmtAST):
+            self._compile_for_stmt(node)
 
         elif isinstance(node, ast.ForeachStmt):
             self._compile_foreach_stmt(node)

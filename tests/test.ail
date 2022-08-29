@@ -1,13 +1,17 @@
+begin
 
-class C {
-    func __init__(self, x=1) {
-        self.__x = x;
-    }
+// I LOVE YOU...
 
-    func f(__self) {
-        return __self.__x;
+for (y = 1.5, ln = ''; y > -1.5; y = y - 0.1, ln = '') {
+    for (x = -1.5; x < 1.5; x = x + 0.05) {
+        a = x * x + y * y - 1
+
+        if a * a * a - x * x * y * y * y <= 0 {
+            ln = ln + '@'
+        } else {
+            ln = ln + ' '
+        }
     }
+    print ln
 }
 
-
-print C().f()

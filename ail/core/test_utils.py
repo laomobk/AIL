@@ -360,10 +360,11 @@ def get_opcode_trader():
 
         if event == 'opcode':
             print(
-                'opcode %s %s in %s' %
+                'opcode %s\t%s %s\t\tin %s' %
                 (
                     frame.f_lasti,
                     opname[frame.f_code.co_code[frame.f_lasti]],
+                    frame.f_code.co_code[frame.f_lasti + 1],
                     frame.f_code.co_name,
                 )
             )
