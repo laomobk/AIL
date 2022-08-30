@@ -525,7 +525,7 @@ class Compiler:
         instr = Instruction()
         instr.is_jabs = True
         instr.target = target
-        instr.opcode = JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP
+        instr.opcode = POP_JUMP_IF_TRUE if condition else POP_JUMP_IF_FALSE
         instr.line = expr.ln
 
         self._unit.block.add_instruction(instr)
@@ -1731,10 +1731,10 @@ def test():
     elif mode == 'x':
         converter = ASTConverter()
         py_node = converter.convert_module(node)
-        code_py = compile(py_node, '<test>', 'exec').co_consts[0]
+        code_py = compile(py_node, '<test>', 'exec')
 
         assembler = Assembler()
-        code_ail = assembler.assemble(compiler.unit.top_block, compiler).co_consts[0]
+        code_ail = assembler.assemble(compiler.unit.top_block, compiler)
 
         print('compare code object: %s and %s' % (code_py, code_ail))
 
