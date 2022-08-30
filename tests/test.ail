@@ -1,30 +1,5 @@
 
-// I LOVE YOU...
-
-for (y = 1.5, ln = ''; y > -1.5; y = y - .1, ln = '') {
-    for (x = -1.5; x < 1.5; x = x + 0.05) {
-        a = x * x + y * y - 1
-        
-        if a * a * a - x * x * y * y * y <= 0 {
-            ln = ln + '@'
-        } else {
-            ln = ln + ' '
-        }
-    }
-    print ln
+for (i = 0; i < 10; i += 1) {
+    x;
 }
 
-/*
-for (y = 1.5, ln = ''; y > -1.5; y = y - 0.1, ln = '') {
-    for (x = -1.5; x < 1.5; x = x + 0.05) {
-        a = x * x + y * y - 1
-
-        if a * a * a - x * x * y * y * y <= 0 {
-            ln = ln + '@'
-        } else {
-            ln = ln + ' '
-        }
-    }
-    print ln
-}
-*/

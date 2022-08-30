@@ -1594,8 +1594,10 @@ class Assembler:
 
         while block is not None:
             for instr in block.instructions:
-                if instr.line > line:
+                if instr.line != line and instr.line > 0:
                     inc = instr.line - line
+                    if inc < 0:
+                        inc = 0x100 + inc
                     lnotab.append(ofs_inc)
                     lnotab.append(inc)
                     ofs_inc = 0
