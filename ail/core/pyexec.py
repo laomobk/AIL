@@ -116,7 +116,8 @@ def ail_eval(source, globals=None, locals=None):
     return eval(code, globals, locals)
 
 
-def ail_compile(source: str, filename: str, mode: str, flags: int = 0, compiler: int = CP_PY_AST):
+def ail_compile(
+        source: str, filename: str, mode: str, flags: int = 0, compiler: int = CP_PY_AST):
     if mode not in AIL_CP_MODES:
         raise ValueError('compile mode must in ()' % (repr(x) for x in AIL_CP_MODES))
 
