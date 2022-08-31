@@ -1,5 +1,5 @@
 from ast import literal_eval
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 from types import CodeType
 
 from . import asts as ast
@@ -494,6 +494,18 @@ class Compiler:
 
         self._compile(expr.right[-1])
         self._enter_next_block(end)
+
+    def _compile_logical_jump(
+            self, expr: Union[ast.AndTestAST, ast.OrTestAST]):
+        self._compile(expr.left)
+        right = BasicBlock()
+        next_ = BasicBlock()
+        
+        condition = isinstance(expr, ast.OrTestAST)
+
+        self._add_jump_op(
+                JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP,
+                next_, expr.ln)
 
     def _compile_if_jump(
             self, expr: ast.Expression, condition: int, target: BasicBlock):
