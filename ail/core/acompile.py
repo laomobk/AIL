@@ -504,8 +504,8 @@ class Compiler:
         condition = isinstance(expr, ast.OrTestAST)
 
         self._add_jump_op(
-                JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP,
-                next_, expr.ln)
+            JUMP_IF_TRUE_OR_POP if condition else JUMP_IF_FALSE_OR_POP,
+            next_, expr.ln)
 
     def _compile_if_jump(
             self, expr: ast.Expression, condition: int, target: BasicBlock):
@@ -566,6 +566,10 @@ class Compiler:
             self._compile_expr(right)
             opc = BIN_OP_MAP[op]
             self._add_instruction(opc, 0, right.ln)
+
+    def _compile_unary_not(self, expr: ast.NotTestAST):
+        self._compile(expr.expr)
+        self._add_instruction(UNARY_NOT, 0, expr.ln)
 
     def _compile_compare_expr(self, expr: ast.CmpTestAST):
         self._compile(expr.left)
@@ -1382,6 +1386,9 @@ class Compiler:
         elif isinstance(expr, ast.UnaryExprAST):
             self._compile_unary_expr(expr)
 
+        elif isinstance(expr, ast.NotTestAST):
+            self._compile_unary_not(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
@@ -1466,6 +1473,7 @@ class Compiler:
         for no, ln in enumerate(source.split('\n')):
             if ln:
                 return no + 1
+        return 1
 
     def enter_new_scope(
             self, symbol_table: SymbolTable, name: str, firstlineno: int = 1):

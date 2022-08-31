@@ -70,7 +70,9 @@ class Hello {
 Hello().helloWorld();
 ```
 
-#### 斐波那契数列
+以上例子均在 AIL 3.0 alpha 0 版本下测试通过
+
+### 斐波那契数列
 
 ```swift
 func fib(n) {
