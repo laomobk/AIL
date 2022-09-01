@@ -54,7 +54,7 @@ def ail_get_var(varname, global_, local, mult_var: bool=False):
             'name \'%s\' is not defined in neither global nor local scope' % varname)
 
 
-def ail_match(target, patterns: list, only_constant: bool) -> bool:
+def ail_match(target, patterns: list, only_constant: bool = False) -> bool:
     if only_constant:
         return target in patterns
 

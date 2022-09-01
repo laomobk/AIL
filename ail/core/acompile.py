@@ -30,6 +30,8 @@ BIN_OP_MAP = {
     '|': BINARY_OR,
     '&': BINARY_AND,
     '**': BINARY_POWER,
+    '<<': BINARY_LSHIFT,
+    '>>': BINARY_RSHIFT,
 }
 
 CMP_OP_MAP = {
@@ -916,23 +918,46 @@ class Compiler:
         self._compile_name(
             ast.CellAST(
                 'ail::match', AIL_IDENTIFIER, expr.ln, Symbol('ail::match', SYM_GLOBAL)))
-        self._add_instruction(DUP_TOP, 0, -1)
         self._compile(expr.target)
 
-        case_bb = BasicBlock()
-        next_case_bb = BasicBlock()
+        case_bb = BasicBlock() 
         next_ = BasicBlock()
 
         for case in expr.cases:
             self._enter_next_block(case_bb)
-            self._compile(case.patterns)
-            self._add_instruction(CALL_FUNCTION, 2, -1, stack_effect=-2)
-            self._add_jump_op(POP_JUMP_IF_FALSE, next_case_bb, -1)
+            next_case_bb = BasicBlock()
+            if len(case.patterns) > 0:
+                self._add_instruction(DUP_TOP_TWO, 0, case.ln)
+                for pattern in case.patterns:
+                    self._compile(pattern)
+                self._add_instruction(
+                    BUILD_TUPLE, len(case.patterns), -1, 
+                    stack_effect=-len(case.patterns)+1)
+                self._add_instruction(CALL_FUNCTION, 2, -1, stack_effect=-2)
+                self._add_jump_op(POP_JUMP_IF_FALSE, next_case_bb, -1)
             self._compile(case.expr)
+            self._add_instruction(ROT_THREE, 0, -1)
+
+            # pop the match function and target
+            self._add_instruction(POP_TOP, 0, -1)
+            self._add_instruction(POP_TOP, 0, -1)
+
             self._add_jump_op(JUMP_FORWARD, next_, -1)
             case_bb = next_case_bb
 
         self._enter_next_block(next_case_bb)
+
+        self._add_instruction(POP_TOP, 0, -1)
+        self._add_instruction(POP_TOP, 0, -1)
+
+        self._compile_call_name(
+            'py::UnhandledMatchError',
+            [ast.CellAST('unhandled match value', AIL_STRING, -1)],
+            -1, SYM_GLOBAL,
+        )
+        self._add_instruction(RAISE_VARARGS, 1, -1, stack_effect=-1)
+
+        self._enter_next_block(next_)
 
     def _compile_unary_expr(self, expr: ast.UnaryExprAST):
         right = expr.expr
@@ -1410,6 +1435,9 @@ class Compiler:
 
         elif isinstance(expr, ast.NotTestAST):
             self._compile_unary_not(expr)
+
+        elif isinstance(expr, ast.MatchExpr):
+            self._compile_match_expr(expr)
 
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
