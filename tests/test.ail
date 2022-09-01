@@ -1,5 +1,8 @@
 
-print match 3 {
-    1: 'a',
-    2: 'b'
+foreach _ in range(1000000) {
+    match x = 3 {
+        1: x,
+        2: x,
+        3: x,
+    }
 }

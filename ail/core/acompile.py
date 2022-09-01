@@ -79,6 +79,10 @@ FB_HANDLER_FINISH = 7
 FB_FOR_LOOP = 8
 
 
+def _new_cell_fast(value: str, _type: int, ln: int, scope: int):
+    return ast.CellAST(value, _type, ln, Symbol(value, scope))
+
+
 class CompilerError(Exception):
     pass
 
@@ -402,6 +406,30 @@ class Compiler:
 
         elif block.type == FB_HANDLER_FINISH:
             self._add_instruction(POP_EXCEPT, 0, -1)
+
+    def _compile_build_tuple(self, elements: List[ast.Expression]) -> bool:
+        all_constant = True
+
+        for elt in elements:
+            if not isinstance(elt, ast.CellAST) or elt.type == AIL_IDENTIFIER:
+                break
+        else:
+            all_constant = True
+
+        if all_constant:
+            ci = self._add_const(tuple(
+                (elt.value if elt.type == AIL_STRING else literal_eval(elt.value)
+                    for elt in elements)
+            ))
+            self._add_instruction(LOAD_CONST, ci, -1)
+
+        else:
+            for elt in elements:
+                self._compile(elt)
+            self._add_instruction(
+                BUILD_TUPLE, len(elements), -1, 
+                stack_effect=-len(elements)+1
+            )
 
     def _compile_const(self, cell: ast.CellAST):
         if cell.type == AIL_NUMBER:
@@ -928,11 +956,7 @@ class Compiler:
             next_case_bb = BasicBlock()
             if len(case.patterns) > 0:
                 self._add_instruction(DUP_TOP_TWO, 0, case.ln)
-                for pattern in case.patterns:
-                    self._compile(pattern)
-                self._add_instruction(
-                    BUILD_TUPLE, len(case.patterns), -1, 
-                    stack_effect=-len(case.patterns)+1)
+                self._compile_build_tuple(case.patterns)
                 self._add_instruction(CALL_FUNCTION, 2, -1, stack_effect=-2)
                 self._add_jump_op(POP_JUMP_IF_FALSE, next_case_bb, -1)
             self._compile(case.expr)
