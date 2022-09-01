@@ -912,6 +912,28 @@ class Compiler:
 
         self._add_instruction(RETURN_VALUE, 0, stmt.ln)
 
+    def _compile_match_expr(self, expr: ast.MatchExpr):
+        self._compile_name(
+            ast.CellAST(
+                'ail::match', AIL_IDENTIFIER, expr.ln, Symbol('ail::match', SYM_GLOBAL)))
+        self._add_instruction(DUP_TOP, 0, -1)
+        self._compile(expr.target)
+
+        case_bb = BasicBlock()
+        next_case_bb = BasicBlock()
+        next_ = BasicBlock()
+
+        for case in expr.cases:
+            self._enter_next_block(case_bb)
+            self._compile(case.patterns)
+            self._add_instruction(CALL_FUNCTION, 2, -1, stack_effect=-2)
+            self._add_jump_op(POP_JUMP_IF_FALSE, next_case_bb, -1)
+            self._compile(case.expr)
+            self._add_jump_op(JUMP_FORWARD, next_, -1)
+            case_bb = next_case_bb
+
+        self._enter_next_block(next_case_bb)
+
     def _compile_unary_expr(self, expr: ast.UnaryExprAST):
         right = expr.expr
         

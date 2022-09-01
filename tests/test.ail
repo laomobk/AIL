@@ -1,3 +1,4 @@
 
-print not a
-
+match x {
+    else: 1
+}
