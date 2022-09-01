@@ -118,6 +118,14 @@ def ail_eval(source, globals=None, locals=None):
 
 def ail_compile(
         source: str, filename: str, mode: str, flags: int = 0, compiler: int = CP_PY_AST):
+
+    if compiler == CP_PY_CODE:
+        from sys import version_info
+        if version_info.major < 3 or version_info.minor != 8:
+            raise PythonVersionError(
+                'native compile mode must run on Python 3.8.x, but got %s.%s.%s' %
+                (version_info.major, version_info.minor, version_info.micro))
+
     if mode not in AIL_CP_MODES:
         raise ValueError('compile mode must in ()' % (repr(x) for x in AIL_CP_MODES))
 
@@ -145,6 +153,10 @@ def ail_compile(
         raise ValueError('Invalid flag: %s' % flags)
 
     return code
+
+
+class PythonVersionError(Exception):
+    pass
 
 
 if __name__ == '__main__':
