@@ -1680,6 +1680,7 @@ def test():
     from .aparser import Parser, ASTConverter
     from .test_utils import CFGDisassembler, get_opcode_trader
     from .version import AIL_VERSION
+    from .namespace import fill_namespace
 
     mode = argv[-1] if len(argv) > 1 else 'd'
 
@@ -1736,16 +1737,12 @@ def test():
         print('--------------------\n')
 
         try:
+            ns = {}
+            fill_namespace(ns)
+
             exec(
                 code,
-                {
-                    'write': print,
-                    'fx': lambda a, b, c, d: print(a, b, c, d),
-                    'd': {'d': 4},
-                    'a': 1,
-                    'b': 2,
-                    'c': 3,
-                },
+                ns,
             )
         finally:
             settrace(None)
