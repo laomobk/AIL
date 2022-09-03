@@ -77,7 +77,7 @@ _VER_STR = '%s [%s]' % (
 
 _WELCOME_STR = \
     '''AIL %s %s(Python %s)
-Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' to exit.
+Type 'help(...)', '$help', 'copyright()', 'python_copyright()' to get more information, 'exit()' or '.exit' to exit.
 ''' % (
         _VER_STR,
         ('(%s) ' % commit_id) if commit_id else '',
@@ -233,10 +233,10 @@ class Shell:
                 if not in_edit:
                     more = self.__get_more_line_state(line)
 
-                if line == '$exit':
+                if line in ('$exit', '.exit'):
                     break
 
-                elif line == '$break':
+                elif line == ('$break', '.break'):
                     self.__buffer.clear()
                     self.__more_level = 0
                     in_more = False
