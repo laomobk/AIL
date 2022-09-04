@@ -331,6 +331,7 @@ class SymbolAnalyzer:
     def _visit_namespace_def(self, node: ast.NamespaceStmt, symbol: Symbol):
         table = FunctionSymbolTable(node.name)
         table.is_namespace = True
+        table.prev_table = self.__symbol_table
 
         analyzer = SymbolAnalyzer()
         table = analyzer.visit_and_make_symbol_table(
