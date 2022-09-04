@@ -47,7 +47,7 @@ class CellAST(Expression):
         self.symbol = symbol
 
     def __str__(self):
-        return '<Cell value = \'%s\'>' % self.value
+        return '<Cell value = \'%s\' | symbol %s>' % (self.value, self.symbol)
 
     __repr__ = __str__
 
@@ -263,7 +263,7 @@ class DoLoopStmtAST(Statement):
 class FunctionDefineAST(Statement, Expression):
     def __init__(self, name: str, param_list: ArgListAST,
                  block: BlockAST, bindto: str, ln: int,
-                 doc_str=''):
+                 doc_str='', symbol=None):
         self.name = name
         self.param_list = param_list
         self.block = block
@@ -275,7 +275,7 @@ class FunctionDefineAST(Statement, Expression):
         self.lambda_return = None
         self.type_comment = None
         self.scope_effect = True  # influence the scope or not
-        self.symbol = None
+        self.symbol = symbol
 
 
 class ClassDefineAST(Statement):
@@ -522,7 +522,7 @@ class ObjectPatternExpr(Expression):
 
 
 class NamespaceStmt(Statement):
-    def __init__(self, name, block, ln: int):
+    def __init__(self, name, block: BlockAST, ln: int):
         self.block = block
         self.ln = ln
         self.name = name

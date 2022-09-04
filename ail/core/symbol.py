@@ -332,6 +332,16 @@ class SymbolAnalyzer:
         table = FunctionSymbolTable(node.name)
         table.is_namespace = True
         table.prev_table = self.__symbol_table
+        _visit_param_list(
+            table, ast.ArgListAST(
+                [ast.ArgItemAST(
+                    ast.CellAST(
+                        'ail::_register_function', AIL_IDENTIFIER, -1,
+                        Symbol('ail::_register_function', SYM_LOCAL)),
+                    False, -1)],
+                -1
+            )
+        )
 
         analyzer = SymbolAnalyzer()
         table = analyzer.visit_and_make_symbol_table(

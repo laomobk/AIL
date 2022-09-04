@@ -983,6 +983,34 @@ class Compiler:
 
         self._enter_next_block(next_)
 
+    def _compile_namespace_stmt(self, stmt: ast.NamespaceStmt):
+        stmt.block.stmts.append(
+            ast.ReturnStmtAST(
+                ast.CallExprAST(
+                    _new_cell_fast('py::locals', AIL_IDENTIFIER, -1, SYM_GLOBAL),
+                    ast.ArgListAST([], -1),
+                    -1,
+                ),
+                -1
+            )
+        )
+
+        func_expr = ast.FunctionDefineAST(
+            stmt.name,
+            ast.ArgListAST(
+                [ast.ArgItemAST(
+                    _new_cell_fast('ail::_register_function', AIL_IDENTIFIER, -1, SYM_LOCAL),
+                    False, -1,
+                )],
+                stmt.ln
+            ),
+            stmt.block,
+            None, stmt.ln, symbol=stmt.symbol,
+        )
+
+        self._compile_call_name('ail::namespace', [func_expr], -1)
+        self._compile_store(_new_cell_fast(stmt.name, AIL_IDENTIFIER, -1, stmt.symbol.flag))
+
     def _compile_unary_expr(self, expr: ast.UnaryExprAST):
         right = expr.expr
         
@@ -1527,6 +1555,9 @@ class Compiler:
 
         elif isinstance(node, ast.ClassDefineAST):
             self._compile_class(node)
+
+        elif isinstance(node, ast.NamespaceStmt):
+            self._compile_namespace_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile
