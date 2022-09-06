@@ -1,6 +1,6 @@
 
 namespace N {
-    x = 1;
+    func f() {}
 }
 
-print N.x;
+print N.f;

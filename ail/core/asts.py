@@ -276,6 +276,7 @@ class FunctionDefineAST(Statement, Expression):
         self.type_comment = None
         self.scope_effect = True  # influence the scope or not
         self.symbol = symbol
+        self.namespace_body = False
 
 
 class ClassDefineAST(Statement):

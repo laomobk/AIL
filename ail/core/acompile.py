@@ -486,13 +486,13 @@ class Compiler:
             self._add_instruction(LOAD_NAME, ni, ln)
 
     def _compile_call_name(
-            self, name: str, args: List[ast.Expression], ln: int, ctx=None):
+            self, name: str, args: List[ast.Expression], ln: int, scope=None):
 
-        if ctx is None:
-            ctx = SYM_GLOBAL
+        if scope is None:
+            scope = SYM_GLOBAL
 
         left = ast.CellAST(name, AIL_IDENTIFIER, ln)
-        left.symbol = Symbol(name, ctx)
+        left.symbol = Symbol(name, scope)
 
         self._compile_call_expr(
             ast.CallExprAST(
@@ -1008,6 +1008,8 @@ class Compiler:
             None, stmt.ln, symbol=stmt.symbol,
         )
 
+        func_expr.namespace_body = True
+
         self._compile_call_name('ail::namespace', [func_expr], -1)
         self._compile_store(_new_cell_fast(stmt.name, AIL_IDENTIFIER, -1, stmt.symbol.flag))
 
@@ -1130,13 +1132,20 @@ class Compiler:
                         symbol=Symbol(cls.name, cls.symbol.flag))
         )
 
-    def _compile_function(self, func: ast.FunctionDefineAST, as_stmt=False):
+    def _compile_function(
+            self, func: ast.FunctionDefineAST, as_stmt=False, namespace_body=False):
         sym: SymbolTable = func.symbol.namespace
+
+        if namespace_body:
+            self._add_instruction(
+                LOAD_FAST, self._add_varname('ail::_register_function'), func.ln,
+            )
 
         frees = sym.freevars
         unit = self._unit
 
         b = BasicBlock()
+
         self.enter_new_scope(sym, func.name, func.block.ln)
         self._unit.block = b
         self._unit.top_block = b
@@ -1147,7 +1156,7 @@ class Compiler:
             # param.expr.value = param_name
             self._add_varname(param.expr.value)
 
-        self._compile_block(func.block)
+        self._compile_block(func.block, namespace_body=func.namespace_body)
 
         self._add_instruction(
             LOAD_CONST, self._add_const(None), -1
@@ -1201,10 +1210,19 @@ class Compiler:
             stack_effect=effect,
         )
 
-        if as_stmt:
+        if  namespace_body:
+            self._add_instruction(DUP_TOP, 0, -1)
+
+        if as_stmt or namespace_body:
             cell = ast.CellAST(func.name, AIL_IDENTIFIER, func.ln)
             cell.symbol = func.symbol
             self._compile_store(cell)
+
+        if namespace_body:
+            self._add_instruction(
+                CALL_FUNCTION, 1, -1, stack_effect=-1
+            )
+            self._add_instruction(POP_TOP, 0, -1)
 
     def _compile_continue_stmt(self, stmt: ast.ContinueStmtAST):
         frame = self._unit.fb_stack[-1]
@@ -1498,13 +1516,13 @@ class Compiler:
             raise Warning('Compiler: Node %s (value = %s) cannot be compiled' %
                           (type(expr), expr))
 
-    def _compile_block(self, block: ast.BlockAST):
+    def _compile_block(self, block: ast.BlockAST, namespace_body=False):
         stmts = block.stmts
 
         for stmt in stmts:
-            self._compile(stmt, as_stmt=True)
+            self._compile(stmt, as_stmt=True, namespace_body=namespace_body)
 
-    def _compile(self, node: ast.AST, as_stmt: bool = False):
+    def _compile(self, node: ast.AST, as_stmt: bool = False, namespace_body=False):
         if isinstance(node, ast.BlockAST) or isinstance(node, ast.ProgramBlock):
             self._compile_block(node)
 
@@ -1536,7 +1554,7 @@ class Compiler:
             self._compile_continue_stmt(node)
 
         elif isinstance(node, ast.FunctionDefineAST):
-            self._compile_function(node, as_stmt)
+            self._compile_function(node, as_stmt, namespace_body)
 
         elif isinstance(node, ast.ReturnStmtAST):
             self._compile_return_stmt(node)

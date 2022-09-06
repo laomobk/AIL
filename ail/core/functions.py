@@ -23,7 +23,9 @@ def convert_to_namespace(namespace_func):
 
     namespace_class = copy(Namespace)
     namespace_class.__name__ = 'Namespace::%s' % namespace_func.__name__
-    ns = namespace_class(namespace_func.__name__, func_locals)
+    ns = namespace_class(
+        namespace_func.__name__, func_locals, {f.__name__: f for f in inside_functions}
+    )
     if ns.__cells_dict__:
         namespace_class.__setattr__ = Namespace.__setattr__for_cell__
     return ns
