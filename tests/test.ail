@@ -1,5 +1,14 @@
 
-func deco(fn) {
+func f(*a) {
+    print a;
+}
+
+x = (1, 2, 3)
+
+f(*x, s)
+
+/*
+func a(fn) {
     func wrapper(*args) {
         print 'call', fn;
         ret = fn(*args);
@@ -9,10 +18,11 @@ func deco(fn) {
 }
 
 
-@deco
+@a
 func f() {
     print 'hello Klee';
 }
 
 
 f()
+*/

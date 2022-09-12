@@ -1136,6 +1136,10 @@ class Compiler:
             self, func: ast.FunctionDefineAST, as_stmt=False, namespace_body=False):
         sym: SymbolTable = func.symbol.namespace
 
+        got_decorator = len(func.decorator) > 0
+        for deco in func.decorator:
+            self._compile(deco)
+
         if namespace_body:
             self._add_instruction(
                 LOAD_FAST, self._add_varname('ail::_register_function'), func.ln,
@@ -1210,12 +1214,10 @@ class Compiler:
             stack_effect=effect,
         )
 
-        if  namespace_body:
+        if namespace_body:
             self._add_instruction(DUP_TOP, 0, -1)
 
-        for deco in func.decorator:
-            self._compile(deco)
-            self._add_instruction(ROT_TWO, 0, -1)
+        for _ in func.decorator:
             self._add_instruction(
                 CALL_FUNCTION, 1, -1, 
                 stack_effect=0
