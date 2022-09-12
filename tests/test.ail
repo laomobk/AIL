@@ -1,6 +1,18 @@
 
-namespace N {
-    func f() {}
+func deco(fn) {
+    func wrapper(*args) {
+        print 'call', fn;
+        ret = fn(*args);
+        return ret;
+    }
+    return wrapper;
 }
 
-print N.f;
+
+@deco
+func f() {
+    print 'hello Klee';
+}
+
+
+f()

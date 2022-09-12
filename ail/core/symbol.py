@@ -620,6 +620,10 @@ class SymbolAnalyzer:
                 self.__add_symbol(bandto_symbol)
 
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
+
+            for deco in node.decorator:
+                self._visit(deco)
+
             if node.scope_effect:
                 self.__add_store_symbol(s)
             self.__block_queue.append((s, node))

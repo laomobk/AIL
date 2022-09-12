@@ -1213,6 +1213,14 @@ class Compiler:
         if  namespace_body:
             self._add_instruction(DUP_TOP, 0, -1)
 
+        for deco in func.decorator:
+            self._compile(deco)
+            self._add_instruction(ROT_TWO, 0, -1)
+            self._add_instruction(
+                CALL_FUNCTION, 1, -1, 
+                stack_effect=0
+            )
+
         if as_stmt or namespace_body:
             cell = ast.CellAST(func.name, AIL_IDENTIFIER, func.ln)
             cell.symbol = func.symbol
