@@ -1,13 +1,4 @@
 
-func f(*a) {
-    print a;
-}
-
-x = (1, 2, 3)
-
-f(*x, *x)
-
-/*
 func a(fn) {
     func wrapper(*args) {
         print 'call', fn;
@@ -25,4 +16,3 @@ func f() {
 
 
 f()
-*/

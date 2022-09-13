@@ -1779,13 +1779,15 @@ class Assembler:
     def _make_code(self, code_str: bytes, lnotab: bytes, extra_flags=0) -> CodeType:
         unit = self._task.compiler.unit
 
+        co_flags = extra_flags | unit.flags | self._compute_flags()
+
         return CodeType(
             unit.argcount,
             unit.posonlyargcount,
             unit.kwonlyargcount,
             unit.nlocals,
             unit.stack_size,
-            unit.flags | extra_flags,
+            co_flags,
             code_str,
             tuple(unit.consts),
             tuple(unit.names),
@@ -1813,7 +1815,8 @@ class Assembler:
         self._task.block = block
         self._task.compiler = compiler
 
-        return self._assemble_block(extra_flags)
+        co = self._assemble_block(extra_flags)
+        return co
 
 
 def test():
