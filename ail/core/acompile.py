@@ -1154,11 +1154,18 @@ class Compiler:
         self._unit.block = b
         self._unit.top_block = b
 
+        co_flags = 0
+
         for param in func.param_list.arg_list:
             assert isinstance(param.expr, ast.CellAST)
             # param_name = self._do_mangle(param.expr.value)
             # param.expr.value = param_name
             self._add_varname(param.expr.value)
+
+            if param.star:
+                co_flags |= 0x04
+            if param.kw_star:
+                co_flags |= 0x08
 
         self._compile_block(func.block, namespace_body=func.namespace_body)
 
@@ -1168,7 +1175,7 @@ class Compiler:
         self._add_instruction(RETURN_VALUE, 0, -1)
 
         assembler = Assembler()
-        code = assembler.assemble(self._unit.top_block, self)
+        code = assembler.assemble(self._unit.top_block, self, co_flags)
 
         self._unit = unit
 
@@ -1763,12 +1770,13 @@ class Assembler:
     def _compute_flags(self) -> int:
         sym = self._task.compiler.unit.scope
         flags = 0
+
         if isinstance(sym, FunctionSymbolTable):
             flags |= CO_NEWLOCALS | CO_OPTIMIZED
 
         return flags
 
-    def _make_code(self, code_str: bytes, lnotab: bytes) -> CodeType:
+    def _make_code(self, code_str: bytes, lnotab: bytes, extra_flags=0) -> CodeType:
         unit = self._task.compiler.unit
 
         return CodeType(
@@ -1777,7 +1785,7 @@ class Assembler:
             unit.kwonlyargcount,
             unit.nlocals,
             unit.stack_size,
-            unit.flags,
+            unit.flags | extra_flags,
             code_str,
             tuple(unit.consts),
             tuple(unit.names),
@@ -1790,21 +1798,22 @@ class Assembler:
             tuple(unit.cellvars),
         )
 
-    def _assemble_block(self) -> CodeType:
+    def _assemble_block(self, extra_flags: int = 0) -> CodeType:
         self._assemble_jump_offset()
         code_str = self._make_bytecode_sequence()
         lnotab = self._make_lnotab(self._task.compiler.unit.firstlineno)
 
-        return self._make_code(code_str, lnotab)
+        return self._make_code(code_str, lnotab, extra_flags)
 
-    def assemble(self, block: BasicBlock, compiler: Compiler) -> CodeType:
+    def assemble(
+            self, block: BasicBlock, compiler: Compiler, extra_flags=0) -> CodeType:
         self._task = AssembleTask()
         self._wish_table.clear()
 
         self._task.block = block
         self._task.compiler = compiler
 
-        return self._assemble_block()
+        return self._assemble_block(extra_flags)
 
 
 def test():

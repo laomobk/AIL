@@ -5,7 +5,7 @@ func f(*a) {
 
 x = (1, 2, 3)
 
-f(*x, s)
+f(*x, *x)
 
 /*
 func a(fn) {

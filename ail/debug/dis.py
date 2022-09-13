@@ -393,6 +393,7 @@ def _disassemble_recursive(co: types.CodeType, *, file=None, depth=None):
     print('code: [consts: %s]' % (co.co_consts,))
     print('code: [nlocals: %s]' % (co.co_nlocals,))
     print('code: [argcount: %s]' % (co.co_argcount,))
+    print('code: [flags: %s]' % (co.co_flags,))
 
     disassemble(co, file=file)
     if depth is None or depth > 0:
