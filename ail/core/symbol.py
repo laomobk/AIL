@@ -51,8 +51,11 @@ def _visit_param_list(
         symbol.from_flag = FROM_PARAMETER
         symbol_table.add_symbol(symbol)
         param.expr.symbol = symbol
+        symbol_table.store_symbols.append(symbol)
         symbol_table.local_maybe.add(param.expr.value)
-        symbol_table.argcount += 1
+
+        if not param.star and not param.kw_star:
+            symbol_table.argcount += 1
 
 
 class Symbol:
