@@ -638,6 +638,10 @@ class SymbolAnalyzer:
             if node.bases:
                 for base in node.bases:
                     self._visit(base)
+
+            for deco in node.decorator:
+                self._visit(deco)
+
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)
             self.__add_store_symbol(s)
             self.__block_queue.append((s, node))

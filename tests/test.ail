@@ -13,9 +13,7 @@ func a(prompt='call func') {
 
 
 @a()
-func f() {
-    print 'hello Klee';
-}
+class C {}
 
 
-f()
+C()

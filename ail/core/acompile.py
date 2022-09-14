@@ -1070,6 +1070,9 @@ class Compiler:
         )
 
     def _compile_class(self, cls: ast.ClassDefineAST, as_stmt=False):
+        for deco in cls.decorator:
+            self._compile(deco)
+
         cls.func.block.stmts.insert(
             0,
             ast.AssignExprAST(
@@ -1130,6 +1133,9 @@ class Compiler:
                 cls.ln
             ), True
         )
+
+        for _ in cls.decorator:
+            self._add_instruction(CALL_FUNCTION, 1, -1, stack_effect=0)
 
         self._compile_store(
             ast.CellAST(cls.name, AIL_IDENTIFIER, cls.ln,
