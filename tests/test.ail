@@ -1,15 +1,18 @@
 
-func a(fn) {
-    func wrapper(*args) {
-        print 'call', fn;
-        ret = fn(*args);
-        return ret;
+func a(prompt='call') {
+    func warp(fn) {
+        func wrapper(*args) {
+            print prompt, fn;
+            ret = fn(*args);
+            return ret;
+        }
+        return wrapper;
     }
-    return wrapper;
+    return wrap;
 }
 
 
-@a
+@a()
 func f() {
     print 'hello Klee';
 }
