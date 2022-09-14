@@ -1,19 +1,9 @@
 
-func a(prompt='call func') {
-    func warp(fn) {
-        func wrapper(*args) {
-            print prompt, fn;
-            ret = fn(*args);
-            return ret;
-        }
-        return wrapper;
-    }
-    return warp;
+import! dataclasses
+
+@dataclasses.dataclass
+class C {
+    x = 1
 }
 
-
-@a()
-class C {}
-
-
-C()
+print C()

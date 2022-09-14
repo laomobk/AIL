@@ -598,6 +598,7 @@ class PyImportAlias(AST):
     def __init__(self, name: str, alias: str, ln: int):
         self.name = name
         self.alias = alias
+        self.symbol = None
         self.ln = ln
 
 
