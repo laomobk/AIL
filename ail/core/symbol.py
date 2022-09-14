@@ -114,7 +114,7 @@ class SymbolTable:
         for s in self.store_symbols:
             if s.name == symbol.name:
                 return True
-        return False
+        return self.prev_table._check_free(symbol)
 
     def is_free(self, symbol: Symbol) -> int:
         assert self.prev_table is not None

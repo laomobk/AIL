@@ -1,5 +1,5 @@
 
-func a(prompt='call') {
+func a(prompt='call func') {
     func warp(fn) {
         func wrapper(*args) {
             print prompt, fn;
@@ -8,7 +8,7 @@ func a(prompt='call') {
         }
         return wrapper;
     }
-    return wrap;
+    return warp;
 }
 
 

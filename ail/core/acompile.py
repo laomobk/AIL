@@ -331,9 +331,13 @@ class Compiler:
 
     def _new_call_name(self, name: str, args: list, ln: int):
         # TODO: finish it.
-        self._add_instruction(LOAD_GLOBAL)
+        self._add_instruction(LOAD_GLOBAL, self._add_name(name), ln)
         for expr in args:
             self._compile(expr)
+        self._add_instruction(
+            CALL_FUNCTION, len(args), ln,
+            stack_effect=-len(args)+1
+        )
 
     def _add_instruction(
             self, op: int, arg: int, ln: int,
