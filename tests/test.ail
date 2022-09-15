@@ -1,9 +1,4 @@
 
-import! dataclasses
+from os import name
 
-@dataclasses.dataclass
-class C {
-    x = 1
-}
-
-print C()
+print name

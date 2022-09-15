@@ -1498,6 +1498,22 @@ class Compiler:
                 _new_cell_fast(
                     alias, AIL_IDENTIFIER, stmt.ln, item.symbol.flag))
 
+    def _compile_py_import_from_stmt(self, stmt: ast.PyImportFromStmt):
+        self._add_instruction(LOAD_CONST, self._add_const(0), stmt.ln)
+        self._add_instruction(
+            LOAD_CONST, self._add_const(
+                tuple((item.name for item in stmt.names))
+            ), -1
+        )
+        self._add_instruction(IMPORT_NAME, self._add_name(stmt.module), -1)
+
+        for name in stmt.names:
+            alias = name.alias if name.alias else name.name
+            self._add_instruction(IMPORT_FROM, self._add_name(name.name), -1)
+            self._compile_store(
+                _new_cell_fast(alias, AIL_IDENTIFIER, -1, name.symbol.flag)
+            )
+
     def _compile_if_expr(self, expr: ast.IfExpr):
         body = BasicBlock()
         orelse = BasicBlock()
@@ -1616,6 +1632,9 @@ class Compiler:
 
         elif isinstance(node, ast.PyImportStmt):
             self._compile_py_import_stmt(node)
+
+        elif isinstance(node, ast.PyImportFromStmt):
+            self._compile_py_import_from_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

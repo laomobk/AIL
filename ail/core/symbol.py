@@ -420,7 +420,8 @@ class SymbolAnalyzer:
             else:
                 name = item.alias
             s = self._analyze_and_fill_symbol(Symbol(name), CTX_STORE, True)
-            self.__add_store_symboll(s)
+            item.symbol = s
+            self.__add_store_symbol(s)
 
     def _visit_import_stmt(self, stmt: ast.ImportStmtAST):
         if not stmt.members:
