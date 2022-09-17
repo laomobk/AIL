@@ -209,13 +209,6 @@ AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
 
 文档 [AIL语句](./docs/reference/statements.md) 简要地描述了 AIL 的语句
 
-## AIL 代码转换细节
-
-想要了解 AIL 代码是如何转换成 Python 语法树的，可以查看：
-
- [ail_in_python](docs/develop/ail_in_python.md)
-
-
 ## VIM 语法高亮支持
 
 AIL 为 vim 专门编写了其语法高亮文件，写代码的时候妈妈再也不会担心敲错关键字了！
