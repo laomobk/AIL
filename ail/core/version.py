@@ -14,7 +14,7 @@ from .._config import CORE_PATH
 
 AIL_MAIN_VERSION = 3
 AIL_SUB_VERSION = [0]
-AIL_VERSION_STATE = 'alpha 0'
+AIL_VERSION_STATE = 'alpha 1'
 AIL_VERSION_NAME = 'Lumine'
 
 AIL_VERSION = '%s.%s %s' % (
