@@ -1,24 +1,13 @@
 
-// try { x = 1; } catch Exception e { print e; } finally { CAP(x); }
+from dataclasses import dataclass
 
 
-temp = v[k];
-v[k] = v[k + 1];
-v[k + 1] = tmp
+@dataclass
+class C {
+    a: int;
+    b: float;
+}
 
 
-/*
-
-lw $15, 0
-lw $16, 4
-sw $15, 4
-sw $16, 0
-
---
-
-lw $15, 0
-sw $4, 0
-sw $0, 15
-
-*/
+print C(1, 2).a + C(3, 4).b;
 

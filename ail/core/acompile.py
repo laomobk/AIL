@@ -247,6 +247,8 @@ class CompileUnit:
 
         self._cur_stack_size = 0
 
+        self.annotations_setup = False
+
 
 class Compiler:
     class __FrameStackManager:
@@ -1514,6 +1516,31 @@ class Compiler:
                 _new_cell_fast(alias, AIL_IDENTIFIER, -1, name.symbol.flag)
             )
 
+    def _compile_annotation_assign_stmt(self, stmt: ast.AnnAssignStmt):
+        if not self._unit.annotations_setup:
+            self._add_instruction(SETUP_ANNOTATIONS, 0, stmt.ln)
+            self._unit.annotations_setup = True
+        
+        if stmt.value is not None:
+            self._compile(stmt.value)
+            self._compile_store(stmt.target)
+
+        if not isinstance(stmt.target, ast.CellAST):
+            return
+        
+        self._compile(stmt.annotation)
+        self._add_instruction(
+            LOAD_NAME, self._add_name('__annotations__'), -1
+        )
+
+        assert isinstance(stmt.target, ast.CellAST)
+
+        self._add_instruction(
+            LOAD_CONST, self._add_const(stmt.target.value), -1
+        )
+
+        self._add_instruction(STORE_SUBSCR, 0, -1)
+
     def _compile_if_expr(self, expr: ast.IfExpr):
         body = BasicBlock()
         orelse = BasicBlock()
@@ -1635,6 +1662,9 @@ class Compiler:
 
         elif isinstance(node, ast.PyImportFromStmt):
             self._compile_py_import_from_stmt(node)
+
+        elif isinstance(node, ast.AnnAssignStmt):
+            self._compile_annotation_assign_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

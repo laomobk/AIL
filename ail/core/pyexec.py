@@ -61,7 +61,8 @@ def _ail_exec(
     fill_namespace(globals, name, main, filename=filename)
 
     if compiler == CP_PY_CODE:
-        print('(native compile mode)')
+        print('Warning: AIL is running in self compilation mode, '
+              'some features in may not supported.', file=stderr)
 
     exec(code, globals)
     return 0
