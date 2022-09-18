@@ -189,7 +189,7 @@ class Shell:
 
             exec(c, self.__pyc_globals)
         except Exception:
-            print_py_traceback(False)
+            print_py_traceback()
 
     __run_single_line = __run_single_line_pyc
 
