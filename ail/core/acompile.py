@@ -785,6 +785,22 @@ class Compiler:
 
         self._compile_store(expr.left)
 
+    def _compile_object_pattern(self, expr: ast.ObjectPatternExpr):
+        self._compile_call_name(
+            'ail::ObjectPattern',
+            [
+                expr.left,
+                ast.DictAST(
+                    [_new_cell_fast(val, AIL_STRING, -1, SYM_NORMAL)
+                        for val in expr.keys],
+                    expr.values,
+                    expr.ln,
+                ),
+            ],
+            expr.ln,
+            SYM_GLOBAL,
+        )
+
     def _compile_store(self, target: ast.Expression):
         if isinstance(target, ast.TupleAST):
             left = target.items
@@ -1635,6 +1651,9 @@ class Compiler:
 
         elif isinstance(node, ast.PyImportFromStmt):
             self._compile_py_import_from_stmt(node)
+
+        elif isinstance(node, ast.ObjectPatternExpr):
+            self._compile_object_pattern(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

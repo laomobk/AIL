@@ -1,4 +1,5 @@
 
-from os import name
-
-print name
+print int! {
+    x: 1,
+    y: 2,
+}
