@@ -1,5 +1,13 @@
 
-print int! {
-    x: 1,
-    y: 2,
+from dataclasses import dataclass
+
+
+@dataclass
+class C {
+    a: int;
+    b: float;
 }
+
+
+print C(1, 2).a + C(3, 4).b;
+

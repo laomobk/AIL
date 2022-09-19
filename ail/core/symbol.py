@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Set, Union
 
 from . import asts as ast
 
@@ -243,7 +243,17 @@ class SymbolAnalyzer:
         return symbol
 
     def _visit_assign_expr(
-            self, expr: ast.AssignExprAST, ignore_nonlocal: bool = False):
+            self, expr: Union[ast.AssignExprAST, ast.AnnAssignStmt], 
+            ignore_nonlocal: bool = False):
+
+        if isinstance(expr, ast.AnnAssignStmt):
+            self._visit(expr.annotation)
+            expr = ast.AssignExprAST(
+                expr.target,
+                expr.value,
+                expr.ln,
+            )
+
         self._visit(expr.right)
 
         left = []
@@ -606,6 +616,9 @@ class SymbolAnalyzer:
 
         elif isinstance(node, ast.TestExprAST):
             self._visit(node.test)
+
+        elif isinstance(node, ast.AnnAssignStmt):
+            self._visit_assign_expr(node)
 
         elif isinstance(node, ast.NamespaceStmt):
             s = self._analyze_and_fill_symbol(Symbol(node.name), CTX_STORE)

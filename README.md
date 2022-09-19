@@ -1,4 +1,4 @@
-# AIL 3.0 alpha 0
+# AIL 3.0 alpha 1
 
 
 [AIL 3.0 Lumine 版本更新内容](./docs/whatsnew.md)
@@ -9,7 +9,7 @@
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
 ![python badge](https://img.shields.io/badge/python-3.7%2B-blue)
-![version badge](https://img.shields.io/badge/version-2.3%20alpha-success)
+![version badge](https://img.shields.io/badge/version-3.0%20alpha-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
 AIL 是一门开源的运行在 Python 虚拟机上的面向对象的编程语言。支持 Python 的大多数特性的同时，还额外增加了如 match 表达式，匿名函数，名称空间等 AIL 自身的特性。
@@ -208,13 +208,6 @@ AIL 的文档仍然在完善中。具体的进度可以在 `/docs/` 中查看。
 ## AIL 语句
 
 文档 [AIL语句](./docs/reference/statements.md) 简要地描述了 AIL 的语句
-
-## AIL 代码转换细节
-
-想要了解 AIL 代码是如何转换成 Python 语法树的，可以查看：
-
- [ail_in_python](docs/develop/ail_in_python.md)
-
 
 ## VIM 语法高亮支持
 
