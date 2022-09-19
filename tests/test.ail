@@ -1,13 +1,2 @@
 
-from dataclasses import dataclass
-
-
-@dataclass
-class C {
-    a: int;
-    b: float;
-}
-
-
-print C(1, 2).a + C(3, 4).b;
-
+load 'py_this'

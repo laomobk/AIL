@@ -1557,6 +1557,34 @@ class Compiler:
 
         self._add_instruction(STORE_SUBSCR, 0, -1)
 
+    def _compile_load_stmt(self, stmt: ast.LoadStmtAST):
+        ln = stmt.ln
+
+        self._compile_call_name(
+            '__ail_import__',
+            [
+                _new_cell_fast('0', AIL_NUMBER, ln, 0),
+                _new_cell_fast(stmt.path, AIL_STRING, ln, 0),
+                ast.CallExprAST(
+                    _new_cell_fast('py::locals', AIL_IDENTIFIER, -1, SYM_GLOBAL),
+                    ast.ArgListAST([], -1),
+                    -1,
+                )
+            ],
+            ln,
+            SYM_GLOBAL,
+        )
+
+    def _compile_import_stmt(self, stmt: ast.ImportStmtAST):
+        members = stmt.members
+        if members is None:
+            members = []
+
+        if len(members) == 0:
+            target = _new_cell_fast(
+                stmt.name, AIL_IDENTIFIER, stmt.ln,
+            )
+
     def _compile_if_expr(self, expr: ast.IfExpr):
         body = BasicBlock()
         orelse = BasicBlock()
@@ -1684,6 +1712,9 @@ class Compiler:
 
         elif isinstance(node, ast.ObjectPatternExpr):
             self._compile_object_pattern(node)
+
+        elif isinstance(node, ast.LoadStmtAST):
+            self._compile_load_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile
