@@ -567,7 +567,7 @@ class SymbolAnalyzer:
             self._visit(node.msg)
             for val in node.value_list.value_list:
                 val: ast.CellAST
-                s = self._analyze_and_fill_symbol(Symbol(val.value), CTX_LOAD, True)
+                s = self._analyze_and_fill_symbol(Symbol(val), CTX_LOAD, True)
                 self.__add_symbol(s)
 
         elif isinstance(node, ast.DoLoopStmtAST):
