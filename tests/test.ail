@@ -1,2 +1,4 @@
 
-load 'py_this'
+import 'maptools' (mapwith)
+
+print mapwith

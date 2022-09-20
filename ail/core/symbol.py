@@ -437,12 +437,13 @@ class SymbolAnalyzer:
         if not stmt.members:
             s = self._analyze_and_fill_symbol(Symbol(stmt.name), CTX_STORE, True)
             self.__add_store_symbol(s)
+            stmt.symbol = s
             return
 
         for m in stmt.members:
             s = self._analyze_and_fill_symbol(Symbol(m), CTX_STORE, True)
             self.__add_store_symbol(s)
-            return
+            stmt.member_symbols.append(s)
 
     def _visit_try_stmt(self, stmt: ast.TryCatchStmtAST):
         self._visit(stmt.try_block)

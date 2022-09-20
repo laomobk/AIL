@@ -117,7 +117,7 @@ class AILImporter:
                         namespace[member] = v
                     return
 
-                namespace[alias] = module_obj
+                namespace[name] = module_obj
         finally:
             self.__loading_modules.remove(path)
 

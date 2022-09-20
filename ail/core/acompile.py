@@ -1583,7 +1583,37 @@ class Compiler:
         if len(members) == 0:
             target = _new_cell_fast(
                 stmt.name, AIL_IDENTIFIER, stmt.ln,
+                stmt.symbol.flag
             )
+        else:
+            target = ast.TupleAST(
+                [_new_cell_fast(
+                        name, AIL_IDENTIFIER, -1, stmt.member_symbols[i].flag)
+                    for i, name in enumerate(stmt.members)],
+                True,
+                stmt.ln,
+            )
+
+        self._compile_call_name(
+            '__ail_import__',
+            [
+                _new_cell_fast('1', AIL_NUMBER, -1, 0),
+                _new_cell_fast(stmt.path, AIL_STRING, -1, 0),
+                _new_cell_fast('None', AIL_IDENTIFIER, -1, 0),
+                _new_cell_fast(stmt.name, AIL_STRING, -1, 0),
+                ast.ListAST(
+                    ast.ItemListAST(
+                        [_new_cell_fast(m, AIL_STRING, -1, 0) for m in stmt.members],
+                        -1,
+                    ),
+                    -1,
+                )
+            ],
+            -1,
+            SYM_GLOBAL,
+        )
+
+        self._compile_store(target)
 
     def _compile_if_expr(self, expr: ast.IfExpr):
         body = BasicBlock()
@@ -1715,6 +1745,9 @@ class Compiler:
 
         elif isinstance(node, ast.LoadStmtAST):
             self._compile_load_stmt(node)
+
+        elif isinstance(node, ast.ImportStmtAST):
+            self._compile_import_stmt(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

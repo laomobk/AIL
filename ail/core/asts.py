@@ -393,6 +393,8 @@ class ImportStmtAST(Statement):
         self.name = name
         self.ln = ln
         self.members = members if members is not None else list()
+        self.member_symbols = list()
+        self.symbol = None
 
 
 class StructDefineAST(Statement):
