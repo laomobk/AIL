@@ -92,10 +92,13 @@ def _get_module_name(full_name: str):
 
 def ail_import(
         mode: int, name: str, namespace: dict, 
-        alias: str=None, members: List[str] = []):
+        alias: str=None, members: List[str] = None):
     """
     :param mode: 0 -> load | 1 -> import
     """
+    if members is None:
+        members = []
+
     if alias is None:
         alias = name
 
@@ -106,7 +109,13 @@ def ail_import(
     
     module_name = _get_module_name(name)
     if mode == 1:
-        return namespace.values() if members else namespace[module_name]
+        if len(members) > 1:
+            return [member for member in namespace]
+        elif len(members) == 1:
+            return namespace[members[0]]
+        else:
+            return namespace[name]
+
     return None
 
 
