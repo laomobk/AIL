@@ -8,7 +8,7 @@
 [AIL 2.2 Klee 版本更新内容](./docs/versions/2_2.md)
 
 ![AIL badge](https://img.shields.io/badge/AIL-Programming%20Language-blue)
-![python badge](https://img.shields.io/badge/python-3.8-blue)
+![python badge](https://img.shields.io/badge/python-3.7%2B-blue)
 ![version badge](https://img.shields.io/badge/version-3.0%20alpha-success)
 ![license badge](https://img.shields.io/badge/license-GPL-blue)
 
