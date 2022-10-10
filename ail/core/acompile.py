@@ -77,6 +77,7 @@ FB_FINALLY_TRY = 5
 FB_EXCEPT = 6
 FB_HANDLER_FINISH = 7
 FB_FOR_LOOP = 8
+FB_WITH = 9
 
 
 def _new_cell_fast(value: str, _type: int, ln: int, scope: int):
@@ -412,6 +413,10 @@ class Compiler:
 
         elif block.type == FB_HANDLER_FINISH:
             self._add_instruction(POP_EXCEPT, 0, -1)
+
+        elif block.type == FB_WITH:
+            pass
+
 
     def _compile_build_tuple(self, elements: List[ast.Expression]) -> bool:
         all_constant = True
@@ -1438,11 +1443,40 @@ class Compiler:
             self._compile(stmt.try_block)
         else:
             self._compile_try_catch_stmt(stmt)
+
         self.pop_frame()
 
         self._add_instruction(POP_BLOCK, 0, -1)
         self._add_instruction(BEGIN_FINALLY, 0, -1)
         self._enter_next_block(finally_bblock)
+
+    def _compile_with(self, stmt: ast.WithStmt, pos: int = 0):
+        finally_block = BasicBlock()
+        body = BasicBlock()
+
+        item = stmt.items[pos]
+        self._compile(item.context_expr)
+        self._add_jump_op(SETUP_WITH, finally_block, -1)
+
+        if item.optional_var is None:
+            self._add_instruction(POP_TOP, 0, -1)
+        else:
+            self._compile_store(item.optional_var)
+        
+        self._enter_next_block(body)
+        self.push_new_frame(FB_WITH, None, None, finally_block)
+
+        if len(stmt.items) > pos:
+            pos += 1
+            self._compile_with(stmt, pos)
+            return
+
+        self._compile_block(stmt.body)
+
+        self.pop_frame()
+        
+        self._enter_next_block(finally_block)
+        self.push_new_frame(FB_FINALLY_END, 0, )
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
