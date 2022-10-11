@@ -1,5 +1,5 @@
 from ast import literal_eval
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union, final
 from types import CodeType
 
 from . import asts as ast
@@ -1466,17 +1466,25 @@ class Compiler:
         self._enter_next_block(body)
         self.push_new_frame(FB_WITH, None, None, finally_block)
 
-        if len(stmt.items) > pos:
+        if len(stmt.items) - 1 > pos:
             pos += 1
             self._compile_with(stmt, pos)
             return
 
+        self._add_instruction(POP_BLOCK, 0, -1)  # pop try block
+        self._add_instruction(BEGIN_FINALLY, 0, -1)
         self._compile_block(stmt.body)
 
         self.pop_frame()
         
         self._enter_next_block(finally_block)
-        self.push_new_frame(FB_FINALLY_END, 0, )
+        self.push_new_frame(FB_FINALLY_END, 0, finally_block, finally_block)
+
+        self._add_instruction(WITH_CLEANUP_START, 0, -1)
+        self._add_instruction(WITH_CLEANUP_FINISH, 0, -1)
+
+        self._add_instruction(END_FINALLY, 0, -1 )
+        self.pop_frame()
 
     def _compile_member_access_expr(self, expr: ast.MemberAccessAST):
         self._compile_expr(expr.left)
@@ -1755,6 +1763,9 @@ class Compiler:
 
         elif isinstance(node, ast.TryCatchStmtAST):
             self._compile_try(node)
+
+        elif isinstance(node, ast.WithStmt):
+            self._compile_with(node)
 
         elif isinstance(node, ast.ThrowStmtAST):
             self._compile_throw_stmt(node)
