@@ -1638,24 +1638,32 @@ class Parser:
 
     def __parse_if_expr(self, as_stmt: bool = True) -> ast.IfExpr:
         ln = self.__now_ln
-
+        
         body = self.__parse_test_expr(as_stmt)
 
-        if self.__now_tok != 'if':
+        if self.__now_tok not in ('if', '?'):
             return body
 
-        self.__next_tok()  # eat 'if'
+        colon_style = self.__now_tok == '?'
+        self.__next_tok()  # eat 'if' or ':'
 
         test = self.__parse_test_expr(False)
+        
+        if colon_style:
+            if self.__now_tok != ':':
+                self.__syntax_error(
+                    'uncompleted \'?\' expression, \':\' was excepted')
 
-        if self.__now_tok != 'else':
+        elif self.__now_tok != 'else':
             self.__syntax_error(
                 'uncompleted \'if\' expression, \'else\' was excepted')
-        self.__next_tok()  # eat 'else'
+        
+        self.__next_tok()  # eat 'else' or ':'
 
         else_body = self.__parse_test_expr()
 
-        return ast.IfExpr(test, body, else_body, ln)
+        return ast.IfExpr(body, test, else_body, ln) if colon_style \
+                else ast.IfExpr(test, body, else_body, ln)
 
     def __parse_if_else_expr0(self) -> ast.IfStmtAST:
         ln = self.__now_ln

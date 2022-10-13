@@ -37,6 +37,7 @@ AIL_WAVE            = 314   #   ~
 AIL_RARROW          = 315   #   ->
 AIL_IN              = 316   #   in
 AIL_NOT_IN          = 317   #   not in
+AIL_QUESTION_MARK   = 318   #   ?
 
 AIL_EQ              = 40    #   ==
 AIL_UEQ             = 41    #   !=

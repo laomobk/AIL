@@ -873,6 +873,15 @@ class Lex:
                     ))
                     self.__movchr()
 
+            elif c == '?':
+                self.__stream.append(Token(
+                        '?',
+                        AIL_QUESTION_MARK,
+                        self.__ln, self.__offset
+                    ))
+                self.__movchr()
+ 
+
             elif c == '!':  # 感叹号
                 if self.__nextch() == '=':  # !=
                     if self.__nextch(2) == '=':  # !==
