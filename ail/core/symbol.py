@@ -384,10 +384,10 @@ class SymbolAnalyzer:
         self._visit(stmt.block)
 
     def _visit_for_stmt(self, stmt: ast.ForStmtAST):
-        self._visit(stmt.test)
-
         for expr in stmt.init_list.expr_list:
             self._visit(expr)
+
+        self._visit(stmt.test)
 
         for expr in stmt.update_list.expr_list:
             self._visit(expr)
@@ -482,6 +482,10 @@ class SymbolAnalyzer:
 
         elif isinstance(node, ast.AssignExprAST):
             self._visit_assign_expr(node)
+
+        elif isinstance(node, ast.AssignExprListAST):
+            for expr in node.expr_list:
+                self._visit(expr)
 
         elif isinstance(node, ast.CellAST):
             self._visit_cell(node)
