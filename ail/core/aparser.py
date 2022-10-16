@@ -9,6 +9,7 @@ from ail.core.exceptions import print_py_traceback
 # import astunparse
 
 from . import aconfig
+from . import pyopcode
 
 from .feature import FEATURE_CLASSICAL_BLOCK, parse_feature_flag
 from .alex import Token, TokenStream, Lex
@@ -86,6 +87,40 @@ CONTINUE_WHEN_SYNTAX_ERROR = 1
 
 def _make_private_name(name):
     return '$'.join(_class_name_stack)
+
+
+def _pyasm_check(
+        opname: str, arg: int, effect: int,
+        err_handler):
+    code = pyopcode.OPMAP.get(opname)
+    if code is None:
+        err_handler('\'%s\' is not a py opcode' % opname)
+
+    effect = pyopcode.OPCODE_STACK_EFFECT[code]\
+
+
+def _number_ast_eval(
+    node: Union[ast.CellAST, ast.UnaryExprAST],
+    error_handler) -> Union[int, float]:
+
+    sign = 1
+
+    if type(node) in (ast.CellAST, ast.UnaryExprAST):
+        error_handler('_number_ast_eval(): node must be Cell or UnaryExpr')
+
+    if isinstance(node, ast.UnaryExprAST):
+        if node.op not in ('+', '-'):
+            error_handler('_number_ast_eval(): cell node muse be a number')
+        sign = -1 if node.op == '-' else 1
+        node = node.expr
+
+    if node.type != AIL_NUMBER:
+        error_handler('_number_ast_eval(): cell node muse be a number')
+
+    num = node.value
+
+    return sign * int(num)
+
 
 
 class ParserState:
@@ -2812,6 +2847,35 @@ class Parser:
         func.name = name
 
         return ast.PropertyDefine(func, action, ln)
+
+    def __parse_pyasm_stmt_single(
+            self, in_group=False) -> Union[ast.PyASMStmt, ast.PyASMStmt]:
+        self.__next_tok()  # eat '%'
+        
+        if self.__now_tok.ttype != AIL_IDENTIFIER:
+            self.__syntax_error(
+                'PyASM excepts a identifier as the OPNAME'
+            )
+    
+        opname = self.__now_tok.value
+        arg = None
+        effect = None
+
+        if self.__now_tok.ttype == AIL_SLBASKET:
+            if self.__now_tok.ttype != AIL_NUMBER:
+                self.__syntax_error(
+                    'PyASM excepts a number as the ARGUMENT'
+                )
+            arg = self.__now_tok.value
+            self.__next_tok()  # eat ARG
+
+            if self.__now_tok.ttype == AIL_COMMA:
+                self.__next_tok()  # eat ','
+                effect_node = self.__parse_unary_expr()
+                if type(effect_node) not in (ast.UnaryExprAST, ast.CellAST):
+                    pass
+
+                num = _number_ast_eval(effect_node)
 
     def __parse_try_catch_stmt(self) -> ast.TryCatchStmtAST:
         ln = self.__now_ln

@@ -619,6 +619,20 @@ class PyImportStmt(Statement):
         self.ln = ln
 
 
+class PyASMStmt(Statement):
+    def __init__(self, op: int, arg: int, effect: int, ln: int):
+        self.op = op
+        self.arg = arg
+        self.effect = effect
+        self.ln = ln
+
+
+class PyASMGroupStmt(Statement):
+    def __init__(self, stmts: List[PyASMStmt], ln: int):
+        self.stmts = stmts
+        self.ln = ln
+
+
 class BlankNode(AST):
     def __init__(self, ln: int):
         self.ln = ln

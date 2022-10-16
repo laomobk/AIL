@@ -1,5 +1,5 @@
 from ast import literal_eval
-from typing import List, Tuple, Dict, Union, final
+from typing import List, Tuple, Dict, Union
 from types import CodeType
 
 from . import asts as ast
