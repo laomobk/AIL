@@ -279,7 +279,6 @@ class Namespace:
     def __init__(self, name, namespace_locals: dict, reg_funcs: dict):
         self.__dict__ = namespace_locals
         self.__name__ = name
-        print(reg_funcs)
         self.__cells_dict__ = self.__get_cells(reg_funcs)
         self.__namespace_members__ = tuple(namespace_locals.keys())
 
