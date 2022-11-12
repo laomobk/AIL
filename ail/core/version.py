@@ -37,3 +37,14 @@ AIL_VERSION_NUMBER = 729
 AIL_COPYRIGHT = '2022 Chenhongbo'
 
 AIL_INSTALL_TIME = -1
+
+
+def _easy_checker_constructer(ver: float, cmp_func):
+    return lambda target: cmp_func(ver, target)
+
+
+PY_VERSION_REQUIRE = (
+    '==', 3, 8,
+    _easy_checker_constructer(3.8, float.__eq__)
+)
+

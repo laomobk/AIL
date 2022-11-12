@@ -3272,6 +3272,7 @@ def _set_lineno(pynode: _PyTreeT, lineno: int) -> _PyTreeT:
     node = pyast.fix_missing_locations(pynode)
     if hasattr(node, 'lineno'):
         node.lineno = lineno
+        node.end_lineno = lineno
     return node
 
 

@@ -1,5 +1,30 @@
 # AIL Launcher
 
+
+from ._config import (
+    AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
+    PY_VERSION_CHECK,
+)
+
+# python version check
+if PY_VERSION_CHECK:
+    from ast import literal_eval
+    from sys import version_info, exit
+    from .core.version import PY_VERSION_REQUIRE, AIL_VERSION
+
+    verbose, major, minor, easy_checker = PY_VERSION_REQUIRE
+
+    if not easy_checker(
+            literal_eval('%s.%s' % (
+                version_info.major, version_info.minor))):
+
+        print('Warning: AIL %s require python %s %s, but %s found' % 
+              (AIL_VERSION, verbose, '%s.%s' % (major, minor), 
+               '%s.%s' % (version_info.major, version_info.minor)))
+
+        exit(1)
+
+
 import argparse
 import os.path
 import sys
@@ -11,11 +36,6 @@ from .core.pyexec import ail_exec
 from .core.alex import Lex
 from .core.aparser import Parser, ASTConverter
 from .core.error import AILSyntaxError
-
-
-from ._config import (
-    AIL_DIR_PATH, BUILTINS_MODULE_PATH, CORE_PATH, LIB_PATH, CURRENT_WORK_PATH,
-)
 
 from . import _config
 

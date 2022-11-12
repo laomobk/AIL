@@ -15,7 +15,7 @@ def print_pyast(tree):
         dump_func = astunparse.dump
     except ModuleNotFoundError:
         import ast
-        dump_func = ast.dump
+        dump_func = lambda tree: ast.dump(tree, indent=True)
 
     print(dump_func(tree))
 
