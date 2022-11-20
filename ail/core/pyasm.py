@@ -1,0 +1,21 @@
+
+
+from . import pyopcode as _o
+
+SUPPORTED_OPCODES = (
+    _o.BINARY_ADD,
+    _o.BINARY_AND,
+    _o.BINARY_FLOOR_DIVIDE,
+    _o.BINARY_LSHIFT,
+    _o.BINARY_MATRIX_MULTIPLY,
+    _o.BINARY_MODULO,
+    _o.BINARY_MULTIPLY,
+    _o.BINARY_OR,
+    _o.BINARY_POWER,
+    _o.BINARY_RSHIFT,
+    _o.BINARY_SUBSCR,
+    _o.BINARY_SUBTRACT,
+    _o.BINARY_TRUE_DIVIDE,
+    _o.BINARY_XOR,
+)
+

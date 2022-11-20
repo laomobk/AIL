@@ -873,6 +873,15 @@ class Compiler:
             self._add_instruction(
                 STORE_ATTR, self._add_name(attr), target.ln)
 
+    def _compile_do_loop(self, stmt: ast.DoLoopStmtAST):
+        body = BasicBlock()
+        next_ = BasicBlock()
+
+        frame = FrameBlock(FB_WHILE_LOOP, body, next_)
+
+        with self._frame(frame):
+            self.__enter
+
     def _compile_while_stmt(self, stmt: ast.WhileStmtAST):
         start = BasicBlock()
         next_ = BasicBlock()
