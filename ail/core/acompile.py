@@ -875,12 +875,20 @@ class Compiler:
 
     def _compile_do_loop(self, stmt: ast.DoLoopStmtAST):
         body = BasicBlock()
+        test = BasicBlock()
         next_ = BasicBlock()
 
-        frame = FrameBlock(FB_WHILE_LOOP, body, next_)
+        frame = FrameBlock(FB_WHILE_LOOP, test, next_)
 
         with self._frame(frame):
-            self.__enter
+            self._enter_next_block(body)
+            self._compile(stmt.block)
+            self._enter_next_block(test)
+            self._compile(stmt.test)
+            self._add_jump_op(POP_JUMP_IF_TRUE, next_, -1)
+            self._add_jump_op(JUMP_ABSOLUTE, body, -1)
+        
+        self._enter_next_block(next_)
 
     def _compile_while_stmt(self, stmt: ast.WhileStmtAST):
         start = BasicBlock()
@@ -1769,6 +1777,9 @@ class Compiler:
 
         elif isinstance(node, ast.ForeachStmt):
             self._compile_foreach_stmt(node)
+
+        elif isinstance(node, ast.DoLoopStmtAST):
+            self._compile_do_loop(node)
 
         elif isinstance(node, ast.TryCatchStmtAST):
             self._compile_try(node)
