@@ -1,5 +1,4 @@
 
 print % (
- load_const('Hello Klee!')
+    load_const ('nothing')
 )
-
