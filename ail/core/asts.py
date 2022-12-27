@@ -620,7 +620,7 @@ class PyImportStmt(Statement):
 
 
 class PyASMStmt(Statement):
-    def __init__(self, op: int, arg: int, effect: int, ln: int):
+    def __init__(self, op: int, arg, effect: int, ln: int):
         self.op = op
         self.arg = arg
         self.effect = effect

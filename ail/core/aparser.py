@@ -9,7 +9,7 @@ from ail.core.exceptions import print_py_traceback
 # import astunparse
 
 from . import aconfig
-from . import pyopcode
+from . import pyasm, pyopcode
 
 from .feature import FEATURE_CLASSICAL_BLOCK, parse_feature_flag
 from .alex import Token, TokenStream, Lex
@@ -89,14 +89,34 @@ def _make_private_name(name):
     return '$'.join(_class_name_stack)
 
 
-def _pyasm_check(
-        opname: str, arg: int, effect: int,
-        err_handler):
-    code = pyopcode.OPMAP.get(opname)
-    if code is None:
-        err_handler('\'%s\' is not a py opcode' % opname)
+def _pyasm_check_and_get(
+        opname: str, arg, effect: int,
+        err_handler) -> int:
+    record = pyasm.SUPPORTED_OPCODES.get(opname)
+    if record is None:
+        err_handler('instr %s is not supported.' % opname)
 
-    effect = pyopcode.OPCODE_STACK_EFFECT[code]\
+    arg_types = record.arg_types
+
+    if arg_types & pyasm.ARG_NONE:
+        return record.code  # any argument
+
+    given_type = {
+        int: pyasm.ARG_NUMBER | pyasm.ARG_INT,
+        str: pyasm.ARG_STRING,
+    }.get(type(arg), 0)
+
+    if not (given_type & arg_types):
+        err_handler('instr \'%s\' got an unexpected argument.' % opname)
+
+    target_effect = pyopcode.OPCODE_STACK_EFFECT[record.code]
+    if effect is not None:
+        if target_effect != effect and \
+                target_effect is not pyopcode.EFCT_DYNAMIC_EFFECT:
+            err_handler('stack effect is required.')
+
+
+    return record.code
 
 
 def _number_ast_eval(
@@ -120,7 +140,6 @@ def _number_ast_eval(
     num = node.value
 
     return sign * int(num)
-
 
 
 class ParserState:
@@ -2862,20 +2881,38 @@ class Parser:
         effect = None
 
         if self.__now_tok.ttype == AIL_SLBASKET:
-            if self.__now_tok.ttype != AIL_NUMBER:
+            if self.__now_tok.ttype not in (AIL_NUMBER, AIL_STRING):
                 self.__syntax_error(
-                    'PyASM excepts a number as the ARGUMENT'
+                    'PyASM excepts a number or string as the ARGUMENT'
                 )
             arg = self.__now_tok.value
+            if self.__now_tok.ttype == AIL_STRING:
+                arg = '\'' + arg + '\''
+
+            arg = pyast.literal_eval(arg)
+
             self.__next_tok()  # eat ARG
 
             if self.__now_tok.ttype == AIL_COMMA:
                 self.__next_tok()  # eat ','
                 effect_node = self.__parse_unary_expr()
-                if type(effect_node) not in (ast.UnaryExprAST, ast.CellAST):
-                    pass
+                if type(effect_node) in (ast.UnaryExprAST, ast.CellAST):
+                    _t_cell = effect_node
+                    if isinstance(_t_cell, ast.UnaryExprAST):
+                        _t_cell = _t_cell.expr
+                    if not isinstance(_t_cell, ast.CellAST) or _t_cell.type == AIL_NUMBER:
+                        self.__syntax_error('PyASM excepts a number')
+                else:
+                    self.__syntax_error('PyASM excepts a number')
 
-                num = _number_ast_eval(effect_node)
+                effect = _number_ast_eval(effect_node, self.__syntax_error)
+
+            if self.__now_tok != ')':
+                self.__syntax_error()
+
+
+
+        return ast.PyASMStmt()
 
     def __parse_try_catch_stmt(self) -> ast.TryCatchStmtAST:
         ln = self.__now_ln
