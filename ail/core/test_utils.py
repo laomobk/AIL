@@ -28,7 +28,7 @@ def unparse_pyast(tree):
         print('unparse_pyast: module \'astunparse\' not found.')
 
 
-def unpack_list(l: list):
+def unpack_list(l):
     rl = []
     for d in l:
         if isinstance(d, tuple):
@@ -343,6 +343,22 @@ def make_ast_tree(a) -> dict:
                 'start': make_ast_tree(a.start),
                 'stop': make_ast_tree(a.stop),
                 'step': make_ast_tree(a.step),
+            }
+        }
+
+    elif isinstance(a, ast.PyASMStmt):
+        return {
+            'PyASM': {
+                'opcode': make_ast_tree(a.op),
+                'arg': repr(a.arg),
+                'effect': a.effect,
+            }
+        }
+
+    elif isinstance(a, ast.PyASMGroupStmt):
+        return {
+            'PyASMGroup': {
+                'stmts': make_ast_tree(a.stmts)
             }
         }
 

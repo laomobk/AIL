@@ -103,8 +103,9 @@ def _pyasm_check_and_get(
 
     given_type = {
         int: pyasm.ARG_NUMBER | pyasm.ARG_INT,
+        float: pyasm.ARG_NUMBER | pyasm.ARG_FLOAT,
         str: pyasm.ARG_STRING,
-    }.get(type(arg), 0)
+    }.get(type(arg), pyasm.ARG_NONE)
 
     if not (given_type & arg_types):
         err_handler('instr \'%s\' got an unexpected argument.' % opname)
@@ -115,17 +116,15 @@ def _pyasm_check_and_get(
                 target_effect is not pyopcode.EFCT_DYNAMIC_EFFECT:
             err_handler('stack effect is required.')
 
-
     return record.code
 
 
 def _number_ast_eval(
-    node: Union[ast.CellAST, ast.UnaryExprAST],
-    error_handler) -> Union[int, float]:
-
+        node: Union[ast.CellAST, ast.UnaryExprAST],
+        error_handler) -> Union[int, float]:
     sign = 1
 
-    if type(node) in (ast.CellAST, ast.UnaryExprAST):
+    if type(node) not in (ast.CellAST, ast.UnaryExprAST):
         error_handler('_number_ast_eval(): node must be Cell or UnaryExpr')
 
     if isinstance(node, ast.UnaryExprAST):
@@ -1692,7 +1691,7 @@ class Parser:
 
     def __parse_if_expr(self, as_stmt: bool = True) -> ast.IfExpr:
         ln = self.__now_ln
-        
+
         body = self.__parse_test_expr(as_stmt)
 
         if self.__now_tok not in ('if', '?'):
@@ -1702,7 +1701,7 @@ class Parser:
         self.__next_tok()  # eat 'if' or ':'
 
         test = self.__parse_test_expr(False)
-        
+
         if colon_style:
             if self.__now_tok != ':':
                 self.__syntax_error(
@@ -1711,13 +1710,13 @@ class Parser:
         elif self.__now_tok != 'else':
             self.__syntax_error(
                 'uncompleted \'if\' expression, \'else\' was excepted')
-        
+
         self.__next_tok()  # eat 'else' or ':'
 
         else_body = self.__parse_test_expr()
 
         return ast.IfExpr(body, test, else_body, ln) if colon_style \
-                else ast.IfExpr(test, body, else_body, ln)
+            else ast.IfExpr(test, body, else_body, ln)
 
     def __parse_if_else_expr0(self) -> ast.IfStmtAST:
         ln = self.__now_ln
@@ -2867,20 +2866,53 @@ class Parser:
 
         return ast.PropertyDefine(func, action, ln)
 
+    def __parse_pyasm_group(self):
+        ln = self.__now_ln
+        self.__next_tok()  # eat '%'
+
+        if self.__now_tok != '(':
+            return self.__parse_pyasm_stmt_single(True)
+
+        s_ln = self.__now_tok.ln
+        s_col = self.__now_tok.offset
+        self.__next_tok()  # '('
+
+        stmts = []
+
+        while True:
+            self.__skip_newlines()
+            stmt = self.__parse_pyasm_stmt_single(True)
+            stmts.append(stmt)
+            self.__skip_newlines()
+
+            if self.__now_tok == AIL_EOF:
+                self.__syntax_error(
+                    'this pyasm group is boundless (starts at line %s, col %s)' % (s_ln, s_col))
+
+            if self.__now_tok == ')':
+                self.__next_tok()  # eat ')'
+                return ast.PyASMGroupStmt(stmts, ln)
+
     def __parse_pyasm_stmt_single(
             self, in_group=False) -> Union[ast.PyASMStmt, ast.PyASMStmt]:
-        self.__next_tok()  # eat '%'
-        
+        if not in_group:
+            self.__next_tok()  # eat '%'
+
+        ln = self.__now_ln
+
         if self.__now_tok.ttype != AIL_IDENTIFIER:
             self.__syntax_error(
                 'PyASM excepts a identifier as the OPNAME'
             )
-    
+
         opname = self.__now_tok.value
         arg = None
         effect = None
 
+        self.__next_tok()  # eat NAME
+
         if self.__now_tok.ttype == AIL_SLBASKET:
+            self.__next_tok()  # eat '('
             if self.__now_tok.ttype not in (AIL_NUMBER, AIL_STRING):
                 self.__syntax_error(
                     'PyASM excepts a number or string as the ARGUMENT'
@@ -2900,7 +2932,7 @@ class Parser:
                     _t_cell = effect_node
                     if isinstance(_t_cell, ast.UnaryExprAST):
                         _t_cell = _t_cell.expr
-                    if not isinstance(_t_cell, ast.CellAST) or _t_cell.type == AIL_NUMBER:
+                    if not isinstance(_t_cell, ast.CellAST) or _t_cell.type != AIL_NUMBER:
                         self.__syntax_error('PyASM excepts a number')
                 else:
                     self.__syntax_error('PyASM excepts a number')
@@ -2910,9 +2942,11 @@ class Parser:
             if self.__now_tok != ')':
                 self.__syntax_error()
 
+            self.__next_tok()  # eat ')'
 
+        _opcode = _pyasm_check_and_get(opname, arg, effect, self.__syntax_error)
 
-        return ast.PyASMStmt()
+        return ast.PyASMStmt(_opcode, arg, effect, ln)
 
     def __parse_try_catch_stmt(self) -> ast.TryCatchStmtAST:
         ln = self.__now_ln
@@ -3056,6 +3090,9 @@ class Parser:
         elif nt == '@':
             a = self.__parse_def_with_decorator_stmt()
 
+        elif nt == '%':
+            a = self.__parse_pyasm_group()
+
         elif nt == 'load':
             a = self.__parse_load_stmt()
 
@@ -3176,7 +3213,7 @@ class Parser:
                 self.__loop_level += 1
 
             if (self.__now_tok.ttype == AIL_LLBASKET or
-                    self.__feature_flag & FEATURE_CLASSICAL_BLOCK) and not for_program:
+                self.__feature_flag & FEATURE_CLASSICAL_BLOCK) and not for_program:
                 return self.__parse_new_block(class_body=class_body)
 
             ln = self.__now_ln

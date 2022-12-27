@@ -25,6 +25,7 @@ ARG_NUMBER = 0x2
 ARG_INT = 0x4
 ARG_STRING = 0x8
 ARG_OBJECT = 0x10
+ARG_FLOAT = 0x20
 
 SUPPORTED_OPCODES: Dict[str, OpcodeRecord] = {
     k: v for k, v in (
@@ -42,7 +43,7 @@ SUPPORTED_OPCODES: Dict[str, OpcodeRecord] = {
         _reg_pyasm_opcode(_o.BINARY_SUBTRACT, ARG_NONE),
         _reg_pyasm_opcode(_o.BINARY_TRUE_DIVIDE, ARG_NONE),
         _reg_pyasm_opcode(_o.BINARY_XOR, ARG_NONE),
-        _reg_pyasm_opcode(_o.LOAD_CONST, ARG_NUMBER | ARG_OBJECT | ARG_STRING)
+        _reg_pyasm_opcode(_o.LOAD_CONST, ARG_NUMBER | ARG_STRING)
     )
 }
 
