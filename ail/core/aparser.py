@@ -985,6 +985,9 @@ class Parser:
     def __parse_low_cell_expr(self) -> ast.Expression:
         ln = self.__now_ln
 
+        if self.__now_tok == '%' :
+            return self.__parse_pyasm_group()
+
         if self.__now_tok.ttype == AIL_MLBASKET:
             a = self.__parse_array_expr()
 
@@ -2871,7 +2874,7 @@ class Parser:
         self.__next_tok()  # eat '%'
 
         if self.__now_tok != '(':
-            return self.__parse_pyasm_stmt_single(True)
+            return self.__parse_pyasm_expr_single(True)
 
         s_ln = self.__now_tok.ln
         s_col = self.__now_tok.offset
@@ -2881,7 +2884,7 @@ class Parser:
 
         while True:
             self.__skip_newlines()
-            stmt = self.__parse_pyasm_stmt_single(True)
+            stmt = self.__parse_pyasm_expr_single(True)
             stmts.append(stmt)
             self.__skip_newlines()
 
@@ -2891,10 +2894,10 @@ class Parser:
 
             if self.__now_tok == ')':
                 self.__next_tok()  # eat ')'
-                return ast.PyASMGroupStmt(stmts, ln)
+                return ast.PyASMGroupExpr(stmts, ln)
 
-    def __parse_pyasm_stmt_single(
-            self, in_group=False) -> Union[ast.PyASMStmt, ast.PyASMStmt]:
+    def __parse_pyasm_expr_single(
+            self, in_group=False) -> Union[ast.PyASMExpr, ast.PyASMExpr]:
         if not in_group:
             self.__next_tok()  # eat '%'
 
@@ -2906,7 +2909,7 @@ class Parser:
             )
 
         opname = self.__now_tok.value
-        arg = None
+        arg = 0
         effect = None
 
         self.__next_tok()  # eat NAME
@@ -2946,7 +2949,7 @@ class Parser:
 
         _opcode = _pyasm_check_and_get(opname, arg, effect, self.__syntax_error)
 
-        return ast.PyASMStmt(_opcode, arg, effect, ln)
+        return ast.PyASMExpr(_opcode, arg, effect, ln)
 
     def __parse_try_catch_stmt(self) -> ast.TryCatchStmtAST:
         ln = self.__now_ln
@@ -3089,9 +3092,6 @@ class Parser:
 
         elif nt == '@':
             a = self.__parse_def_with_decorator_stmt()
-
-        elif nt == '%':
-            a = self.__parse_pyasm_group()
 
         elif nt == 'load':
             a = self.__parse_load_stmt()

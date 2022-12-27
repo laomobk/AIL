@@ -1,5 +1,3 @@
-
-
 OPMAP = {}
 OPCODE_TO_NAME_MAP = {}
 OPCODE_STACK_EFFECT = {}
@@ -140,7 +138,6 @@ CALL_METHOD = _stack_effect(_register_opcode(161, 'CALL_METHOD'), EFCT_DYNAMIC_E
 CALL_FINALLY = _stack_effect(_register_opcode(162, 'CALL_FINALLY'), 1)
 POP_FINALLY = _stack_effect(_register_opcode(163, 'POP_FINALLY'), -6)
 
-
 OPCODE_JUMP = (
     JUMP_ABSOLUTE,
     JUMP_FORWARD,
@@ -162,5 +159,27 @@ OPCODE_JUMP_REL = (
     SETUP_WITH,
 )
 
+OP_NAME = (
+    LOAD_NAME,
+    LOAD_GLOBAL
+)
+
+OP_VARNAME = (
+    LOAD_FAST,
+)
+
+OP_CONST = (
+    LOAD_CONST,
+)
+
+OP_JMP = (
+    JUMP_FORWARD,
+    JUMP_IF_FALSE_OR_POP,
+    JUMP_IF_TRUE_OR_POP,
+    JUMP_ABSOLUTE,
+    POP_JUMP_IF_FALSE,
+    POP_JUMP_IF_TRUE,
+    SETUP_FINALLY,
+)
 
 del _register_opcode

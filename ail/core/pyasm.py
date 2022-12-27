@@ -43,7 +43,12 @@ SUPPORTED_OPCODES: Dict[str, OpcodeRecord] = {
         _reg_pyasm_opcode(_o.BINARY_SUBTRACT, ARG_NONE),
         _reg_pyasm_opcode(_o.BINARY_TRUE_DIVIDE, ARG_NONE),
         _reg_pyasm_opcode(_o.BINARY_XOR, ARG_NONE),
-        _reg_pyasm_opcode(_o.LOAD_CONST, ARG_NUMBER | ARG_STRING)
+        _reg_pyasm_opcode(_o.LOAD_CONST, ARG_NUMBER | ARG_STRING),
+        _reg_pyasm_opcode(_o.LOAD_NAME, ARG_STRING),
+        _reg_pyasm_opcode(_o.LOAD_GLOBAL, ARG_STRING),
+        _reg_pyasm_opcode(_o.LOAD_FAST, ARG_STRING),
+        _reg_pyasm_opcode(_o.CALL_FUNCTION, ARG_INT),
+        _reg_pyasm_opcode(_o.POP_TOP, ARG_NONE)
     )
 }
 

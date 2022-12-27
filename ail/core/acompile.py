@@ -1688,6 +1688,29 @@ class Compiler:
         self._compile(expr.orelse)
         self._enter_next_block(end)
 
+    def _compile_pyasm_expr(self, expr: ast.PyASMExpr):
+        if expr.op in OP_CONST:
+            ci = self._add_const(expr.arg)
+            self._add_instruction(
+                expr.op, ci, expr.ln, stack_effect=expr.effect
+            )
+        elif expr.op in OP_NAME:
+            ni = self._add_name(expr.arg)
+            self._add_instruction(
+                expr.op, ni, expr.ln, stack_effect=expr.effect
+            )
+        elif expr.op in OP_VARNAME:
+            ni = self._add_varname(expr.arg)
+            self._add_instruction(
+                expr.op, ni, expr.ln, stack_effect=expr.effect
+            )
+        else:
+            self._add_instruction(expr.op, expr.arg, expr.ln, stack_effect=expr.effect)
+
+    def _compile_pyasm_group(self, group: ast.PyASMGroupExpr):
+        for expr in group.stmts:
+            self._compile_pyasm_expr(expr)
+
     def _compile_expr(self, expr: ast.Expression):
         if isinstance(expr, ast.CellAST):
             return self._compile_cell(expr)
@@ -1813,6 +1836,12 @@ class Compiler:
 
         elif isinstance(node, ast.ImportStmtAST):
             self._compile_import_stmt(node)
+
+        elif isinstance(node, ast.PyASMGroupExpr):
+            self._compile_pyasm_group(node)
+
+        elif isinstance(node, ast.PyASMExpr):
+            self._compile_pyasm_expr(node)
 
         elif type(node) in (ast.NonlocalStmtAST, ast.GlobalStmtAST):
             pass  # do not compile

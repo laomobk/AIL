@@ -619,7 +619,7 @@ class PyImportStmt(Statement):
         self.ln = ln
 
 
-class PyASMStmt(Statement):
+class PyASMExpr(Expression):
     def __init__(self, op: int, arg, effect: int, ln: int):
         self.op = op
         self.arg = arg
@@ -627,8 +627,8 @@ class PyASMStmt(Statement):
         self.ln = ln
 
 
-class PyASMGroupStmt(Statement):
-    def __init__(self, stmts: List[PyASMStmt], ln: int):
+class PyASMGroupExpr(Expression):
+    def __init__(self, stmts: List[PyASMExpr], ln: int):
         self.stmts = stmts
         self.ln = ln
 
@@ -658,6 +658,8 @@ EXPR_AST_TYPES = (
     BitOpExprAST,
     TestExprAST,
     CmpTestAST,
+    PyASMExpr,
+    PyASMGroupExpr,
 )
 
 BIN_OP_AST = (

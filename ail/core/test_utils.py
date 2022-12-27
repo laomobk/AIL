@@ -346,7 +346,7 @@ def make_ast_tree(a) -> dict:
             }
         }
 
-    elif isinstance(a, ast.PyASMStmt):
+    elif isinstance(a, ast.PyASMExpr):
         return {
             'PyASM': {
                 'opcode': make_ast_tree(a.op),
@@ -355,7 +355,7 @@ def make_ast_tree(a) -> dict:
             }
         }
 
-    elif isinstance(a, ast.PyASMGroupStmt):
+    elif isinstance(a, ast.PyASMGroupExpr):
         return {
             'PyASMGroup': {
                 'stmts': make_ast_tree(a.stmts)
