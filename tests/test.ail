@@ -1,4 +1,4 @@
 
-print % (
-    load_const ('nothing')
-)
+%load_global ('print')
+%load_const ('klee')
+print %(), %()

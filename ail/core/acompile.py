@@ -1745,6 +1745,12 @@ class Compiler:
         elif isinstance(expr, ast.MatchExpr):
             self._compile_match_expr(expr)
 
+        elif isinstance(expr, ast.PyASMGroupExpr):
+            self._compile_pyasm_group(expr)
+
+        elif isinstance(expr, ast.PyASMExpr):
+            self._compile_pyasm_expr(expr)
+
         elif type(expr) in ast.BIN_OP_AST:
             self._compile_binary_expr(expr)
 
