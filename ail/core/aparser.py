@@ -2908,7 +2908,7 @@ class Parser:
                 'PyASM excepts a identifier as the OPNAME'
             )
 
-        opname = self.__now_tok.value
+        opname = self.__now_tok.value.upper()
         arg = 0
         effect = None
 

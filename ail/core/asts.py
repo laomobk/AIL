@@ -658,8 +658,6 @@ EXPR_AST_TYPES = (
     BitOpExprAST,
     TestExprAST,
     CmpTestAST,
-    PyASMExpr,
-    PyASMGroupExpr,
 )
 
 BIN_OP_AST = (

@@ -1,5 +1,5 @@
 
 print % (
- LOAD_CONST('Hello Klee!')
+ load_const('Hello Klee!')
 )
 
