@@ -1,6 +1,5 @@
 
-%load_const ('last');
-print %load_const('hello'), %load_const('Klee');
-x = %();
-print %load_const('x ='), %load_name('x')
+greeting = 'Hello %s'
+who = 'Klee'
+print greeting % who
 
