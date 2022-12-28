@@ -1,0 +1,8 @@
+
+from ail.core.pyasm import SUPPORTED_OPCODES as _supported_opcodes;
+
+
+func support_opcode_names() {
+    return list(_supported_opcodes);
+}
+

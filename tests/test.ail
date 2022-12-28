@@ -1,4 +1,5 @@
 
-%load_global ('print')
-%load_const ('klee')
-print %(), %()
+greeting = 'Hello %s'
+who = 'Klee'
+print greeting % who
+

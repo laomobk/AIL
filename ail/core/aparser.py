@@ -2885,13 +2885,14 @@ class Parser:
         while True:
             self.__skip_newlines()
 
+            if self.__now_tok == AIL_EOF:
+                self.__syntax_error(
+                    'this pyasm group is boundless (starts at line %s, col %s)' % 
+                    (s_ln, s_col))
+
             if self.__now_tok == ')':
                 self.__next_tok()  # eat ')'
                 return ast.PyASMGroupExpr(stmts, ln)
-
-            if self.__now_tok == AIL_EOF:
-                self.__syntax_error(
-                    'this pyasm group is boundless (starts at line %s, col %s)' % (s_ln, s_col))
 
             stmt = self.__parse_pyasm_expr_single(True)
             stmts.append(stmt)

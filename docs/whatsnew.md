@@ -87,6 +87,30 @@ Disassembly of <code object <anonymous function> at 0x000001EDD318D240, file "<u
 可以发现，在 AIL 3 中，匿名函数的定义仅仅是被编译成了一条 `MAKE_FUNCTION` 指令，此函数仅仅是停留在栈上，当需要使用此函数时，它就被从栈中弹出，不会对名称空间造成任何影响。
 
 
+### 二、PyASM 支持
+
+PyASM 允许用户直接在 AIL 程序中插入 Python 字节码指令（目前仅支持部分指令）：
+
+```
+print % (
+    load_const('hello ')
+    load_const('Klee')
+    binary_add
+)
+```
+
+```
+%load_const ('last');
+print %load_const('hello'), %load_const('Klee');
+x = %();
+print %load_const('x ='), %load_name('x')
+```
+
+PyASM 块是*一个伪表达式*，即它可以在语法上可以作为表达式放入如函数参数，条件表达式的位置，但是在运行时**不一定会返回值**。
+
+*但在多数情况下，如果在被作为表达式的情况下没有返回值，AIL 将会崩溃。*
+
+*PyASM 表达式将会被直接嵌入到输出的 Python 字节码中，为了使得程序不崩溃，请在使用 PyASM 前对字节码有一定的认识*
 
 
 ## == 主要变更 ==
