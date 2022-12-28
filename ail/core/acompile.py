@@ -1954,28 +1954,33 @@ class Assembler:
             instr.arg = offset - now_offset - 2  # skip self
 
     def _assemble_jump_offset(self):
-        block = self._task.block
-        total_offset = 0
+        not_extended_arg_recompile = True
 
-        while block is not None:
-            instructions = block.instructions
-            block.offset = total_offset
+        while True:
+            block = self._task.block
+            total_offset = 0
+            while block is not None:
+                instructions = block.instructions
+                block.offset = total_offset
 
-            if block in self._wish_table:
-                for follower, offset in self._wish_table[block]:
-                    self._set_jump_instr_argument(
-                        follower, block.offset, offset)
-
-            for instr in instructions:
-                if instr.opcode in OPCODE_JUMP:
-                    if instr.target.offset == -1:
-                        self.__set_wish(instr, total_offset)
-                    else:
+                if block in self._wish_table:
+                    for follower, offset in self._wish_table[block]:
                         self._set_jump_instr_argument(
-                            instr, instr.target.offset, total_offset)
-                total_offset += 2
+                            follower, block.offset, offset)
 
-            block = block.next_block
+                for instr in instructions:
+                    if instr.opcode in OPCODE_JUMP:
+                        if instr.target.offset == -1:
+                            self.__set_wish(instr, total_offset)
+                        else:
+                            self._set_jump_instr_argument(
+                                instr, instr.target.offset, total_offset)
+                    total_offset += 2
+
+                block = block.next_block
+
+            if not_extended_arg_recompile:
+                break
 
     def _make_bytecode_sequence(self) -> bytes:
         block = self._task.block
